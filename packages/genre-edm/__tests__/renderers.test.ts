@@ -11,7 +11,6 @@ function makeBlueprint(overrides: Record<string, unknown> = {}) {
     mood: "warm",
     energy: 6,
     complexity: 5,
-    vocalMode: "vocals_hook" as const,
     lyricsMode: "guided_instrumental" as const,
     arrangement: buildDefaultArrangement(6, 5),
     styleClauses: [{ key: "genre", value: "deep house", order: 1 }],
@@ -62,10 +61,22 @@ describe("EDM renderers", () => {
     expect(excluded).toContain("happy");
   });
 
-  it("renderExcludedStyles for instrumental excludes vocals", () => {
-    const bp = makeBlueprint({ lyricsMode: "strict_instrumental", vocalMode: "none" });
+  it("renderExcludedStyles for strict_instrumental excludes vocals", () => {
+    const bp = makeBlueprint({ lyricsMode: "strict_instrumental" });
     const excluded = renderers.excludedStyles(bp);
     expect(excluded).toContain("vocals");
+  });
+
+  it("renderExcludedStyles for guided_instrumental excludes vocals", () => {
+    const bp = makeBlueprint({ lyricsMode: "guided_instrumental" });
+    const excluded = renderers.excludedStyles(bp);
+    expect(excluded).toContain("vocals");
+  });
+
+  it("renderExcludedStyles for full_lyrics does not exclude vocals", () => {
+    const bp = makeBlueprint({ lyricsMode: "full_lyrics" });
+    const excluded = renderers.excludedStyles(bp);
+    expect(excluded).not.toContain("vocals");
   });
 
   it("renderLyrics guided_instrumental returns arrangement tags", () => {

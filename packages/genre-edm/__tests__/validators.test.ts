@@ -56,7 +56,6 @@ describe("EDM validators", () => {
       mood: "warm",
       energy: 6,
       complexity: 5,
-      vocalMode: "vocals_hook",
       lyricsMode: "guided_instrumental",
       arrangement: [{ section: "intro", bars: 8, tags: [] }],
       styleClauses: [{ key: "genre", value: "deep house", order: 1 }],

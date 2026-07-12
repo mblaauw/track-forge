@@ -205,6 +205,11 @@ export function createHipHopRenderers(
     excludedStyles(data: HipHopBlueprint): string {
       const exclusions: string[] = [];
 
+      // Instrumental mode — exclude vocals
+      if (data.lyricsMode === "instrumental") {
+        exclusions.push("vocals", "singing", "lyrics", "voice");
+      }
+
       // Opposite characteristics
       if (data.energy <= 4) exclusions.push("high-energy, aggressive, hype");
       else if (data.energy >= 8) exclusions.push("low-energy, slow, lethargic");

@@ -63,9 +63,7 @@ export const EdmBlueprintSchema = z.object({
   energy: z.number().int().min(1).max(10),
   /** Complexity (1-10) */
   complexity: z.number().int().min(1).max(10),
-  /** Vocal treatment */
-  vocalMode: z.enum(["none", "vocals_hook", "vocals_full"]),
-  /** Lyrics mode */
+  /** Lyrics mode (subsumes vocal treatment) */
   lyricsMode: z.enum(["guided_instrumental", "strict_instrumental", "full_lyrics"]),
   /** Ordered arrangement sections */
   arrangement: z.array(

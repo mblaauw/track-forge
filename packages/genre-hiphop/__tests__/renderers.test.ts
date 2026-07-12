@@ -66,4 +66,16 @@ describe("Hip-Hop renderers", () => {
     const bp = makeBlueprint({ lyricsMode: "instrumental" });
     expect(renderers.lyrics(bp)).toBe("");
   });
+
+  it("renderExcludedStyles instrumental excludes vocals", () => {
+    const bp = makeBlueprint({ lyricsMode: "instrumental" });
+    const excluded = renderers.excludedStyles(bp);
+    expect(excluded).toContain("vocals");
+  });
+
+  it("renderExcludedStyles full_lyrics does not exclude vocals", () => {
+    const bp = makeBlueprint({ lyricsMode: "full_lyrics" });
+    const excluded = renderers.excludedStyles(bp);
+    expect(excluded).not.toContain("vocals");
+  });
 });

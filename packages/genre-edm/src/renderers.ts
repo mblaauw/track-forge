@@ -80,7 +80,7 @@ function renderExcludedStyles(data: EdmBlueprint): string {
   if (data.complexity <= 3) {
     excludes.push("complex", "busy", "cluttered");
   }
-  if (data.lyricsMode === "strict_instrumental" || data.vocalMode === "none") {
+  if (data.lyricsMode !== "full_lyrics") {
     excludes.push("vocals", "singing", "lyrics", "voice");
   }
   if (data.scale === "minor") {
