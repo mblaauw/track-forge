@@ -6,4 +6,6 @@ export { PromptAssembler, fillTemplate, buildPromptContext } from "./prompt-asse
 export { runCritics, parseFindings } from "./critic-runner.js";
 export { subscribe, publish, unsubscribeAll } from "./events.js";
 export type { PipelineEvent } from "./events.js";
+export { createLockService } from "./lock-service.js";
+export type { LockService } from "./lock-service.js";
 export type { PipelineDeps, PipelineState, PipelineResult, PromptContext, PromptManifest } from "./types.js";

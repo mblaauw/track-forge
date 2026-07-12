@@ -135,6 +135,14 @@ export function createDb(dbPath: string): Db {
     created_at TEXT NOT NULL,
     applied_at TEXT
   )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS artifact_locks (
+    id TEXT PRIMARY KEY,
+    version_id TEXT NOT NULL REFERENCES versions(id),
+    artifact_type TEXT NOT NULL,
+    locked_by TEXT NOT NULL,
+    acquired_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+  )`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS suno_tracks (
     id TEXT PRIMARY KEY,
     generation_id TEXT NOT NULL REFERENCES generations(id),

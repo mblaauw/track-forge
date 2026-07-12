@@ -134,6 +134,19 @@ export const adjustments = sqliteTable("adjustments", {
   appliedAt: text("applied_at"),
 });
 
+// ── Artifact locks (persistent, multi-server) ────────────────────────
+
+export const artifactLocks = sqliteTable("artifact_locks", {
+  id: text("id").primaryKey(),
+  versionId: text("version_id")
+    .notNull()
+    .references(() => versions.id),
+  artifactType: text("artifact_type").notNull(),
+  lockedBy: text("locked_by").notNull(),
+  acquiredAt: text("acquired_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+});
+
 // ── Suno track records (individual tracks per generation) ────────────
 
 export const sunoTracks = sqliteTable("suno_tracks", {

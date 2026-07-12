@@ -1,38 +1,15 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc, and } from "drizzle-orm";
-import type { Db } from "@track-forge/core";
+import { eq, desc } from "drizzle-orm";
+import type { Db, LockService } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 
 export interface VersionRouteDeps {
   db: Db;
-}
-
-// ── In-memory lock store ─────────────────────────────────────────────
-
-interface ArtifactLock {
-  artifactType: string;
-  lockedAt: string;
-}
-
-const locks = new Map<string, ArtifactLock>();
-
-function lockKey(versionId: string, artifactType: string): string {
-  return `${versionId}:${artifactType}`;
-}
-
-function acquireLock(versionId: string, artifactType: string): boolean {
-  const key = lockKey(versionId, artifactType);
-  if (locks.has(key)) return false;
-  locks.set(key, { artifactType, lockedAt: new Date().toISOString() });
-  return true;
-}
-
-function releaseLock(versionId: string, artifactType: string): void {
-  locks.delete(lockKey(versionId, artifactType));
+  lockService: LockService;
 }
 
 export function registerVersionRoutes(server: FastifyInstance, deps: VersionRouteDeps): void {
-  const { db } = deps;
+  const { db, lockService } = deps;
 
   // ── List versions for a job ──────────────────────────────────────────
 
@@ -92,8 +69,9 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
       return reply.code(400).send({ error: "Cannot edit a finalized version" });
     }
 
-    // Try to acquire lock
-    if (!acquireLock(id, body.artifactType)) {
+    const owner = `server:${process.pid}`;
+    const acquired = await lockService.acquireLock(id, body.artifactType, owner);
+    if (!acquired) {
       return reply.code(423).send({ error: `Artifact "${body.artifactType}" is locked` });
     }
 
@@ -120,7 +98,7 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
 
       return reply.code(200).send(updated);
     } finally {
-      releaseLock(id, body.artifactType);
+      await lockService.releaseLock(id, body.artifactType);
     }
   });
 

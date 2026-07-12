@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import pino from "pino";
 import { initConfig } from "./lib/config.js";
 import { initDb } from "./lib/db.js";
-import { SunoClient, createSunoClientConfig, createLlmClient } from "@track-forge/core";
+import { SunoClient, createSunoClientConfig, createLlmClient, createLockService } from "@track-forge/core";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerJobRoutes } from "./routes/jobs.js";
 import { registerVersionRoutes } from "./routes/versions.js";
@@ -19,11 +19,19 @@ const suno = new SunoClient(sunoCfg, config, logger.child({ module: "suno" }));
 const llm = createLlmClient(config);
 
 const server = Fastify({ logger });
+const lockService = createLockService(db);
+
+// ── Periodic lock cleanup ──────────────────────────────────────────
+
+const LOCK_CLEANUP_INTERVAL = 30_000;
+const cleanupTimer = setInterval(() => {
+  lockService.cleanExpiredLocks().catch(() => {});
+}, LOCK_CLEANUP_INTERVAL);
 
 registerHealthRoutes(server);
 registerProjectRoutes(server, { db, config });
 registerJobRoutes(server, { db, config, llm, suno });
-registerVersionRoutes(server, { db });
+registerVersionRoutes(server, { db, lockService });
 registerSunoRoutes(server, { db, suno });
 registerEventRoutes(server);
 registerImportExportRoutes(server, { db });
