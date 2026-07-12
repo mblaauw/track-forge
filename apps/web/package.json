@@ -1,0 +1,24 @@
+{
+  "name": "@track-forge/web",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@track-forge/contracts": "*",
+    "@track-forge/genre-core": "*",
+    "@track-forge/genre-edm": "*",
+    "@track-forge/genre-hiphop": "*",
+    "preact": "^10.25.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

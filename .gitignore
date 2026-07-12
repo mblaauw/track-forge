@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.log
+.turbo/
+.next/
+coverage/
+*.tsbuildinfo
+.codegraph/
+.vscode/

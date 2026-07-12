@@ -1,0 +1,352 @@
+/* ── Reset & base ──────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a2e;
+  background: #f0f2f5;
+}
+
+a {
+  color: #4361ee;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────── */
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 24px;
+}
+
+.app-logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.app-logo:hover {
+  text-decoration: none;
+}
+
+.app-nav {
+  display: flex;
+  gap: 16px;
+}
+.app-nav a {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+}
+.app-nav a:hover {
+  color: #4361ee;
+}
+
+/* ── Page header ───────────────────────────────────────────────────── */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.page-header h2 {
+  margin: 0;
+}
+
+/* ── Typography ────────────────────────────────────────────────────── */
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+}
+
+.muted {
+  color: #777;
+}
+.mono {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+.error {
+  color: #d32f2f;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: #4361ee;
+  border-color: #4361ee;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #3651de;
+  border-color: #3651de;
+}
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ── Badges ─────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+.badge-ok {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.badge-err {
+  background: #fbe9e7;
+  color: #c62828;
+}
+.badge-progress {
+  background: #fff3e0;
+  color: #e65100;
+}
+.badge-pending {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.stage {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: #f5f5f5;
+  color: #555;
+}
+
+/* ── Table ──────────────────────────────────────────────────────────── */
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.job-table th,
+.job-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+.job-table th {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #777;
+  background: #fafafa;
+}
+.job-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Form ───────────────────────────────────────────────────────────── */
+
+.create-form {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #555;
+  letter-spacing: 0.3px;
+}
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  font-family: inherit;
+}
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #4361ee;
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+}
+
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #777;
+  margin: 2px 0 0;
+}
+
+/* ── Multiselect ───────────────────────────────────────────────────── */
+
+.multiselect {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.multiselect-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ── Detail card ───────────────────────────────────────────────────── */
+
+.detail-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.detail-row {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.detail-row:last-child {
+  border-bottom: none;
+}
+.detail-label {
+  width: 140px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #777;
+  flex-shrink: 0;
+}
+
+/* ── Code block ────────────────────────────────────────────────────── */
+
+.code-block {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+/* ── Details/summary ───────────────────────────────────────────────── */
+
+details {
+  margin-bottom: 16px;
+}
+details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+/* ── Live stage indicator ─────────────────────────────────────────── */
+
+.live-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #e8f5e9;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #2e7d32;
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2e7d32;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}

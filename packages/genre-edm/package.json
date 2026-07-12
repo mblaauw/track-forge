@@ -1,0 +1,33 @@
+{
+  "name": "@track-forge/genre-edm",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ui": {
+      "types": "./ui/dist/index.d.ts",
+      "import": "./ui/dist/index.js",
+      "default": "./ui/dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p ui/tsconfig.json",
+    "dev": "tsc --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@track-forge/contracts": "*",
+    "@track-forge/genre-core": "*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
