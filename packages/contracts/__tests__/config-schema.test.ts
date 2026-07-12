@@ -108,8 +108,8 @@ describe("AutoFixPolicy const map", () => {
 });
 
 describe("PatchType const map", () => {
-  it("has 7 patch types", () => {
-    expect(Object.keys(PatchType)).toHaveLength(7);
+  it("has 12 patch types", () => {
+    expect(Object.keys(PatchType)).toHaveLength(12);
     expect(PatchType.ReplaceStyleDescription).toBe("replace_style_description");
     expect(PatchType.ReplaceNegativeTags).toBe("replace_negative_tags");
     expect(PatchType.ReplaceLyricsSection).toBe("replace_lyrics_section");

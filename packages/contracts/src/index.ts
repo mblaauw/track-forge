@@ -361,6 +361,11 @@ export const PatchType = {
   InputPatch: "input_patch",
   MergeField: "merge_field",
   RemoveField: "remove_field",
+  ReplaceSection: "replace_section",
+  InsertSection: "insert_section",
+  MergeSectionLines: "merge_section_lines",
+  ChangeSectionBars: "change_section_bars",
+  ChangeSectionTags: "change_section_tags",
 } as const;
 export type PatchType = (typeof PatchType)[keyof typeof PatchType];
 

@@ -31,6 +31,7 @@ import { interpretReference, formatInterpretedRef } from "./reference-interprete
 import { PromptAssembler, buildPromptContext, parseControlDescriptors } from "./prompt-assembler.js";
 import { runCritics, parseFindings } from "./critic-runner.js";
 import { publish } from "./events.js";
+import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
 
 // ── Reference cache (module-level singleton) ─────────────────────────
 
@@ -295,6 +296,18 @@ async function handleRevision(
   for (const p of patches) {
     const key = p.target as keyof typeof compiled;
     if (!(key in compiled)) continue;
+
+    // Use LyricsPatcher for section-level lyrics patches
+    if (key === "lyrics" && isLyricsSectionPatch(p.type)) {
+      const lyricsDoc = state.lyricsWriterResult?.document
+        ? JSON.stringify(state.lyricsWriterResult.document)
+        : null;
+      const patched = lyricsDoc ? applyLyricsPatch(lyricsDoc, p) : undefined;
+      if (patched) {
+        compiled[key] = patched;
+      }
+      continue;
+    }
 
     switch (p.type) {
       case "merge_field":
