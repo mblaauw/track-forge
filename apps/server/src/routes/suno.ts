@@ -122,22 +122,20 @@ export function registerSunoRoutes(
 
     const result = await suno.submit(request);
 
-    // Store new generation IDs
-    for (const genId of result.ids) {
-      await storeGeneration(db, {
-        id: genId,
-        jobId,
-        versionId: latestVersion.id,
-        status: "queued",
-      });
-    }
+    // Store task as generation record (individual song IDs come from polling)
+    await storeGeneration(db, {
+      id: result.taskId,
+      jobId,
+      versionId: latestVersion.id,
+      status: "queued",
+    });
 
-    req.log.info({ jobId, newIds: result.ids }, "generation retried");
+    req.log.info({ jobId, taskId: result.taskId }, "generation task submitted");
 
     return {
       status: "retried",
       jobId,
-      generationIds: result.ids,
+      taskId: result.taskId,
     };
   });
 }

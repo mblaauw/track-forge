@@ -35,6 +35,7 @@ export function createDb(dbPath: string): Db {
     nl_adjustments TEXT,
     findings TEXT,
     compiled_json TEXT,
+    stage_data TEXT,
     stage_attempt INTEGER NOT NULL DEFAULT 0,
     error TEXT,
     created_at TEXT NOT NULL,
@@ -56,6 +57,7 @@ export function createDb(dbPath: string): Db {
 
   try { sqlite.exec(`ALTER TABLE versions ADD COLUMN stage TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE versions ADD COLUMN parent_version_id TEXT`); } catch {}
+  try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN stage_data TEXT`); } catch {}
   sqlite.exec(`CREATE TABLE IF NOT EXISTS generations (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL REFERENCES jobs(id),

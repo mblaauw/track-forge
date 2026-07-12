@@ -17,6 +17,8 @@ export const jobs = sqliteTable("jobs", {
   findings: text("findings"),
   /** JSON-encoded compiled artifacts saved when pipeline pauses at review */
   compiledJson: text("compiled_json"),
+  /** JSON-encoded intermediate pipeline state (songPlan, rawStyle, rawLyrics, interpretedRef) */
+  stageData: text("stage_data"),
   stageAttempt: integer("stage_attempt").notNull().default(0),
   error: text("error"),
   createdAt: text("created_at").notNull(),

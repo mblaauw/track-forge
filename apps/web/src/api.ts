@@ -129,11 +129,11 @@ export interface PayloadPreviewResult {
   request: {
     title: string;
     style: string;
-    lyrics: string;
+    prompt?: string;
     instrumental: boolean;
     negativeTags?: string;
-    modelVersion?: string;
-    callbackUrl?: string;
+    model: string;
+    callBackUrl?: string;
   };
   warnings: Array<{ field: string; message: string }>;
 }

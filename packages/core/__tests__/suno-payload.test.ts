@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { generateSunoPayload, payloadToLog } from "../src/suno/payload.js";
 import type { SunoPayloadInput } from "../src/suno/payload.js";
 import { getCapabilities } from "../src/suno/capabilities.js";
+import type { SunoCapabilities } from "../src/suno/capabilities.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -20,9 +21,11 @@ describe("generateSunoPayload", () => {
 
     expect(request.title).toBe("My Track");
     expect(request.style).toContain("Deep house");
-    expect(request.lyrics).toContain("[Intro]");
+    expect(request.prompt).toContain("[Intro]");
     expect(request.negativeTags).toBe("slow, ballad");
     expect(request.instrumental).toBe(false);
+    expect(request.customMode).toBe(true);
+    expect(request.model).toBe("V4_5ALL");
     expect(warnings).toHaveLength(0);
   });
 
@@ -33,7 +36,7 @@ describe("generateSunoPayload", () => {
     });
 
     expect(request.instrumental).toBe(true);
-    expect(request.lyrics).toBe("");
+    expect(request.prompt).toBeUndefined();
   });
 
   it("sets instrumental=true when lyrics are whitespace only", () => {
@@ -54,11 +57,11 @@ describe("generateSunoPayload", () => {
     expect(request.negativeTags).toBeUndefined();
   });
 
-  it("omits negativeTags when model does not support them", () => {
-    const caps = getCapabilities("chirp-v2");
+  it("includes negativeTags (all models support them)", () => {
+    const caps = getCapabilities("V4");
     const { request } = generateSunoPayload(MIN_INPUT, caps);
 
-    expect(request.negativeTags).toBeUndefined();
+    expect(request.negativeTags).toBe("slow, ballad");
   });
 
   it("truncates style when exceeding max length", () => {
@@ -68,7 +71,7 @@ describe("generateSunoPayload", () => {
     };
     const { request, warnings } = generateSunoPayload(input);
 
-    expect(request.style.length).toBe(2000);
+    expect(request.style.length).toBe(1000);
     expect(warnings).toHaveLength(1);
     expect(warnings[0].field).toBe("style");
   });
@@ -76,11 +79,11 @@ describe("generateSunoPayload", () => {
   it("truncates lyrics when exceeding max length", () => {
     const input: SunoPayloadInput = {
       ...MIN_INPUT,
-      lyrics: "X".repeat(5000),
+      lyrics: "X".repeat(6000),
     };
     const { request, warnings } = generateSunoPayload(input);
 
-    expect(request.lyrics.length).toBe(3000);
+    expect(request.prompt!.length).toBe(5000);
     expect(warnings.some((w) => w.field === "lyrics")).toBe(true);
   });
 
@@ -89,7 +92,7 @@ describe("generateSunoPayload", () => {
       ...MIN_INPUT,
       excludedStyles: "X".repeat(1000),
     };
-    const caps = getCapabilities("chirp-v3-5");
+    const caps = getCapabilities("V4_5ALL");
     const { request, warnings } = generateSunoPayload(input, caps);
 
     expect(request.negativeTags?.length).toBe(500);
@@ -108,36 +111,40 @@ describe("generateSunoPayload", () => {
   it("honours explicit model version", () => {
     const { request } = generateSunoPayload({
       ...MIN_INPUT,
-      modelVersion: "chirp-v2",
+      modelVersion: "V4",
     });
 
-    expect(request.modelVersion).toBe("chirp-v2");
+    expect(request.model).toBe("V4");
   });
 
   it("passes through callbackUrl when capabilities support it", () => {
     const { request } = generateSunoPayload({
       ...MIN_INPUT,
       callbackUrl: "https://example.com/callback",
-      webhookToken: "secret-123",
     });
 
-    expect(request.callbackUrl).toBe("https://example.com/callback");
-    expect(request.webhookToken).toBe("secret-123");
+    expect(request.callBackUrl).toBe("https://example.com/callback");
   });
 
   it("strips callbackUrl when capabilities do not support it", () => {
+    const caps: SunoCapabilities = {
+      maxLyricsLength: 5000,
+      maxStyleLength: 1000,
+      maxTitleLength: 100,
+      maxTagsLength: 500,
+      supportsNegativeTags: true,
+      supportsCallbacks: false,
+      maxBatchSize: 1,
+    };
     const { request } = generateSunoPayload(
       {
         ...MIN_INPUT,
         callbackUrl: "https://example.com/callback",
-        webhookToken: "secret-123",
-        modelVersion: "chirp-v2",
       },
-      getCapabilities("chirp-v2"),
+      caps,
     );
 
-    expect(request.callbackUrl).toBeUndefined();
-    expect(request.webhookToken).toBeUndefined();
+    expect(request.callBackUrl).toBeUndefined();
   });
 
   it("applies BPM from genre transform when style lacks BPM", () => {
@@ -199,7 +206,7 @@ describe("generateSunoPayload", () => {
     const input: SunoPayloadInput = {
       ...MIN_INPUT,
       style: "X".repeat(3000),
-      lyrics: "Y".repeat(5000),
+      lyrics: "Y".repeat(5001),
       excludedStyles: "Z".repeat(1000),
     };
     const { warnings } = generateSunoPayload(input);
@@ -218,8 +225,8 @@ describe("payloadToLog", () => {
 
     expect(log.title).toBe("My Track");
     expect(log.style).toBeDefined();
-    expect(log.lyrics).toBeDefined();
+    expect(log.prompt).toBeDefined();
     expect(log.instrumental).toBe(false);
-    expect(log.modelVersion).toBeUndefined();
+    expect(log.model).toBe("V4_5ALL");
   });
 });

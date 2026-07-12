@@ -20,7 +20,7 @@ export function createSunoClientConfig(config: Config): SunoClientConfig {
   return {
     baseUrl: config.sunoBaseUrl.replace(/\/+$/, ""),
     authToken: config.sunoAuthToken,
-    defaultModelVersion: "chirp-v3-5",
+    defaultModelVersion: "V4_5ALL",
     pollIntervalMs: DEFAULT_POLL_INTERVAL,
     pollTimeoutMs: DEFAULT_POLL_TIMEOUT,
   };
@@ -39,68 +39,102 @@ export class SunoClient {
     this.log = logger.child({ module: "suno-client" });
   }
 
-  // ── Submit generation ──────────────────────────────────────────
+  // ── Submit generation (v1 API) ─────────────────────────────────
 
   async submit(request: SunoGenerateRequest): Promise<SunoSubmitResult> {
-    const callbackUrl = request.callbackUrl ?? resolveCallbackUrl(this.appConfig);
+    const callBackUrl = request.callBackUrl ?? resolveCallbackUrl(this.appConfig);
 
     const body: Record<string, unknown> = {
+      customMode: true,
+      instrumental: request.instrumental,
+      model: request.model,
       title: request.title,
-      prompt: request.style,
-      tags: request.tags,
-      make_instrumental: request.instrumental,
-      mv: request.modelVersion ?? this.cfg.defaultModelVersion,
+      style: request.style,
     };
 
-    if (request.lyrics && !request.instrumental) {
-      body.lyrics = request.lyrics;
+    if (request.prompt) {
+      body.prompt = request.prompt;
     }
 
     if (request.negativeTags) {
-      body.negative_tags = request.negativeTags;
+      body.negativeTags = request.negativeTags;
     }
 
-    if (callbackUrl) {
-      body.callback_url = callbackUrl;
+    if (callBackUrl) {
+      body.callBackUrl = callBackUrl;
     }
 
-    if (request.webhookToken) {
-      body.webhook_token = request.webhookToken;
+    if (request.vocalGender) {
+      body.vocalGender = request.vocalGender;
+    }
+    if (request.styleWeight !== undefined) {
+      body.styleWeight = request.styleWeight;
+    }
+    if (request.weirdnessConstraint !== undefined) {
+      body.weirdnessConstraint = request.weirdnessConstraint;
+    }
+    if (request.audioWeight !== undefined) {
+      body.audioWeight = request.audioWeight;
+    }
+    if (request.personaId) {
+      body.personaId = request.personaId;
+      body.personaModel = request.personaModel ?? "style_persona";
     }
 
-    this.log.info({ title: request.title }, "submitting generation to Suno");
+    this.log.info({ title: request.title, model: request.model }, "submitting generation to Suno API v1");
 
-    const res = await this.fetch("/api/generate", {
+    const res = await this.fetch("/api/v1/generate", {
       method: "POST",
       body: JSON.stringify(body),
     });
 
-    const data = (await res.json()) as Record<string, unknown> | Array<Record<string, unknown>>;
-    const ids: string[] = Array.isArray(data)
-      ? data.map((item) => String(item.id ?? "")).filter(Boolean)
-      : ((data as Record<string, unknown>).ids as string[]) ??
-        ((data as Record<string, unknown>).id
-          ? [String((data as Record<string, unknown>).id)]
-          : []);
+    const json = (await res.json()) as {
+      code: number;
+      msg: string;
+      data?: { taskId: string };
+    };
+
+    if (json.code !== 200 || !json.data?.taskId) {
+      throw new Error(`Suno API error: ${json.msg ?? "unknown"} (code ${json.code})`);
+    }
 
     return {
-      ids,
-      callbackConfigured: !!callbackUrl,
+      taskId: json.data.taskId,
+      callbackConfigured: !!callBackUrl,
     };
   }
 
-  // ── Fetch generation status ────────────────────────────────────
+  // ── Fetch task status (v1 API record-info) ─────────────────────
 
-  async getGenerationStatus(id: string): Promise<SunoFeedItem> {
-    const res = await this.fetch(`/api/feed/${encodeURIComponent(id)}`);
-    const data = await res.json();
-    return normalizeFeedItem(data);
+  async getGenerationStatus(taskId: string): Promise<SunoFeedItem> {
+    const res = await this.fetch(
+      `/api/v1/generate/record-info?taskId=${encodeURIComponent(taskId)}`,
+    );
+    const json = (await res.json()) as {
+      code: number;
+      msg: string;
+      data?: {
+        taskId: string;
+        status: string;
+        errorCode?: string | null;
+        errorMessage?: string | null;
+        response?: {
+          sunoData?: Array<Record<string, unknown>>;
+        };
+      };
+    };
+
+    if (json.code !== 200 || !json.data) {
+      throw new Error(`Suno API error fetching status: ${json.msg ?? "unknown"}`);
+    }
+
+    return normalizeTaskResponse(taskId, json.data);
   }
 
   // ── Poll until completion (exponential backoff) ───────────────
 
   async waitForCompletion(
-    id: string,
+    taskId: string,
     timeoutMs?: number,
   ): Promise<SunoFeedItem> {
     const deadline = Date.now() + (timeoutMs ?? this.cfg.pollTimeoutMs);
@@ -108,7 +142,7 @@ export class SunoClient {
     let delay = this.cfg.pollIntervalMs;
 
     while (Date.now() < deadline) {
-      const item = await this.getGenerationStatus(id);
+      const item = await this.getGenerationStatus(taskId);
 
       if (item.status === "completed" || item.status === "error") {
         return item;
@@ -118,7 +152,7 @@ export class SunoClient {
       delay = Math.min(delay * 2, maxBackoff);
     }
 
-    throw new Error(`Suno generation ${id} timed out after ${timeoutMs ?? this.cfg.pollTimeoutMs}ms`);
+    throw new Error(`Suno task ${taskId} timed out after ${timeoutMs ?? this.cfg.pollTimeoutMs}ms`);
   }
 
   // ── Internal fetch helper ──────────────────────────────────────
@@ -150,22 +184,56 @@ export class SunoClient {
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-function normalizeFeedItem(data: unknown): SunoFeedItem {
-  const d = data as Record<string, unknown>;
+const TASK_STATUS_MAP: Record<string, SunoGenerationStatus> = {
+  PENDING: "queued",
+  TEXT_SUCCESS: "processing",
+  FIRST_SUCCESS: "processing",
+  SUCCESS: "completed",
+  CREATE_TASK_FAILED: "error",
+  GENERATE_AUDIO_FAILED: "error",
+  CALLBACK_EXCEPTION: "error",
+  SENSITIVE_WORD_ERROR: "error",
+};
+
+function normalizeTaskResponse(
+  taskId: string,
+  data: {
+    taskId: string;
+    status: string;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    response?: {
+      sunoData?: Array<Record<string, unknown>>;
+    };
+  },
+): SunoFeedItem {
+  const status = TASK_STATUS_MAP[data.status] ?? "processing";
+  const firstSong = data.response?.sunoData?.[0];
+
+  if (!firstSong) {
+    return {
+      id: taskId,
+      taskId,
+      status,
+      error: data.errorMessage ?? data.errorCode ?? undefined,
+    };
+  }
+
   return {
-    id: String(d.id ?? ""),
-    status: (d.status as SunoGenerationStatus) ?? "processing",
-    title: d.title as string | undefined,
-    audioUrl: d.audio_url as string | undefined,
-    imageUrl: d.image_url as string | undefined,
-    videoUrl: d.video_url as string | undefined,
-    duration: d.duration as number | undefined,
-    error: d.error as string | undefined,
-    style: d.style as string | undefined,
-    lyrics: d.lyrics as string | undefined,
-    tags: d.tags as string | undefined,
-    modelVersion: d.model_version as string | undefined,
-    createdAt: d.created_at as string | undefined,
+    id: String(firstSong.id ?? taskId),
+    taskId,
+    status,
+    title: firstSong.title as string | undefined,
+    audioUrl: firstSong.audioUrl as string | undefined,
+    imageUrl: firstSong.imageUrl as string | undefined,
+    videoUrl: firstSong.videoUrl as string | undefined,
+    duration: firstSong.duration as number | undefined,
+    error: data.errorMessage ?? data.errorCode ?? undefined,
+    style: firstSong.tags as string | undefined,
+    lyrics: firstSong.prompt as string | undefined,
+    tags: firstSong.tags as string | undefined,
+    modelVersion: firstSong.modelName as string | undefined,
+    createdAt: firstSong.createTime as string | undefined,
   };
 }
 

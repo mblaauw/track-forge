@@ -19,8 +19,6 @@ export interface SunoPayloadInput {
   modelVersion?: SunoModelVersion;
   /** Optional callback URL */
   callbackUrl?: string;
-  /** Optional webhook token for callback verification */
-  webhookToken?: string;
 }
 
 export interface SunoGenreTransform {
@@ -43,7 +41,7 @@ export interface PayloadWarning {
 // ── Payload generation ───────────────────────────────────────────────
 
 /**
- * Transform compiled artifacts into a SunoGenerateRequest.
+ * Transform compiled artifacts into a SunoGenerateRequest (v1 API).
  *
  * Steps:
  *  1. Apply genre-specific transformations to style string.
@@ -59,6 +57,9 @@ export function generateSunoPayload(
   const caps =
     capabilities ?? getCapabilities(input.modelVersion);
   const warnings: PayloadWarning[] = [];
+
+  // ── Model version ────────────────────────────────────────────────
+  const model: SunoModelVersion = input.modelVersion ?? "V4_5ALL";
 
   // ── Style ────────────────────────────────────────────────────────
   let style = input.style;
@@ -87,42 +88,46 @@ export function generateSunoPayload(
     negativeTags = negativeTags.slice(0, caps.maxTagsLength);
   }
 
-  // ── Lyrics ───────────────────────────────────────────────────────
-  let lyrics = input.lyrics;
-  if (lyrics.length > caps.maxLyricsLength) {
+  // ── Lyrics (mapped to prompt) ────────────────────────────────────
+  let prompt = input.lyrics;
+  if (prompt.length > caps.maxLyricsLength) {
     warnings.push({
       field: "lyrics",
-      message: `Lyrics truncated from ${lyrics.length} to ${caps.maxLyricsLength} chars`,
-      currentLength: lyrics.length,
+      message: `Lyrics truncated from ${prompt.length} to ${caps.maxLyricsLength} chars`,
+      currentLength: prompt.length,
       maxLength: caps.maxLyricsLength,
     });
-    lyrics = lyrics.slice(0, caps.maxLyricsLength);
+    prompt = prompt.slice(0, caps.maxLyricsLength);
   }
 
   // ── Instrumental flag ────────────────────────────────────────────
   // Empty or whitespace-only lyrics → instrumental
-  const instrumental = lyrics.trim().length === 0;
+  const instrumental = prompt.trim().length === 0;
 
   // ── Title ────────────────────────────────────────────────────────
   const title = input.title || "Untitled";
-  if (title.length > caps.maxStyleLength) {
+  if (title.length > caps.maxTitleLength) {
     warnings.push({
       field: "title",
-      message: `Title truncated from ${title.length} to ${caps.maxStyleLength} chars`,
+      message: `Title truncated from ${title.length} to ${caps.maxTitleLength} chars`,
       currentLength: title.length,
-      maxLength: caps.maxStyleLength,
+      maxLength: caps.maxTitleLength,
     });
   }
 
   const request: SunoGenerateRequest = {
-    title: title.slice(0, caps.maxStyleLength),
-    style,
-    lyrics,
+    customMode: true,
     instrumental,
-    modelVersion: input.modelVersion,
-    callbackUrl: caps.supportsCallbacks ? input.callbackUrl : undefined,
-    webhookToken: caps.supportsCallbacks ? input.webhookToken : undefined,
+    model,
+    title: title.slice(0, caps.maxTitleLength),
+    style,
+    callBackUrl: caps.supportsCallbacks ? input.callbackUrl : undefined,
   };
+
+  // Only include prompt (lyrics) if not instrumental
+  if (!instrumental && prompt.length > 0) {
+    request.prompt = prompt;
+  }
 
   // Only include negativeTags if supported and non-empty
   if (caps.supportsNegativeTags && negativeTags.length > 0) {
@@ -179,10 +184,10 @@ export function payloadToLog(
   return {
     title: request.title,
     style: request.style.slice(0, 200),
-    lyrics: request.lyrics.slice(0, 200),
+    prompt: request.prompt?.slice(0, 200),
     instrumental: request.instrumental,
-    modelVersion: request.modelVersion,
+    model: request.model,
     negativeTags: request.negativeTags?.slice(0, 200),
-    callbackUrl: request.callbackUrl,
+    callbackUrl: request.callBackUrl,
   };
 }

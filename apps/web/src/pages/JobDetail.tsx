@@ -765,12 +765,12 @@ function PayloadPreview({ jobId }: PayloadPreviewProps) {
             )}
             <div class="payload-field">
               <label>Lyrics</label>
-              <pre class="code-block">{preview.request.lyrics || "(instrumental — empty)"}</pre>
+              <pre class="code-block">{preview.request.prompt || "(instrumental — empty)"}</pre>
             </div>
             <div class="payload-field-row">
               <span><strong>Instrumental:</strong> {preview.request.instrumental ? "Yes" : "No"}</span>
-              {preview.request.modelVersion && (
-                <span><strong>Model:</strong> {preview.request.modelVersion}</span>
+              {preview.request.model && (
+                <span><strong>Model:</strong> {preview.request.model}</span>
               )}
             </div>
           </div>

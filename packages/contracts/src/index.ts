@@ -155,6 +155,8 @@ export interface Job {
   findings: string | null;
   /** JSON-encoded compiled artifacts saved when pipeline pauses at review */
   compiledJson: string | null;
+  /** JSON-encoded intermediate pipeline state (songPlan, rawStyle, rawLyrics, interpretedRef) */
+  stageData: string | null;
   /** Monotonically increasing attempt counter for current stage */
   stageAttempt: number;
   /** Error detail when failed */

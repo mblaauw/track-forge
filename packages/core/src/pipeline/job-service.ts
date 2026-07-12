@@ -11,7 +11,19 @@ import type {
   VersionId,
   VersionStatus,
   SunoArtifact,
+  InterpretedReference,
 } from "@track-forge/contracts";
+
+/** Subset of PipelineState that can be persisted/restored */
+export interface StageData {
+  interpretedRef?: InterpretedReference | null;
+  songPlan?: string | null;
+  rawStyle?: string | null;
+  rawLyrics?: string | null;
+  compiledJson?: string | null;
+  findings?: unknown[] | null;
+  appliedPatch?: string | null;
+}
 
 // ── Job CRUD ──────────────────────────────────────────────────────────
 
@@ -197,6 +209,36 @@ async function loadVersionOrThrow(db: Db, versionId: VersionId): Promise<Version
     .limit(1);
   if (rows.length === 0) throw new Error(`Version ${versionId} not found`);
   return rows[0] as unknown as Version;
+}
+
+// ── Pipeline state persistence ────────────────────────────────────────
+
+export async function savePipelineState(
+  db: Db,
+  jobId: JobId,
+  data: StageData,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .update(schema.jobs)
+    .set({
+      stageData: JSON.stringify(data),
+      updatedAt: now,
+    })
+    .where(eq(schema.jobs.id, jobId));
+}
+
+export async function loadPipelineState(
+  db: Db,
+  jobId: JobId,
+): Promise<StageData | null> {
+  const job = await loadJob(db, jobId);
+  if (!job?.stageData) return null;
+  try {
+    return JSON.parse(job.stageData) as StageData;
+  } catch {
+    return null;
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────

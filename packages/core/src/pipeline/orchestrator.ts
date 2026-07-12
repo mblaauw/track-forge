@@ -19,7 +19,10 @@ import {
   failStage,
   completeJob,
   createVersion,
+  savePipelineState,
+  loadPipelineState,
 } from "./job-service.js";
+import type { StageData } from "./job-service.js";
 import { ReferenceCache } from "./reference-cache.js";
 import { interpretReference, formatInterpretedRef } from "./reference-interpreter.js";
 import { PromptAssembler, buildPromptContext } from "./prompt-assembler.js";
@@ -189,7 +192,33 @@ async function handleCompilation(
     lyrics: lyricsText,
   };
 
-  const compiledJson = JSON.stringify(compiled);
+  let compiledJson = JSON.stringify(compiled);
+
+  // ── Optional refinement: blend raw LLM output into compiled artifacts ──
+  if (rawStyle || rawLyrics) {
+    const refinerPrompt = assembler.resolvePrompt("compilation_refinement", {
+      ...context,
+      compiledJson,
+      rawStyle: rawStyle ?? "",
+      rawLyrics: rawLyrics ?? "",
+      songPlan: songPlan ?? "",
+    });
+    if (refinerPrompt) {
+      const response = await deps.llm.complete({
+        messages: [{ role: "user", content: refinerPrompt }],
+        temperature: 0.5,
+      });
+      try {
+        const refined = JSON.parse(response.content) as Record<string, string>;
+        // Validate refined output has all required fields
+        if (refined.title && refined.style && refined.lyrics !== undefined) {
+          compiledJson = JSON.stringify(refined);
+        }
+      } catch {
+        // LLM returned invalid JSON — fall back to renderer output
+      }
+    }
+  }
 
   // Run blueprint validators
   const blueprintErrors = module.validators.blueprint(bp as Record<string, unknown>);
@@ -357,6 +386,7 @@ async function handleVersioning(
 
   const compiled = JSON.parse(compiledJson) as Record<string, string>;
 
+  // Create version (empty artifacts initially, updated below)
   const version = await createVersion(deps.db, job.id, [], "final");
   const vid = version.id;
 
@@ -381,8 +411,11 @@ async function handleVersioning(
     });
   }
 
-  // Finalize version with updated artifacts
-  await createVersion(deps.db, job.id, artifacts, "final");
+  // Update version with real artifacts (replaces initial empty artifacts)
+  await deps.db
+    .update(schema.versions)
+    .set({ artifacts: JSON.stringify(artifacts) })
+    .where(eq(schema.versions.id, vid));
   await completeJob(deps.db, job.id);
 
   return { ...state, versionId: vid };
@@ -414,6 +447,21 @@ export async function runPipeline(
     nlAdjustments: job.nlAdjustments ?? null,
   };
 
+  // Restore persisted pipeline state if available
+  const saved = await loadPipelineState(deps.db, job.id as any);
+  if (saved) {
+    state = {
+      ...state,
+      interpretedRef: saved.interpretedRef ?? null,
+      songPlan: saved.songPlan ?? null,
+      rawStyle: saved.rawStyle ?? null,
+      rawLyrics: saved.rawLyrics ?? null,
+      compiledJson: saved.compiledJson ?? null,
+      findings: saved.findings ?? null,
+      appliedPatch: saved.appliedPatch ?? null,
+    };
+  }
+
   const stageHandlers: Record<string, (s: PipelineState, d: PipelineDeps) => Promise<PipelineState>> = {
     ref_interpretation: handleRefInterpretation,
     planning: handlePlanning,
@@ -439,18 +487,35 @@ export async function runPipeline(
       state = await handler(state, deps);
       publish(state.job.id, { stage: currentStage, status: "completed" });
 
-      // ── Pause after review if findings exist ────────────────────────
-      if (currentStage === "review" && state.findings && (state.findings as unknown[]).length > 0) {
-        const now = new Date().toISOString();
-        await deps.db
-          .update(schema.jobs)
-          .set({
-            findings: JSON.stringify(state.findings),
-            compiledJson: state.compiledJson,
-            updatedAt: now,
-          })
-          .where(eq(schema.jobs.id, state.job.id));
-        break;
+      // Persist state after each stage
+      const stageData: StageData = {
+        interpretedRef: state.interpretedRef,
+        songPlan: state.songPlan,
+        rawStyle: state.rawStyle,
+        rawLyrics: state.rawLyrics,
+        compiledJson: state.compiledJson,
+        findings: state.findings as unknown[] | null | undefined,
+        appliedPatch: state.appliedPatch,
+      };
+      await savePipelineState(deps.db, state.job.id as any, stageData);
+
+      // ── Pause after revision if human-review findings remain ────────
+      if (currentStage === "revision" && state.findings) {
+        const remainingFindings = (state.findings as unknown as CriticFinding[]).filter(
+          (f) => f.autoFixPolicy === "skipped" || !f.patchType || !f.suggestedValue,
+        );
+        if (remainingFindings.length > 0) {
+          const now = new Date().toISOString();
+          await deps.db
+            .update(schema.jobs)
+            .set({
+              findings: JSON.stringify(state.findings),
+              compiledJson: state.compiledJson,
+              updatedAt: now,
+            })
+            .where(eq(schema.jobs.id, state.job.id));
+          break;
+        }
       }
 
       const next = nextStage(currentStage);

@@ -7,6 +7,8 @@ export interface SunoCapabilities {
   maxLyricsLength: number;
   /** Maximum style prompt length (characters) */
   maxStyleLength: number;
+  /** Maximum title length (characters) */
+  maxTitleLength: number;
   /** Maximum total tags length (characters) */
   maxTagsLength: number;
   /** Whether negative tags are supported */
@@ -17,38 +19,69 @@ export interface SunoCapabilities {
   maxBatchSize: number;
 }
 
-// ── Registry ──────────────────────────────────────────────────────
+// ── Registry (limits per sunoapi.org docs) ────────────────────────
 
 const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
-  "chirp-v3-5": {
+  "V4": {
     maxLyricsLength: 3000,
-    maxStyleLength: 2000,
+    maxStyleLength: 200,
+    maxTitleLength: 80,
     maxTagsLength: 500,
     supportsNegativeTags: true,
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "chirp-v3": {
-    maxLyricsLength: 3000,
-    maxStyleLength: 2000,
+  "V4_5": {
+    maxLyricsLength: 5000,
+    maxStyleLength: 1000,
+    maxTitleLength: 100,
     maxTagsLength: 500,
     supportsNegativeTags: true,
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "chirp-v2": {
-    maxLyricsLength: 3000,
-    maxStyleLength: 2000,
+  "V4_5PLUS": {
+    maxLyricsLength: 5000,
+    maxStyleLength: 1000,
+    maxTitleLength: 100,
     maxTagsLength: 500,
-    supportsNegativeTags: false,
-    supportsCallbacks: false,
-    maxBatchSize: 1,
+    supportsNegativeTags: true,
+    supportsCallbacks: true,
+    maxBatchSize: 2,
+  },
+  "V4_5ALL": {
+    maxLyricsLength: 5000,
+    maxStyleLength: 1000,
+    maxTitleLength: 80,
+    maxTagsLength: 500,
+    supportsNegativeTags: true,
+    supportsCallbacks: true,
+    maxBatchSize: 2,
+  },
+  "V5": {
+    maxLyricsLength: 5000,
+    maxStyleLength: 1000,
+    maxTitleLength: 100,
+    maxTagsLength: 500,
+    supportsNegativeTags: true,
+    supportsCallbacks: true,
+    maxBatchSize: 2,
+  },
+  "V5_5": {
+    maxLyricsLength: 5000,
+    maxStyleLength: 1000,
+    maxTitleLength: 100,
+    maxTagsLength: 500,
+    supportsNegativeTags: true,
+    supportsCallbacks: true,
+    maxBatchSize: 2,
   },
 };
 
 const DEFAULT_CAPABILITIES: SunoCapabilities = {
-  maxLyricsLength: 3000,
-  maxStyleLength: 2000,
+  maxLyricsLength: 5000,
+  maxStyleLength: 1000,
+  maxTitleLength: 100,
   maxTagsLength: 500,
   supportsNegativeTags: true,
   supportsCallbacks: true,
