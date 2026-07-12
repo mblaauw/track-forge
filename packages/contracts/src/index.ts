@@ -137,6 +137,7 @@ export interface TextAnchor extends ContentLock {
 
 export interface Job {
   id: JobId;
+  name: string | null;
   genreId: GenreId;
   presetId: PresetId;
   status: JobStatus;

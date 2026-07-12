@@ -21,6 +21,7 @@ export async function createJob(
   presetId: PresetId,
   inputs: string,
   reference: string | null,
+  name?: string | null,
 ): Promise<Job> {
   const id = crypto.randomUUID() as JobId;
   const sourceHash = reference ? hashRef(reference) : null;
@@ -28,6 +29,7 @@ export async function createJob(
 
   await db.insert(schema.jobs).values({
     id,
+    name: name ?? null,
     genreId,
     presetId,
     status: "pending",

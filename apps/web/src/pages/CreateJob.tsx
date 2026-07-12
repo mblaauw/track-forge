@@ -28,6 +28,7 @@ export function CreateJob() {
   const [genreId, setGenreId] = useState("edm");
   const [presetId, setPresetId] = useState("");
   const [inputs, setInputs] = useState<Record<string, unknown>>({});
+  const [projectName, setProjectName] = useState("");
   const [reference, setReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +83,7 @@ export function CreateJob() {
         presetId: presetId || mod.presets[0]?.id || "",
         inputs,
         reference: reference || undefined,
+        name: projectName || undefined,
       });
       navigate(`/job/${job.id}`);
     } catch (err) {
@@ -96,6 +98,17 @@ export function CreateJob() {
       <h2>Create New Job</h2>
 
       <form onSubmit={handleSubmit} class="create-form">
+        {/* Project name */}
+        <div class="form-field">
+          <label>Project Name</label>
+          <input
+            type="text"
+            value={projectName}
+            onInput={(e) => setProjectName((e.target as HTMLInputElement).value)}
+            placeholder="My Song"
+          />
+        </div>
+
         {/* Genre selection */}
         <div class="form-field">
           <label>Genre</label>

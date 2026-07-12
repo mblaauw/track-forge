@@ -24,6 +24,7 @@ export interface GenreInfo {
 
 export interface JobInfo {
   id: string;
+  name: string | null;
   genreId: string;
   presetId: string;
   status: string;
@@ -58,8 +59,20 @@ export function createJob(body: {
   presetId: string;
   inputs: Record<string, unknown>;
   reference?: string;
+  name?: string;
 }): Promise<JobInfo> {
   return api("/api/jobs", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function renameJob(id: string, name: string): Promise<JobInfo> {
+  return api(`/api/jobs/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteJob(id: string): Promise<void> {
+  return api(`/api/jobs/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export function fetchJobs(limit = 20, offset = 0): Promise<JobInfo[]> {

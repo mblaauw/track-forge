@@ -24,6 +24,7 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     const presetId = body.presetId as string | undefined;
     const inputs = body.inputs ?? {};
     const reference = (body.reference as string) ?? null;
+    const name = (body.name as string) ?? null;
 
     if (!genreId || !presetId) {
       return reply.code(400).send({ error: "genreId and presetId required" });
@@ -47,6 +48,7 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       presetId as never,
       JSON.stringify(inputs),
       reference,
+      name,
     );
 
     return reply.code(201).send(job);
@@ -82,6 +84,60 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     if (!job) return reply.code(404).send({ error: "Job not found" });
     return job;
+  });
+
+  // ── Rename job ───────────────────────────────────────────────────────
+
+  server.patch("/api/jobs/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = req.body as Record<string, unknown>;
+    const name = body.name as string | undefined;
+
+    if (!name || typeof name !== "string") {
+      return reply.code(400).send({ error: "name required" });
+    }
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    const now = new Date().toISOString();
+    await db
+      .update(schema.jobs)
+      .set({ name, updatedAt: now })
+      .where(eq(schema.jobs.id, id));
+
+    const [updated] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    return reply.code(200).send(updated);
+  });
+
+  // ── Delete job ───────────────────────────────────────────────────────
+
+  server.delete("/api/jobs/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    // Delete associated versions first
+    await db.delete(schema.versions).where(eq(schema.versions.jobId, id));
+    await db.delete(schema.jobs).where(eq(schema.jobs.id, id));
+
+    return reply.code(204).send();
   });
 
   // ── Start pipeline ───────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 export const jobs = sqliteTable("jobs", {
   id: text("id").primaryKey(),
+  name: text("name"),
   genreId: text("genre_id").notNull(),
   presetId: text("preset_id").notNull(),
   status: text("status").notNull().default("pending"),

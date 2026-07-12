@@ -24,6 +24,7 @@ export function createDb(dbPath: string): Db {
   // Auto-create tables if they don't exist
   sqlite.exec(`CREATE TABLE IF NOT EXISTS jobs (
     id TEXT PRIMARY KEY,
+    name TEXT,
     genre_id TEXT NOT NULL,
     preset_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
