@@ -8,5 +8,6 @@ export { subscribe, publish, unsubscribeAll, getJobEvents, resetTestCounters } f
 export type { PipelineEvent } from "./events.js";
 export { createLockService } from "./lock-service.js";
 export type { LockService } from "./lock-service.js";
+export { abortJob } from "./job-abort-controller.js";
 export type { PipelineDeps, PipelineState, PipelineResult, PromptContext, PromptManifest } from "./types.js";
 export { formatControlDescriptors, parseControlDescriptors } from "./prompt-assembler.js";

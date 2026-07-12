@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, LlmClient, SunoClient } from "@track-forge/core";
-import { createJob, runPipeline, schema, resetJobStage, cancelJob, generateSunoPayload } from "@track-forge/core";
+import { createJob, runPipeline, schema, resetJobStage, cancelJob, generateSunoPayload, abortJob } from "@track-forge/core";
 import type { GenerationStage, CriticFinding, SunoArtifact } from "@track-forge/contracts";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
@@ -322,6 +322,9 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       .limit(1);
 
     if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    // Abort in-flight pipeline work — must happen before DB update
+    abortJob(id);
 
     // Signal cancellation via events
     const { publish } = await import("@track-forge/core");

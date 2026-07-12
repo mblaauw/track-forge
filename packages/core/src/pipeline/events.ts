@@ -10,7 +10,7 @@ export interface PipelineEvent {
   jobId: string;
   sequence: number;
   stage: string;
-  status: "started" | "completed" | "error";
+  status: "started" | "completed" | "error" | "cancelled";
   error?: string;
   timestamp: string;
 }

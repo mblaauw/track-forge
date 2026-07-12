@@ -10,6 +10,7 @@ export interface PipelineDeps {
   llm: LlmClient;
   suno: SunoClient;
   config: Config;
+  signal?: AbortSignal;
 }
 
 /** Mutable state built up across pipeline stages (in-memory, not persisted) */

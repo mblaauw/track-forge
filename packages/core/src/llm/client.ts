@@ -50,6 +50,7 @@ export class LlmClient {
         temperature: req.temperature ?? 0.7,
         max_tokens: req.maxTokens ?? 2048,
       }),
+      signal: req.signal,
     });
 
     if (!res.ok) {
@@ -96,6 +97,7 @@ export class LlmClient {
         temperature: req.temperature ?? 0.7,
         max_tokens: req.maxTokens ?? 2048,
       }),
+      signal: req.signal,
     });
 
     if (!res.ok) {
@@ -135,6 +137,7 @@ export class LlmClient {
         max_tokens: req.maxTokens ?? 2048,
         stream: false,
       }),
+      signal: req.signal,
     });
 
     if (!res.ok) {

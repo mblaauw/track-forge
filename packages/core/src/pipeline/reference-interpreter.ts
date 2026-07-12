@@ -34,6 +34,7 @@ export async function interpretReference(
   sourceHash: SourceHash,
   llm: LlmClient,
   cache?: ReferenceCache,
+  signal?: AbortSignal,
 ): Promise<InterpretedReference> {
   // Check cache first
   if (cache?.has(sourceHash)) {
@@ -48,6 +49,7 @@ export async function interpretReference(
     ],
     temperature: 0.3,
     maxTokens: 1500,
+    signal,
   });
 
   // Parse response

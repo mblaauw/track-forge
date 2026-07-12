@@ -25,13 +25,14 @@ export async function runCritics(
   context: PromptContext,
   llm: LlmClient,
   options: CriticRunOptions = {},
+  signal?: AbortSignal,
 ): Promise<CriticFinding[]> {
   if (options.full && critics.full && critics.full.length > 0) {
-    return runFullCritics(critics.full, context, llm);
+    return runFullCritics(critics.full, context, llm, signal);
   }
 
   if (critics.fast) {
-    return runSingleCritic(critics.fast, context, llm);
+    return runSingleCritic(critics.fast, context, llm, signal);
   }
 
   // Fallback: generic review
@@ -45,6 +46,7 @@ async function runSingleCritic(
   critic: CriticDefinition,
   context: PromptContext,
   llm: LlmClient,
+  signal?: AbortSignal,
 ): Promise<CriticFinding[]> {
   const prompt = fillTemplate(critic.promptTemplate, context);
 
@@ -54,6 +56,7 @@ async function runSingleCritic(
       { role: "user", content: prompt },
     ],
     temperature: 0.3,
+    signal,
   });
 
   return parseFindings(response.content);
@@ -66,9 +69,10 @@ async function runFullCritics(
   criticDefs: CriticDefinition[],
   context: PromptContext,
   llm: LlmClient,
+  signal?: AbortSignal,
 ): Promise<CriticFinding[]> {
   const results = await Promise.all(
-    criticDefs.map((critic) => runSingleCritic(critic, context, llm)),
+    criticDefs.map((critic) => runSingleCritic(critic, context, llm, signal)),
   );
   return results.flat();
 }

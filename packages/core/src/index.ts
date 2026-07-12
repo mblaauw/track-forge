@@ -37,7 +37,7 @@ export type {
 } from "./suno/index.js";
 
 // Lyrics canonical grammar
-export { createLockService } from "./pipeline/index.js";
+export { createLockService, abortJob } from "./pipeline/index.js";
 export type { LockService } from "./pipeline/index.js";
 export { parseLyrics, serializeLyrics, isInstrumental } from "./lyrics/index.js";
 

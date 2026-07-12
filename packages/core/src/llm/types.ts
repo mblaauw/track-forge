@@ -11,6 +11,7 @@ export interface LlmRequest {
   messages: LlmMessage[];
   temperature?: number;
   maxTokens?: number;
+  signal?: AbortSignal;
 }
 
 export interface LlmResponse {

@@ -32,6 +32,7 @@ import { PromptAssembler, buildPromptContext, parseControlDescriptors } from "./
 import { runCritics, parseFindings } from "./critic-runner.js";
 import { publish } from "./events.js";
 import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
+import { createAbortController, cleanupJob } from "./job-abort-controller.js";
 
 // ── Reference cache (module-level singleton) ─────────────────────────
 
@@ -72,6 +73,7 @@ async function handleRefInterpretation(
     job.sourceHash,
     deps.llm,
     _refCache,
+    deps.signal,
   );
 
   return { ...state, interpretedRef: interpreted };
@@ -101,6 +103,7 @@ async function handlePlanning(
   const response = await deps.llm.complete({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.7,
+    signal: deps.signal,
   });
 
   return { ...state, songPlan: response.content };
@@ -133,14 +136,18 @@ async function handleWriting(
   const lyricsPrompt = assembler.resolvePrompt("lyrics_writing", context)
     ?? `Generate Suno lyrics/structure based on:\n${songPlan}`;
 
+  if (deps.signal?.aborted) throw new DOMException("Job cancelled", "AbortError");
+
   const [styleResult, lyricsResult] = await Promise.all([
     deps.llm.complete({
       messages: [{ role: "user", content: stylePrompt }],
       temperature: 0.8,
+      signal: deps.signal,
     }),
     deps.llm.complete({
       messages: [{ role: "user", content: lyricsPrompt }],
       temperature: 0.8,
+      signal: deps.signal,
     }),
   ]);
 
@@ -241,7 +248,7 @@ async function handleReview(
 
   const findings = await runCritics(module.critics, context, deps.llm, {
     full: useFullCritics,
-  });
+  }, deps.signal);
 
   return { ...state, findings };
 }
@@ -421,8 +428,12 @@ export async function runPipeline(
   deps: PipelineDeps,
   module: GenreModule,
 ): Promise<PipelineResult> {
+  const controller = createAbortController(jobId);
+  deps.signal = controller.signal;
+
   const job = await loadJob(deps.db, jobId as any);
   if (!job) {
+    cleanupJob(jobId);
     return { success: false, jobId, versionId: null, error: "Job not found" };
   }
 
@@ -471,6 +482,11 @@ export async function runPipeline(
   try {
     // Process all stages before versioning
     while (currentStage !== "versioning") {
+      if (deps.signal?.aborted) {
+        await publish(deps.db, state.job.id, { stage: currentStage, status: "error", error: "Cancelled" });
+        cleanupJob(state.job.id);
+        return { success: false, jobId: state.job.id, versionId: null, error: "Cancelled by user" };
+      }
       const handler = stageHandlers[currentStage];
       if (!handler) {
         throw new Error(`No handler for stage: ${currentStage}`);
@@ -526,6 +542,7 @@ export async function runPipeline(
       await publish(deps.db, state.job.id, { stage: currentStage, status: "completed" });
     }
 
+    cleanupJob(state.job.id);
     return {
       success: true,
       jobId: state.job.id,
@@ -533,9 +550,13 @@ export async function runPipeline(
       error: null,
     };
   } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    await publish(deps.db, job.id, { stage: currentStage, status: "error", error: errorMsg });
-    await failStage(deps.db, job.id, errorMsg);
+    const isAbort = err instanceof DOMException && err.name === "AbortError";
+    const errorMsg = isAbort ? "Cancelled by user" : err instanceof Error ? err.message : String(err);
+    await publish(deps.db, job.id, { stage: currentStage, status: isAbort ? "cancelled" : "error", error: errorMsg });
+    if (!isAbort) {
+      await failStage(deps.db, job.id, errorMsg);
+    }
+    cleanupJob(job.id);
     return { success: false, jobId: job.id, versionId: null, error: errorMsg };
   }
 }
