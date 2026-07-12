@@ -1,7 +1,35 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
+// ── Projects ─────────────────────────────────────────────────────────
+
+export const projects = sqliteTable("projects", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  genreId: text("genre_id"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const projectDrafts = sqliteTable("project_drafts", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id),
+  genreId: text("genre_id").notNull(),
+  presetId: text("preset_id").notNull(),
+  inputs: text("inputs"),
+  reference: text("reference"),
+  nlAdjustments: text("nl_adjustments"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// ── Jobs ─────────────────────────────────────────────────────────────
+
 export const jobs = sqliteTable("jobs", {
   id: text("id").primaryKey(),
+  projectId: text("project_id").references(() => projects.id),
   name: text("name"),
   genreId: text("genre_id").notNull(),
   presetId: text("preset_id").notNull(),
@@ -9,15 +37,10 @@ export const jobs = sqliteTable("jobs", {
   currentStage: text("current_stage").notNull().default("ref_interpretation"),
   reference: text("reference"),
   sourceHash: text("source_hash"),
-  /** JSON-encoded genre-specific user inputs */
   inputs: text("inputs"),
-  /** Natural-language adjustment instructions */
   nlAdjustments: text("nl_adjustments"),
-  /** JSON-encoded CriticFinding[] from review stage */
   findings: text("findings"),
-  /** JSON-encoded compiled artifacts saved when pipeline pauses at review */
   compiledJson: text("compiled_json"),
-  /** JSON-encoded intermediate pipeline state (songPlan, rawStyle, rawLyrics, interpretedRef) */
   stageData: text("stage_data"),
   stageAttempt: integer("stage_attempt").notNull().default(0),
   error: text("error"),
@@ -50,27 +73,79 @@ export const jobStageOutputs = sqliteTable("job_stage_outputs", {
 });
 
 export const generations = sqliteTable("generations", {
-  /** Suno generation ID */
   id: text("id").primaryKey(),
-  /** Reference to job */
   jobId: text("job_id").notNull().references(() => jobs.id),
-  /** Optional reference to version */
   versionId: text("version_id").references(() => versions.id),
   status: text("status").notNull().default("queued"),
-  /** Audio URL from Suno */
   audioUrl: text("audio_url"),
-  /** Cover image URL */
   imageUrl: text("image_url"),
-  /** Video URL */
   videoUrl: text("video_url"),
-  /** Duration in seconds */
   duration: integer("duration"),
-  /** Title returned by Suno */
   generatedTitle: text("generated_title"),
-  /** Style prompt used */
   style: text("style"),
-  /** Error detail if failed */
   error: text("error"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
+});
+
+// ── Job events (persisted event history for replay) ──────────────────
+
+export const jobEvents = sqliteTable("job_events", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  stage: text("stage"),
+  status: text("status").notNull(),
+  data: text("data"),
+  error: text("error"),
+  timestamp: text("timestamp").notNull(),
+});
+
+// ── Structured critic findings ───────────────────────────────────────
+
+export const criticFindings = sqliteTable("critic_findings", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  stage: text("stage").notNull(),
+  severity: text("severity").notNull(),
+  field: text("field").notNull(),
+  message: text("message").notNull(),
+  patchType: text("patch_type"),
+  suggestedValue: text("suggested_value"),
+  applied: integer("applied", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at").notNull(),
+});
+
+// ── Structured adjustment records ────────────────────────────────────
+
+export const adjustments = sqliteTable("adjustments", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id),
+  instruction: text("instruction").notNull(),
+  targetStage: text("target_stage"),
+  applied: integer("applied", { mode: "boolean" }).notNull().default(false),
+  resultHash: text("result_hash"),
+  createdAt: text("created_at").notNull(),
+  appliedAt: text("applied_at"),
+});
+
+// ── Suno track records (individual tracks per generation) ────────────
+
+export const sunoTracks = sqliteTable("suno_tracks", {
+  id: text("id").primaryKey(),
+  generationId: text("generation_id")
+    .notNull()
+    .references(() => generations.id),
+  index: integer("index").notNull(),
+  audioUrl: text("audio_url"),
+  imageUrl: text("image_url"),
+  videoUrl: text("video_url"),
+  duration: integer("duration"),
+  title: text("title"),
+  createdAt: text("created_at").notNull(),
 });

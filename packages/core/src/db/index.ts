@@ -21,9 +21,30 @@ export function createDb(dbPath: string): Db {
 
   const db = drizzle(sqlite, { schema });
 
-  // Auto-create tables if they don't exist
+  // ── Auto-create tables ────────────────────────────────────────────
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    genre_id TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS project_drafts (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id),
+    genre_id TEXT NOT NULL,
+    preset_id TEXT NOT NULL,
+    inputs TEXT,
+    reference TEXT,
+    nl_adjustments TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS jobs (
     id TEXT PRIMARY KEY,
+    project_id TEXT REFERENCES projects(id),
     name TEXT,
     genre_id TEXT NOT NULL,
     preset_id TEXT NOT NULL,
@@ -58,6 +79,8 @@ export function createDb(dbPath: string): Db {
   try { sqlite.exec(`ALTER TABLE versions ADD COLUMN stage TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE versions ADD COLUMN parent_version_id TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN stage_data TEXT`); } catch {}
+  try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN project_id TEXT`); } catch {}
+
   sqlite.exec(`CREATE TABLE IF NOT EXISTS generations (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL REFERENCES jobs(id),
@@ -72,6 +95,56 @@ export function createDb(dbPath: string): Db {
     error TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS job_stage_outputs (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id),
+    stage TEXT NOT NULL,
+    output_json TEXT NOT NULL,
+    prompt_manifest_json TEXT,
+    completed_at TEXT NOT NULL
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS job_events (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id),
+    stage TEXT,
+    status TEXT NOT NULL,
+    data TEXT,
+    error TEXT,
+    timestamp TEXT NOT NULL
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS critic_findings (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id),
+    stage TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    field TEXT NOT NULL,
+    message TEXT NOT NULL,
+    patch_type TEXT,
+    suggested_value TEXT,
+    applied INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS adjustments (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id),
+    instruction TEXT NOT NULL,
+    target_stage TEXT,
+    applied INTEGER NOT NULL DEFAULT 0,
+    result_hash TEXT,
+    created_at TEXT NOT NULL,
+    applied_at TEXT
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS suno_tracks (
+    id TEXT PRIMARY KEY,
+    generation_id TEXT NOT NULL REFERENCES generations(id),
+    "index" INTEGER NOT NULL,
+    audio_url TEXT,
+    image_url TEXT,
+    video_url TEXT,
+    duration INTEGER,
+    title TEXT,
+    created_at TEXT NOT NULL
   )`);
 
   return db;

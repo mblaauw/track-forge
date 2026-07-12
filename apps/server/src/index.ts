@@ -7,6 +7,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerJobRoutes } from "./routes/jobs.js";
 import { registerVersionRoutes } from "./routes/versions.js";
 import { registerSunoRoutes } from "./routes/suno.js";
+import { registerProjectRoutes } from "./routes/projects.js";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerImportExportRoutes } from "./routes/import-export.js";
 
@@ -20,6 +21,7 @@ const llm = createLlmClient(config);
 const server = Fastify({ logger });
 
 registerHealthRoutes(server);
+registerProjectRoutes(server, { db, config });
 registerJobRoutes(server, { db, config, llm, suno });
 registerVersionRoutes(server, { db });
 registerSunoRoutes(server, { db, suno });

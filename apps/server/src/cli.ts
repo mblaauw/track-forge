@@ -50,7 +50,10 @@ async function run() {
     const bundle: ExportBundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      jobs: [{ job: job as any, versions: versions as any[] }],
+      projects: [{
+        project: { id: "" as any, name: job.name ?? "Exported Job", description: null, genreId: null, createdAt: job.createdAt, updatedAt: job.updatedAt },
+        jobs: [{ job: job as any, versions: versions as any[] }],
+      }],
     };
 
     writeFileSync(outputPath, JSON.stringify(bundle, null, 2));
@@ -74,7 +77,10 @@ async function run() {
     const bundle: ExportBundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      jobs: entries,
+      projects: [{
+        project: { id: "" as any, name: "Bulk Export", description: null, genreId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        jobs: entries,
+      }],
     };
 
     writeFileSync(outputPath, JSON.stringify(bundle, null, 2));
@@ -97,8 +103,10 @@ async function run() {
 
     const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
 
-    for (let i = 0; i < bundle.jobs.length; i++) {
-      const entry = bundle.jobs[i]!;
+    const allJobEntries = (bundle.projects ?? []).flatMap((p) => p.jobs);
+
+    for (let i = 0; i < allJobEntries.length; i++) {
+      const entry = allJobEntries[i]!;
 
       try {
         if (!entry.job || !entry.job.genreId || !entry.job.presetId) {

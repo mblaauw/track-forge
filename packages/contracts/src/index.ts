@@ -34,6 +34,8 @@ export type VersionStatus = (typeof VersionStatus)[keyof typeof VersionStatus];
 
 export type JobId = string & { readonly __brand: "JobId" };
 export type VersionId = string & { readonly __brand: "VersionId" };
+export type ProjectId = string & { readonly __brand: "ProjectId" };
+export type DraftId = string & { readonly __brand: "DraftId" };
 export type GenreId = string & { readonly __brand: "GenreId" };
 export type PresetId = string & { readonly __brand: "PresetId" };
 export type SourceHash = string & { readonly __brand: "SourceHash" };
@@ -149,34 +151,49 @@ export interface TextAnchor extends ContentLock {
   lockedValue: string;
 }
 
+// ── Project & Draft ──────────────────────────────────────────────────
+
+export interface Project {
+  id: ProjectId;
+  name: string;
+  description: string | null;
+  genreId: GenreId | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Draft {
+  id: DraftId;
+  projectId: ProjectId;
+  genreId: GenreId;
+  presetId: PresetId;
+  inputs: string | null;
+  reference: string | null;
+  nlAdjustments: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── Job & Version ────────────────────────────────────────────────────
 
 export interface Job {
   id: JobId;
+  projectId: ProjectId | null;
   name: string | null;
   genreId: GenreId;
   presetId: PresetId;
   status: JobStatus;
   currentStage: GenerationStage;
-  /** Reference material — lyrics, audio ref URLs, etc. */
   reference: string | null;
-  /** Hash of canonical reference (for cache key) */
   sourceHash: SourceHash | null;
-  /** JSON-encoded genre-specific user inputs */
   inputs: string | null;
-  /** Natural-language adjustment instructions */
   nlAdjustments: string | null;
-  /** JSON-encoded CriticFinding[] from review stage */
   findings: string | null;
-  /** JSON-encoded compiled artifacts saved when pipeline pauses at review */
   compiledJson: string | null;
-  /** JSON-encoded intermediate pipeline state (songPlan, rawStyle, rawLyrics, interpretedRef) */
   stageData: string | null;
-  /** Monotonically increasing attempt counter for current stage */
   stageAttempt: number;
-  /** Error detail when failed */
   error: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -197,7 +214,66 @@ export interface Version {
   createdAt: string;
 }
 
+// ── Job events ───────────────────────────────────────────────────────
+
+export interface JobEvent {
+  id: string;
+  jobId: JobId;
+  stage: GenerationStage | null;
+  status: string;
+  data: string | null;
+  error: string | null;
+  timestamp: string;
+}
+
+// ── Structured critic finding ────────────────────────────────────────
+
+export interface CriticFindingRecord {
+  id: string;
+  jobId: JobId;
+  stage: GenerationStage;
+  severity: CriticSeverity;
+  field: string;
+  message: string;
+  patchType: PatchType | null;
+  suggestedValue: string | null;
+  applied: boolean;
+  createdAt: string;
+}
+
+// ── Structured adjustment ────────────────────────────────────────────
+
+export interface AdjustmentRecord {
+  id: string;
+  jobId: JobId;
+  instruction: string;
+  targetStage: GenerationStage | null;
+  applied: boolean;
+  resultHash: string | null;
+  createdAt: string;
+  appliedAt: string | null;
+}
+
+// ── Suno track ───────────────────────────────────────────────────────
+
+export interface SunoTrack {
+  id: string;
+  generationId: string;
+  index: number;
+  audioUrl: string | null;
+  imageUrl: string | null;
+  videoUrl: string | null;
+  duration: number | null;
+  title: string | null;
+  createdAt: string;
+}
+
 // ── Import/Export ────────────────────────────────────────────────────
+
+export interface ProjectExport {
+  project: Project;
+  jobs: JobExport[];
+}
 
 export interface JobExport {
   job: Job;
@@ -207,7 +283,7 @@ export interface JobExport {
 export interface ExportBundle {
   formatVersion: number;
   exportedAt: string;
-  jobs: JobExport[];
+  projects: ProjectExport[];
 }
 
 export interface ImportResult {

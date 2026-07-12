@@ -78,9 +78,10 @@ describe("Import / Export routes", () => {
     const bundle = JSON.parse(res.payload);
     expect(bundle.formatVersion).toBe(1);
     expect(bundle.exportedAt).toBeDefined();
-    expect(bundle.jobs).toHaveLength(1);
-    expect(bundle.jobs[0].job.id).toBe(created.id);
-    expect(Array.isArray(bundle.jobs[0].versions)).toBe(true);
+    expect(bundle.projects).toHaveLength(1);
+    expect(bundle.projects[0].jobs).toHaveLength(1);
+    expect(bundle.projects[0].jobs[0].job.id).toBe(created.id);
+    expect(Array.isArray(bundle.projects[0].jobs[0].versions)).toBe(true);
   });
 
   it("GET /api/jobs/:id/export returns 404 for missing job", async () => {
@@ -158,7 +159,7 @@ describe("Import / Export routes", () => {
 
     const importRes = await server.inject({
       method: "POST",
-      url: "/api/jobs/import",
+      url: "/api/projects/import",
       payload: bundle,
     });
 
@@ -168,16 +169,16 @@ describe("Import / Export routes", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it("POST /api/jobs/import returns 400 for invalid formatVersion", async () => {
+  it("POST /api/projects/import returns 400 for invalid formatVersion", async () => {
     const res = await server.inject({
       method: "POST",
-      url: "/api/jobs/import",
-      payload: { formatVersion: 2, jobs: [] },
+      url: "/api/projects/import",
+      payload: { formatVersion: 2, projects: [] },
     });
     expect(res.statusCode).toBe(400);
   });
 
-  it("POST /api/jobs/import skips existing jobs", async () => {
+  it("POST /api/projects/import skips existing jobs", async () => {
     const createRes = await server.inject({
       method: "POST",
       url: "/api/jobs",
@@ -197,7 +198,7 @@ describe("Import / Export routes", () => {
 
     const importRes = await server.inject({
       method: "POST",
-      url: "/api/jobs/import",
+      url: "/api/projects/import",
       payload: bundle,
     });
 
@@ -207,29 +208,32 @@ describe("Import / Export routes", () => {
     expect(result.skipped).toBe(1);
   });
 
-  it("POST /api/jobs/import reports errors for unknown genre", async () => {
+  it("POST /api/projects/import reports errors for unknown genre", async () => {
     const bundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      jobs: [{
-        job: {
-          id: "test-import-bad-genre",
-          genreId: "nonexistent_genre",
-          presetId: "test",
-          status: "pending",
-          currentStage: "ref_interpretation",
-          inputs: "{}",
-          stageAttempt: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        versions: [],
+      projects: [{
+        project: { id: "__bulk", name: "Test Import", description: null, genreId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        jobs: [{
+          job: {
+            id: "test-import-bad-genre",
+            genreId: "nonexistent_genre",
+            presetId: "test",
+            status: "pending",
+            currentStage: "ref_interpretation",
+            inputs: "{}",
+            stageAttempt: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          versions: [],
+        }],
       }],
     };
 
     const res = await server.inject({
       method: "POST",
-      url: "/api/jobs/import",
+      url: "/api/projects/import",
       payload: bundle,
     });
 
