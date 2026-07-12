@@ -1,8 +1,10 @@
 import { useState, useEffect } from "preact/hooks";
-import { fetchGenres, createJob, type GenreInfo, type JobInfo } from "../api";
+import { fetchGenres, createJob, updateJobInputs, type GenreInfo, type JobInfo } from "../api";
 import { useRouter } from "../lib/router";
 import { DynamicForm } from "../components/DynamicForm";
 import type { FormFieldDescriptor } from "@track-forge/genre-core";
+import { useAutosave } from "../lib/useAutosave";
+import { AutoSaveIndicator } from "../components/AutoSaveIndicator";
 
 /** Import genre modules for form field definitions */
 import { edmModule } from "@track-forge/genre-edm";
@@ -32,6 +34,18 @@ export function CreateJob() {
   const [reference, setReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+
+  // Autosave after creation — monitor inputs + name changes
+  const saveExisting = createdJobId
+    ? () => updateJobInputs(createdJobId, { inputs, name: projectName || undefined })
+    : null;
+  const autoSaveStatus = useAutosave(
+    createdJobId ? { inputs, projectName } : null,
+    async () => {
+      if (createdJobId) await updateJobInputs(createdJobId, { inputs, name: projectName || undefined });
+    },
+  );
 
   useEffect(() => {
     fetchGenres().then(setGenres).catch(() => {});
@@ -85,6 +99,8 @@ export function CreateJob() {
         reference: reference || undefined,
         name: projectName || undefined,
       });
+      // After creation, future edits auto-save
+      setCreatedJobId(job.id);
       navigate(`/job/${job.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -159,6 +175,7 @@ export function CreateJob() {
           <button type="submit" class="btn btn-primary" disabled={submitting}>
             {submitting ? "Creating…" : "Create Job"}
           </button>
+          {createdJobId && <AutoSaveIndicator status={autoSaveStatus} />}
         </div>
       </form>
     </div>

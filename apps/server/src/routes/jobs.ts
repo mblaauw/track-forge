@@ -120,6 +120,42 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     return reply.code(200).send(updated);
   });
 
+  // ── Update job inputs (autosave) ────────────────────────────────────
+
+  server.patch("/api/jobs/:id/inputs", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = req.body as Record<string, unknown>;
+    const inputs = body.inputs as Record<string, unknown> | undefined;
+    const name = body.name as string | undefined;
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    const now = new Date().toISOString();
+    const update: Record<string, unknown> = { updatedAt: now };
+
+    if (inputs !== undefined) update.inputs = JSON.stringify(inputs);
+    if (name !== undefined) update.name = name;
+
+    await db
+      .update(schema.jobs)
+      .set(update as any)
+      .where(eq(schema.jobs.id, id));
+
+    const [updated] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    return reply.code(200).send(updated);
+  });
+
   // ── Delete job ───────────────────────────────────────────────────────
 
   server.delete("/api/jobs/:id", async (req, reply) => {

@@ -75,6 +75,13 @@ export function deleteJob(id: string): Promise<void> {
   return api(`/api/jobs/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
+export function updateJobInputs(id: string, patch: { inputs?: Record<string, unknown>; name?: string }): Promise<JobInfo> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/inputs`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
 export function fetchJobs(limit = 20, offset = 0): Promise<JobInfo[]> {
   return api(`/api/jobs?limit=${limit}&offset=${offset}`);
 }
