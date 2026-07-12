@@ -1,5 +1,5 @@
 export { runPipeline } from "./orchestrator.js";
-export { createJob, loadJob } from "./job-service.js";
+export { createJob, loadJob, resetJobStage, cancelJob } from "./job-service.js";
 export { ReferenceCache } from "./reference-cache.js";
 export { interpretReference, formatInterpretedRef, parseInterpretation } from "./reference-interpreter.js";
 export { PromptAssembler, fillTemplate, buildPromptContext } from "./prompt-assembler.js";

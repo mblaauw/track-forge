@@ -20,6 +20,7 @@ export const JobStatus = {
   InProgress: "in_progress",
   Completed: "completed",
   Failed: "failed",
+  Cancelled: "cancelled",
 } as const;
 export type JobStatus = (typeof JobStatus)[keyof typeof JobStatus];
 

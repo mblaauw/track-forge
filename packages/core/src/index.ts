@@ -30,5 +30,6 @@ export type {
 export { parseLyrics, serializeLyrics, isInstrumental } from "./lyrics/index.js";
 
 // Pipeline
-export { runPipeline, createJob, loadJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, subscribe, publish, unsubscribeAll } from "./pipeline/index.js";
+export { runPipeline, createJob, loadJob, resetJobStage, cancelJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, subscribe, publish, unsubscribeAll } from "./pipeline/index.js";
 export type { PipelineDeps, PipelineState, PipelineResult, PipelineEvent, PromptContext, PromptManifest } from "./pipeline/index.js";
+export type { GenerationStage } from "@track-forge/contracts";

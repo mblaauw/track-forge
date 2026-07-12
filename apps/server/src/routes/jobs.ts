@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, LlmClient, SunoClient } from "@track-forge/core";
-import { createJob, runPipeline, schema } from "@track-forge/core";
+import { createJob, runPipeline, schema, resetJobStage, cancelJob } from "@track-forge/core";
+import type { GenerationStage } from "@track-forge/contracts";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import { getModuleOrThrow } from "../lib/modules.js";
@@ -174,6 +175,85 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     await db.delete(schema.jobs).where(eq(schema.jobs.id, id));
 
     return reply.code(204).send();
+  });
+
+  // ── Replay: reset to stage and re-run ────────────────────────────────
+
+  server.post("/api/jobs/:id/replay", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = req.body as { stage?: GenerationStage } | undefined;
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+    if (job.status !== "completed" && job.status !== "failed") {
+      return reply.code(400).send({ error: "Job must be completed or failed to replay" });
+    }
+
+    const stage = body?.stage ?? "ref_interpretation";
+    await resetJobStage(db, id as any, stage);
+
+    const mod = getModuleOrThrow(job.genreId);
+    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
+
+    runPipeline(id, pipelineDeps, mod).catch((err) => {
+      req.log.error({ jobId: id, err }, "replay error");
+    });
+
+    return reply.code(202).send({ status: "replaying", jobId: id, stage });
+  });
+
+  // ── Retry: retry failed stage ───────────────────────────────────────
+
+  server.post("/api/jobs/:id/retry", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+    if (job.status !== "failed") {
+      return reply.code(400).send({ error: "Job must be failed to retry" });
+    }
+
+    await resetJobStage(db, id as any, job.currentStage as GenerationStage);
+
+    const mod = getModuleOrThrow(job.genreId);
+    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
+
+    runPipeline(id, pipelineDeps, mod).catch((err) => {
+      req.log.error({ jobId: id, err }, "retry error");
+    });
+
+    return reply.code(202).send({ status: "retrying", jobId: id });
+  });
+
+  // ── Cancel: stop running job ────────────────────────────────────────
+
+  server.post("/api/jobs/:id/cancel", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    // Signal cancellation via events
+    const { publish } = await import("@track-forge/core");
+    publish(id, { type: "cancelled", jobId: id } as any);
+
+    await cancelJob(db, id as any);
+    return reply.code(200).send({ status: "cancelled", jobId: id });
   });
 
   // ── Start pipeline ───────────────────────────────────────────────────

@@ -129,6 +129,41 @@ export async function completeJob(
   return loadJobOrThrow(db, jobId);
 }
 
+export async function resetJobStage(
+  db: Db,
+  jobId: JobId,
+  stage: GenerationStage,
+): Promise<Job> {
+  const now = new Date().toISOString();
+  await db
+    .update(schema.jobs)
+    .set({
+      currentStage: stage,
+      status: "pending",
+      stageAttempt: 0,
+      error: null,
+      updatedAt: now,
+    })
+    .where(eq(schema.jobs.id, jobId));
+  return loadJobOrThrow(db, jobId);
+}
+
+export async function cancelJob(
+  db: Db,
+  jobId: JobId,
+): Promise<Job> {
+  const now = new Date().toISOString();
+  await db
+    .update(schema.jobs)
+    .set({
+      status: "cancelled" as any,
+      error: "Cancelled by user",
+      updatedAt: now,
+    })
+    .where(eq(schema.jobs.id, jobId));
+  return loadJobOrThrow(db, jobId);
+}
+
 // ── Version CRUD ──────────────────────────────────────────────────────
 
 export async function createVersion(

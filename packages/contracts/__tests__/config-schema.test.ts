@@ -70,6 +70,7 @@ describe("JobStatus const map", () => {
     expect(JobStatus.InProgress).toBe("in_progress");
     expect(JobStatus.Completed).toBe("completed");
     expect(JobStatus.Failed).toBe("failed");
+    expect(JobStatus.Cancelled).toBe("cancelled");
   });
 });
 
