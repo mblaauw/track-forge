@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { InterpretedReference, SourceHash } from "@track-forge/contracts";
-import { PromptAssembler, fillTemplate, buildPromptContext } from "../src/pipeline/prompt-assembler.js";
+import { PromptAssembler, fillTemplate, buildPromptContext, sanitizeReference } from "../src/pipeline/prompt-assembler.js";
 
 const hash = "hash" as SourceHash;
 
@@ -87,19 +87,44 @@ describe("buildPromptContext", () => {
     expect(ctx.genreId).toBe("x");
   });
 
+  it("sanitizes raw reference text by stripping URLs", () => {
+    const ctx = buildPromptContext({
+      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: "Check out https://example.com/song lyrics here", interpretedRef: null,
+    });
+    expect(ctx.reference).not.toContain("https://");
+    expect(ctx.reference).toContain("lyrics here");
+  });
+
+  it("prefers interpreted ref over raw reference when available", () => {
+    const ctx = buildPromptContext({
+      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: "raw lyrics that should not appear", interpretedRef: sampleInterpretedRef,
+    });
+    expect(ctx.reference).toContain("Genre: rock (alternative)");
+    expect(ctx.reference).not.toContain("raw lyrics");
+  });
+
+  it("truncates long raw reference without interpreted ref", () => {
+    const long = "a".repeat(1000);
+    const ctx = buildPromptContext({
+      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: long, interpretedRef: null,
+    });
+    expect(ctx.reference!.length).toBeLessThan(600);
+    expect(ctx.reference).toMatch(/\.\.\.$/);
+  });
+
+  it("returns null when no reference provided", () => {
+    const ctx = buildPromptContext({
+      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: null, interpretedRef: null,
+    });
+    expect(ctx.reference).toBeNull();
+  });
+
   it("includes formatted interpreted ref when available", () => {
     const ctx = buildPromptContext({
-      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: null, interpretedRef: sampleInterpretedRef,
+      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: "some lyrics", interpretedRef: sampleInterpretedRef,
     });
     expect(ctx.interpretedRef).toContain("Genre: rock (alternative)");
     expect(ctx.interpretedRef).toContain("Mood: energetic");
-  });
-
-  it("includes raw reference text", () => {
-    const ctx = buildPromptContext({
-      genreId: "x", genreName: "X", presetId: "p", inputs: null, reference: "some lyrics", interpretedRef: null,
-    });
-    expect(ctx.reference).toBe("some lyrics");
   });
 });
 

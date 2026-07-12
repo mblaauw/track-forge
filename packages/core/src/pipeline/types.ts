@@ -58,12 +58,12 @@ export interface PromptContext {
   genreId: string;
   genreName: string;
   presetId: string;
-  /** Raw reference text */
+  /** Sanitized reference text (URLs stripped, truncated; prefers interpretedRef summary) */
   reference: string | null;
   /** Formatted interpreted reference (null if no ref or not yet interpreted) */
   interpretedRef: string | null;
   /** Natural-language adjustment instructions */
-  nlAdjustments: string | null;
+  nlAdjustments?: string | null;
   /** Input field values (flattened) */
   [key: string]: unknown;
 }

@@ -160,10 +160,37 @@ export function parseControlDescriptors(raw: string | null): ControlDescriptor[]
   return [{ parameter: "instruction", operator: "set", value: raw, confidence: 0.3 }];
 }
 
+// ── Reference sanitizer ────────────────────────────────────────────────
+
+const URL_RE = /https?:\/\/[^\s,;)]+/g;
+const MAX_RAW_LENGTH = 500;
+
+/**
+ * Sanitize user-provided reference text for safe prompt injection.
+ * Strips URLs and truncates; prefers interpreted ref summary when available.
+ */
+export function sanitizeReference(
+  raw: string | null,
+  interpretedRef: InterpretedReference | null,
+): string | null {
+  if (!raw) return null;
+
+  if (interpretedRef) {
+    // Use structured interpretation — metadata only, no raw lyrics/URLs
+    return formatInterpretedRef(interpretedRef);
+  }
+
+  // Only raw text available — strip URLs and truncate
+  const cleaned = raw.replace(URL_RE, "").replace(/\s+/g, " ").trim();
+  if (cleaned.length <= MAX_RAW_LENGTH) return cleaned;
+  return cleaned.slice(0, MAX_RAW_LENGTH) + "...";
+}
+
 // ── Context builder ───────────────────────────────────────────────────
 
 /**
  * Build PromptContext from pipeline state inputs.
+ * Reference text is sanitized before injection into prompt templates.
  */
 export function buildPromptContext(params: {
   genreId: string;
@@ -185,7 +212,7 @@ export function buildPromptContext(params: {
     genreId: params.genreId,
     genreName: params.genreName,
     presetId: params.presetId,
-    reference: params.reference,
+    reference: sanitizeReference(params.reference, params.interpretedRef),
     interpretedRef: params.interpretedRef ? formatInterpretedRef(params.interpretedRef) : null,
     nlAdjustments: formatControlDescriptors(params.nlAdjustments ?? null),
     ...inputs,

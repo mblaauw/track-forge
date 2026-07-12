@@ -97,7 +97,7 @@ export const HIP_HOP_ORIGINALITY_CRITIC: CriticDefinition = {
   promptTemplate: `You are an originality/comparison expert reviewing Hip-Hop tracks against references.
 
 Subgenre: {{subgenre}}
-Reference tracks: {{reference}}
+Reference analysis: {{interpretedRef}}
 
 Check:
 1. Does the generated style derivative from the reference tracks?

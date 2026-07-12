@@ -290,11 +290,10 @@ export function createHipHopRenderers(
   };
 }
 
-function getVersePrompt(data: HipHopBlueprint & { reference?: string }): string {
+function getVersePrompt(data: HipHopBlueprint): string {
   const parts: string[] = [];
   parts.push(`${NARRATIVE_LABELS[data.narrativeArc!] ?? data.narrativeArc}`);
   parts.push(`${FLOW_LABELS[data.flowPattern!] ?? data.flowPattern} flow`);
-  if (data.reference) parts.push(`reference: ${data.reference}`);
   return parts.join(", ");
 }
 
