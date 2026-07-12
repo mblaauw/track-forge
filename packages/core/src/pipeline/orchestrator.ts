@@ -121,6 +121,12 @@ async function handleWriting(
   const { job, module, songPlan, interpretedRef } = state;
   if (!songPlan) throw new Error("Pipeline state missing songPlan before writing");
 
+  // Check lyrics mode — skip LLM call for strict_instrumental
+  let inputs: Record<string, unknown> = {};
+  try { inputs = JSON.parse(job.inputs ?? "{}"); } catch { /* ignore */ }
+  const lyricsMode = String(inputs.lyricsMode ?? inputs.lyricsFormat ?? "");
+  const isStrictInstrumental = lyricsMode === "strict_instrumental";
+
   const assembler = new PromptAssembler(module);
   const context = buildPromptContext({
     genreId: module.id,
@@ -136,10 +142,28 @@ async function handleWriting(
 
   const stylePrompt = assembler.resolvePrompt("style_writing", context)
     ?? `Generate Suno style description based on:\n${songPlan}`;
-  const lyricsPrompt = assembler.resolvePrompt("lyrics_writing", context)
-    ?? `Generate Suno lyrics/structure based on:\n${songPlan}`;
 
   if (deps.signal?.aborted) throw new DOMException("Job cancelled", "AbortError");
+
+  if (isStrictInstrumental) {
+    // Skip lyrics LLM — renderer will produce empty lyrics
+    const [styleResult] = await Promise.all([
+      deps.llm.complete({
+        messages: [{ role: "user", content: stylePrompt }],
+        temperature: 0.8,
+        signal: deps.signal,
+      }),
+    ]);
+
+    return {
+      ...state,
+      styleWriterResult: tryParseStyleResult(styleResult.content),
+      lyricsWriterResult: { document: { sections: [], metadata: {} } },
+    };
+  }
+
+  const lyricsPrompt = assembler.resolvePrompt("lyrics_writing", context)
+    ?? `Generate Suno lyrics/structure based on:\n${songPlan}`;
 
   const [styleResult, lyricsResult] = await Promise.all([
     deps.llm.complete({

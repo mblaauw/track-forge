@@ -17,6 +17,7 @@ export interface LlmRequest {
 export interface LlmResponse {
   content: string;
   model: string;
+  reasoningContent?: string;
   usage?: {
     promptTokens: number;
     completionTokens: number;

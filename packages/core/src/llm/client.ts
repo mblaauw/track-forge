@@ -4,7 +4,17 @@ import { PROVIDER_DEFAULTS } from "./types.js";
 
 // ── Factory ──────────────────────────────────────────────────────────
 
-export function createLlmClient(config: Pick<Config, "llmProvider" | "llmApiKey" | "llmBaseUrl" | "llmModel">): LlmClient {
+export interface LlmLogger {
+  debug(obj: Record<string, unknown>, msg?: string): void;
+  info(obj: Record<string, unknown>, msg?: string): void;
+  warn(obj: Record<string, unknown>, msg?: string): void;
+  error(obj: Record<string, unknown>, msg?: string): void;
+}
+
+export function createLlmClient(
+  config: Pick<Config, "llmProvider" | "llmApiKey" | "llmBaseUrl" | "llmModel">,
+  logger?: LlmLogger,
+): LlmClient {
   const model = config.llmModel ?? "gpt-4o";
   const baseUrl = config.llmBaseUrl ?? PROVIDER_DEFAULTS[config.llmProvider]?.baseUrl ?? "http://localhost:11434";
   const providerConfig: ProviderConfig = {
@@ -13,19 +23,42 @@ export function createLlmClient(config: Pick<Config, "llmProvider" | "llmApiKey"
     baseUrl,
     model,
   };
-  return new LlmClient(providerConfig);
+  return new LlmClient(providerConfig, logger);
 }
 
 // ── Client ───────────────────────────────────────────────────────────
 
 export class LlmClient {
   private cfg: ProviderConfig;
+  private logger?: LlmLogger;
 
-  constructor(cfg: ProviderConfig) {
+  constructor(cfg: ProviderConfig, logger?: LlmLogger) {
     this.cfg = cfg;
+    this.logger = logger;
   }
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
+    this.logger?.debug({
+      prompt: req.messages[0]?.content?.slice(0, 500),
+      messages: req.messages.length,
+      temperature: req.temperature ?? 0.7,
+      maxTokens: req.maxTokens ?? 8192,
+      model: this.cfg.model,
+    }, "LLM request");
+
+    const response = await this._complete(req);
+
+    this.logger?.debug({
+      content: response.content.slice(0, 500),
+      reasoningContent: response.reasoningContent?.slice(0, 2000),
+      usage: response.usage,
+      model: response.model,
+    }, "LLM response");
+
+    return response;
+  }
+
+  private async _complete(req: LlmRequest): Promise<LlmResponse> {
     switch (this.cfg.provider) {
       case "openai":
       case "openai-compatible":
@@ -67,7 +100,7 @@ export class LlmClient {
       }
 
       const json = (await res.json()) as {
-        choices: { message: { content: string } }[];
+        choices: { message: { content: string; reasoning_content?: string } }[];
         model: string;
         usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
       };
@@ -75,6 +108,7 @@ export class LlmClient {
       return {
         content: json.choices[0]?.message?.content ?? "",
         model: json.model,
+        reasoningContent: json.choices[0]?.message?.reasoning_content,
         usage: json.usage
           ? {
               promptTokens: json.usage.prompt_tokens,

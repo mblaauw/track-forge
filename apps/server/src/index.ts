@@ -18,7 +18,7 @@ const logger = pino({ level: config.logLevel });
 const db = initDb(config);
 const sunoCfg = createSunoClientConfig(config);
 const suno = new SunoClient(sunoCfg, config, logger.child({ module: "suno" }));
-const llm = createLlmClient(config);
+const llm = createLlmClient(config, logger.child({ module: "llm" }));
 
 const server = Fastify({ logger: { level: config.logLevel } });
 const lockService = createLockService(db);
