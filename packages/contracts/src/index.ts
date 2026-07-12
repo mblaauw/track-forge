@@ -319,6 +319,10 @@ export const ConfigSchema = z.object({
   logLevel: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
   /** Port for HTTP server */
   port: z.number().int().positive().default(3000),
+  /** Host to bind (127.0.0.1 for dev safety, 0.0.0.0 for production) */
+  host: z.string().default("127.0.0.1"),
+  /** Path to built web GUI (set in production for static serving) */
+  staticDir: z.string().optional(),
   /** LLM provider config */
   llmProvider: z.enum(["openai", "anthropic", "ollama"]).default("openai"),
   llmApiKey: z.string().optional(),

@@ -15,6 +15,8 @@ const CONFIG_FILENAME = "track-forge.config.js";
  *   TRACK_FORGE_DB_PATH
  *   TRACK_FORGE_LOG_LEVEL
  *   TRACK_FORGE_PORT
+ *   TRACK_FORGE_HOST
+ *   TRACK_FORGE_STATIC_DIR
  *   TRACK_FORGE_LLM_PROVIDER
  *   TRACK_FORGE_LLM_API_KEY
  *   TRACK_FORGE_LLM_MODEL
@@ -39,6 +41,8 @@ export function loadConfig(cwd = process.cwd()): Config {
     dbPath: envStr("TRACK_FORGE_DB_PATH") ?? fileConfig.dbPath,
     logLevel: envStr("TRACK_FORGE_LOG_LEVEL") ?? fileConfig.logLevel,
     port: envInt("TRACK_FORGE_PORT") ?? fileConfig.port,
+    host: envStr("TRACK_FORGE_HOST") ?? fileConfig.host,
+    staticDir: envStr("TRACK_FORGE_STATIC_DIR") ?? fileConfig.staticDir,
     llmProvider: envStr("TRACK_FORGE_LLM_PROVIDER") ?? fileConfig.llmProvider,
     llmApiKey: envStr("TRACK_FORGE_LLM_API_KEY") ?? fileConfig.llmApiKey,
     llmModel: envStr("TRACK_FORGE_LLM_MODEL") ?? fileConfig.llmModel,
