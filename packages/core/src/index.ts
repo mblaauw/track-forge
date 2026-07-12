@@ -14,6 +14,12 @@ export {
   resolveCompletionMode,
   getCapabilities,
   registerCapabilities,
+  generateSunoPayload,
+  payloadToLog,
+  storeGeneration,
+  updateGeneration,
+  getGeneration,
+  listGenerations,
 } from "./suno/index.js";
 export type {
   CompletionMode,
@@ -24,6 +30,10 @@ export type {
   SunoSubmitResult,
   SunoGenerationStatus,
   SunoModelVersion,
+  SunoPayloadInput,
+  SunoGenreTransform,
+  PayloadWarning,
+  GenerationRecord,
 } from "./suno/index.js";
 
 // Lyrics canonical grammar

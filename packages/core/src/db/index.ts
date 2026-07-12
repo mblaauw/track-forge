@@ -32,6 +32,9 @@ export function createDb(dbPath: string): Db {
     reference TEXT,
     source_hash TEXT,
     inputs TEXT,
+    nl_adjustments TEXT,
+    findings TEXT,
+    compiled_json TEXT,
     stage_attempt INTEGER NOT NULL DEFAULT 0,
     error TEXT,
     created_at TEXT NOT NULL,
@@ -43,8 +46,30 @@ export function createDb(dbPath: string): Db {
     status TEXT NOT NULL DEFAULT 'draft',
     number INTEGER NOT NULL,
     artifacts TEXT NOT NULL DEFAULT '[]',
+    stage TEXT,
+    parent_version_id TEXT,
     finalized_at TEXT,
     created_at TEXT NOT NULL
+  )`);
+
+  // ── Migrate existing databases ──────────────────────────────────────
+
+  try { sqlite.exec(`ALTER TABLE versions ADD COLUMN stage TEXT`); } catch {}
+  try { sqlite.exec(`ALTER TABLE versions ADD COLUMN parent_version_id TEXT`); } catch {}
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS generations (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id),
+    version_id TEXT REFERENCES versions(id),
+    status TEXT NOT NULL DEFAULT 'queued',
+    audio_url TEXT,
+    image_url TEXT,
+    video_url TEXT,
+    duration INTEGER,
+    generated_title TEXT,
+    style TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
   )`);
 
   return db;

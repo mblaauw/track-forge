@@ -11,6 +11,8 @@ import {
 } from "@track-forge/contracts";
 import type { GenreModule, GenreCritics } from "@track-forge/genre-core";
 import type { PipelineDeps, PipelineState, PipelineResult, PromptContext } from "./types.js";
+import { eq } from "drizzle-orm";
+import { schema } from "../db/index.js";
 import {
   loadJob,
   advanceStage,
@@ -84,6 +86,7 @@ async function handlePlanning(
     inputs: job.inputs,
     reference: job.reference,
     interpretedRef,
+    nlAdjustments: state.nlAdjustments,
   });
   const prompt = assembler.resolvePrompt("planning", context)
     ?? `Create a song plan based on:\n${job.inputs ?? "{}"}`;
@@ -113,6 +116,7 @@ async function handleWriting(
     inputs: job.inputs,
     reference: job.reference,
     interpretedRef,
+    nlAdjustments: state.nlAdjustments,
   });
   // Inject plan into context for {{plan}} placeholder
   context.plan = songPlan;
@@ -162,6 +166,7 @@ async function handleCompilation(
     inputs: job.inputs,
     reference: job.reference,
     interpretedRef,
+    nlAdjustments: state.nlAdjustments,
   });
   context.rawStyle = rawStyle;
   context.rawLyrics = rawLyrics;
@@ -211,6 +216,7 @@ async function handleReview(
     inputs: job.inputs,
     reference: job.reference,
     interpretedRef,
+    nlAdjustments: state.nlAdjustments,
   });
   context.compiledJson = compiledJson;
   context.rawStyle = state.rawStyle ?? "";
@@ -237,12 +243,19 @@ async function handleRevision(
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const { compiledJson, findings, job, module } = state;
-  if (!compiledJson || !findings || findings.length === 0) {
+
+  // When restarting from review pause, load state from job columns
+  const effCompiled = compiledJson ?? job.compiledJson;
+  const effFindings: CriticFinding[] | null = findings
+    ? (findings as unknown as CriticFinding[])
+    : (job.findings ? JSON.parse(job.findings) as CriticFinding[] : null);
+
+  if (!effCompiled || !effFindings || effFindings.length === 0) {
     return state;
   }
 
   const patches: SurgicalPatch[] = [];
-  for (const f of findings as unknown as CriticFinding[]) {
+  for (const f of effFindings) {
     if (f.autoFixPolicy === "required" && f.patchType && f.suggestedValue) {
       patches.push({
         type: f.patchType as PatchType,
@@ -267,7 +280,7 @@ async function handleRevision(
   }
 
   // Apply patches to compiled output with fallback
-  const compiled = JSON.parse(compiledJson) as Record<string, string>;
+  const compiled = JSON.parse(effCompiled) as Record<string, string>;
   const fallback = { ...compiled };
 
   for (const p of patches) {
@@ -398,6 +411,7 @@ export async function runPipeline(
     findings: null,
     appliedPatch: null,
     versionId: null,
+    nlAdjustments: job.nlAdjustments ?? null,
   };
 
   const stageHandlers: Record<string, (s: PipelineState, d: PipelineDeps) => Promise<PipelineState>> = {
@@ -424,6 +438,20 @@ export async function runPipeline(
       publish(state.job.id, { stage: currentStage, status: "started" });
       state = await handler(state, deps);
       publish(state.job.id, { stage: currentStage, status: "completed" });
+
+      // ── Pause after review if findings exist ────────────────────────
+      if (currentStage === "review" && state.findings && (state.findings as unknown[]).length > 0) {
+        const now = new Date().toISOString();
+        await deps.db
+          .update(schema.jobs)
+          .set({
+            findings: JSON.stringify(state.findings),
+            compiledJson: state.compiledJson,
+            updatedAt: now,
+          })
+          .where(eq(schema.jobs.id, state.job.id));
+        break;
+      }
 
       const next = nextStage(currentStage);
       if (!next) break;

@@ -26,6 +26,9 @@ export interface PipelineState {
   findings: unknown[] | null; // serialized CriticFinding[]
   appliedPatch: string | null; // serialized SurgicalPatch
   versionId: string | null;
+
+  /** Natural-language adjustment instructions */
+  nlAdjustments: string | null;
 }
 
 /** Stage handler function signature */
@@ -59,6 +62,8 @@ export interface PromptContext {
   reference: string | null;
   /** Formatted interpreted reference (null if no ref or not yet interpreted) */
   interpretedRef: string | null;
+  /** Natural-language adjustment instructions */
+  nlAdjustments: string | null;
   /** Input field values (flattened) */
   [key: string]: unknown;
 }

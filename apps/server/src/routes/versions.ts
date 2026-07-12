@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 
@@ -107,7 +107,6 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
         artifacts[idx] = { type: body.artifactType, value: body.value, versionId: prev?.versionId };
       }
 
-      const now = new Date().toISOString();
       await db
         .update(schema.versions)
         .set({ artifacts: JSON.stringify(artifacts) })
@@ -123,5 +122,128 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
     } finally {
       releaseLock(id, body.artifactType);
     }
+  });
+
+  // ── Promote version to final ─────────────────────────────────────────
+
+  server.post("/api/versions/:id/promote", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [version] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, id))
+      .limit(1);
+
+    if (!version) return reply.code(404).send({ error: "Version not found" });
+    if (version.status === "final") {
+      return reply.code(400).send({ error: "Version is already finalized" });
+    }
+
+    const now = new Date().toISOString();
+    await db
+      .update(schema.versions)
+      .set({ status: "final", finalizedAt: now })
+      .where(eq(schema.versions.id, id));
+
+    const [updated] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, id))
+      .limit(1);
+
+    return reply.code(200).send(updated);
+  });
+
+  // ── Rollback: create new version from previous version's artifacts ───
+
+  server.post("/api/jobs/:jobId/versions/:versionId/rollback", async (req, reply) => {
+    const { jobId, versionId } = req.params as { jobId: string; versionId: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, jobId))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    const [sourceVersion] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, versionId))
+      .limit(1);
+
+    if (!sourceVersion) return reply.code(404).send({ error: "Source version not found" });
+
+    const [maxVersion] = await db
+      .select({ maxNumber: schema.versions.number })
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, jobId as string))
+      .orderBy(desc(schema.versions.number))
+      .limit(1);
+
+    const nextNumber = (maxVersion?.maxNumber ?? 0) + 1;
+    const newId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await db.insert(schema.versions).values({
+      id: newId,
+      jobId: jobId as string,
+      status: "draft",
+      number: nextNumber,
+      artifacts: sourceVersion.artifacts,
+      parentVersionId: versionId,
+      createdAt: now,
+    });
+
+    const [created] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, newId))
+      .limit(1);
+
+    return reply.code(201).send(created);
+  });
+
+  // ── Version tree ─────────────────────────────────────────────────────
+
+  server.get("/api/jobs/:jobId/versions/tree", async (req, reply) => {
+    const { jobId } = req.params as { jobId: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, jobId))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    const rows = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, jobId))
+      .orderBy(schema.versions.number);
+
+    const versionMap = new Map<string, typeof rows[0]>();
+    const roots: typeof rows = [];
+
+    for (const v of rows) {
+      versionMap.set(v.id, v);
+      if (!v.parentVersionId) {
+        roots.push(v);
+      }
+    }
+
+    function buildTree(parentId: string | null): unknown[] {
+      return rows
+        .filter((v) => v.parentVersionId === parentId)
+        .map((v) => ({
+          ...v,
+          children: buildTree(v.id),
+        }));
+    }
+
+    return buildTree(null);
   });
 }

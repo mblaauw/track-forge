@@ -136,6 +136,7 @@ export function buildPromptContext(params: {
   inputs: string | null;
   reference: string | null;
   interpretedRef: InterpretedReference | null;
+  nlAdjustments?: string | null;
 }): PromptContext {
   const inputs: Record<string, unknown> = {};
   if (params.inputs) {
@@ -150,6 +151,7 @@ export function buildPromptContext(params: {
     presetId: params.presetId,
     reference: params.reference,
     interpretedRef: params.interpretedRef ? formatInterpretedRef(params.interpretedRef) : null,
+    nlAdjustments: params.nlAdjustments ?? null,
     ...inputs,
   };
 

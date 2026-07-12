@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, LlmClient, SunoClient } from "@track-forge/core";
-import { createJob, runPipeline, schema, resetJobStage, cancelJob } from "@track-forge/core";
-import type { GenerationStage } from "@track-forge/contracts";
+import { createJob, runPipeline, schema, resetJobStage, cancelJob, generateSunoPayload } from "@track-forge/core";
+import type { GenerationStage, CriticFinding, SunoArtifact } from "@track-forge/contracts";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import { getModuleOrThrow } from "../lib/modules.js";
@@ -177,6 +177,75 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     return reply.code(204).send();
   });
 
+  // ── Set NL adjustments ──────────────────────────────────────────────
+
+  server.patch("/api/jobs/:id/nl-adjustments", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = req.body as { nlAdjustments?: string } | undefined;
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    const now = new Date().toISOString();
+    await db
+      .update(schema.jobs)
+      .set({ nlAdjustments: body?.nlAdjustments ?? null, updatedAt: now })
+      .where(eq(schema.jobs.id, id));
+
+    const [updated] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    return reply.code(200).send(updated);
+  });
+
+  // ── Submit review: filter findings and continue to revision ──────────
+
+  server.post("/api/jobs/:id/review", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = req.body as { findings?: CriticFinding[] } | undefined;
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+    if (job.status !== "in_progress" || job.currentStage !== "review") {
+      return reply.code(400).send({ error: "Job must be at review stage" });
+    }
+
+    const finalFindings = body?.findings ?? (job.findings ? JSON.parse(job.findings) : []);
+    const now = new Date().toISOString();
+
+    await db
+      .update(schema.jobs)
+      .set({
+        findings: JSON.stringify(finalFindings),
+        currentStage: "revision",
+        stageAttempt: 0,
+        updatedAt: now,
+      })
+      .where(eq(schema.jobs.id, id));
+
+    const mod = getModuleOrThrow(job.genreId);
+    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
+
+    runPipeline(id, pipelineDeps, mod).catch((err) => {
+      req.log.error({ jobId: id, err }, "review-continue error");
+    });
+
+    return reply.code(202).send({ status: "review_submitted", jobId: id });
+  });
+
   // ── Replay: reset to stage and re-run ────────────────────────────────
 
   server.post("/api/jobs/:id/replay", async (req, reply) => {
@@ -285,6 +354,50 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       });
 
     return reply.code(202).send({ status: "started", jobId: id });
+  });
+
+  // ── Payload preview ──────────────────────────────────────────────────
+
+  server.get("/api/jobs/:id/payload-preview", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    // Extract compiled artifacts — prefer latest version, fallback to compiledJson
+    const versions = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, id))
+      .orderBy(desc(schema.versions.number))
+      .limit(1);
+
+    let title = ""; let style = ""; let excludedStyles = ""; let lyrics = "";
+    const latestVersion = versions[0];
+
+    if (latestVersion) {
+      const artifacts = JSON.parse(latestVersion.artifacts as string) as SunoArtifact[];
+      for (const a of artifacts) {
+        if (a.type === "title") title = a.value;
+        else if (a.type === "style") style = a.value;
+        else if (a.type === "excluded_styles") excludedStyles = a.value;
+        else if (a.type === "lyrics") lyrics = a.value;
+      }
+    } else if (job.compiledJson != null) {
+      const compiled = JSON.parse(job.compiledJson) as Record<string, string>;
+      title = compiled.title ?? "";
+      style = compiled.style ?? "";
+      excludedStyles = compiled.excludedStyles ?? "";
+      lyrics = compiled.lyrics ?? "";
+    }
+
+    const result = generateSunoPayload({ title, style, excludedStyles, lyrics });
+    return result;
   });
 
   // ── List genres ──────────────────────────────────────────────────────

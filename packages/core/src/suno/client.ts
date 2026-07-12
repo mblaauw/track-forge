@@ -97,13 +97,15 @@ export class SunoClient {
     return normalizeFeedItem(data);
   }
 
-  // ── Poll until completion ──────────────────────────────────────
+  // ── Poll until completion (exponential backoff) ───────────────
 
   async waitForCompletion(
     id: string,
     timeoutMs?: number,
   ): Promise<SunoFeedItem> {
     const deadline = Date.now() + (timeoutMs ?? this.cfg.pollTimeoutMs);
+    const maxBackoff = 20_000;
+    let delay = this.cfg.pollIntervalMs;
 
     while (Date.now() < deadline) {
       const item = await this.getGenerationStatus(id);
@@ -112,7 +114,8 @@ export class SunoClient {
         return item;
       }
 
-      await sleep(this.cfg.pollIntervalMs);
+      await sleep(delay);
+      delay = Math.min(delay * 2, maxBackoff);
     }
 
     throw new Error(`Suno generation ${id} timed out after ${timeoutMs ?? this.cfg.pollTimeoutMs}ms`);

@@ -149,6 +149,12 @@ export interface Job {
   sourceHash: SourceHash | null;
   /** JSON-encoded genre-specific user inputs */
   inputs: string | null;
+  /** Natural-language adjustment instructions */
+  nlAdjustments: string | null;
+  /** JSON-encoded CriticFinding[] from review stage */
+  findings: string | null;
+  /** JSON-encoded compiled artifacts saved when pipeline pauses at review */
+  compiledJson: string | null;
   /** Monotonically increasing attempt counter for current stage */
   stageAttempt: number;
   /** Error detail when failed */
@@ -165,9 +171,32 @@ export interface Version {
   number: number;
   /** Compiled artifacts ready for Suno */
   artifacts: SunoArtifact[];
+  /** Pipeline stage that created this version */
+  stage: GenerationStage | null;
+  /** Parent version ID for branch/rollback tracking */
+  parentVersionId: VersionId | null;
   /** Immutable after finalisation */
   finalizedAt: string | null;
   createdAt: string;
+}
+
+// ── Import/Export ────────────────────────────────────────────────────
+
+export interface JobExport {
+  job: Job;
+  versions: Version[];
+}
+
+export interface ExportBundle {
+  formatVersion: number;
+  exportedAt: string;
+  jobs: JobExport[];
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  errors: { index: number; message: string }[];
 }
 
 // ── Config schema (server-side only, gitignored) ─────────────────────

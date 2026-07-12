@@ -32,6 +32,9 @@ export interface JobInfo {
   reference: string | null;
   sourceHash: string | null;
   inputs: string | null;
+  nlAdjustments: string | null;
+  findings: string | null;
+  compiledJson: string | null;
   stageAttempt: number;
   error: string | null;
   createdAt: string;
@@ -44,8 +47,14 @@ export interface VersionInfo {
   status: string;
   number: number;
   artifacts: { type: string; value: string; versionId: string }[];
+  stage: string | null;
+  parentVersionId: string | null;
   finalizedAt: string | null;
   createdAt: string;
+}
+
+export interface VersionTreeNode extends VersionInfo {
+  children: VersionTreeNode[];
 }
 
 // ── API functions ────────────────────────────────────────────────────
@@ -102,6 +111,60 @@ export function fetchVersion(id: string): Promise<VersionInfo> {
   return api(`/api/versions/${encodeURIComponent(id)}`);
 }
 
+export function promoteVersion(id: string): Promise<VersionInfo> {
+  return api(`/api/versions/${encodeURIComponent(id)}/promote`, { method: "POST" });
+}
+
+export function rollbackToVersion(jobId: string, versionId: string): Promise<VersionInfo> {
+  return api(`/api/jobs/${encodeURIComponent(jobId)}/versions/${encodeURIComponent(versionId)}/rollback`, { method: "POST" });
+}
+
+export function fetchVersionTree(jobId: string): Promise<VersionTreeNode[]> {
+  return api(`/api/jobs/${encodeURIComponent(jobId)}/versions/tree`);
+}
+
+// ── Payload preview ──────────────────────────────────────────────────
+
+export interface PayloadPreviewResult {
+  request: {
+    title: string;
+    style: string;
+    lyrics: string;
+    instrumental: boolean;
+    negativeTags?: string;
+    modelVersion?: string;
+    callbackUrl?: string;
+  };
+  warnings: Array<{ field: string; message: string }>;
+}
+
+export function fetchPayloadPreview(
+  id: string,
+): Promise<PayloadPreviewResult> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/payload-preview`);
+}
+
+// ── Review ────────────────────────────────────────────────────────────
+
+export function submitReview(
+  id: string,
+  findings: unknown[],
+): Promise<{ status: string; jobId: string }> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/review`, {
+    method: "POST",
+    body: JSON.stringify({ findings }),
+  });
+}
+
+// ── NL Adjustments ───────────────────────────────────────────────────
+
+export function setNlAdjustments(id: string, nlAdjustments: string | null): Promise<JobInfo> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/nl-adjustments`, {
+    method: "PATCH",
+    body: JSON.stringify({ nlAdjustments }),
+  });
+}
+
 // ── Artifacts ────────────────────────────────────────────────────────
 
 export function updateArtifact(
@@ -112,6 +175,95 @@ export function updateArtifact(
   return api(`/api/versions/${encodeURIComponent(versionId)}/artifacts`, {
     method: "PATCH",
     body: JSON.stringify({ artifactType, value }),
+  });
+}
+
+// ── Suno status & generations ───────────────────────────────────────
+
+export interface GenerationInfo {
+  id: string;
+  jobId: string;
+  versionId?: string;
+  status: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  generatedTitle?: string;
+  style?: string;
+  error?: string;
+}
+
+export interface SunoFeedItemInfo {
+  id: string;
+  status: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  error?: string;
+  style?: string;
+  lyrics?: string;
+  title?: string;
+  modelVersion?: string;
+  createdAt?: string;
+}
+
+export function fetchGenerationStatus(
+  generationId: string,
+): Promise<SunoFeedItemInfo> {
+  return api(`/api/suno/status/${encodeURIComponent(generationId)}`);
+}
+
+export function fetchGenerations(
+  jobId: string,
+  limit = 10,
+): Promise<GenerationInfo[]> {
+  return api(`/api/suno/jobs/${encodeURIComponent(jobId)}/generations?limit=${limit}`);
+}
+
+export function retryGeneration(
+  jobId: string,
+  generationId: string,
+): Promise<{ status: string; jobId: string; generationIds: string[] }> {
+  return api(
+    `/api/suno/jobs/${encodeURIComponent(jobId)}/generations/${encodeURIComponent(generationId)}/retry`,
+    { method: "POST" },
+  );
+}
+
+// ── Import / Export ─────────────────────────────────────────────────
+
+export interface ExportBundle {
+  formatVersion: number;
+  exportedAt: string;
+  jobs: Array<{
+    job: JobInfo;
+    versions: VersionInfo[];
+  }>;
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  errors: { index: number; message: string }[];
+}
+
+export function exportJob(jobId: string): Promise<ExportBundle> {
+  return api(`/api/jobs/${encodeURIComponent(jobId)}/export`);
+}
+
+export function bulkExport(jobIds: string[]): Promise<ExportBundle> {
+  return api("/api/jobs/export", {
+    method: "POST",
+    body: JSON.stringify({ ids: jobIds }),
+  });
+}
+
+export function importJobs(bundle: ExportBundle): Promise<ImportResult> {
+  return api("/api/jobs/import", {
+    method: "POST",
+    body: JSON.stringify(bundle),
   });
 }
 
