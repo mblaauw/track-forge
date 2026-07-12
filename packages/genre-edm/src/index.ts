@@ -90,8 +90,8 @@ export const edmModule: GenreModule<EdmInputs, EdmBlueprint> = {
   },
   presets: EDM_PRESETS,
   promptFragments: {
-    title: "Generate a short, memorable title for an EDM track in {{subgenre}} style. Mood: {{mood}}. Keep it to 1-4 words.",
-    style: "Describe the musical style for a {{subgenre}} track. Include energy level, key characteristics, and arrangement approach.\n{{nlAdjustments}}",
+    planning: "Plan a {{subgenre}} EDM track. Tempo: {{bpm}} BPM, Key: {{key}} {{scale}}, Mood: {{mood}}, Energy: {{energy}}/10. Describe the arrangement structure (intro → build → drop → breakdown → outro), energy arc, and production style. Be specific to the {{subgenre}} genre.\n{{nlAdjustments}}",
+    style: "Generate a Suno AI style prompt for a {{subgenre}} track. Tempo: {{bpm}} BPM, Key: {{key}} {{scale}}, Mood: {{mood}}, Energy: {{energy}}/10.\n{{nlAdjustments}}\n\nReturn your answer as valid JSON matching this schema:\n{\n  \"titleCandidates\": [\"suggested title 1\", \"suggested title 2\"],\n  \"descriptiveStyle\": \"the style description text\",\n  \"negativeTags\": [\"tag_to_avoid\"],\n  \"bpm\": 128,\n  \"key\": \"Am\",\n  \"vocalDescription\": \"vocal style notes\"\n}",
     lyrics_instrumental: "Generate instrumental arrangement tags for a {{subgenre}} track with sections: intro, build, drop, breakdown, outro.\n{{nlAdjustments}}",
     lyrics_full: "Write lyrics for a {{subgenre}} dance track. Include verse, chorus, bridge structure with a strong hook.",
     excluded: "List styles and elements to exclude when generating a {{subgenre}} track.",

@@ -281,6 +281,15 @@ async function handleReview(
   context.lyricsResult = state.lyricsWriterResult ? JSON.stringify(state.lyricsWriterResult.document) : "";
   context.songPlan = state.songPlan ?? "";
 
+  // Inject individual compiled fields for critic {{placeholders}}
+  try {
+    const compiled = JSON.parse(compiledJson) as Record<string, string>;
+    context.title = compiled.title ?? "";
+    context.style = compiled.style ?? "";
+    context.lyrics = compiled.lyrics ?? "";
+    context.excluded_styles = compiled.excludedStyles ?? "";
+  } catch { /* compiledJson parse failed */ }
+
   let useFullCritics = false;
   try {
     const inputs = JSON.parse(job.inputs ?? "{}") as Record<string, unknown>;
