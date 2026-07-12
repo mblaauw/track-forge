@@ -107,12 +107,14 @@ describe("AutoFixPolicy const map", () => {
 });
 
 describe("PatchType const map", () => {
-  it("has 5 patch types", () => {
-    expect(Object.keys(PatchType)).toHaveLength(5);
+  it("has 7 patch types", () => {
+    expect(Object.keys(PatchType)).toHaveLength(7);
     expect(PatchType.ReplaceStyleDescription).toBe("replace_style_description");
     expect(PatchType.ReplaceNegativeTags).toBe("replace_negative_tags");
     expect(PatchType.ReplaceLyricsSection).toBe("replace_lyrics_section");
     expect(PatchType.ReplaceSelectedText).toBe("replace_selected_text");
     expect(PatchType.InputPatch).toBe("input_patch");
+    expect(PatchType.MergeField).toBe("merge_field");
+    expect(PatchType.RemoveField).toBe("remove_field");
   });
 });

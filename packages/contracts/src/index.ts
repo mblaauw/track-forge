@@ -225,6 +225,8 @@ export const PatchType = {
   ReplaceLyricsSection: "replace_lyrics_section",
   ReplaceSelectedText: "replace_selected_text",
   InputPatch: "input_patch",
+  MergeField: "merge_field",
+  RemoveField: "remove_field",
 } as const;
 export type PatchType = (typeof PatchType)[keyof typeof PatchType];
 

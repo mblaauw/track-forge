@@ -266,16 +266,46 @@ async function handleRevision(
     return state;
   }
 
-  // Apply patches to compiled output
+  // Apply patches to compiled output with fallback
   const compiled = JSON.parse(compiledJson) as Record<string, string>;
+  const fallback = { ...compiled };
+
   for (const p of patches) {
-    // Patches target fields like "style", "lyrics", "title", "excludedStyles"
     const key = p.target as keyof typeof compiled;
-    if (key in compiled && typeof compiled[key] === "string") {
-      compiled[key] = p.value;
+    if (!(key in compiled)) continue;
+
+    switch (p.type) {
+      case "merge_field":
+        // Append to existing content
+        compiled[key] = compiled[key] + "\n" + p.value;
+        break;
+      case "remove_field":
+        // Clear field (cannot delete from object, set empty)
+        compiled[key] = "";
+        break;
+      default:
+        // Replace field value
+        compiled[key] = p.value;
     }
   }
+
+  // Validate patched output — fallback to original if invalid
   const patchedCompiledJson = JSON.stringify(compiled);
+  try {
+    const bp = parseBlueprint(job, module) as Record<string, unknown>;
+    // Re-run only if blueprint changed
+    if (patches.some((p) => p.target === "inputs" || p.target === "input")) {
+      const errors = module.validators.blueprint(bp);
+      if (errors.length > 0) {
+        // Fallback: revert to original
+        return { ...state, appliedPatch: JSON.stringify(patches) };
+      }
+    }
+  } catch {
+    // Validation failed — use fallback
+    const fallbackJson = JSON.stringify(fallback);
+    return { ...state, compiledJson: fallbackJson, appliedPatch: JSON.stringify(patches) };
+  }
 
   const appliedPatch = JSON.stringify(patches);
   return { ...state, appliedPatch, compiledJson: patchedCompiledJson };
@@ -317,6 +347,11 @@ async function handleVersioning(
   const version = await createVersion(deps.db, job.id, [], "final");
   const vid = version.id;
 
+  // Attach patch history if available
+  const patchNotes = state.appliedPatch
+    ? `Patches: ${(JSON.parse(state.appliedPatch) as SurgicalPatch[]).map((p) => p.description).join("; ")}`
+    : "";
+
   const artifacts: SunoArtifact[] = [
     { type: "title", value: compiled.title ?? "", versionId: vid },
     { type: "style", value: compiled.style ?? "", versionId: vid },
@@ -324,7 +359,16 @@ async function handleVersioning(
     { type: "lyrics", value: compiled.lyrics ?? "", versionId: vid },
   ];
 
-  // Use the same version — attach artifacts with versionId set
+  // Store patch history as extra artifact if patches applied
+  if (patchNotes) {
+    artifacts.push({
+      type: "title" as any,
+      value: patchNotes,
+      versionId: vid,
+    });
+  }
+
+  // Finalize version with updated artifacts
   await createVersion(deps.db, job.id, artifacts, "final");
   await completeJob(deps.db, job.id);
 
