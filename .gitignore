@@ -6,5 +6,8 @@ dist/
 .next/
 coverage/
 *.tsbuildinfo
+track-forge.config.js
 .codegraph/
 .vscode/
+design-system/
+.playwright-mcp/

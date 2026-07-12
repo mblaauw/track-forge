@@ -76,12 +76,14 @@ const hipHopPromptFragments: Record<string, string> = {
   planning: `You are a Hip-Hop producer planning a track.
 Subgenre: {{subgenre}} | BPM: {{bpm}} | Key: {{key}} {{scale}}
 Narrative: {{narrativeArc}} | Flow: {{flowPattern}}
-Create a production plan including arrangement, instrumentation, and vocal approach.`,
+Create a production plan including arrangement, instrumentation, and vocal approach.
+{{nlAdjustments}}`,
 
   style_writing: `Write a Hip-Hop style description for Suno AI.
 Subgenre: {{subgenre}} | BPM: {{bpm}} | Key: {{key}} {{scale}}
 Narrative: {{narrativeArc}} | Production: {{productionStyle}}
 Energy: {{energy}}/10 | Complexity: {{complexity}}/10
+{{nlAdjustments}}
 Produce a concise, Suno-compatible style prompt.
 
 Return your answer as valid JSON matching this schema:
@@ -138,6 +140,30 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
   tagPolicy: hipHopTagPolicy,
   presets: HIP_HOP_PRESETS,
   promptFragments: hipHopPromptFragments,
+  compileBlueprint: (inputs: HipHopInputs) => HipHopBlueprintSchema.parse({
+    subgenre: inputs.subgenre,
+    bpm: inputs.bpm,
+    key: inputs.key,
+    scale: inputs.scale,
+    mood: inputs.mood,
+    narrativeArc: inputs.narrativeArc,
+    rhymeStyle: inputs.rhymeStyle,
+    flowPattern: inputs.flowPattern,
+    delivery: inputs.delivery,
+    productionStyle: inputs.productionStyle,
+    energy: inputs.energy,
+    complexity: inputs.complexity,
+    lyricsMode: inputs.lyricsMode,
+    vocalStyle: "",
+    tags: inputs.customTags ? inputs.customTags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+    negativeTags: inputs.lyricsMode === "instrumental" ? ["vocals", "singing"] : [],
+    styleClauses: [
+      { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
+      { key: "bpm", value: String(inputs.bpm), order: 1 },
+      { key: "mood", value: inputs.mood, order: 2 },
+    ],
+    songStructure: ["intro", "verse", "hook", "verse", "hook", "bridge", "hook", "outro"],
+  }),
   renderers: {
     title: (data: HipHopBlueprint) => defaultRenderers.title(data),
     style: (data: HipHopBlueprint) => defaultRenderers.style(data),

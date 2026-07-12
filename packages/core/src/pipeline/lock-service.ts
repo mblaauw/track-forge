@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/index.js";
 import { schema } from "../db/index.js";
 
-const DEFAULT_TTL_MS = 30_000;
+const DEFAULT_TTL_MS = 300_000; // 5 min lease
 
 export function createLockService(db: Db) {
   function lockKey(versionId: string, artifactType: string): string {
@@ -93,7 +93,26 @@ export function createLockService(db: Db) {
     return result.changes ?? 0;
   }
 
-  return { acquireLock, releaseLock, renewLock, cleanExpiredLocks };
+  /**
+   * Start a heartbeat loop that renews a lock every `intervalMs`.
+   * Returns an `unsubscribe` function to stop the loop.
+   */
+  function startHeartbeat(
+    versionId: string,
+    artifactType: string,
+    owner: string,
+    intervalMs = DEFAULT_TTL_MS / 3,
+  ): () => void {
+    const key = lockKey(versionId, artifactType);
+    const timer = setInterval(() => {
+      renewLock(versionId, artifactType, owner).catch(() => {
+        clearInterval(timer);
+      });
+    }, intervalMs);
+    return () => clearInterval(timer);
+  }
+
+  return { acquireLock, releaseLock, renewLock, cleanExpiredLocks, startHeartbeat };
 }
 
 export type LockService = ReturnType<typeof createLockService>;

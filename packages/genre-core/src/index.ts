@@ -37,6 +37,8 @@ export interface GenreModule<
   presets: GenrePreset[];
   /** LLM prompt fragments keyed by stage */
   promptFragments: Record<string, string>;
+  /** Compile user inputs into full blueprint shape */
+  compileBlueprint: (inputs: TInputs) => TBlueprintData;
   /** Renderers produce Suno-ready artifacts from blueprint */
   renderers: GenreRenderers<TBlueprintData>;
   /** Critic function table */

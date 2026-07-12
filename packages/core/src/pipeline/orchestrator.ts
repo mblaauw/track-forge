@@ -8,6 +8,7 @@ import {
   type SunoArtifactType,
   type StyleWriterResult,
   type LyricsWriterResult,
+  type LyricsFormat,
   CriticSeverity,
   AutoFixPolicy,
 } from "@track-forge/contracts";
@@ -32,6 +33,7 @@ import { PromptAssembler, buildPromptContext, parseControlDescriptors } from "./
 import { runCritics, parseFindings } from "./critic-runner.js";
 import { publish } from "./events.js";
 import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
+import { serializeLyrics } from "../lyrics/canonical.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
 
 // ── Reference cache (module-level singleton) ─────────────────────────
@@ -68,11 +70,12 @@ async function handleRefInterpretation(
     return { ...state, interpretedRef: null };
   }
 
+  const cache = deps.refCache ?? _refCache;
   const interpreted = await interpretReference(
     job.reference,
     job.sourceHash,
     deps.llm,
-    _refCache,
+    cache,
     deps.signal,
   );
 
@@ -174,6 +177,9 @@ async function handleCompilation(
 
   const bp = parseBlueprint(job, module) as Record<string, unknown>;
 
+  // Extract lyrics format from inputs if present
+  const lyricsFormat = (bp.lyricsMode ?? bp.lyricsFormat ?? null) as LyricsFormat | null;
+
   // Use the assembler for compilation context (includes raw outputs for potential fragment use)
   const assembler = new PromptAssembler(module);
   const context = buildPromptContext({
@@ -197,13 +203,20 @@ async function handleCompilation(
   const styleText = styleWriterResult.descriptiveStyle || module.renderers.style(bp);
   const excludedText = module.renderers.excludedStyles(bp);
   const titleText = styleWriterResult.titleCandidates[0] ?? module.renderers.title(bp);
-  const lyricsText = module.renderers.lyrics(bp);
+  const lyricsText = (lyricsWriterResult.document.sections.length > 0
+    ? serializeLyrics(lyricsWriterResult.document)
+    : null) ?? module.renderers.lyrics(bp);
 
   const compiled: Record<string, string> = {
     title: titleText,
     style: styleText,
     excludedStyles: excludedText,
     lyrics: lyricsText,
+    bpm: styleWriterResult.bpm !== null ? String(styleWriterResult.bpm) : "",
+    key: styleWriterResult.key ?? "",
+    vocalDescription: styleWriterResult.vocalDescription,
+    negativeTags: styleWriterResult.negativeTags.join(", "),
+    titleCandidates: styleWriterResult.titleCandidates.slice(1).join(" | "),
   };
 
   let compiledJson = JSON.stringify(compiled);
@@ -214,7 +227,7 @@ async function handleCompilation(
     throw new Error(`Blueprint validation failed: ${blueprintErrors.map((e) => `${e.field}: ${e.message}`).join("; ")}`);
   }
 
-  return { ...state, compiledJson };
+  return { ...state, compiledJson, lyricsFormat };
 }
 
 // ── Stage: Review ─────────────────────────────────────────────────────
@@ -246,10 +259,11 @@ async function handleReview(
     useFullCritics = inputs.fullReview === true;
   } catch { /* ignore */ }
 
-  const findings = await runCritics(module.critics, context, deps.llm, {
+  const rawFindings = await runCritics(module.critics, context, deps.llm, {
     full: useFullCritics,
   }, deps.signal);
 
+  const findings = Array.isArray(rawFindings) ? rawFindings.filter(Boolean) : rawFindings;
   return { ...state, findings };
 }
 
@@ -359,20 +373,41 @@ async function handleVerification(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const { compiledJson, appliedPatch, job } = state;
+  const { compiledJson, appliedPatch, job, module } = state;
 
-  // If there was a patch applied, do basic verification
-  if (appliedPatch) {
-    JSON.parse(appliedPatch) as SurgicalPatch[];
+  if (appliedPatch && compiledJson) {
     // Re-run blueprint validator as sanity check
-    const bp = parseBlueprint(job, state.module) as Record<string, unknown>;
-    const errors = state.module.validators.blueprint(bp);
+    const bp = parseBlueprint(job, module) as Record<string, unknown>;
+    const errors = module.validators.blueprint(bp);
     if (errors.length > 0) {
       throw new Error(`Verification failed after revision: ${errors.map((e) => e.message).join("; ")}`);
     }
+
+    // Re-run critics on patched content
+    const context = buildPromptContext({
+      genreId: module.id,
+      genreName: module.name,
+      presetId: job.presetId,
+      inputs: job.inputs,
+      reference: job.reference,
+      interpretedRef: state.interpretedRef,
+    });
+    context.compiledJson = compiledJson;
+
+    const recheckFindings = await runCritics(module.critics, context, deps.llm, {
+      full: false,
+    }, deps.signal);
+
+    if (Array.isArray(recheckFindings) && recheckFindings.some(
+      (f) => f && f.autoFixPolicy === "required",
+    )) {
+      throw new Error(`Verification failed: ${recheckFindings
+        .filter((f) => f && f.autoFixPolicy === "required")
+        .map((f) => f!.message).join("; ")}`);
+    }
   }
 
-  return state; // Pass through
+  return state;
 }
 
 // ── Stage: Versioning ─────────────────────────────────────────────────
@@ -402,10 +437,30 @@ async function handleVersioning(
     { type: "lyrics", value: compiled.lyrics ?? "", versionId: vid },
   ];
 
+  // Store structured writer fields as artifacts
+  const { styleWriterResult } = state;
+  if (styleWriterResult) {
+    if (styleWriterResult.bpm !== null) {
+      artifacts.push({ type: "bpm", value: String(styleWriterResult.bpm), versionId: vid });
+    }
+    if (styleWriterResult.key) {
+      artifacts.push({ type: "key", value: styleWriterResult.key, versionId: vid });
+    }
+    if (styleWriterResult.vocalDescription) {
+      artifacts.push({ type: "vocal_description", value: styleWriterResult.vocalDescription, versionId: vid });
+    }
+    if (styleWriterResult.negativeTags.length > 0) {
+      artifacts.push({ type: "negative_tags", value: styleWriterResult.negativeTags.join(", "), versionId: vid });
+    }
+    if (styleWriterResult.titleCandidates.length > 1) {
+      artifacts.push({ type: "title", value: styleWriterResult.titleCandidates.slice(1).join(" | "), versionId: vid });
+    }
+  }
+
   // Store patch history as extra artifact if patches applied
   if (patchNotes) {
     artifacts.push({
-      type: "title" as any,
+      type: "patch_notes",
       value: patchNotes,
       versionId: vid,
     });
@@ -450,6 +505,7 @@ export async function runPipeline(
     appliedPatch: null,
     versionId: null,
     nlAdjustments: parseControlDescriptors(job.nlAdjustments),
+    lyricsFormat: null,
   };
 
   // Override with persisted stage-level state if available
@@ -462,6 +518,7 @@ export async function runPipeline(
     initialState.lyricsWriterResult = saved.lyricsWriterResult ?? null;
     initialState.findings = saved.findings ?? (initialState.findings ?? null);
     initialState.appliedPatch = saved.appliedPatch ?? null;
+    initialState.lyricsFormat = saved.lyricsFormat ?? null;
   }
 
   let state = initialState;
@@ -505,6 +562,7 @@ export async function runPipeline(
         compiledJson: state.compiledJson,
         findings: state.findings as unknown[] | null | undefined,
         appliedPatch: state.appliedPatch,
+        lyricsFormat: state.lyricsFormat,
       };
       await savePipelineState(deps.db, state.job.id as any, stageData);
 
@@ -550,10 +608,15 @@ export async function runPipeline(
       error: null,
     };
   } catch (err) {
-    const isAbort = err instanceof DOMException && err.name === "AbortError";
-    const errorMsg = isAbort ? "Cancelled by user" : err instanceof Error ? err.message : String(err);
-    await publish(deps.db, job.id, { stage: currentStage, status: isAbort ? "cancelled" : "error", error: errorMsg });
-    if (!isAbort) {
+    const isTimeout = err instanceof Error && (
+      err.message === "Request timed out" ||
+      (err.cause instanceof Error && err.cause.message === "Request timed out")
+    );
+    const isCancel = (err instanceof DOMException && err.name === "AbortError" && !isTimeout)
+      || err instanceof DOMException && (err as any).cause?.message === "Cancelled by user";
+    const errorMsg = isCancel ? "Cancelled by user" : isTimeout ? "LLM request timed out" : err instanceof Error ? err.message : String(err);
+    if (!isCancel) {
+      await publish(deps.db, job.id, { stage: currentStage, status: "error", error: errorMsg });
       await failStage(deps.db, job.id, errorMsg);
     }
     cleanupJob(job.id);
@@ -563,13 +626,21 @@ export async function runPipeline(
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function parseBlueprint(job: Job, module: GenreModule): unknown {
+function parseBlueprint(job: Job, module: GenreModule): Record<string, unknown> {
   if (!job.inputs) return {};
+  let inputs: Record<string, unknown>;
   try {
-    return JSON.parse(job.inputs);
+    inputs = JSON.parse(job.inputs) as Record<string, unknown>;
   } catch {
     return {};
   }
+  // Compile raw inputs into full blueprint shape if module supports it
+  if (module.compileBlueprint && typeof module.compileBlueprint === "function") {
+    try {
+      return module.compileBlueprint(inputs) as Record<string, unknown>;
+    } catch { /* fall through to raw inputs */ }
+  }
+  return inputs;
 }
 
 function tryParseStyleResult(content: string): StyleWriterResult {

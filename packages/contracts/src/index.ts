@@ -47,6 +47,11 @@ export const SunoArtifactType = {
   Style: "style",
   ExcludedStyles: "excluded_styles",
   Lyrics: "lyrics",
+  Bpm: "bpm",
+  Key: "key",
+  VocalDescription: "vocal_description",
+  NegativeTags: "negative_tags",
+  PatchNotes: "patch_notes",
 } as const;
 export type SunoArtifactType = (typeof SunoArtifactType)[keyof typeof SunoArtifactType];
 
@@ -324,8 +329,9 @@ export const ConfigSchema = z.object({
   /** Path to built web GUI (set in production for static serving) */
   staticDir: z.string().optional(),
   /** LLM provider config */
-  llmProvider: z.enum(["openai", "anthropic", "ollama"]).default("openai"),
+  llmProvider: z.enum(["openai", "anthropic", "ollama", "openai-compatible"]).default("openai"),
   llmApiKey: z.string().optional(),
+  llmBaseUrl: z.string().optional(),
   llmModel: z.string().default("gpt-4o"),
 });
 

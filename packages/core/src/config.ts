@@ -19,6 +19,7 @@ const CONFIG_FILENAME = "track-forge.config.js";
  *   TRACK_FORGE_STATIC_DIR
  *   TRACK_FORGE_LLM_PROVIDER
  *   TRACK_FORGE_LLM_API_KEY
+ *   TRACK_FORGE_LLM_BASE_URL
  *   TRACK_FORGE_LLM_MODEL
  */
 export function loadConfig(cwd = process.cwd()): Config {
@@ -45,6 +46,7 @@ export function loadConfig(cwd = process.cwd()): Config {
     staticDir: envStr("TRACK_FORGE_STATIC_DIR") ?? fileConfig.staticDir,
     llmProvider: envStr("TRACK_FORGE_LLM_PROVIDER") ?? fileConfig.llmProvider,
     llmApiKey: envStr("TRACK_FORGE_LLM_API_KEY") ?? fileConfig.llmApiKey,
+    llmBaseUrl: envStr("TRACK_FORGE_LLM_BASE_URL") ?? fileConfig.llmBaseUrl,
     llmModel: envStr("TRACK_FORGE_LLM_MODEL") ?? fileConfig.llmModel,
   };
 

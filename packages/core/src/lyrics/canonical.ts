@@ -172,7 +172,8 @@ export function serializeLyrics(doc: LyricsDocument): string {
 // ── Utility: check if doc represents an instrumental track ────────────
 
 export function isInstrumental(doc: LyricsDocument): boolean {
-  return doc.sections.every((s) => s.instrumental || s.lines.length === 0);
+  if (doc.sections.length === 0) return true;
+  return doc.sections.every((s) => s.instrumental);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────

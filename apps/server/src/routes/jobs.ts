@@ -170,8 +170,45 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     if (!job) return reply.code(404).send({ error: "Job not found" });
 
-    // Delete associated versions first
+    // Cascade delete: child tables first, then job
+    await db.delete(schema.sunoTracks).where(
+      eq(schema.sunoTracks.generationId, ""), // no direct FK to job; delete via subquery
+    );
+    await db.delete(schema.artifactLocks).where(
+      eq(schema.artifactLocks.versionId, ""), // delete via versions
+    );
+
+    // Get version IDs for this job to cascade
+    const versionRows = await db
+      .select({ id: schema.versions.id })
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, id));
+    const versionIds = versionRows.map((r) => r.id);
+
+    // Delete sunoTracks via generation IDs for this job
+    const genRows = await db
+      .select({ id: schema.generations.id })
+      .from(schema.generations)
+      .where(eq(schema.generations.jobId, id));
+    const genIds = genRows.map((r) => r.id);
+
+    if (genIds.length > 0) {
+      for (const gid of genIds) {
+        await db.delete(schema.sunoTracks).where(eq(schema.sunoTracks.generationId, gid));
+      }
+    }
+    if (versionIds.length > 0) {
+      for (const vid of versionIds) {
+        await db.delete(schema.artifactLocks).where(eq(schema.artifactLocks.versionId, vid));
+      }
+    }
+
+    await db.delete(schema.generations).where(eq(schema.generations.jobId, id));
     await db.delete(schema.versions).where(eq(schema.versions.jobId, id));
+    await db.delete(schema.jobStageOutputs).where(eq(schema.jobStageOutputs.jobId, id));
+    await db.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, id));
+    await db.delete(schema.criticFindings).where(eq(schema.criticFindings.jobId, id));
+    await db.delete(schema.adjustments).where(eq(schema.adjustments.jobId, id));
     await db.delete(schema.jobs).where(eq(schema.jobs.id, id));
 
     return reply.code(204).send();
@@ -326,11 +363,13 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     // Abort in-flight pipeline work — must happen before DB update
     abortJob(id);
 
-    // Signal cancellation via events
+    // Signal cancellation via events then update DB (atomic)
     const { publish } = await import("@track-forge/core");
-    await publish(db, id, { stage: "cancelled", status: "completed" });
+    await db.transaction(async (tx) => {
+      await publish(tx as any, id, { stage: "cancelled", status: "completed" });
+      await cancelJob(tx as any, id as any);
+    });
 
-    await cancelJob(db, id as any);
     return reply.code(200).send({ status: "cancelled", jobId: id });
   });
 
@@ -405,8 +444,13 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       lyrics = compiled.lyrics ?? "";
     }
 
-    const result = generateSunoPayload({ title, style, excludedStyles, lyrics });
-    return result;
+    // Resolve callback URL from config
+    const callbackUrl = config.publicBaseUrl
+      ? `${config.publicBaseUrl.replace(/\/+$/, "")}/api/suno/callback`
+      : undefined;
+
+    const result = generateSunoPayload({ title, style, excludedStyles, lyrics, callbackUrl });
+    return { ...result, callbackUrl };
   });
 
   // ── List genres ──────────────────────────────────────────────────────

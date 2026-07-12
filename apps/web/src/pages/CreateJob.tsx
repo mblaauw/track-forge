@@ -70,6 +70,8 @@ export function CreateJob() {
     }
   }, [presetId]);
 
+  const selectedGenre = genres.find((g) => g.id === genreId);
+
   // EDM-specific: dynamic family → subgenre options
   const getFieldOptions = () => {
     if (genreId !== "edm") return undefined;
@@ -110,10 +112,27 @@ export function CreateJob() {
   };
 
   return (
-    <div>
-      <h2>Create New Job</h2>
+    <div class="page-shell">
+      <section class="page-hero">
+        <div>
+          <p class="hero-kicker">Create</p>
+          <h2>New Project</h2>
+          <p class="hero-copy">Choose a genre, tune inputs, and keep the reference material close at hand.</p>
+          <div class="hero-metrics">
+            <span class="metric-pill">Genre: {selectedGenre?.name ?? genreId}</span>
+            <span class="metric-pill">Preset: {selectedPreset?.name ?? "Custom"}</span>
+            <span class="metric-pill">Autosaves after create</span>
+          </div>
+        </div>
+      </section>
 
-      <form onSubmit={handleSubmit} class="create-form">
+      <form onSubmit={handleSubmit} class="create-form surface-card">
+        <div class="form-intro">
+          <p class="section-kicker">Project brief</p>
+          <h3>Set up generation inputs</h3>
+          <p class="section-copy">Start with naming, genre, and preset, then fill out the generated controls.</p>
+        </div>
+
         {/* Project name */}
         <div class="form-field">
           <label>Project Name</label>
@@ -125,57 +144,78 @@ export function CreateJob() {
           />
         </div>
 
-        {/* Genre selection */}
-        <div class="form-field">
-          <label>Genre</label>
-          <select value={genreId} onChange={(e) => setGenreId((e.target as HTMLSelectElement).value)}>
-            {genres.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Preset selection */}
-        {mod && mod.presets.length > 0 && (
+        <div class="form-grid">
+          {/* Genre selection */}
           <div class="form-field">
-            <label>Preset</label>
-            <select value={presetId} onChange={(e) => setPresetId((e.target as HTMLSelectElement).value)}>
-              <option value="">— Custom —</option>
-              {mod.presets.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
+            <label>Genre</label>
+            <select value={genreId} onChange={(e) => setGenreId((e.target as HTMLSelectElement).value)}>
+              {genres.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
                 </option>
               ))}
             </select>
-            {selectedPreset && <p class="hint">{selectedPreset.description}</p>}
           </div>
-        )}
+
+          {/* Preset selection */}
+          {mod && mod.presets.length > 0 && (
+            <div class="form-field">
+              <label>Preset</label>
+              <select value={presetId} onChange={(e) => setPresetId((e.target as HTMLSelectElement).value)}>
+                <option value="">— Custom —</option>
+                {mod.presets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              {selectedPreset && <p class="hint">{selectedPreset.description}</p>}
+            </div>
+          )}
+        </div>
 
         {/* Dynamic inputs from genre module */}
         {mod && (
-          <DynamicForm fields={mod.form} values={inputs} onChange={handleChange} fieldOptions={getFieldOptions()} />
+          <div class="form-section">
+            <div class="form-section-header">
+              <div>
+                <p class="section-kicker">Genre controls</p>
+                <h3>Style and structure</h3>
+              </div>
+            </div>
+            <DynamicForm fields={mod.form} values={inputs} onChange={handleChange} fieldOptions={getFieldOptions()} />
+          </div>
         )}
 
         {/* Reference */}
-        <div class="form-field">
-          <label>Reference Tracks / Lyrics</label>
-          <textarea
-            rows={3}
-            value={reference}
-            onInput={(e) => setReference((e.target as HTMLTextAreaElement).value)}
-            placeholder="Optional reference material…"
-          />
+        <div class="form-section">
+          <div class="form-section-header">
+            <div>
+              <p class="section-kicker">Reference</p>
+              <h3>Tracks, lyrics, or notes</h3>
+              <p class="section-copy">Optional source material helps the pipeline keep direction and tone aligned.</p>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Reference Tracks / Lyrics</label>
+            <textarea
+              rows={3}
+              value={reference}
+              onInput={(e) => setReference((e.target as HTMLTextAreaElement).value)}
+              placeholder="Optional reference material…"
+            />
+          </div>
         </div>
 
         {error && <p class="error">{error}</p>}
 
-        <div class="form-actions">
+        <div class="form-actions form-actions-spread">
           <button type="submit" class="btn btn-primary" disabled={submitting}>
             {submitting ? "Creating…" : "Create Job"}
           </button>
-          {createdJobId && <AutoSaveIndicator status={autoSaveStatus} />}
+          <div class="form-actions-meta">
+            {createdJobId ? <AutoSaveIndicator status={autoSaveStatus} /> : <span class="muted">Autosave starts after creation.</span>}
+          </div>
         </div>
       </form>
     </div>

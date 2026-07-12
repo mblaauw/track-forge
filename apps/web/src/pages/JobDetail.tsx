@@ -29,14 +29,14 @@ import { StatusBadge, StageIndicator } from "../components/DynamicForm";
 // ── Pipeline stage definitions ──────────────────────────────────────
 
 const PIPELINE_STAGES = [
-  { id: "ref_interpretation", label: "Reference", icon: "📄" },
-  { id: "planning", label: "Planning", icon: "📋" },
-  { id: "style_writing", label: "Style Writing", icon: "🎨" },
-  { id: "compilation", label: "Compilation", icon: "⚙️" },
-  { id: "review", label: "Review", icon: "🔍" },
-  { id: "revision", label: "Revision", icon: "✏️" },
-  { id: "verification", label: "Verification", icon: "✅" },
-  { id: "versioning", label: "Versioning", icon: "📦" },
+  { id: "ref_interpretation", label: "Reference", icon: "ph-waves" },
+  { id: "planning", label: "Planning", icon: "ph-notebook" },
+  { id: "style_writing", label: "Style Writing", icon: "ph-palette" },
+  { id: "compilation", label: "Compilation", icon: "ph-gear" },
+  { id: "review", label: "Review", icon: "ph-magnifying-glass" },
+  { id: "revision", label: "Revision", icon: "ph-pencil-line" },
+  { id: "verification", label: "Verification", icon: "ph-seal-check" },
+  { id: "versioning", label: "Versioning", icon: "ph-package" },
 ] as const;
 
 // ── JobDetail / Studio Shell ────────────────────────────────────────
@@ -231,7 +231,7 @@ export function JobDetail() {
 
             return (
               <div class={cls} key={stage.id}>
-                <span class="stage-icon">{stage.icon}</span>
+                <span class="stage-icon"><i class={`ph ${stage.icon}`}></i></span>
                 <span class="stage-label">{stage.label}</span>
                 {isLive && <span class="pulse-dot" />}
                 {isDone && <span class="check-mark">✓</span>}

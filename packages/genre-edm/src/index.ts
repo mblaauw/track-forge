@@ -7,7 +7,7 @@
 
 import type { GenreModule } from "@track-forge/genre-core";
 import type { EdmInputs, EdmBlueprint } from "./schema.js";
-import { EdmInputSchema, EdmBlueprintSchema, EDM_DEFAULTS } from "./schema.js";
+import { EdmInputSchema, EdmBlueprintSchema, EDM_DEFAULTS, compileBlueprint } from "./schema.js";
 import { EDM_FORM_FIELDS } from "./schema.js";
 import { EDM_PRESETS } from "./presets.js";
 import { createEdmRenderers } from "./renderers.js";
@@ -16,7 +16,7 @@ import { EDM_VALIDATORS } from "./validators.js";
 
 // ── Re-exports ────────────────────────────────────────────────────────
 
-export { EdmInputSchema, EdmBlueprintSchema, EDM_DEFAULTS } from "./schema.js";
+export { EdmInputSchema, EdmBlueprintSchema, EDM_DEFAULTS, compileBlueprint as edmCompileBlueprint } from "./schema.js";
 export type { EdmInputs, EdmBlueprint } from "./schema.js";
 export { EDM_PRESETS } from "./presets.js";
 export { EDM_CRITICS } from "./critics.js";
@@ -91,11 +91,12 @@ export const edmModule: GenreModule<EdmInputs, EdmBlueprint> = {
   presets: EDM_PRESETS,
   promptFragments: {
     title: "Generate a short, memorable title for an EDM track in {{subgenre}} style. Mood: {{mood}}. Keep it to 1-4 words.",
-    style: "Describe the musical style for a {{subgenre}} track. Include energy level, key characteristics, and arrangement approach.",
-    lyrics_instrumental: "Generate instrumental arrangement tags for a {{subgenre}} track with sections: intro, build, drop, breakdown, outro.",
+    style: "Describe the musical style for a {{subgenre}} track. Include energy level, key characteristics, and arrangement approach.\n{{nlAdjustments}}",
+    lyrics_instrumental: "Generate instrumental arrangement tags for a {{subgenre}} track with sections: intro, build, drop, breakdown, outro.\n{{nlAdjustments}}",
     lyrics_full: "Write lyrics for a {{subgenre}} dance track. Include verse, chorus, bridge structure with a strong hook.",
     excluded: "List styles and elements to exclude when generating a {{subgenre}} track.",
   },
+  compileBlueprint: compileBlueprint,
   renderers: createEdmRenderers(),
   critics: EDM_CRITICS,
   validators: EDM_VALIDATORS,

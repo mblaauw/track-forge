@@ -4,13 +4,17 @@ const API_BASE =
     : "");
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
+  const hasBody = !!(init?.body && typeof init.body === "string" && init.body.length > 0);
   const res = await fetch(`${API_BASE}${url}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: { ...(hasBody ? { "Content-Type": "application/json" } : {}), ...init?.headers },
     ...init,
   });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${body}`);
+  }
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
+    return undefined as unknown as Promise<T>;
   }
   return res.json() as Promise<T>;
 }

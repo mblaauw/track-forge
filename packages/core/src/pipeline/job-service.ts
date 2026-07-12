@@ -17,6 +17,8 @@ import type {
 } from "@track-forge/contracts";
 
 /** Subset of PipelineState that can be persisted/restored */
+import type { LyricsFormat } from "@track-forge/contracts";
+
 export interface StageData {
   interpretedRef?: InterpretedReference | null;
   songPlan?: string | null;
@@ -25,6 +27,7 @@ export interface StageData {
   compiledJson?: string | null;
   findings?: unknown[] | null;
   appliedPatch?: string | null;
+  lyricsFormat?: LyricsFormat | null;
 }
 
 // ── Job CRUD ──────────────────────────────────────────────────────────

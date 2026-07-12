@@ -82,12 +82,17 @@ describe("VersionStatus const map", () => {
 });
 
 describe("SunoArtifactType const map", () => {
-  it("has 4 artifact types", () => {
-    expect(Object.keys(SunoArtifactType)).toHaveLength(4);
+  it("has 9 artifact types", () => {
+    expect(Object.keys(SunoArtifactType)).toHaveLength(9);
     expect(SunoArtifactType.Title).toBe("title");
     expect(SunoArtifactType.Style).toBe("style");
     expect(SunoArtifactType.ExcludedStyles).toBe("excluded_styles");
     expect(SunoArtifactType.Lyrics).toBe("lyrics");
+    expect(SunoArtifactType.Bpm).toBe("bpm");
+    expect(SunoArtifactType.Key).toBe("key");
+    expect(SunoArtifactType.VocalDescription).toBe("vocal_description");
+    expect(SunoArtifactType.NegativeTags).toBe("negative_tags");
+    expect(SunoArtifactType.PatchNotes).toBe("patch_notes");
   });
 });
 

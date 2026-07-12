@@ -97,6 +97,37 @@ export interface ArrangementSection {
   tags: string[];
 }
 
+/** Compile user inputs into full blueprint shape */
+export function compileBlueprint(inputs: EdmInputs): EdmBlueprint {
+  const arrangement = buildDefaultArrangement(inputs.energy, inputs.complexity);
+  const tags = [...inputs.customTags, "electronic"];
+  const negativeTags: string[] = [];
+  if (inputs.lyricsMode !== "full_lyrics") negativeTags.push("vocals", "singing", "lyrics", "voice");
+
+  const styleClauses = [
+    { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
+    { key: "bpm", value: String(inputs.bpm), order: 1 },
+    { key: "mood", value: inputs.mood, order: 2 },
+    { key: "energy", value: String(inputs.energy), order: 3 },
+    { key: "complexity", value: String(inputs.complexity), order: 4 },
+  ];
+
+  return EdmBlueprintSchema.parse({
+    subgenre: inputs.subgenre,
+    bpm: inputs.bpm,
+    key: inputs.key,
+    scale: inputs.scale,
+    mood: inputs.mood,
+    energy: inputs.energy,
+    complexity: inputs.complexity,
+    lyricsMode: inputs.lyricsMode,
+    arrangement,
+    styleClauses,
+    tags,
+    negativeTags,
+  });
+}
+
 /** Build standard EDM arrangement based on subgenre characteristics */
 export function buildDefaultArrangement(
   energy: number,

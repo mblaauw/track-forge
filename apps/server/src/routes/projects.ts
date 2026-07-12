@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, count } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
@@ -11,23 +11,6 @@ export interface ProjectRouteDeps {
 
 export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRouteDeps): void {
   const { db } = deps;
-
-  // ── List projects ──────────────────────────────────────────────────────
-
-  server.get("/api/projects", async (req) => {
-    const query = req.query as { limit?: string; offset?: string };
-    const limit = Math.min(parseInt(query.limit ?? "20", 10) || 20, 100);
-    const offset = parseInt(query.offset ?? "0", 10) || 0;
-
-    const rows = await db
-      .select()
-      .from(schema.projects)
-      .orderBy(desc(schema.projects.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    return rows;
-  });
 
   // ── Get project ────────────────────────────────────────────────────────
 
@@ -42,6 +25,50 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
 
     if (!project) return reply.code(404).send({ error: "Project not found" });
     return project;
+  });
+
+  // ── Project stats (aggregated across jobs) ──────────────────────────────
+
+  server.get("/api/projects/:id/stats", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [project] = await db
+      .select()
+      .from(schema.projects)
+      .where(eq(schema.projects.id, id))
+      .limit(1);
+
+    if (!project) return reply.code(404).send({ error: "Project not found" });
+
+    const [totalJobs] = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(eq(schema.jobs.projectId, id));
+
+    const [draftCount] = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(schema.projectDrafts)
+      .where(eq(schema.projectDrafts.projectId, id));
+
+    const statusRows = await db
+      .select({ status: schema.jobs.status, count: sql<number>`count(*)` })
+      .from(schema.jobs)
+      .where(eq(schema.jobs.projectId, id))
+      .groupBy(schema.jobs.status);
+
+    const [latestJob] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.projectId, id))
+      .orderBy(desc(schema.jobs.createdAt))
+      .limit(1);
+
+    return {
+      totalJobs: Number(totalJobs?.value ?? 0),
+      draftCount: Number(draftCount?.value ?? 0),
+      jobsByStatus: Object.fromEntries(statusRows.map((r) => [r.status, Number(r.count)])),
+      latestActivity: latestJob?.updatedAt ?? null,
+    };
   });
 
   // ── Create project ─────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ const sunoCfg = createSunoClientConfig(config);
 const suno = new SunoClient(sunoCfg, config, logger.child({ module: "suno" }));
 const llm = createLlmClient(config);
 
-const server = Fastify({ logger });
+const server = Fastify({ logger: { level: config.logLevel } });
 const lockService = createLockService(db);
 
 // ── Periodic lock cleanup ──────────────────────────────────────────

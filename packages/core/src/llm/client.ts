@@ -4,12 +4,13 @@ import { PROVIDER_DEFAULTS } from "./types.js";
 
 // ── Factory ──────────────────────────────────────────────────────────
 
-export function createLlmClient(config: Pick<Config, "llmProvider" | "llmApiKey" | "llmModel">): LlmClient {
-  const model = config.llmModel ?? PROVIDER_DEFAULTS[config.llmProvider].baseUrl;
+export function createLlmClient(config: Pick<Config, "llmProvider" | "llmApiKey" | "llmBaseUrl" | "llmModel">): LlmClient {
+  const model = config.llmModel ?? "gpt-4o";
+  const baseUrl = config.llmBaseUrl ?? PROVIDER_DEFAULTS[config.llmProvider]?.baseUrl ?? "http://localhost:11434";
   const providerConfig: ProviderConfig = {
     provider: config.llmProvider,
     apiKey: config.llmApiKey,
-    baseUrl: PROVIDER_DEFAULTS[config.llmProvider].baseUrl,
+    baseUrl,
     model,
   };
   return new LlmClient(providerConfig);
@@ -27,6 +28,7 @@ export class LlmClient {
   async complete(req: LlmRequest): Promise<LlmResponse> {
     switch (this.cfg.provider) {
       case "openai":
+      case "openai-compatible":
         return this.openaiComplete(req);
       case "anthropic":
         return this.anthropicComplete(req);
@@ -38,43 +40,52 @@ export class LlmClient {
   // ── OpenAI ───────────────────────────────────────────────────────
 
   private async openaiComplete(req: LlmRequest): Promise<LlmResponse> {
-    const res = await fetch(`${this.cfg.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.cfg.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.cfg.model,
-        messages: req.messages,
-        temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 2048,
-      }),
-      signal: req.signal,
-    });
+    const timeoutController = new AbortController();
+    const timeout = setTimeout(() => timeoutController.abort(new Error("Request timed out")), 180_000);
+    const combinedSignal = combineSignals(req.signal, timeoutController.signal);
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
+    try {
+      const res = await fetch(`${this.cfg.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.cfg.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.cfg.model,
+          messages: req.messages,
+          temperature: req.temperature ?? 0.7,
+          max_tokens: req.maxTokens ?? 8192,
+        }),
+        signal: combinedSignal,
+      });
+
+      clearTimeout(timeout);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
+      }
+
+      const json = (await res.json()) as {
+        choices: { message: { content: string } }[];
+        model: string;
+        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+      };
+
+      return {
+        content: json.choices[0]?.message?.content ?? "",
+        model: json.model,
+        usage: json.usage
+          ? {
+              promptTokens: json.usage.prompt_tokens,
+              completionTokens: json.usage.completion_tokens,
+              totalTokens: json.usage.total_tokens,
+            }
+          : undefined,
+      };
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const json = (await res.json()) as {
-      choices: { message: { content: string } }[];
-      model: string;
-      usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-    };
-
-    return {
-      content: json.choices[0]?.message?.content ?? "",
-      model: json.model,
-      usage: json.usage
-        ? {
-            promptTokens: json.usage.prompt_tokens,
-            completionTokens: json.usage.completion_tokens,
-            totalTokens: json.usage.total_tokens,
-          }
-        : undefined,
-    };
   }
 
   // ── Anthropic ────────────────────────────────────────────────────
@@ -95,7 +106,7 @@ export class LlmClient {
         system: systemMsg?.content,
         messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
         temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 2048,
+        max_tokens: req.maxTokens ?? 4096,
       }),
       signal: req.signal,
     });
@@ -134,7 +145,7 @@ export class LlmClient {
         model: this.cfg.model,
         messages: req.messages,
         temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 2048,
+        max_tokens: req.maxTokens ?? 4096,
         stream: false,
       }),
       signal: req.signal,
@@ -155,6 +166,21 @@ export class LlmClient {
       model: json.model,
     };
   }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+/** Combine two AbortSignals into one — fires when either aborts */
+function combineSignals(s1: AbortSignal | undefined, s2: AbortSignal): AbortSignal {
+  if (!s1) return s2;
+  const c = new AbortController();
+  const onAbort = () => {
+    const reason = s1.aborted ? s1.reason : s2.reason;
+    c.abort(reason);
+  };
+  s1.addEventListener("abort", onAbort, { once: true });
+  s2.addEventListener("abort", onAbort, { once: true });
+  return c.signal;
 }
 
 // ── Error ────────────────────────────────────────────────────────────
