@@ -82,18 +82,35 @@ Create a production plan including arrangement, instrumentation, and vocal appro
 Subgenre: {{subgenre}} | BPM: {{bpm}} | Key: {{key}} {{scale}}
 Narrative: {{narrativeArc}} | Production: {{productionStyle}}
 Energy: {{energy}}/10 | Complexity: {{complexity}}/10
-Produce a concise, Suno-compatible style prompt.`,
+Produce a concise, Suno-compatible style prompt.
+
+Return your answer as valid JSON matching this schema:
+{
+  "titleCandidates": ["suggested title 1", "suggested title 2"],
+  "descriptiveStyle": "the style description text",
+  "negativeTags": ["tag_to_avoid"],
+  "bpm": 140,
+  "key": "C",
+  "vocalDescription": "vocal style notes"
+}`,
 
   lyrics_writing: `Write Hip-Hop lyrics for {{subgenre}}.
 Narrative: {{narrativeArc}} | Flow: {{flowPattern}} | Delivery: {{delivery}}
 Energy: {{energy}}/10 | Complexity: {{complexity}}/10
 Song structure: {{songStructure}}
 Write {{lyricsMode}} lyrics following the structure.
-${
-  "" /* 
-  Note: The lyrics_writing prompt references lyricsMode which
-  determines whether to write lyrics or instrumental markers.
-  */
+
+Return your answer as valid JSON matching this schema:
+{
+  "document": {
+    "bpm": 140,
+    "key": "Am",
+    "genre": "Hip-Hop",
+    "sections": [
+      { "type": "verse", "lines": ["line 1", "line 2"], "bars": 8, "tags": [], "instrumental": false }
+    ],
+    "metadata": {}
+  }
 }`,
 
   review: `Review the generated Hip-Hop track for quality and coherence.

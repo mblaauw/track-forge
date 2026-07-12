@@ -40,6 +40,15 @@ export const versions = sqliteTable("versions", {
   createdAt: text("created_at").notNull(),
 });
 
+export const jobStageOutputs = sqliteTable("job_stage_outputs", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id").notNull().references(() => jobs.id),
+  stage: text("stage").notNull(),
+  outputJson: text("output_json").notNull(),
+  promptManifestJson: text("prompt_manifest_json"),
+  completedAt: text("completed_at").notNull(),
+});
+
 export const generations = sqliteTable("generations", {
   /** Suno generation ID */
   id: text("id").primaryKey(),

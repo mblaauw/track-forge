@@ -12,14 +12,16 @@ import type {
   VersionStatus,
   SunoArtifact,
   InterpretedReference,
+  StyleWriterResult,
+  LyricsWriterResult,
 } from "@track-forge/contracts";
 
 /** Subset of PipelineState that can be persisted/restored */
 export interface StageData {
   interpretedRef?: InterpretedReference | null;
   songPlan?: string | null;
-  rawStyle?: string | null;
-  rawLyrics?: string | null;
+  styleWriterResult?: StyleWriterResult | null;
+  lyricsWriterResult?: LyricsWriterResult | null;
   compiledJson?: string | null;
   findings?: unknown[] | null;
   appliedPatch?: string | null;

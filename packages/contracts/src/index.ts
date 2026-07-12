@@ -91,6 +91,21 @@ export interface LyricsDocument {
   metadata: Record<string, string>;
 }
 
+// ── Writer stage results ────────────────────────────────────────
+
+export interface StyleWriterResult {
+  titleCandidates: string[];
+  descriptiveStyle: string;
+  negativeTags: string[];
+  bpm: number | null;
+  key: string | null;
+  vocalDescription: string;
+}
+
+export interface LyricsWriterResult {
+  document: LyricsDocument;
+}
+
 export type LyricsFormat = "strict_instrumental" | "guided_instrumental" | "full_lyrics";
 
 export const SunoInstrumentalMode = {

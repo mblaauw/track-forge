@@ -1,4 +1,4 @@
-import type { Job, Config, InterpretedReference, GenerationStage } from "@track-forge/contracts";
+import type { Job, Config, InterpretedReference, GenerationStage, StyleWriterResult, LyricsWriterResult } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { Db } from "../db/index.js";
 import type { LlmClient } from "../llm/index.js";
@@ -20,8 +20,8 @@ export interface PipelineState {
   // Stage outputs — null until produced
   interpretedRef: InterpretedReference | null;
   songPlan: string | null;
-  rawStyle: string | null;
-  rawLyrics: string | null;
+  styleWriterResult: StyleWriterResult | null;
+  lyricsWriterResult: LyricsWriterResult | null;
   compiledJson: string | null; // serialized CompiledStyle
   findings: unknown[] | null; // serialized CriticFinding[]
   appliedPatch: string | null; // serialized SurgicalPatch

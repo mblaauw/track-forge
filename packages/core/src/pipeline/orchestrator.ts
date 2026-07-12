@@ -6,6 +6,8 @@ import {
   type PatchType,
   type SunoArtifact,
   type SunoArtifactType,
+  type StyleWriterResult,
+  type LyricsWriterResult,
   CriticSeverity,
   AutoFixPolicy,
 } from "@track-forge/contracts";
@@ -140,10 +142,13 @@ async function handleWriting(
     }),
   ]);
 
+  const styleWriterResult = tryParseStyleResult(styleResult.content);
+  const lyricsWriterResult = tryParseLyricsResult(lyricsResult.content);
+
   return {
     ...state,
-    rawStyle: styleResult.content,
-    rawLyrics: lyricsResult.content,
+    styleWriterResult,
+    lyricsWriterResult,
   };
 }
 
@@ -153,9 +158,9 @@ async function handleCompilation(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const { job, module, rawStyle, rawLyrics, songPlan, interpretedRef } = state;
-  if (!rawStyle || !rawLyrics) {
-    throw new Error("Pipeline state missing style/lyrics before compilation");
+  const { job, module, styleWriterResult, lyricsWriterResult, songPlan, interpretedRef } = state;
+  if (!styleWriterResult || !lyricsWriterResult) {
+    throw new Error("Pipeline state missing style/lyrics results before compilation");
   }
 
   const bp = parseBlueprint(job, module) as Record<string, unknown>;
@@ -171,18 +176,18 @@ async function handleCompilation(
     interpretedRef,
     nlAdjustments: state.nlAdjustments,
   });
-  context.rawStyle = rawStyle;
-  context.rawLyrics = rawLyrics;
+  context.styleDescription = styleWriterResult.descriptiveStyle;
+  context.lyricsDocument = JSON.stringify(lyricsWriterResult.document);
   context.songPlan = songPlan ?? "";
   context.compilation = JSON.stringify(bp);
 
   // Run any compile-time fragments first (resolves {{placeholders}} in compilation fragments)
   assembler.resolvePrompt("compilation", context);
 
-  // Deterministic compilation from blueprint via renderers
-  const styleText = module.renderers.style(bp);
+  // Blend structured writer results into compiled artifacts
+  const styleText = styleWriterResult.descriptiveStyle || module.renderers.style(bp);
   const excludedText = module.renderers.excludedStyles(bp);
-  const titleText = module.renderers.title(bp);
+  const titleText = styleWriterResult.titleCandidates[0] ?? module.renderers.title(bp);
   const lyricsText = module.renderers.lyrics(bp);
 
   const compiled: Record<string, string> = {
@@ -193,32 +198,6 @@ async function handleCompilation(
   };
 
   let compiledJson = JSON.stringify(compiled);
-
-  // ── Optional refinement: blend raw LLM output into compiled artifacts ──
-  if (rawStyle || rawLyrics) {
-    const refinerPrompt = assembler.resolvePrompt("compilation_refinement", {
-      ...context,
-      compiledJson,
-      rawStyle: rawStyle ?? "",
-      rawLyrics: rawLyrics ?? "",
-      songPlan: songPlan ?? "",
-    });
-    if (refinerPrompt) {
-      const response = await deps.llm.complete({
-        messages: [{ role: "user", content: refinerPrompt }],
-        temperature: 0.5,
-      });
-      try {
-        const refined = JSON.parse(response.content) as Record<string, string>;
-        // Validate refined output has all required fields
-        if (refined.title && refined.style && refined.lyrics !== undefined) {
-          compiledJson = JSON.stringify(refined);
-        }
-      } catch {
-        // LLM returned invalid JSON — fall back to renderer output
-      }
-    }
-  }
 
   // Run blueprint validators
   const blueprintErrors = module.validators.blueprint(bp as Record<string, unknown>);
@@ -248,8 +227,8 @@ async function handleReview(
     nlAdjustments: state.nlAdjustments,
   });
   context.compiledJson = compiledJson;
-  context.rawStyle = state.rawStyle ?? "";
-  context.rawLyrics = state.rawLyrics ?? "";
+  context.styleResult = state.styleWriterResult ? JSON.stringify(state.styleWriterResult) : "";
+  context.lyricsResult = state.lyricsWriterResult ? JSON.stringify(state.lyricsWriterResult.document) : "";
   context.songPlan = state.songPlan ?? "";
 
   let useFullCritics = false;
@@ -438,8 +417,8 @@ export async function runPipeline(
     module,
     interpretedRef: null,
     songPlan: null,
-    rawStyle: null,
-    rawLyrics: null,
+    styleWriterResult: null,
+    lyricsWriterResult: null,
     compiledJson: null,
     findings: null,
     appliedPatch: null,
@@ -454,8 +433,8 @@ export async function runPipeline(
       ...state,
       interpretedRef: saved.interpretedRef ?? null,
       songPlan: saved.songPlan ?? null,
-      rawStyle: saved.rawStyle ?? null,
-      rawLyrics: saved.rawLyrics ?? null,
+      styleWriterResult: saved.styleWriterResult ?? null,
+      lyricsWriterResult: saved.lyricsWriterResult ?? null,
       compiledJson: saved.compiledJson ?? null,
       findings: saved.findings ?? null,
       appliedPatch: saved.appliedPatch ?? null,
@@ -491,8 +470,8 @@ export async function runPipeline(
       const stageData: StageData = {
         interpretedRef: state.interpretedRef,
         songPlan: state.songPlan,
-        rawStyle: state.rawStyle,
-        rawLyrics: state.rawLyrics,
+        styleWriterResult: state.styleWriterResult,
+        lyricsWriterResult: state.lyricsWriterResult,
         compiledJson: state.compiledJson,
         findings: state.findings as unknown[] | null | undefined,
         appliedPatch: state.appliedPatch,
@@ -556,6 +535,48 @@ function parseBlueprint(job: Job, module: GenreModule): unknown {
   } catch {
     return {};
   }
+}
+
+function tryParseStyleResult(content: string): StyleWriterResult {
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.titleCandidates)) {
+      return {
+        titleCandidates: parsed.titleCandidates ?? [],
+        descriptiveStyle: String(parsed.descriptiveStyle ?? parsed.style ?? ""),
+        negativeTags: Array.isArray(parsed.negativeTags) ? parsed.negativeTags : [],
+        bpm: typeof parsed.bpm === "number" ? parsed.bpm : null,
+        key: typeof parsed.key === "string" ? parsed.key : null,
+        vocalDescription: String(parsed.vocalDescription ?? parsed.vocal ?? ""),
+      };
+    }
+  } catch { /* not JSON */ }
+  return {
+    titleCandidates: [],
+    descriptiveStyle: content,
+    negativeTags: [],
+    bpm: null,
+    key: null,
+    vocalDescription: "",
+  };
+}
+
+function tryParseLyricsResult(content: string): LyricsWriterResult {
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed && typeof parsed === "object" && parsed.document) {
+      return { document: parsed.document };
+    }
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.sections)) {
+      return { document: parsed as any };
+    }
+  } catch { /* not JSON */ }
+  return {
+    document: {
+      sections: [],
+      metadata: {},
+    },
+  };
 }
 
 
