@@ -1,0 +1,121 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SunoClient.submit > includes callBackUrl when publicBaseUrl is configured 1`] = `
+{
+  "callBackUrl": "https://myapp.example.com/api/suno/callback",
+  "customMode": true,
+  "instrumental": false,
+  "model": "V4_5ALL",
+  "prompt": "Lyrics",
+  "style": "Style",
+  "title": "Callback Track",
+}
+`;
+
+exports[`SunoClient.submit > includes optional fields when provided 1`] = `
+{
+  "audioWeight": 0.7,
+  "callBackUrl": "https://hook.example.com/callback",
+  "customMode": true,
+  "instrumental": false,
+  "model": "V4_5ALL",
+  "negativeTags": "slow, ballad",
+  "prompt": "Lyrics",
+  "style": "Style",
+  "styleWeight": 0.5,
+  "title": "Track",
+  "vocalGender": "f",
+  "weirdnessConstraint": 0.3,
+}
+`;
+
+exports[`SunoClient.submit > includes persona fields when personaId provided 1`] = `
+{
+  "customMode": true,
+  "instrumental": false,
+  "model": "V4_5ALL",
+  "personaId": "pers-001",
+  "personaModel": "style_persona",
+  "prompt": "Lyrics",
+  "style": "Style",
+  "title": "Persona Track",
+}
+`;
+
+exports[`SunoClient.submit > sends POST /api/v1/generate with expected body 1`] = `
+{
+  "customMode": true,
+  "instrumental": false,
+  "model": "V4_5ALL",
+  "prompt": "[Verse]
+Hello world",
+  "style": "Deep house, warm pads",
+  "title": "Test Track",
+}
+`;
+
+exports[`normalizeTaskResponse > ERROR status with error message 1`] = `
+{
+  "error": "Failed to create task",
+  "id": "task-003",
+  "status": "error",
+  "taskId": "task-003",
+}
+`;
+
+exports[`normalizeTaskResponse > PENDING status 1`] = `
+{
+  "error": undefined,
+  "id": "task-002",
+  "status": "queued",
+  "taskId": "task-002",
+}
+`;
+
+exports[`normalizeTaskResponse > SUCCESS status with one song 1`] = `
+{
+  "audioUrl": "https://cdn.example.com/audio.mp3",
+  "createdAt": "2025-01-01T00:00:00Z",
+  "duration": 180,
+  "error": undefined,
+  "id": "song-001",
+  "imageUrl": "https://cdn.example.com/image.png",
+  "lyrics": "[Verse]
+Hello",
+  "modelVersion": "V4_5",
+  "status": "completed",
+  "style": "deep house, warm",
+  "tags": "deep house, warm",
+  "taskId": "task-001",
+  "title": "My Song",
+  "videoUrl": "https://cdn.example.com/video.mp4",
+}
+`;
+
+exports[`normalizeTaskResponse > TEXT_SUCCESS status maps to processing 1`] = `
+{
+  "audioUrl": undefined,
+  "createdAt": undefined,
+  "duration": undefined,
+  "error": undefined,
+  "id": "song-005",
+  "imageUrl": undefined,
+  "lyrics": undefined,
+  "modelVersion": undefined,
+  "status": "processing",
+  "style": undefined,
+  "tags": undefined,
+  "taskId": "task-005",
+  "title": undefined,
+  "videoUrl": undefined,
+}
+`;
+
+exports[`normalizeTaskResponse > empty sunoData array 1`] = `
+{
+  "error": undefined,
+  "id": "task-004",
+  "status": "completed",
+  "taskId": "task-004",
+}
+`;

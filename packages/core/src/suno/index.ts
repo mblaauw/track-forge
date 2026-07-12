@@ -1,4 +1,4 @@
-export { SunoClient, createSunoClientConfig } from "./client.js";
+export { SunoClient, createSunoClientConfig, normalizeTaskResponse } from "./client.js";
 export { resolveCallbackUrl, resolveCompletionMode } from "./callbacks.js";
 export type { CompletionMode } from "./callbacks.js";
 export {

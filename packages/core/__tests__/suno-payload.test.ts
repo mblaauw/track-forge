@@ -230,3 +230,57 @@ describe("payloadToLog", () => {
     expect(log.model).toBe("V4_5ALL");
   });
 });
+
+// ── Snapshot tests ─────────────────────────────────────────────────
+
+describe("generateSunoPayload snapshots", () => {
+  it("minimal input", () => {
+    const result = generateSunoPayload(MIN_INPUT);
+    expect(result).toMatchSnapshot();
+  });
+
+  it("with explicit model version", () => {
+    const result = generateSunoPayload({
+      ...MIN_INPUT,
+      modelVersion: "V4",
+    });
+    expect(result).toMatchSnapshot();
+  });
+
+  it("with callback URL", () => {
+    const result = generateSunoPayload({
+      ...MIN_INPUT,
+      callbackUrl: "https://example.com/callback",
+    });
+    expect(result).toMatchSnapshot();
+  });
+
+  it("instrumental mode (empty lyrics)", () => {
+    const result = generateSunoPayload({
+      ...MIN_INPUT,
+      lyrics: "",
+    });
+    expect(result.request.prompt).toBeUndefined();
+    expect(result.request.instrumental).toBe(true);
+    expect(result).toMatchSnapshot();
+  });
+
+  it("with genre transform", () => {
+    const result = generateSunoPayload({
+      ...MIN_INPUT,
+      genreTransform: { genreId: "edm", bpm: 128, mood: "dark", energy: 8 },
+    });
+    expect(result).toMatchSnapshot();
+  });
+
+  it("with truncation warnings", () => {
+    const result = generateSunoPayload({
+      ...MIN_INPUT,
+      style: "X".repeat(3000),
+      lyrics: "Y".repeat(6000),
+      excludedStyles: "Z".repeat(1000),
+    });
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result).toMatchSnapshot();
+  });
+});

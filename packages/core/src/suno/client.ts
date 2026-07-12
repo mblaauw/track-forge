@@ -195,7 +195,7 @@ const TASK_STATUS_MAP: Record<string, SunoGenerationStatus> = {
   SENSITIVE_WORD_ERROR: "error",
 };
 
-function normalizeTaskResponse(
+export function normalizeTaskResponse(
   taskId: string,
   data: {
     taskId: string;
