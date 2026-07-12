@@ -437,34 +437,34 @@ export async function runPipeline(
     return { success: false, jobId, versionId: null, error: "Job not found" };
   }
 
-  let state: PipelineState = {
+  // Seed from job columns so resumed/cancelled runs pick up persisted artifacts
+  const initialState: PipelineState = {
     job,
     module,
     interpretedRef: null,
     songPlan: null,
     styleWriterResult: null,
     lyricsWriterResult: null,
-    compiledJson: null,
-    findings: null,
+    compiledJson: job.compiledJson ?? null,
+    findings: job.findings ? JSON.parse(job.findings) as unknown[] : null,
     appliedPatch: null,
     versionId: null,
     nlAdjustments: parseControlDescriptors(job.nlAdjustments),
   };
 
-  // Restore persisted pipeline state if available
+  // Override with persisted stage-level state if available
   const saved = await loadPipelineState(deps.db, job.id as any);
   if (saved) {
-    state = {
-      ...state,
-      interpretedRef: saved.interpretedRef ?? null,
-      songPlan: saved.songPlan ?? null,
-      styleWriterResult: saved.styleWriterResult ?? null,
-      lyricsWriterResult: saved.lyricsWriterResult ?? null,
-      compiledJson: saved.compiledJson ?? null,
-      findings: saved.findings ?? null,
-      appliedPatch: saved.appliedPatch ?? null,
-    };
+    initialState.compiledJson = saved.compiledJson ?? initialState.compiledJson;
+    initialState.interpretedRef = saved.interpretedRef ?? null;
+    initialState.songPlan = saved.songPlan ?? null;
+    initialState.styleWriterResult = saved.styleWriterResult ?? null;
+    initialState.lyricsWriterResult = saved.lyricsWriterResult ?? null;
+    initialState.findings = saved.findings ?? (initialState.findings ?? null);
+    initialState.appliedPatch = saved.appliedPatch ?? null;
   }
+
+  let state = initialState;
 
   const stageHandlers: Record<string, (s: PipelineState, d: PipelineDeps) => Promise<PipelineState>> = {
     ref_interpretation: handleRefInterpretation,
