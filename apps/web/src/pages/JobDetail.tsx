@@ -5,6 +5,7 @@ import {
   renameJob,
   fetchVersions,
   connectJobEvents,
+  updateArtifact,
   type JobInfo,
   type VersionInfo,
   type ProgressEvent,
@@ -39,6 +40,7 @@ export function JobDetail() {
   const [liveStage, setLiveStage] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [nameInput, setNameInput] = useState("");
+  const [selectedVersion, setSelectedVersion] = useState<VersionInfo | null>(null);
   const closeSseRef = useRef<(() => void) | null>(null);
 
   const load = () => {
@@ -48,6 +50,7 @@ export function JobDetail() {
         setJob(j);
         setVersions(v);
         setNameInput(j.name ?? "");
+        if (v.length > 0 && !selectedVersion) setSelectedVersion(v[0] ?? null);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -76,6 +79,12 @@ export function JobDetail() {
               .then(([j, v]) => {
                 setJob(j);
                 setVersions(v);
+                // Refresh selected version
+                const currentId = selectedVersion?.id;
+                if (currentId) {
+                  const fresh = v.find((x) => x.id === currentId);
+                  if (fresh) setSelectedVersion(fresh);
+                }
               });
           }
         },
@@ -248,34 +257,128 @@ export function JobDetail() {
         {versions.length === 0 ? (
           <p class="muted">No versions yet.</p>
         ) : (
-          <table class="job-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Status</th>
-                <th>Artifacts</th>
-                <th>Created</th>
-                <th>Finalized</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div class="version-panel">
+            {/* Version selector tabs */}
+            <div class="version-tabs">
               {versions.map((v) => (
-                <tr key={v.id}>
-                  <td class="mono">{v.number}</td>
-                  <td>
-                    <StatusBadge status={v.status} />
-                  </td>
-                  <td>{v.artifacts?.length ?? 0} artifacts</td>
-                  <td class="muted">{new Date(v.createdAt).toLocaleDateString()}</td>
-                  <td class="muted">
-                    {v.finalizedAt ? new Date(v.finalizedAt).toLocaleDateString() : "—"}
-                  </td>
-                </tr>
+                <button
+                  key={v.id}
+                  class={`version-tab${selectedVersion?.id === v.id ? " active" : ""}`}
+                  onClick={() => setSelectedVersion(v)}
+                >
+                  v{v.number}
+                  {v.status === "final" ? " ✓" : ""}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Artifact editor for selected version */}
+            {selectedVersion && (
+              <ArtifactEditor
+                version={selectedVersion}
+                onUpdate={(updated) => {
+                  setVersions((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
+                  setSelectedVersion(updated);
+                }}
+              />
+            )}
+          </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// ── Artifact Editor ───────────────────────────────────────────────────
+
+const ARTIFACT_LABELS: Record<string, string> = {
+  title: "Title",
+  style: "Style",
+  excluded_styles: "Excluded Styles",
+  lyrics: "Lyrics",
+};
+
+interface ArtifactEditorProps {
+  version: VersionInfo;
+  onUpdate: (updated: VersionInfo) => void;
+}
+
+function ArtifactEditor({ version, onUpdate }: ArtifactEditorProps) {
+  const [editing, setEditing] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const artifacts = (version.artifacts ?? []) as Array<{ type: string; value: string }>;
+  const isFinal = version.status === "final";
+
+  const handleEdit = async (artifactType: string) => {
+    const value = editing[artifactType]?.trim();
+    if (value === undefined) return;
+
+    setSaving(artifactType);
+    setSaveError(null);
+    try {
+      const updated = await updateArtifact(version.id, artifactType, value);
+      onUpdate(updated);
+      setEditing((prev) => {
+        const next = { ...prev };
+        delete next[artifactType];
+        return next;
+      });
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  if (artifacts.length === 0) {
+    return <p class="muted">No artifacts in this version.</p>;
+  }
+
+  return (
+    <div class="artifact-editor">
+      {saveError && <p class="error">{saveError}</p>}
+      {artifacts.map((a) => {
+        const label = ARTIFACT_LABELS[a.type] ?? a.type;
+        const isEditing = a.type in editing;
+
+        return (
+          <div class="artifact-field" key={a.type}>
+            <label>{label}</label>
+            {a.type === "lyrics" ? (
+              <textarea
+                class="artifact-input"
+                rows={6}
+                value={isEditing ? editing[a.type] : a.value}
+                disabled={isFinal || saving === a.type}
+                onInput={(e) =>
+                  setEditing((prev) => ({ ...prev, [a.type]: (e.target as HTMLTextAreaElement).value }))
+                }
+              />
+            ) : (
+              <input
+                type="text"
+                class="artifact-input"
+                value={isEditing ? editing[a.type] : a.value}
+                disabled={isFinal || saving === a.type}
+                onInput={(e) =>
+                  setEditing((prev) => ({ ...prev, [a.type]: (e.target as HTMLInputElement).value }))
+                }
+              />
+            )}
+            {!isFinal && (
+              <button
+                class="btn btn-xs"
+                onClick={() => handleEdit(a.type)}
+                disabled={saving !== null}
+              >
+                {saving === a.type ? "Saving…" : "Save"}
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

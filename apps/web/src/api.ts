@@ -102,6 +102,19 @@ export function fetchVersion(id: string): Promise<VersionInfo> {
   return api(`/api/versions/${encodeURIComponent(id)}`);
 }
 
+// ── Artifacts ────────────────────────────────────────────────────────
+
+export function updateArtifact(
+  versionId: string,
+  artifactType: string,
+  value: string,
+): Promise<VersionInfo> {
+  return api(`/api/versions/${encodeURIComponent(versionId)}/artifacts`, {
+    method: "PATCH",
+    body: JSON.stringify({ artifactType, value }),
+  });
+}
+
 // ── SSE progress events ────────────────────────────────────────────
 
 export interface ProgressEvent {
