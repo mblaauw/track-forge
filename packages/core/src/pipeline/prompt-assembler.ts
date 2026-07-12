@@ -1,4 +1,4 @@
-import type { GenerationStage, InterpretedReference } from "@track-forge/contracts";
+import type { GenerationStage, InterpretedReference, ControlDescriptor } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { PromptContext, PromptManifest } from "./types.js";
 import { formatInterpretedRef } from "./reference-interpreter.js";
@@ -124,6 +124,42 @@ function resolveKey(key: string, context: PromptContext): unknown {
   return undefined;
 }
 
+// ── Control descriptor formatting ─────────────────────────────────────
+
+/**
+ * Convert ControlDescriptor[] into a human-readable string for prompt injection.
+ * Falls back to raw text if descriptors are empty.
+ */
+export function formatControlDescriptors(
+  descriptors: ControlDescriptor[] | null | string,
+): string {
+  if (!descriptors || (Array.isArray(descriptors) && descriptors.length === 0)) return "";
+
+  if (typeof descriptors === "string") return descriptors;
+
+  return descriptors
+    .map((d) => {
+      const val = Array.isArray(d.value) ? d.value.join(", ") : String(d.value);
+      return `${d.operator} ${d.parameter} = ${val}`;
+    })
+    .join("\n");
+}
+
+/**
+ * Parse raw nlAdjustments string into ControlDescriptor[].
+ * Backward compat: plain text becomes a single descriptor.
+ */
+export function parseControlDescriptors(raw: string | null): ControlDescriptor[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed as ControlDescriptor[];
+  } catch {
+    /* not JSON — treat as plain text */
+  }
+  return [{ parameter: "instruction", operator: "set", value: raw, confidence: 0.3 }];
+}
+
 // ── Context builder ───────────────────────────────────────────────────
 
 /**
@@ -136,7 +172,7 @@ export function buildPromptContext(params: {
   inputs: string | null;
   reference: string | null;
   interpretedRef: InterpretedReference | null;
-  nlAdjustments?: string | null;
+  nlAdjustments?: ControlDescriptor[] | string | null;
 }): PromptContext {
   const inputs: Record<string, unknown> = {};
   if (params.inputs) {
@@ -151,7 +187,7 @@ export function buildPromptContext(params: {
     presetId: params.presetId,
     reference: params.reference,
     interpretedRef: params.interpretedRef ? formatInterpretedRef(params.interpretedRef) : null,
-    nlAdjustments: params.nlAdjustments ?? null,
+    nlAdjustments: formatControlDescriptors(params.nlAdjustments ?? null),
     ...inputs,
   };
 

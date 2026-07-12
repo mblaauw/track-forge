@@ -13,6 +13,7 @@ import {
 } from "@track-forge/contracts";
 import type { GenreModule, GenreCritics } from "@track-forge/genre-core";
 import type { PipelineDeps, PipelineState, PipelineResult, PromptContext } from "./types.js";
+import type { ControlDescriptor } from "@track-forge/contracts";
 import { eq } from "drizzle-orm";
 import { schema } from "../db/index.js";
 import {
@@ -27,7 +28,7 @@ import {
 import type { StageData } from "./job-service.js";
 import { ReferenceCache } from "./reference-cache.js";
 import { interpretReference, formatInterpretedRef } from "./reference-interpreter.js";
-import { PromptAssembler, buildPromptContext } from "./prompt-assembler.js";
+import { PromptAssembler, buildPromptContext, parseControlDescriptors } from "./prompt-assembler.js";
 import { runCritics, parseFindings } from "./critic-runner.js";
 import { publish } from "./events.js";
 
@@ -423,7 +424,7 @@ export async function runPipeline(
     findings: null,
     appliedPatch: null,
     versionId: null,
-    nlAdjustments: job.nlAdjustments ?? null,
+    nlAdjustments: parseControlDescriptors(job.nlAdjustments),
   };
 
   // Restore persisted pipeline state if available

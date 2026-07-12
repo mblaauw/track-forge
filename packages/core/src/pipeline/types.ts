@@ -1,4 +1,4 @@
-import type { Job, Config, InterpretedReference, GenerationStage, StyleWriterResult, LyricsWriterResult } from "@track-forge/contracts";
+import type { Job, Config, InterpretedReference, GenerationStage, StyleWriterResult, LyricsWriterResult, ControlDescriptor } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { Db } from "../db/index.js";
 import type { LlmClient } from "../llm/index.js";
@@ -27,8 +27,8 @@ export interface PipelineState {
   appliedPatch: string | null; // serialized SurgicalPatch
   versionId: string | null;
 
-  /** Natural-language adjustment instructions */
-  nlAdjustments: string | null;
+  /** Structured adjustment instructions (parsed from job.nlAdjustments) */
+  nlAdjustments: ControlDescriptor[] | null;
 }
 
 /** Stage handler function signature */

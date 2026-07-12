@@ -117,6 +117,17 @@ export const SunoInstrumentalMode = {
 } as const;
 export type SunoInstrumentalMode = (typeof SunoInstrumentalMode)[keyof typeof SunoInstrumentalMode];
 
+// ── Control descriptors (structured NL adjustments) ───────────────────
+
+export type ControlOperator = "set" | "adjust" | "remove" | "add";
+
+export interface ControlDescriptor {
+  parameter: string;
+  operator: ControlOperator;
+  value: string | number | boolean | string[];
+  confidence: number;
+}
+
 // ── Content Locking ───────────────────────────────────────────────────
 
 export const LockType = {

@@ -158,7 +158,10 @@ export function submitReview(
 
 // ── NL Adjustments ───────────────────────────────────────────────────
 
-export function setNlAdjustments(id: string, nlAdjustments: string | null): Promise<JobInfo> {
+export function setNlAdjustments(
+  id: string,
+  nlAdjustments: string | { parameter: string; operator: string; value: unknown; confidence: number }[] | null,
+): Promise<JobInfo> {
   return api(`/api/jobs/${encodeURIComponent(id)}/nl-adjustments`, {
     method: "PATCH",
     body: JSON.stringify({ nlAdjustments }),

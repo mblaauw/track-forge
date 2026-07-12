@@ -191,7 +191,8 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
     const presetId = body.presetId as string | undefined;
     const inputs = (body.inputs as string) ?? null;
     const reference = (body.reference as string) ?? null;
-    const nlAdjustments = (body.nlAdjustments as string) ?? null;
+    const rawNl = body.nlAdjustments;
+    const nlAdjustments = typeof rawNl === "string" ? rawNl : rawNl ? JSON.stringify(rawNl) : null;
 
     const [project] = await db
       .select()
@@ -237,7 +238,11 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
     const presetId = body.presetId as string | undefined;
     const inputs = body.inputs as string | undefined | null;
     const reference = body.reference as string | undefined | null;
-    const nlAdjustments = body.nlAdjustments as string | undefined | null;
+    const rawNl = body.nlAdjustments;
+    const nlAdjustments = rawNl === undefined ? undefined
+      : rawNl === null ? null
+      : typeof rawNl === "string" ? rawNl
+      : JSON.stringify(rawNl);
 
     const [draft] = await db
       .select()

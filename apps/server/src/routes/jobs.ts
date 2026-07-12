@@ -181,7 +181,13 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
   server.patch("/api/jobs/:id/nl-adjustments", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const body = req.body as { nlAdjustments?: string } | undefined;
+    const body = req.body as { nlAdjustments?: unknown } | undefined;
+    let nlValue: string | null = null;
+    if (body?.nlAdjustments !== undefined) {
+      nlValue = typeof body.nlAdjustments === "string"
+        ? body.nlAdjustments
+        : JSON.stringify(body.nlAdjustments);
+    }
 
     const [job] = await db
       .select()
@@ -194,7 +200,7 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     const now = new Date().toISOString();
     await db
       .update(schema.jobs)
-      .set({ nlAdjustments: body?.nlAdjustments ?? null, updatedAt: now })
+      .set({ nlAdjustments: nlValue, updatedAt: now })
       .where(eq(schema.jobs.id, id));
 
     const [updated] = await db
