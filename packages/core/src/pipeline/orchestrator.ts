@@ -106,6 +106,7 @@ async function handlePlanning(
   const response = await deps.llm.complete({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.7,
+    maxTokens: 2048,
     signal: deps.signal,
   });
 
@@ -151,6 +152,7 @@ async function handleWriting(
       deps.llm.complete({
         messages: [{ role: "user", content: stylePrompt }],
         temperature: 0.8,
+        maxTokens: 2048,
         signal: deps.signal,
       }),
     ]);
@@ -169,11 +171,13 @@ async function handleWriting(
     deps.llm.complete({
       messages: [{ role: "user", content: stylePrompt }],
       temperature: 0.8,
+      maxTokens: 2048,
       signal: deps.signal,
     }),
     deps.llm.complete({
       messages: [{ role: "user", content: lyricsPrompt }],
       temperature: 0.8,
+      maxTokens: 8192,
       signal: deps.signal,
     }),
   ]);
