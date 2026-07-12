@@ -476,9 +476,9 @@ export async function runPipeline(
         throw new Error(`No handler for stage: ${currentStage}`);
       }
 
-      publish(state.job.id, { stage: currentStage, status: "started" });
+      await publish(deps.db, state.job.id, { stage: currentStage, status: "started" });
       state = await handler(state, deps);
-      publish(state.job.id, { stage: currentStage, status: "completed" });
+      await publish(deps.db, state.job.id, { stage: currentStage, status: "completed" });
 
       // Persist state after each stage
       const stageData: StageData = {
@@ -521,9 +521,9 @@ export async function runPipeline(
 
     // Final versioning stage (handles completion internally)
     if (currentStage === "versioning") {
-      publish(state.job.id, { stage: currentStage, status: "started" });
+      await publish(deps.db, state.job.id, { stage: currentStage, status: "started" });
       state = await handleVersioning(state, deps);
-      publish(state.job.id, { stage: currentStage, status: "completed" });
+      await publish(deps.db, state.job.id, { stage: currentStage, status: "completed" });
     }
 
     return {
@@ -534,7 +534,7 @@ export async function runPipeline(
     };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    publish(job.id, { stage: currentStage, status: "error", error: errorMsg });
+    await publish(deps.db, job.id, { stage: currentStage, status: "error", error: errorMsg });
     await failStage(deps.db, job.id, errorMsg);
     return { success: false, jobId: job.id, versionId: null, error: errorMsg };
   }

@@ -325,7 +325,7 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     // Signal cancellation via events
     const { publish } = await import("@track-forge/core");
-    publish(id, { type: "cancelled", jobId: id } as any);
+    await publish(db, id, { stage: "cancelled", status: "completed" });
 
     await cancelJob(db, id as any);
     return reply.code(200).send({ status: "cancelled", jobId: id });

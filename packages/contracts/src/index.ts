@@ -230,6 +230,7 @@ export interface Version {
 export interface JobEvent {
   id: string;
   jobId: JobId;
+  sequence: number;
   stage: GenerationStage | null;
   status: string;
   data: string | null;

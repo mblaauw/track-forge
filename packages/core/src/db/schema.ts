@@ -95,6 +95,7 @@ export const jobEvents = sqliteTable("job_events", {
   jobId: text("job_id")
     .notNull()
     .references(() => jobs.id),
+  sequence: integer("sequence").notNull(),
   stage: text("stage"),
   status: text("status").notNull(),
   data: text("data"),

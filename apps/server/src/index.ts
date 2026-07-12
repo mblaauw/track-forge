@@ -33,7 +33,7 @@ registerProjectRoutes(server, { db, config });
 registerJobRoutes(server, { db, config, llm, suno });
 registerVersionRoutes(server, { db, lockService });
 registerSunoRoutes(server, { db, suno });
-registerEventRoutes(server);
+registerEventRoutes(server, { db });
 registerImportExportRoutes(server, { db });
 
 const start = async () => {

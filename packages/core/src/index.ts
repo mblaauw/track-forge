@@ -42,6 +42,6 @@ export type { LockService } from "./pipeline/index.js";
 export { parseLyrics, serializeLyrics, isInstrumental } from "./lyrics/index.js";
 
 // Pipeline
-export { runPipeline, createJob, loadJob, resetJobStage, cancelJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, formatControlDescriptors, parseControlDescriptors, subscribe, publish, unsubscribeAll } from "./pipeline/index.js";
+export { runPipeline, createJob, loadJob, resetJobStage, cancelJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, formatControlDescriptors, parseControlDescriptors, subscribe, publish, unsubscribeAll, getJobEvents, resetTestCounters } from "./pipeline/index.js";
 export type { PipelineDeps, PipelineState, PipelineResult, PipelineEvent, PromptContext, PromptManifest } from "./pipeline/index.js";
 export type { ControlDescriptor, GenerationStage } from "@track-forge/contracts";

@@ -107,12 +107,18 @@ export function createDb(dbPath: string): Db {
   sqlite.exec(`CREATE TABLE IF NOT EXISTS job_events (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL REFERENCES jobs(id),
+    sequence INTEGER NOT NULL,
     stage TEXT,
     status TEXT NOT NULL,
     data TEXT,
     error TEXT,
     timestamp TEXT NOT NULL
   )`);
+  // Migrate: add sequence column to existing tables
+  try { sqlite.exec(`ALTER TABLE job_events ADD COLUMN sequence INTEGER`); } catch {}
+  // Backfill sequence for existing rows (order by timestamp)
+  try { sqlite.exec(`UPDATE job_events SET sequence = rowid WHERE sequence IS NULL`); } catch {}
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_job_events_job_sequence ON job_events(job_id, sequence)`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS critic_findings (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL REFERENCES jobs(id),
