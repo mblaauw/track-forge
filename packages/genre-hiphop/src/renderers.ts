@@ -11,6 +11,103 @@ const NARRATIVE_LABELS: Record<string, string> = {
   abstract: "Abstract/experimental narrative",
 };
 
+const VERSE_THEMES: Record<string, string[]> = {
+  storytelling: [
+    "Let me take you back to the moment it all began",
+    "Through the struggle and the pain, I found my way",
+    "Every chapter of my life written in these streets",
+    "The story unfolds with every breath I take",
+  ],
+  braggadocio: [
+    "I'm the king of this game, there's no debate",
+    "Crown on my head, they just watch and wait",
+    "They said I couldn't, now look what I became",
+    "Numbers don't lie, check the scoreboard again",
+  ],
+  conscious: [
+    "System keeps us down, but we rise each day",
+    "They build walls, we build bridges anyway",
+    "Wake up, the revolution starts within",
+    "Truth is the weapon, knowledge is the shield",
+  ],
+  party: [
+    "Hands up high, feel the energy in the room",
+    "Tonight we celebrate, forget the gloom",
+    "The beat drops, bodies moving as one",
+    "Turn up the volume, let the good times roll",
+  ],
+  introspective: [
+    "Deep in my thoughts, the weight of the world",
+    "I search for meaning in the quiet hours",
+    "Every scar tells a story I'm learning to read",
+    "The mirror shows a face I'm getting to know",
+  ],
+  abstract: [
+    "Reality bends, perception is fluid",
+    "Words paint pictures that logic can't frame",
+    "Between the lines, a different frequency",
+    "Abstract thoughts take physical form",
+  ],
+};
+
+const HOOK_THEMES: Record<string, string[]> = {
+  high: [
+    "This is the moment, we own the night",
+    "Can't stop, won't stop, we're taking flight",
+  ],
+  medium: [
+    "You know the vibe, feel it in your soul",
+    "Ride the wave, let the rhythm take control",
+  ],
+  low: [
+    "Stay close, don't let the feeling fade",
+    "In the silence, the truth is made",
+  ],
+};
+
+const BRIDGE_THEMES: Record<string, string[]> = {
+  storytelling: [
+    "But everything changed when I looked back",
+    "A different angle, a new truth revealed",
+  ],
+  braggadocio: [
+    "They never thought I'd make it this far",
+    "But here I stand, rewriting the narrative",
+  ],
+  conscious: [
+    "We need to see beyond the surface",
+    "The real change starts from within",
+  ],
+  party: [
+    "But even the night must find its end",
+    "Before the dawn, a moment to reflect",
+  ],
+  introspective: [
+    "In the quiet between the noise",
+    "I found a piece of myself I'd lost",
+  ],
+  abstract: [
+    "The boundaries shift, reshape again",
+    "What was solid dissolves into light",
+  ],
+};
+
+function getVerseThemes(narrative: string, mood: string): string[] {
+  const themes = VERSE_THEMES[narrative] ?? VERSE_THEMES.braggadocio!;
+  const moodLine = mood ? `(${mood} vibe)` : "";
+  return moodLine ? [themes[0]!, themes[1]!, moodLine, themes[3]!] : themes;
+}
+
+function getHookThemes(energy: number): string[] {
+  if (energy >= 7) return HOOK_THEMES.high!;
+  if (energy >= 4) return HOOK_THEMES.medium!;
+  return HOOK_THEMES.low!;
+}
+
+function getBridgeThemes(narrative: string): string[] {
+  return BRIDGE_THEMES[narrative] ?? BRIDGE_THEMES.introspective!;
+}
+
 const FLOW_LABELS: Record<string, string> = {
   laid_back: "laid-back",
   aggressive: "aggressive",
@@ -161,22 +258,17 @@ export function createHipHopRenderers(
           case "verse":
             lines.push(`[Verse]`);
             lines.push(`(${getVersePrompt(data)})`);
-            lines.push(`[line]`);
-            lines.push(`[line]`);
-            lines.push(`[line]`);
-            lines.push(`[line]`);
+            for (const l of getVerseThemes(data.narrativeArc!, data.mood)) lines.push(l);
             break;
           case "hook":
             lines.push(`[Hook]`);
             lines.push(`(${getHookPrompt(data)})`);
-            lines.push(`[line]`);
-            lines.push(`[line]`);
+            for (const l of getHookThemes(data.energy)) lines.push(l);
             break;
           case "bridge":
             lines.push(`[Bridge]`);
             lines.push(`(Shift in perspective — ${getBridgePrompt(data)})`);
-            lines.push(`[line]`);
-            lines.push(`[line]`);
+            for (const l of getBridgeThemes(data.narrativeArc!)) lines.push(l);
             break;
           case "break":
             lines.push(`[Break]`);

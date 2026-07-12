@@ -107,7 +107,7 @@ function renderLyrics(data: EdmBlueprint): string {
       lines.push(`[${data.bpm} BPM]`);
       lines.push(`[Key: ${data.key !== "auto" ? data.key : "determined by generation"}]`);
       if (data.subgenre) {
-        lines.push(`[Style: ${data.subgenre.replace(/_/g, " ")}]`);
+        lines.push(`[Genre: ${data.subgenre.replace(/_/g, " ")}]`);
       }
       lines.push("");
 
