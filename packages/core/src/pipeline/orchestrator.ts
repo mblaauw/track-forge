@@ -30,7 +30,7 @@ import type { StageData } from "./job-service.js";
 import { ReferenceCache } from "./reference-cache.js";
 import { interpretReference, formatInterpretedRef } from "./reference-interpreter.js";
 import { PromptAssembler, buildPromptContext, parseControlDescriptors } from "./prompt-assembler.js";
-import { runCritics, parseFindings } from "./critic-runner.js";
+import { runCritics } from "./critic-runner.js";
 import { publish } from "./events.js";
 import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
 import { serializeLyrics } from "../lyrics/canonical.js";
@@ -196,7 +196,6 @@ async function handleWriting(
 
 async function handleCompilation(
   state: PipelineState,
-  deps: PipelineDeps,
 ): Promise<PipelineState> {
   const { job, module, styleWriterResult, lyricsWriterResult, songPlan, interpretedRef } = state;
   if (!styleWriterResult || !lyricsWriterResult) {
@@ -223,9 +222,6 @@ async function handleCompilation(
   context.lyricsDocument = JSON.stringify(lyricsWriterResult.document);
   context.songPlan = songPlan ?? "";
   context.compilation = JSON.stringify(bp);
-
-  // Run any compile-time fragments first (resolves {{placeholders}} in compilation fragments)
-  assembler.resolvePrompt("compilation", context);
 
   // Blend structured writer results into compiled artifacts
   const styleText = styleWriterResult.descriptiveStyle || module.renderers.style(bp);
@@ -308,7 +304,6 @@ async function handleReview(
 
 async function handleRevision(
   state: PipelineState,
-  deps: PipelineDeps,
 ): Promise<PipelineState> {
   const { compiledJson, findings, job, module } = state;
 
@@ -390,14 +385,13 @@ async function handleRevision(
     if (patches.some((p) => p.target === "inputs" || p.target === "input")) {
       const errors = module.validators.blueprint(bp);
       if (errors.length > 0) {
-        // Fallback: revert to original
-        return { ...state, appliedPatch: JSON.stringify(patches) };
+        // Fallback: revert to original, don't mark patches as applied
+        return state;
       }
     }
   } catch {
-    // Validation failed — use fallback
-    const fallbackJson = JSON.stringify(fallback);
-    return { ...state, compiledJson: fallbackJson, appliedPatch: JSON.stringify(patches) };
+    // Validation failed — use fallback, don't mark patches as applied
+    return state;
   }
 
   const appliedPatch = JSON.stringify(patches);
@@ -430,6 +424,15 @@ async function handleVerification(
       interpretedRef: state.interpretedRef,
     });
     context.compiledJson = compiledJson;
+
+    // Inject individual compiled fields for critic {{placeholders}}
+    try {
+      const c = JSON.parse(compiledJson) as Record<string, string>;
+      context.title = c.title ?? "";
+      context.style = c.style ?? "";
+      context.lyrics = c.lyrics ?? "";
+      context.excluded_styles = c.excludedStyles ?? "";
+    } catch { /* ignore */ }
 
     const recheckFindings = await runCritics(module.critics, context, deps.llm, {
       full: false,
@@ -538,7 +541,7 @@ export async function runPipeline(
     styleWriterResult: null,
     lyricsWriterResult: null,
     compiledJson: job.compiledJson ?? null,
-    findings: job.findings ? JSON.parse(job.findings) as unknown[] : null,
+    findings: job.findings ? (() => { try { return JSON.parse(job.findings) as unknown[]; } catch { return null; } })() : null,
     appliedPatch: null,
     versionId: null,
     nlAdjustments: parseControlDescriptors(job.nlAdjustments),
@@ -613,6 +616,7 @@ export async function runPipeline(
           await deps.db
             .update(schema.jobs)
             .set({
+              currentStage: "review",
               findings: JSON.stringify(state.findings),
               compiledJson: state.compiledJson,
               updatedAt: now,

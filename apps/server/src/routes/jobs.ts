@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, LlmClient, SunoClient } from "@track-forge/core";
-import { createJob, runPipeline, schema, resetJobStage, cancelJob, generateSunoPayload, abortJob } from "@track-forge/core";
+import { createJob, runPipeline, schema, resetJobStage, cancelJob, generateSunoPayload, abortJob, publish } from "@track-forge/core";
 import type { GenerationStage, CriticFinding, SunoArtifact } from "@track-forge/contracts";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
@@ -170,14 +170,7 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     if (!job) return reply.code(404).send({ error: "Job not found" });
 
-    // Cascade delete: child tables first, then job
-    await db.delete(schema.sunoTracks).where(
-      eq(schema.sunoTracks.generationId, ""), // no direct FK to job; delete via subquery
-    );
-    await db.delete(schema.artifactLocks).where(
-      eq(schema.artifactLocks.versionId, ""), // delete via versions
-    );
-
+    // Cascade delete: version IDs → artifactLocks, gen IDs → sunoTracks, then job
     // Get version IDs for this job to cascade
     const versionRows = await db
       .select({ id: schema.versions.id })
@@ -364,7 +357,6 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     abortJob(id);
 
     // Signal cancellation via events then update DB (atomic)
-    const { publish } = await import("@track-forge/core");
     await db.transaction(async (tx) => {
       await publish(tx as any, id, { stage: "cancelled", status: "completed" });
       await cancelJob(tx as any, id as any);

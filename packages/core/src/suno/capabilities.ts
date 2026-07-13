@@ -99,9 +99,4 @@ export function getCapabilities(
   return DEFAULT_CAPABILITIES;
 }
 
-export function registerCapabilities(
-  model: SunoModelVersion,
-  caps: SunoCapabilities,
-): void {
-  CAPABILITIES[model] = caps;
-}
+

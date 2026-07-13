@@ -74,7 +74,7 @@ export function registerSunoRoutes(
 
   // ── List generations for job ──────────────────────────────────────
 
-  server.get("/api/suno/jobs/:jobId/generations", async (req, reply) => {
+  server.get("/api/suno/jobs/:jobId/generations", async (req) => {
     const { jobId } = req.params as { jobId: string };
 
     const limit = parseInt(String((req.query as Record<string, string>).limit ?? "10"), 10);

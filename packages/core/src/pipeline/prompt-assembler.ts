@@ -209,13 +209,14 @@ export function buildPromptContext(params: {
   }
 
   const context: PromptContext = {
+    // Spread inputs first so reserved fields below always win
+    ...inputs,
     genreId: params.genreId,
     genreName: params.genreName,
     presetId: params.presetId,
     reference: sanitizeReference(params.reference, params.interpretedRef),
     interpretedRef: params.interpretedRef ? formatInterpretedRef(params.interpretedRef) : null,
     nlAdjustments: formatControlDescriptors(params.nlAdjustments ?? null),
-    ...inputs,
   };
 
   return context;

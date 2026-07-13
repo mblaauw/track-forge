@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc, sql, count } from "drizzle-orm";
+import { eq, inArray, desc, sql, count } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
@@ -155,7 +155,7 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
 
     if (!project) return reply.code(404).send({ error: "Project not found" });
 
-    // Cascade: delete drafts, jobs, and their children
+    // Cascade: delete all FK children before parent tables
     await db.delete(schema.projectDrafts).where(eq(schema.projectDrafts.projectId, id));
 
     const projectJobs = await db
@@ -164,7 +164,30 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
       .where(eq(schema.jobs.projectId, id));
 
     for (const job of projectJobs) {
-      await db.delete(schema.versions).where(eq(schema.versions.jobId, job.id));
+      // Gather version and generation IDs for this job
+      const versionIds = (await db
+        .select({ id: schema.versions.id })
+        .from(schema.versions)
+        .where(eq(schema.versions.jobId, job.id))).map((r) => r.id);
+
+      const genIds = (await db
+        .select({ id: schema.generations.id })
+        .from(schema.generations)
+        .where(eq(schema.generations.jobId, job.id))).map((r) => r.id);
+
+      // Delete FK children in dependency order
+      if (genIds.length > 0) {
+        await db.delete(schema.sunoTracks).where(inArray(schema.sunoTracks.generationId, genIds));
+        await db.delete(schema.generations).where(inArray(schema.generations.id, genIds));
+      }
+      if (versionIds.length > 0) {
+        await db.delete(schema.artifactLocks).where(inArray(schema.artifactLocks.versionId, versionIds));
+        await db.delete(schema.versions).where(eq(schema.versions.jobId, job.id));
+      }
+      await db.delete(schema.jobStageOutputs).where(eq(schema.jobStageOutputs.jobId, job.id));
+      await db.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, job.id));
+      await db.delete(schema.criticFindings).where(eq(schema.criticFindings.jobId, job.id));
+      await db.delete(schema.adjustments).where(eq(schema.adjustments.jobId, job.id));
     }
     await db.delete(schema.jobs).where(eq(schema.jobs.projectId, id));
     await db.delete(schema.projects).where(eq(schema.projects.id, id));

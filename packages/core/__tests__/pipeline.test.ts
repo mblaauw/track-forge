@@ -313,11 +313,11 @@ describe("E2E - Review to revision flow", () => {
     };
 
     const result = await runPipeline(job.id, deps, pauseModule);
-    // Pipeline returns success but pauses — job stays at revision with findings persisted
+    // Pipeline returns success but pauses — job transitions to review stage awaiting human input
     expect(result.success).toBe(true);
 
     const updatedJob = await loadJob(db, job.id);
-    expect(updatedJob!.currentStage).toBe("revision");
+    expect(updatedJob!.currentStage).toBe("review");
     expect(updatedJob!.findings).not.toBeNull();
 
     const parsedFindings = JSON.parse(updatedJob!.findings!) as CriticFinding[];

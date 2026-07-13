@@ -1,6 +1,6 @@
 import type { Db } from "../db/index.js";
 import { schema } from "../db/index.js";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface GenerationRecord {
   id: string;
@@ -113,7 +113,6 @@ export async function listGenerations(
   jobId: string,
   limit = 10,
 ): Promise<GenerationRecord[]> {
-  const { desc } = await import("drizzle-orm");
   const rows = await db
     .select()
     .from(schema.generations)

@@ -22,14 +22,4 @@ export function resolveCallbackUrl(config: Pick<Config, "publicBaseUrl">): strin
   return null;
 }
 
-/**
- * Determine which mode to use for completion detection.
- */
-export type CompletionMode = "callback" | "polling";
 
-export function resolveCompletionMode(config: Pick<Config, "publicBaseUrl">): CompletionMode {
-  if (config.publicBaseUrl) {
-    return "callback";
-  }
-  return "polling";
-}

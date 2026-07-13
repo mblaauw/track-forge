@@ -42,7 +42,7 @@ export class LlmClient {
       prompt: req.messages[0]?.content?.slice(0, 500),
       messages: req.messages.length,
       temperature: req.temperature ?? 0.7,
-      maxTokens: req.maxTokens ?? 8192,
+      maxTokens: req.maxTokens ?? 2048,
       model: this.cfg.model,
     }, "LLM request");
 
@@ -75,7 +75,7 @@ export class LlmClient {
   private async openaiComplete(req: LlmRequest): Promise<LlmResponse> {
     const timeoutController = new AbortController();
     const timeout = setTimeout(() => timeoutController.abort(new Error("Request timed out")), 180_000);
-    const combinedSignal = combineSignals(req.signal, timeoutController.signal);
+    const combined = combineSignals(req.signal, timeoutController.signal);
 
     try {
       const res = await fetch(`${this.cfg.baseUrl}/chat/completions`, {
@@ -88,13 +88,13 @@ export class LlmClient {
           model: this.cfg.model,
           messages: req.messages,
           temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 2048,
-      }),
-      signal: combinedSignal,
-    });
+          max_tokens: req.maxTokens ?? 2048,
+        }),
+        signal: combined.signal,
+      });
 
-    clearTimeout(timeout);
-    if (!res.ok) {
+      clearTimeout(timeout);
+      if (!res.ok) {
       const body = await res.text().catch(() => "");
       throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
     }
@@ -119,6 +119,7 @@ export class LlmClient {
       };
     } finally {
       clearTimeout(timeout);
+      combined.cleanup();
     }
   }
 
@@ -205,8 +206,8 @@ export class LlmClient {
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /** Combine two AbortSignals into one — fires when either aborts */
-function combineSignals(s1: AbortSignal | undefined, s2: AbortSignal): AbortSignal {
-  if (!s1) return s2;
+function combineSignals(s1: AbortSignal | undefined, s2: AbortSignal): { signal: AbortSignal; cleanup: () => void } {
+  if (!s1) return { signal: s2, cleanup: () => {} };
   const c = new AbortController();
   const onAbort = () => {
     const reason = s1.aborted ? s1.reason : s2.reason;
@@ -214,7 +215,13 @@ function combineSignals(s1: AbortSignal | undefined, s2: AbortSignal): AbortSign
   };
   s1.addEventListener("abort", onAbort, { once: true });
   s2.addEventListener("abort", onAbort, { once: true });
-  return c.signal;
+  return {
+    signal: c.signal,
+    cleanup: () => {
+      s1.removeEventListener("abort", onAbort);
+      s2.removeEventListener("abort", onAbort);
+    },
+  };
 }
 
 // ── Error ────────────────────────────────────────────────────────────

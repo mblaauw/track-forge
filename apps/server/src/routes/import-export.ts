@@ -9,10 +9,6 @@ export interface ImportExportRouteDeps {
   db: Db;
 }
 
-function jobToExport(job: typeof schema.jobs.$inferSelect, db: Db): JobExport {
-  return { job: job as any, versions: [] };
-}
-
 export function registerImportExportRoutes(server: FastifyInstance, deps: ImportExportRouteDeps): void {
   const { db } = deps;
 

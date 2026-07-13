@@ -11,9 +11,7 @@ export {
   SunoClient,
   createSunoClientConfig,
   resolveCallbackUrl,
-  resolveCompletionMode,
   getCapabilities,
-  registerCapabilities,
   generateSunoPayload,
   payloadToLog,
   storeGeneration,
@@ -22,7 +20,6 @@ export {
   listGenerations,
 } from "./suno/index.js";
 export type {
-  CompletionMode,
   SunoCapabilities,
   SunoClientConfig,
   SunoGenerateRequest,
@@ -36,12 +33,12 @@ export type {
   GenerationRecord,
 } from "./suno/index.js";
 
-// Lyrics canonical grammar
 export { createLockService, abortJob } from "./pipeline/index.js";
 export type { LockService } from "./pipeline/index.js";
+// Lyrics canonical grammar
 export { parseLyrics, serializeLyrics, isInstrumental } from "./lyrics/index.js";
 
 // Pipeline
-export { runPipeline, createJob, loadJob, resetJobStage, cancelJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, formatControlDescriptors, parseControlDescriptors, subscribe, publish, unsubscribeAll, getJobEvents, resetTestCounters } from "./pipeline/index.js";
+export { runPipeline, createJob, loadJob, resetJobStage, cancelJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, formatControlDescriptors, parseControlDescriptors, subscribe, publish, unsubscribeAll, getJobEvents } from "./pipeline/index.js";
 export type { PipelineDeps, PipelineState, PipelineResult, PipelineEvent, PromptContext, PromptManifest } from "./pipeline/index.js";
 export type { ControlDescriptor, GenerationStage } from "@track-forge/contracts";

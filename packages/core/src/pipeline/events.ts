@@ -126,14 +126,6 @@ export async function getJobEvents(
   return rows.reverse() as unknown as JobEvent[];
 }
 
-/** Delete events older than TTL. */
-export async function cleanOldEvents(db: Db): Promise<void> {
-  const cutoff = new Date(Date.now() - EVENT_TTL_MS).toISOString();
-  await db
-    .delete(schema.jobEvents)
-    .where(lt(schema.jobEvents.timestamp, cutoff));
-}
-
 /** Remove all in-memory subscriptions for a job. */
 export function unsubscribeAll(jobId: string): void {
   subscriptions.delete(jobId);
