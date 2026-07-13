@@ -88,27 +88,27 @@ export class LlmClient {
           model: this.cfg.model,
           messages: req.messages,
           temperature: req.temperature ?? 0.7,
-          max_tokens: req.maxTokens ?? 8192,
-        }),
-        signal: combinedSignal,
-      });
+        max_tokens: req.maxTokens ?? 2048,
+      }),
+      signal: combinedSignal,
+    });
 
-      clearTimeout(timeout);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
-      }
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
+    }
 
-      const json = (await res.json()) as {
-        choices: { message: { content: string; reasoning_content?: string } }[];
-        model: string;
-        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-      };
+    const json = (await res.json()) as {
+      choices: { message: { content: string; reasoning_content?: string } }[];
+      model: string;
+      usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    };
 
-      return {
-        content: json.choices[0]?.message?.content ?? "",
-        model: json.model,
-        reasoningContent: json.choices[0]?.message?.reasoning_content,
+    return {
+      content: json.choices[0]?.message?.content ?? "",
+      model: json.model,
+      reasoningContent: json.choices[0]?.message?.reasoning_content,
         usage: json.usage
           ? {
               promptTokens: json.usage.prompt_tokens,
@@ -140,7 +140,7 @@ export class LlmClient {
         system: systemMsg?.content,
         messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
         temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 4096,
+        max_tokens: req.maxTokens ?? 2048,
       }),
       signal: req.signal,
     });
@@ -179,7 +179,7 @@ export class LlmClient {
         model: this.cfg.model,
         messages: req.messages,
         temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 4096,
+        max_tokens: req.maxTokens ?? 2048,
         stream: false,
       }),
       signal: req.signal,
