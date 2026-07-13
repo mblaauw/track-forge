@@ -43,6 +43,7 @@ export interface JobInfo {
   error: string | null;
   createdAt: string;
   updatedAt: string;
+  isFavorite?: boolean;
 }
 
 export interface VersionInfo {
@@ -82,6 +83,10 @@ export function renameJob(id: string, name: string): Promise<JobInfo> {
     method: "PATCH",
     body: JSON.stringify({ name }),
   });
+}
+
+export function favoriteJob(id: string): Promise<JobInfo> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/favorite`, { method: "PATCH" });
 }
 
 export function deleteJob(id: string): Promise<void> {
@@ -224,6 +229,8 @@ export interface GenerationInfo {
   generatedTitle?: string;
   style?: string;
   error?: string;
+  isFavorite?: boolean;
+  seed?: number;
 }
 
 export interface SunoFeedItemInfo {
@@ -264,6 +271,18 @@ export function retryGeneration(
   );
 }
 
+export function fetchTakes(versionId: string): Promise<GenerationInfo[]> {
+  return api(`/api/versions/${encodeURIComponent(versionId)}/takes`);
+}
+
+export function createTake(versionId: string): Promise<GenerationInfo> {
+  return api(`/api/versions/${encodeURIComponent(versionId)}/takes`, { method: "POST" });
+}
+
+export function favoriteTake(takeId: string): Promise<GenerationInfo> {
+  return api(`/api/takes/${encodeURIComponent(takeId)}/favorite`, { method: "PATCH" });
+}
+
 // ── Import / Export ─────────────────────────────────────────────────
 
 export interface ExportBundle {
@@ -288,6 +307,9 @@ export interface ProgressEvent {
   stage: string;
   status: "started" | "completed" | "error";
   error?: string;
+  message?: string;
+  tag?: string;
+  elapsedMs?: number;
   timestamp: string;
 }
 

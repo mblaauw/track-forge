@@ -93,6 +93,7 @@ export function Forge({ id }: { id: string }) {
         if (e.status === "started") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "active" }));
           setLogs((prev) => [...prev, { time: fmt(now), tag: "stage", msg: `${label}...` }]);
+          if (e.message) setLogs((prev) => [...prev, { time: fmt(now), tag: "info", msg: e.message! }]);
         } else if (e.status === "completed") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "done" }));
           setLogs((prev) => [...prev, { time: fmt(now), tag: "done", msg: `${label} complete` }]);

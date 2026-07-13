@@ -60,7 +60,8 @@ export function createDb(dbPath: string): Db {
     stage_attempt INTEGER NOT NULL DEFAULT 0,
     error TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    is_favorite INTEGER NOT NULL DEFAULT 0
   )`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS versions (
     id TEXT PRIMARY KEY,
@@ -80,6 +81,9 @@ export function createDb(dbPath: string): Db {
   try { sqlite.exec(`ALTER TABLE versions ADD COLUMN parent_version_id TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN stage_data TEXT`); } catch {}
   try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN project_id TEXT`); } catch {}
+  try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { sqlite.exec(`ALTER TABLE generations ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { sqlite.exec(`ALTER TABLE generations ADD COLUMN seed INTEGER`); } catch {}
 
   sqlite.exec(`CREATE TABLE IF NOT EXISTS generations (
     id TEXT PRIMARY KEY,
@@ -94,7 +98,9 @@ export function createDb(dbPath: string): Db {
     style TEXT,
     error TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    is_favorite INTEGER NOT NULL DEFAULT 0,
+    seed INTEGER
   )`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS job_stage_outputs (
     id TEXT PRIMARY KEY,

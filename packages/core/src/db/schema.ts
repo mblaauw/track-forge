@@ -46,6 +46,7 @@ export const jobs = sqliteTable("jobs", {
   error: text("error"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
+  isFavorite: integer("is_favorite", { mode: "boolean" }).notNull().default(false),
 });
 
 export const versions = sqliteTable("versions", {
@@ -86,6 +87,8 @@ export const generations = sqliteTable("generations", {
   error: text("error"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
+  isFavorite: integer("is_favorite", { mode: "boolean" }).notNull().default(false),
+  seed: integer("seed"),
 });
 
 // ── Job events (persisted event history for replay) ──────────────────

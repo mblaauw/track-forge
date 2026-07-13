@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
-import { fetchJob, fetchVersions, fetchGenerations, renameJob } from "../api";
+import { fetchJob, fetchVersions, fetchTakes, createTake, favoriteTake, renameJob } from "../api";
 import type { JobInfo, VersionInfo, GenerationInfo } from "../api";
 
 function hashString(s: string, seedA = 9301, seedB = 49297): number {
@@ -80,18 +80,26 @@ export function Studio({ id }: { id: string }) {
     Promise.all([
       fetchJob(actualId),
       fetchVersions(actualId),
-      fetchGenerations(actualId),
     ])
-      .then(([j, vs, gs]) => {
+      .then(([j, vs]) => {
         const sorted = [...vs].sort((a, b) => b.number - a.number);
         setJob(j);
         setVersions(sorted);
-        setGenerations(gs);
         setJobName(j.name || "Untitled");
         setSelectedVersionIdx(0);
+        if (sorted.length > 0) {
+          fetchTakes(sorted[0]!.id).then(setGenerations);
+        }
       })
       .finally(() => setLoading(false));
   }, [actualId]);
+
+  useEffect(() => {
+    if (versions.length > 0) {
+      const v = versions[selectedVersionIdx];
+      if (v) fetchTakes(v.id).then(setGenerations);
+    }
+  }, [selectedVersionIdx]);
 
   useEffect(() => {
     return () => {
@@ -156,8 +164,24 @@ export function Studio({ id }: { id: string }) {
     });
   };
 
-  const toggleFavored = (genId: string) => {
-    setFavoredId((prev) => (prev === genId ? null : genId));
+  const toggleFavored = async (genId: string) => {
+    try {
+      const g = await favoriteTake(genId);
+      setGenerations((prev) => prev.map((pg) => (pg.id === genId ? { ...pg, isFavorite: g.isFavorite } : pg)));
+    } catch {
+      // fallback to local toggle
+      setFavoredId((prev) => (prev === genId ? null : genId));
+    }
+  };
+
+  const handleNewTake = async () => {
+    if (!selectedVersion) return;
+    try {
+      const take = await createTake(selectedVersion.id);
+      setGenerations((prev) => [take, ...prev]);
+    } catch (err) {
+      console.error("Failed to create take", err);
+    }
   };
 
   const handleRename = (e: Event) => {
@@ -301,7 +325,7 @@ export function Studio({ id }: { id: string }) {
       <div class="takes-section">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
           <h2 class="takes-title" style="margin:0;">Audio Takes</h2>
-          <button class="render-btn">
+          <button class="render-btn" onClick={handleNewTake}>
             <i class="ph-plus-circle" />
             Render new take
           </button>
@@ -315,7 +339,7 @@ export function Studio({ id }: { id: string }) {
             {completedGenerations.map((gen, i) => {
               const isPlaying = playingIdx === i;
               const abState = abMap[gen.id] ?? null;
-              const isFavored = favoredId === gen.id;
+              const isFavored = gen.isFavorite ?? (favoredId === gen.id);
               return (
                 <div key={gen.id} class={`take-card${isFavored ? " favored" : ""}`}>
                   <button

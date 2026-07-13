@@ -224,4 +224,84 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
 
     return buildTree(null);
   });
+
+  // ── Takes (generations scoped to a version) ─────────────────────────
+
+  server.get("/api/versions/:id/takes", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [version] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, id))
+      .limit(1);
+
+    if (!version) return reply.code(404).send({ error: "Version not found" });
+
+    const rows = await db
+      .select()
+      .from(schema.generations)
+      .where(eq(schema.generations.versionId, id))
+      .orderBy(desc(schema.generations.createdAt));
+
+    return rows;
+  });
+
+  server.post("/api/versions/:id/takes", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [version] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, id))
+      .limit(1);
+
+    if (!version) return reply.code(404).send({ error: "Version not found" });
+
+    const now = new Date().toISOString();
+    const genId = crypto.randomUUID();
+
+    await db.insert(schema.generations).values({
+      id: genId,
+      jobId: version.jobId,
+      versionId: id,
+      status: "queued",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const [created] = await db
+      .select()
+      .from(schema.generations)
+      .where(eq(schema.generations.id, genId))
+      .limit(1);
+
+    return reply.code(201).send(created);
+  });
+
+  server.patch("/api/takes/:id/favorite", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [gen] = await db
+      .select()
+      .from(schema.generations)
+      .where(eq(schema.generations.id, id))
+      .limit(1);
+
+    if (!gen) return reply.code(404).send({ error: "Take not found" });
+
+    const now = new Date().toISOString();
+    await db
+      .update(schema.generations)
+      .set({ isFavorite: !gen.isFavorite, updatedAt: now })
+      .where(eq(schema.generations.id, id));
+
+    const [updated] = await db
+      .select()
+      .from(schema.generations)
+      .where(eq(schema.generations.id, id))
+      .limit(1);
+
+    return reply.code(200).send(updated);
+  });
 }

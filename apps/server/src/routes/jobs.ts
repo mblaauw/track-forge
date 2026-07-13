@@ -121,6 +121,34 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     return reply.code(200).send(updated);
   });
 
+  // ── Favorite toggle ───────────────────────────────────────────────────
+
+  server.patch("/api/jobs/:id/favorite", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    const [job] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    if (!job) return reply.code(404).send({ error: "Job not found" });
+
+    const now = new Date().toISOString();
+    await db
+      .update(schema.jobs)
+      .set({ isFavorite: !job.isFavorite, updatedAt: now })
+      .where(eq(schema.jobs.id, id));
+
+    const [updated] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, id))
+      .limit(1);
+
+    return reply.code(200).send(updated);
+  });
+
   // ── Update job inputs (autosave) ────────────────────────────────────
 
   server.patch("/api/jobs/:id/inputs", async (req, reply) => {
@@ -450,5 +478,68 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
   server.get("/api/genres", async () => {
     const { listGenres } = await import("../lib/modules.js");
     return listGenres();
+  });
+
+  // ── Style tag suggestions (LLM-powered) ───────────────────────────────
+
+  server.post("/api/jobs/style-tag-suggestions", async (req, reply) => {
+    const body = req.body as Record<string, unknown> | undefined;
+    const genreId = body?.genreId as string | undefined;
+    const presetId = body?.presetId as string | undefined;
+    const reference = body?.reference as string | undefined;
+    const bpm = body?.bpm as number | undefined;
+    const key = body?.key as string | undefined;
+
+    if (!genreId) return reply.code(400).send({ error: "genreId required" });
+
+    let module: import("@track-forge/genre-core").GenreModule;
+    try {
+      const { getModuleOrThrow } = await import("../lib/modules.js");
+      module = getModuleOrThrow(genreId);
+    } catch {
+      return reply.code(404).send({ error: `Unknown genre: ${genreId}` });
+    }
+
+    const promptTemplate = module.promptFragments?.style_tag_suggestions;
+    if (!promptTemplate) return reply.code(400).send({ error: "No tag suggestion prompt for this genre" });
+
+    const context: Record<string, unknown> = {
+      subgenre: presetId?.replace(/_/g, " ") ?? "",
+      bpm: bpm ?? 120,
+      key: key ?? "C",
+      scale: "minor",
+      mood: "",
+      energy: 7,
+      complexity: 5,
+    };
+
+    const prompt = Object.entries(context).reduce(
+      (p, [k, v]) => p.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v)),
+      promptTemplate,
+    );
+
+    try {
+      const result = await llm.complete({
+        messages: [
+          { role: "system", content: "You are a music production expert. Return ONLY valid JSON." },
+          { role: "user", content: prompt },
+        ],
+        maxTokens: 1024,
+      });
+      const content = result.content?.trim() ?? "";
+      const jsonStart = content.indexOf("{");
+      const jsonEnd = content.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd === -1) {
+        return reply.code(200).send({ suggestions: [] });
+      }
+      const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
+      const suggestions = Object.entries(parsed).map(([category, tags]) => ({
+        category,
+        tags: Array.isArray(tags) ? tags.map(String) : [],
+      }));
+      return { suggestions };
+    } catch {
+      return { suggestions: [] };
+    }
   });
 }

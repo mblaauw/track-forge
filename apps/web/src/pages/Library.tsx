@@ -1,21 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { useRouter } from "../lib/router";
-import { fetchJobs, deleteJob, fetchGenres, type JobInfo, type GenreInfo } from "../api";
-
-const FAVORITES_KEY = "tf-library-favorites";
-
-function getFavorites(): Set<string> {
-  try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    return new Set(raw ? JSON.parse(raw) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveFavorites(ids: Set<string>) {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...ids]));
-}
+import { fetchJobs, deleteJob, fetchGenres, favoriteJob, type JobInfo, type GenreInfo } from "../api";
 
 function hashString(s: string): number {
   let hash = 0;
@@ -56,7 +41,6 @@ export function Library() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<Set<string>>(() => getFavorites());
 
   useEffect(() => {
     Promise.all([fetchJobs(100), fetchGenres()])
@@ -81,13 +65,14 @@ export function Library() {
 
   const allGenreIds = [...new Set(jobs.map((j) => j.genreId))];
 
-  const toggleFavorite = (id: string, e: Event) => {
+  const toggleFavorite = async (id: string, e: Event) => {
     e.stopPropagation();
-    const next = new Set(favorites);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setFavorites(next);
-    saveFavorites(next);
+    try {
+      const updated = await favoriteJob(id);
+      setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, isFavorite: updated.isFavorite } : j)));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDelete = async (id: string, e: Event) => {
@@ -193,10 +178,10 @@ export function Library() {
                 <i class="ph-trash" />
               </button>
               <span
-                class={`session-star${favorites.has(job.id) ? " active" : ""}`}
+                class={`session-star${job.isFavorite ? " active" : ""}`}
                 onClick={(e) => toggleFavorite(job.id, e)}
               >
-                <i class={favorites.has(job.id) ? "ph-star-fill" : "ph-star"} />
+                <i class={job.isFavorite ? "ph-star-fill" : "ph-star"} />
               </span>
             </div>
           </div>

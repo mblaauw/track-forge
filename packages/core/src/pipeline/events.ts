@@ -12,6 +12,9 @@ export interface PipelineEvent {
   stage: string;
   status: "started" | "completed" | "error" | "cancelled";
   error?: string;
+  message?: string;
+  tag?: string;
+  elapsedMs?: number;
   timestamp: string;
 }
 
