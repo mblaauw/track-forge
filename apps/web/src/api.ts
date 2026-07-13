@@ -107,6 +107,21 @@ export function startJob(id: string): Promise<{ status: string; jobId: string }>
   return api(`/api/jobs/${encodeURIComponent(id)}/start`, { method: "POST" });
 }
 
+export function cancelJob(id: string): Promise<{ status: string; jobId: string }> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" });
+}
+
+export function replayJob(id: string, stage?: string): Promise<{ status: string; jobId: string }> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/replay`, {
+    method: "POST",
+    body: JSON.stringify(stage ? { stage } : {}),
+  });
+}
+
+export function retryJob(id: string): Promise<{ status: string; jobId: string }> {
+  return api(`/api/jobs/${encodeURIComponent(id)}/retry`, { method: "POST" });
+}
+
 /** Parse artifacts from JSON string to array (server returns string) */
 function parseVersion(v: VersionInfo): VersionInfo {
   if (typeof v.artifacts === "string") {
