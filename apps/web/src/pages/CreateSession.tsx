@@ -3,16 +3,25 @@ import { useRouter } from "../lib/router";
 import { fetchGenres, createJob, type GenreInfo } from "../api";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
-import type { GenreModule } from "@track-forge/genre-core";
+import { popModule } from "@track-forge/genre-pop";
+import { ambientModule } from "@track-forge/genre-ambient";
+import { dnbModule } from "@track-forge/genre-dnb";
+import type { GenreModule, TagCategory } from "@track-forge/genre-core";
 
 const GENRE_MODULES: Record<string, GenreModule> = {
   edm: edmModule as unknown as GenreModule,
   hiphop: hipHopModule as unknown as GenreModule,
+  pop: popModule as unknown as GenreModule,
+  ambient: ambientModule as unknown as GenreModule,
+  dnb: dnbModule as unknown as GenreModule,
 };
 
 const GENRE_SUBGENRE_COUNTS: Record<string, string> = {
   edm: "80+",
   hiphop: "40+",
+  pop: "20+",
+  ambient: "15+",
+  dnb: "10+",
 };
 
 const KEY_OPTIONS = [
@@ -22,36 +31,12 @@ const KEY_OPTIONS = [
   "F# min", "G min", "G# min", "A min", "A# min", "B min",
 ];
 
-const PRESET_TAGS: Record<string, { genre: string[]; mood: string[]; inst: string[]; prod: string[] }> = {
-  deep_house_chill: {
-    genre: ["Deep House", "Electronic"],
-    mood: ["Warm", "Soulful", "Chill"],
-    inst: ["Synth", "Pad", "Organ"],
-    prod: ["Sidechain", "Smooth Mix", "Analog Warmth"],
-  },
-  tech_house_driving: {
-    genre: ["Tech House", "Electronic"],
-    mood: ["Driving", "Hypnotic", "Energetic"],
-    inst: ["Synth", "Percussion", "Bassline"],
-    prod: ["Tight Mix", "Compression", "Filter"],
-  },
-  progressive_house_euphoric: {
-    genre: ["Progressive House", "Electronic"],
-    mood: ["Euphoric", "Uplifting", "Building"],
-    inst: ["Synth Leads", "Pads", "Arpeggios"],
-    prod: ["Sidechain", "Layering", "Sweeps"],
-  },
-  detroit_techno_deep: {
-    genre: ["Detroit Techno", "Techno"],
-    mood: ["Deep", "Hypnotic", "Dark"],
-    inst: ["Synth", "Sequencer", "Drum Machine"],
-    prod: ["Minimal Mix", "Reverb", "Delay"],
-  },
-};
-
 const GENRE_COLORS: Record<string, string> = {
   edm: "cyan",
   hiphop: "amber",
+  pop: "violet",
+  ambient: "accent",
+  dnb: "red",
 };
 
 const SECTION_PALETTE = ["Intro", "Build", "Drop", "Breakdown", "Bridge", "Outro"];
@@ -66,8 +51,10 @@ export function CreateSession() {
   const [lyricsMode, setLyricsMode] = useState("");
   const [selectedSectionIdx, setSelectedSectionIdx] = useState(0);
   const [sections, setSections] = useState<{ section: string; bars: number }[]>([]);
+  const [sectionsDirty, setSectionsDirty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tags, setTags] = useState<{ label: string; category: string; weight: number; muted: boolean }[]>([]);
 
   useEffect(() => {
     fetchGenres().then(setGenres).catch(() => {});
@@ -81,6 +68,7 @@ export function CreateSession() {
       setInputs({ ...(m.defaults as Record<string, unknown>) });
       const firstPreset = m.presets[0];
       setPresetId(firstPreset?.id ?? "");
+      setSectionsDirty(false);
     }
   }, [genreId]);
 
@@ -110,8 +98,8 @@ export function CreateSession() {
   }, [genreId, presetId, inputs]);
 
   useEffect(() => {
-    setSections(arrangement);
-  }, [arrangement]);
+    if (!sectionsDirty) setSections(arrangement);
+  }, [arrangement, sectionsDirty]);
 
   const currentKey = (() => {
     const k = inputs.key as string;
@@ -120,32 +108,36 @@ export function CreateSession() {
     return `${k} ${s}`;
   })();
 
-  const presetTags = presetId && PRESET_TAGS[presetId] ? PRESET_TAGS[presetId] : null;
+  const activeTags = tags.filter((t) => !t.muted).sort((a, b) => b.weight - a.weight);
+  const tagLabels = activeTags.map((t) => t.label).join(", ");
 
   const stylePreviewText = (() => {
-    if (!presetTags) return "";
-    const tagParts = [...presetTags.genre, ...presetTags.mood, ...presetTags.inst, ...presetTags.prod].join(", ");
+    if (!tagLabels) return "";
     const bpm = (inputs.bpm as number) ?? "";
     const k = inputs.key as string;
     const s = inputs.scale as string;
     const keyDisplay = !k || k === "auto" ? "" : `${k}${s === "minor" ? "m" : ""}`;
-    return `${tagParts} · ${bpm} BPM · ${keyDisplay} · high fidelity, professional mix`;
+    return `${tagLabels} · ${bpm} BPM · ${keyDisplay} · high fidelity, professional mix`;
   })();
 
   const filteredGenres = genres.filter((g) => GENRE_MODULES[g.id]);
 
   const lyricsOptions = useMemo(() => {
-    if (genreId === "edm") {
-      return [
-        { value: "full_lyrics", label: "Full Lyrics" },
-        { value: "guided_instrumental", label: "Hook Only" },
-        { value: "strict_instrumental", label: "Instrumental" },
-      ];
+    switch (genreId) {
+      case "edm":
+      case "ambient":
+      case "dnb":
+        return [
+          { value: "full_lyrics", label: "Full Lyrics" },
+          { value: "guided_instrumental", label: "Hook Only" },
+          { value: "strict_instrumental", label: "Instrumental" },
+        ];
+      default:
+        return [
+          { value: "instrumental", label: "Instrumental" },
+          { value: "full_lyrics", label: "Full Lyrics" },
+        ];
     }
-    return [
-      { value: "instrumental", label: "Instrumental" },
-      { value: "full_lyrics", label: "Full Lyrics" },
-    ];
   }, [genreId]);
 
   const handleGenreClick = (id: string) => {
@@ -175,6 +167,7 @@ export function CreateSession() {
   };
 
   const decrementBars = () => {
+    setSectionsDirty(true);
     setSections((prev) => {
       const next = [...prev];
       if (selectedSectionIdx < 0 || selectedSectionIdx >= next.length) return prev;
@@ -188,6 +181,7 @@ export function CreateSession() {
   };
 
   const incrementBars = () => {
+    setSectionsDirty(true);
     setSections((prev) => {
       const next = [...prev];
       if (selectedSectionIdx < 0 || selectedSectionIdx >= next.length) return prev;
@@ -218,6 +212,14 @@ export function CreateSession() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const addTag = (label: string, category: string) => {
+    setTags((prev) => {
+      const existing = prev.findIndex((t) => t.label === label && t.category === category);
+      if (existing >= 0) return prev.filter((_, i) => i !== existing);
+      return [...prev, { label, category, weight: 2, muted: false }];
+    });
   };
 
   return (
@@ -378,48 +380,62 @@ export function CreateSession() {
             </div>
 
             <div class="category-lanes">
-              {[
-                { key: "genre", label: "GENRE", dot: "accent" },
-                { key: "mood", label: "MOOD", dot: "amber" },
-                { key: "inst", label: "INST", dot: "cyan" },
-                { key: "prod", label: "PROD", dot: "violet" },
-              ].map((lane) => {
-                const chips = presetTags ? presetTags[lane.key as keyof typeof presetTags] : [];
+              {(GENRE_MODULES[genreId]?.tagCategories ?? []).map((cat) => {
+                const selectedCount = tags.filter((t) => t.category === cat.id).length;
                 return (
-                  <div key={lane.key} class="category-lane">
-                    <div class="lane-dot" style={{ background: `var(--${lane.dot})` }} />
-                    <span class="lane-label">{lane.label}</span>
+                  <div key={cat.id} class="category-lane">
+                    <div class="lane-dot" style={{ background: `var(--${cat.color})` }} />
+                    <span class="lane-label">{cat.name.toUpperCase()}</span>
                     <div class="lane-chips">
-                      {chips.map((chip) => (
-                        <span key={chip} class="lane-chip">{chip}</span>
-                      ))}
+                      {cat.suggestions.slice(0, 4).map((s) => {
+                        const isSelected = tags.some((t) => t.label === s && t.category === cat.id);
+                        return (
+                          <span
+                            key={s}
+                            class={`lane-chip${isSelected ? " active" : ""}`}
+                            onClick={() => addTag(s, cat.id)}
+                          >
+                            {s}
+                          </span>
+                        );
+                      })}
                     </div>
-                    <span class="lane-count">{chips.length}</span>
+                    <span class="lane-count">{selectedCount}</span>
                     <button class="lane-add">+</button>
                   </div>
                 );
               })}
             </div>
 
-            {presetTags && presetTags.genre.length > 0 && (
+            {tags.length > 0 && (
               <div class="tag-channel-strip">
-                <span class="tag-strip-name">{presetTags.genre[0]}</span>
+                <span class="tag-strip-name">{tags[0]!.label}</span>
                 <div class="tag-weight-selector">
-                  <button class="weight-option">Sub</button>
-                  <button class="weight-option active">Bal</button>
-                  <button class="weight-option">Dom</button>
+                  {(["Sub", "Bal", "Dom"] as const).map((w) => (
+                    <button
+                      key={w}
+                      class={`weight-option${(w === "Sub" ? 1 : w === "Bal" ? 2 : 3) === tags[0]!.weight ? " active" : ""}`}
+                      onClick={() =>
+                        setTags((prev) =>
+                          prev.map((t, i) => (i === 0 ? { ...t, weight: w === "Sub" ? 1 : w === "Bal" ? 2 : 3 } : t))
+                        )
+                      }
+                    >
+                      {w}
+                    </button>
+                  ))}
                 </div>
-                <button class="tag-mute">
+                <button class="tag-mute" onClick={() => setTags((prev) => prev.map((t, i) => (i === 0 ? { ...t, muted: !t.muted } : t)))}>
                   <i class="ph-speaker-simple-slash" />
                 </button>
-                <button class="tag-remove">
+                <button class="tag-remove" onClick={() => setTags((prev) => prev.filter((_, i) => i !== 0))}>
                   <i class="ph-x" />
                 </button>
               </div>
             )}
 
             <div class="style-preview">
-              {stylePreviewText || "Select a preset to preview style"}
+              {stylePreviewText || "Select tags to build your style"}
             </div>
           </div>
         </div>

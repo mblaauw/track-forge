@@ -98,8 +98,8 @@ export interface ArrangementSection {
 }
 
 /** Compile user inputs into full blueprint shape */
-export function compileBlueprint(inputs: EdmInputs): EdmBlueprint {
-  const arrangement = buildDefaultArrangement(inputs.energy, inputs.complexity);
+export function compileBlueprint(inputs: EdmInputs, options?: { arrangementOverride?: { section: string; bars: number; tags?: string[] }[] }): EdmBlueprint {
+  const arrangement = options?.arrangementOverride ?? buildDefaultArrangement(inputs.energy, inputs.complexity);
   const tags = [...inputs.customTags, "electronic"];
   const negativeTags: string[] = [];
   if (inputs.lyricsMode !== "full_lyrics") negativeTags.push("vocals", "singing", "lyrics", "voice");

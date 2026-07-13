@@ -15,6 +15,9 @@
     "@track-forge/genre-core": "*",
     "@track-forge/genre-edm": "*",
     "@track-forge/genre-hiphop": "*",
+    "@track-forge/genre-pop": "*",
+    "@track-forge/genre-ambient": "*",
+    "@track-forge/genre-dnb": "*",
     "preact": "^10.25.0"
   },
   "devDependencies": {

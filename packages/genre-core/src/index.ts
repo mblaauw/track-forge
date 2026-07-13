@@ -37,8 +37,10 @@ export interface GenreModule<
   presets: GenrePreset[];
   /** LLM prompt fragments keyed by stage */
   promptFragments: Record<string, string>;
+  /** Tag categories for the Style Console UI */
+  tagCategories: TagCategory[];
   /** Compile user inputs into full blueprint shape */
-  compileBlueprint: (inputs: TInputs) => TBlueprintData;
+  compileBlueprint: (inputs: TInputs, options?: { arrangementOverride?: { section: string; bars: number }[] }) => TBlueprintData;
   /** Renderers produce Suno-ready artifacts from blueprint */
   renderers: GenreRenderers<TBlueprintData>;
   /** Critic function table */
@@ -126,6 +128,13 @@ export interface GenreMigration {
   fromVersion: number;
   toVersion: number;
   migrate: (data: Record<string, unknown>) => Record<string, unknown>;
+}
+
+export interface TagCategory {
+  id: string;
+  name: string;
+  color: string;
+  suggestions: string[];
 }
 
 // ── UI Module ────────────────────────────────────────────────────────

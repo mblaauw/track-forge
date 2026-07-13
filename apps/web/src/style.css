@@ -416,6 +416,7 @@ ul, ol { list-style: none; }
 .session-genre-badge.amber { background: var(--amber-dim); color: var(--amber); }
 .session-genre-badge.violet { background: var(--violet-dim); color: var(--violet); }
 .session-genre-badge.accent { background: var(--accent-dim); color: var(--accent); }
+.session-genre-badge.red { background: var(--red-dim); color: var(--red); }
 
 .session-status-badge {
   font-size: 10px;

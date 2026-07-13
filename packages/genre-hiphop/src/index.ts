@@ -10,6 +10,7 @@ import { HIP_HOP_PRESETS } from "./presets.js";
 import { createHipHopRenderers } from "./renderers.js";
 import { HIP_HOP_FAST_CRITIC, HIP_HOP_FULL_CRITICS, HIP_HOP_ORIGINALITY_CRITIC } from "./critics.js";
 import { hipHopValidators } from "./validators.js";
+import { HIP_HOP_TAG_CATEGORIES } from "./tag-categories.js";
 
 // ── Adjustment vocabulary ─────────────────────────────────────────────
 
@@ -117,6 +118,8 @@ Return your answer as valid JSON matching this schema:
 
   review: `Review the generated Hip-Hop track for quality and coherence.
 Verify subgenre conventions, lyrical complexity, and production style.`,
+
+  style_tag_suggestions: `Suggest style tags for {{subgenre}} Hip-Hop ({{bpm}}BPM, {{key}} {{scale}}, {{mood}}, {{narrativeArc}}, {{productionStyle}}). Return 4 categories: genre (subgenre-specific), mood (mood keywords), inst (instruments/samples), prod (production techniques). 6-8 suggestions per category. Return as JSON with keys genre, mood, inst, prod, each an array of strings.`,
 };
 
 // ── Module Assembly ───────────────────────────────────────────────────
@@ -139,8 +142,9 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
   adjustmentVocabulary: hipHopAdjustmentVocabulary,
   tagPolicy: hipHopTagPolicy,
   presets: HIP_HOP_PRESETS,
+  tagCategories: HIP_HOP_TAG_CATEGORIES,
   promptFragments: hipHopPromptFragments,
-  compileBlueprint: (inputs: HipHopInputs) => HipHopBlueprintSchema.parse({
+  compileBlueprint: (inputs: HipHopInputs, options?: { arrangementOverride?: { section: string; bars: number }[] }) => HipHopBlueprintSchema.parse({
     subgenre: inputs.subgenre,
     bpm: inputs.bpm,
     key: inputs.key,
