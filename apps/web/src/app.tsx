@@ -1,14 +1,10 @@
 import { Router, Route } from "./lib/router";
-import { JobList } from "./pages/JobList";
-import { CreateJob } from "./pages/CreateJob";
-import { JobDetail } from "./pages/JobDetail";
+import { AppShell } from "./components/AppShell";
 
 export function App() {
   return (
     <Router>
-      <Route path="/" component={JobList} />
-      <Route path="/create" component={CreateJob} />
-      <Route path="/job/:id" component={JobDetail} />
+      <AppShell />
     </Router>
   );
 }
