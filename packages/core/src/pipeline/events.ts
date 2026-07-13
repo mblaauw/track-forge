@@ -1,6 +1,6 @@
 import type { Db } from "../db/index.js";
 import { schema } from "../db/index.js";
-import { eq, desc, lt, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import type { JobEvent, GenerationStage } from "@track-forge/contracts";
 import { randomUUID } from "node:crypto";
 

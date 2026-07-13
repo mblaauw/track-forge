@@ -1,7 +1,7 @@
 import { initConfig } from "./lib/config.js";
 import { initDb } from "./lib/db.js";
 import { schema } from "@track-forge/core";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { writeFileSync, readFileSync } from "node:fs";
 import type { ExportBundle, ImportResult } from "@track-forge/contracts";
 import { getModule } from "./lib/modules.js";

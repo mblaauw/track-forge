@@ -125,10 +125,6 @@ export function fetchVersions(jobId: string): Promise<VersionInfo[]> {
   return api<VersionInfo[]>(`/api/jobs/${encodeURIComponent(jobId)}/versions`).then((vs) => vs.map(parseVersion));
 }
 
-export function fetchVersion(id: string): Promise<VersionInfo> {
-  return api<VersionInfo>(`/api/versions/${encodeURIComponent(id)}`).then(parseVersion);
-}
-
 export function promoteVersion(id: string): Promise<VersionInfo> {
   return api<VersionInfo>(`/api/versions/${encodeURIComponent(id)}/promote`, { method: "POST" }).then(parseVersion);
 }
@@ -268,24 +264,6 @@ export interface ImportResult {
   imported: number;
   skipped: number;
   errors: { index: number; message: string }[];
-}
-
-export function exportJob(jobId: string): Promise<ExportBundle> {
-  return api(`/api/jobs/${encodeURIComponent(jobId)}/export`);
-}
-
-export function bulkExport(jobIds: string[]): Promise<ExportBundle> {
-  return api("/api/jobs/export", {
-    method: "POST",
-    body: JSON.stringify({ ids: jobIds }),
-  });
-}
-
-export function importJobs(bundle: ExportBundle): Promise<ImportResult> {
-  return api("/api/jobs/import", {
-    method: "POST",
-    body: JSON.stringify(bundle),
-  });
 }
 
 // ── SSE progress events ────────────────────────────────────────────
