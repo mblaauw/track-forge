@@ -1,8 +1,11 @@
 node_modules/
 dist/
-__tests__/*.js
-__tests__/*.d.ts
 .env
+# tsc --build artifacts (TypeScript-only repo — no legitimate .js sources)
+*.js
+*.js.map
+*.d.ts
+*.d.ts.map
 *.log
 .turbo/
 .next/
