@@ -4,131 +4,98 @@
 
 ```bash
 npm ci                     # install (allowScripts for better-sqlite3 + esbuild)
-npm run build               # tsc --build all workspaces (generates .js/.d.ts in src/ + __tests__/)
-npm test                    # vitest run (all workspaces — 28 files, 249 tests, ~2s)
-npm run -w <workspace> test # single workspace (each has its own vitest run)
+npm run build               # tsc --build + vite build all workspaces
+npm test                    # vitest run (all workspaces — 249+ tests, ~2s)
+npm run -w <workspace> test # single workspace
 npx vitest run --project '@track-forge/core'  # single package via vitest project name
-npm run dev --workspaces --if-present          # start all dev servers
+npm run -w apps/web dev     # Vite on :5173, proxies /api → :3000
+npm run -w apps/server dev  # Fastify on :3000
 npm run clean               # rm -rf apps/*/dist packages/*/dist
 ```
 
-**CI** (`.github/workflows/ci.yml`): two separate jobs — `check` (tsc --build + vitest + prettier --check) then `lint` (tsc --noEmit). Run both locally: `npm run build && npm test && npx prettier --check . && npx tsc --noEmit`.
+**CI** (`.github/workflows/ci.yml`): `check` job runs `tsc --build && vitest && prettier --check`.
 
-**Local apps**: `npm run -w apps/server dev` starts Fastify on `127.0.0.1:3000`; `npm run -w apps/web dev` starts Vite on `127.0.0.1:5173` and proxies `/api` to the server.
-
-**Full stack**: start both in separate terminals, or root `npm run dev --workspaces --if-present`.
-
-**Build artifacts**: `tsc --build` writes `.js`/`.d.ts`/`.js.map`/`.d.ts.map` alongside source files in `src/` and `__tests__/`. These are gitignored (`__tests__/*.js`, `__tests__/*.d.ts`). Vitest runs `.ts` files only — `.js` artifacts in `src/` can be deleted before rebuild if stale.
+**Build artifacts**: `tsc --build` emits `.js`/`.d.ts`/`.js.map`/`.d.ts.map` beside source files. These are gitignored. Vitest runs `.ts` only — stale `.js` in `src/` can cause build confusion; delete and rebuild if weird errors appear.
 
 ## Workspaces
 
 | Path | Package | Purpose |
 |------|---------|---------|
-| `apps/server` | `@track-forge/server` | Fastify API server (port 3000). Entry: `src/index.ts` |
-| `apps/web` | `@track-forge/web` | Preact SPA (Vite, port 5173). Proxies `/api` → `localhost:3000` |
-| `packages/contracts` | `@track-forge/contracts` | Shared Zod schemas, types, branded IDs. Lowest dep — no runtime deps |
-| `packages/core` | `@track-forge/core` | Pipeline engine, DB (SQLite+drizzle-orm), LLM/Suno clients, orchestration |
-| `packages/genre-core` | `@track-forge/genre-core` | `GenreModule` interface + sub-types. Zero runtime deps |
-| `packages/genre-edm` | `@track-forge/genre-edm` | EDM genre module: schema, renderers, validators, presets, prompts |
+| `apps/server` | `@track-forge/server` | Fastify API server. Entry: `src/index.ts` |
+| `apps/web` | `@track-forge/web` | Preact SPA (Vite). 4-views: Library, Create, Forge, Studio |
+| `packages/contracts` | `@track-forge/contracts` | Shared Zod schemas, branded IDs (`JobId`, `VersionId`, etc.), types |
+| `packages/core` | `@track-forge/core` | Pipeline engine, DB (SQLite+drizzle), LLM/Suno clients, orchestration |
+| `packages/genre-core` | `@track-forge/genre-core` | `GenreModule` interface + `TagCategory` type |
+| `packages/genre-edm` | `@track-forge/genre-edm` | EDM genre module |
 | `packages/genre-hiphop` | `@track-forge/genre-hiphop` | Hip-Hop genre module |
-| `packages/test-support` | `@track-forge/test-support` | Shared test helpers, mock factories |
+| `packages/genre-pop` | `@track-forge/genre-pop` | Pop genre module (3 presets) |
+| `packages/genre-ambient` | `@track-forge/genre-ambient` | Ambient genre module (2 presets) |
+| `packages/genre-dnb` | `@track-forge/genre-dnb` | Drum & Bass genre module (2 presets) |
+| `packages/test-support` | `@track-forge/test-support` | Shared test helpers |
 
-Genre packages have `ui/` sub-packages (`packages/genre-*/ui/src/index.ts`) that export `VERSION` only — stubs, not wired into anything.
+Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphaned stub dirs). Build now runs `tsc -p tsconfig.json` only.
 
-## Architecture
+## Frontend architecture
 
-**Pipeline stages** (sequential, in `packages/core/src/pipeline/orchestrator.ts`):
+**4-view hash router** (`apps/web/src/lib/router.tsx`): custom hash-based router with `Router`/`Route`/`Link`/`useRouter`. Route component passes `{ params }` extracted via `match()`. Nav to `/forge/:id` or `/studio/:id` requires a job ID — without it the route won't match and viewport stays blank.
+
+**Session context** (`apps/web/src/lib/session.tsx`): `SessionProvider` wrapping the app provides `{ jobId, name, genreId, bpm, key, status, onForge, forgeLabel }` to all views. TransportBar reads this for live breadcrumb/status/button. Views write into it via `useSession().setSession()`.
+
+**AppShell** (`apps/web/src/components/AppShell.tsx`): composes NavRail + TransportBar + viewport. Route dispatch inside viewport renders one of 4 views.
+
+**CSS design tokens** (`apps/web/src/style.css`, ~2000 lines): use short aliases — `--acc` (accent green `#3DDC84`), `--tx` (text), `--dim` (muted), `--faint` (muted), `--line2` (secondary border). These are defined in `:root` alongside long names.
+
+**Views**:
+- **Library** (`/`): fetches `fetchJobs(100)` + `fetchGenres()`. Cards show genre badge, status badge, waveform, star/favorite, delete. Click → Studio (completed) or Forge (in_progress).
+- **Create** (`/create`): genre selection from real modules, presets from `module.presets`, arrangement from `compileBlueprint()`, Style Console with tag categories from `module.tagCategories`.
+- **Forge** (`/forge/:id`): fetches job, connects SSE via `connectJobEvents(id, handlers)`. 8-stage assembly line. Actions depend on job status.
+- **Studio** (`/studio/:id`): fetches job + versions + generations (takes). Style + lyric artifacts parsed from version artifacts JSON. Play/pause simulated via `setInterval`.
+
+## Backend architecture
+
+**Server routes** (`apps/server/src/routes/*`): jobs, versions, projects, health, suno, events, import-export.
+
+**Pipeline stages** (`packages/core/src/pipeline/orchestrator.ts`):
 ```
 ref_interpretation → planning → style_writing → compilation → review → revision → verification → versioning
 ```
+Stage state on `PipelineState`, persisted as JSON in `job.stageData`.
 
-Each stage handler lives in `orchestrator.ts`. State is built up on `PipelineState` and persisted via `StageData` in the `stageData` JSON column of the jobs table.
-If you touch pipeline, review, revision, or Suno payload logic, start in `packages/core/src/pipeline/orchestrator.ts` and `packages/core/src/suno/*`.
+**SSE**: `GET /api/jobs/:id/events` streams `{ jobId, stage, status, message?, tag?, elapsedMs?, error?, timestamp }`. History replay on reconnect.
 
-**Server routes** live in `apps/server/src/routes/*`. Core areas are health, projects, jobs, versions, Suno, SSE events, and import/export.
+**DB**: SQLite via better-sqlite3 + drizzle-orm. Schema in `packages/core/src/db/schema.ts`. Tables: projects, projectDrafts, jobs, versions, generations, sunoTracks, jobEvents, criticFindings, adjustments, artifactLocks, jobStageOutputs. Auto-created by `createDb()` with `CREATE TABLE IF NOT EXISTS` + migration `ALTER TABLE` blocks for new columns.
 
-**Genre modules** implement `GenreModule` from `@track-forge/genre-core`:
-- `inputSchema` / `blueprintSchema` — Zod validation for user-facing inputs and internal blueprint
-- `compileBlueprint(inputs) → TBlueprintData` — transforms user inputs to full blueprint (must provide `arrangement`, `styleClauses`, `tags`, etc.)
-- `renderers` — produce Suno artifacts from compiled blueprint
-- `critics` — LLM-based review definitions
-- `validators` — input + blueprint validation
-- `promptFragments` — LLM prompt templates per stage
-- `presets` — named preset configurations
+**Config**: `TRACK_FORGE_*` env vars or `track-forge.config.js`. Default DB path: `./data/track-forge.db`. LLM supports `openai`/`anthropic`/`ollama`/`openai-compatible`.
 
-**Config** (`track-forge.config.js`, gitignored): Env vars override (`TRACK_FORGE_LLM_API_KEY`, `TRACK_FORGE_SUNO_AUTH_TOKEN`, `TRACK_FORGE_DB_PATH`, `TRACK_FORGE_HOST`, `TRACK_FORGE_PORT`, `TRACK_FORGE_STATIC_DIR`, etc.). LLM provider: `openai` | `anthropic` | `ollama` | `openai-compatible`. Custom base URL via `llmBaseUrl` / `TRACK_FORGE_LLM_BASE_URL`. Fetch timeout: 180s per call.
+## Genre modules
 
-**DB**: SQLite via better-sqlite3. Schema in `packages/core/src/db/schema.ts`. Tables: projects, projectDrafts, jobs, versions, generations, sunoTracks, jobEvents, artifactLocks, criticFindings, adjustments, jobStageOutputs. User-facing migrations use drizzle-orm.
+Implement `GenreModule<TInputs, TBlueprintData>` from `@track-forge/genre-core`:
 
-## LLM model behavior (hard-earned)
+- `inputSchema` / `blueprintSchema` — Zod schemas
+- `compileBlueprint(inputs, options?)` — builds arrangement, styleClauses, tags. Optional `arrangementOverride?: { section, bars }[]`
+- `renderers` — `title`, `style`, `excludedStyles`, `lyrics`
+- `promptFragments` — keyed by stage, including `style_tag_suggestions`
+- `tagCategories: TagCategory[]` — colored category groups with suggestions for Style Console
+- `tagPolicy` — `mandatoryTags`, `forbiddenTags`, `canonicalMap`
+- All genres must include `lyricsMode` in inputSchema and handle it in renderers (strict_instrumental, guided_instrumental, full_lyrics)
 
-The app's LLM client talks to an OpenAI-compatible endpoint (`TRACK_FORGE_LLM_BASE_URL`). Currently configured to use OpenCode API with `kimi-k2.5`.
+## LLM behavior
 
-**Available models** (tested via openai-compatible provider):
-- `kimi-k2.5` — **recommended**. ~13s/call, no hidden reasoning, content in `message.content`. Best speed/quality.
-- `deepseek-v4-flash` — reasoning model. 80-92% of tokens go to hidden `reasoning_content`. Empty content unless `max_tokens` > 4096. 20-30s/call.
-- `qwen3.7-plus` — very slow (>30s even for trivial prompts). Not recommended.
-- `minimax-m3` — fast (~11s) but less tested.
-
-**Reasoning overhead problem**: DeepSeek and some others consume most of the `max_tokens` budget on internal thinking. The visible `content` comes back empty when the budget is too small. This is NOT a prompt quality issue — the model needs more tokens.
-
-**Measured pipeline timing** (Kimi k2.5):
-- Planning: ~30s
-- Style+Lyrics (parallel): ~30s
-- Review: ~15s
-- Compilation→Version: <1s
-- **Total: ~76s** (vs 150s with DeepSeek)
-
-**Per-stage max_tokens** (tuned for kimi-k2.5):
-- Planning: 2048
-- Style: 4096
-- Lyrics: 2048
-- Default (client.ts): 2048
-
-If switching to DeepSeek, bump all to 8192 minimum.
-
-## Debugging
-
-**LLM debug**: `TRACK_FORGE_LOG_LEVEL=debug` prints every LLM request (prompt, content, reasoning_content, token usage) in server logs.
-
-**Suno**: External audio generation API. Config via `TRACK_FORGE_SUNO_BASE_URL` + `TRACK_FORGE_SUNO_AUTH_TOKEN`.
-
-**Cancel+abort**: Pipeline abort via `POST /api/jobs/:id/cancel`. Uses in-memory `AbortController` map (`job-abort-controller.ts`). LLM fetches combine pipeline+timeout signals via `combineSignals()` helper — returns `{ signal, cleanup }`; cleanup called in `finally` to prevent listener leaks.
-
-## Testing
-
-- Vitest project mode: root config runs `packages/*` + `apps/*` as separate projects
-- Server tests use Fastify `server.inject()` (no real sockets). Temp SQLite DBs per test.
-- Web tests are smoke-only (no DOM). No Playwright/Cypress in repo.
-- To add a test to a package: create `__tests__/*.test.ts` in that workspace.
-- Genre modules have renderers + validators tests in-genre.
-
-## Conventions
-
-- **No comments in production code** — state intent through naming, not prose
-- **No emoji icons** — use Phosphor (`@phosphor-icons/react`) SVG icons
-- **CSS**: custom properties/design tokens in `style.css`. No Tailwind. Dark theme (#0F0F23 bg, #F8FAFC text, #22C55E accent). Inter font.
-- **No zustand/redux** — plain `useState` + `useEffect` in Preact
-- **API responses**: DELETE returns 204 (no body). Other endpoints return JSON.
-- **Zod branded IDs**: `JobId`, `VersionId`, etc. Cast with `as any` at DB boundaries
-- **Pipeline errors**: LLM timeouts vs user cancellations distinguished via error message checks in the catch block
+Kimi k2.5 recommended (~13s/call). DeepSeek v4 flash uses 80-92% tokens on hidden `reasoning_content` — need `max_tokens` ≥ 8192 to see visible output. Per-stage max_tokens tuned for kimi: planning 2048, style 4096, lyrics 2048.
 
 ## Common gotchas
 
-- **`compiledJson` on job row can be stale**. Always read from `stageData` (the `stageData` JSON column) for the latest compiled output. The verification critics and review context must parse from `stageData`, not the raw `compiledJson` column.
-- **EDM must have `compileBlueprint`** — raw user inputs don't include `arrangement` or `styleClauses` that the renderer needs. The `compileBlueprint()` function builds these from inputs.
-- **EDM must have a `planning` prompt fragment** — if missing, the fallback template produces generic/non-EDM song plans.
-- **EDM style prompt must include JSON schema** — without it, the LLM returns free-form text which `tryParseStyleResult` can't parse, resulting in empty `titleCandidates` and null `bpm`/`key`.
-- **Critic `{{style}}` `{{title}}` `{{lyrics}}` placeholders need injection** — `handleReview` and `handleVerification` must parse `compiledJson` and set these individually on the context, otherwise critics see empty strings. `handleVerification` was missing this injection until recently — check that stage if critics report empty fields.
-- **`artifacts` is a JSON string in DB** — the API returns it as a string. The frontend `VersionInfo` interface expects it parsed. Any new version endpoint needs to parse it via `parseVersion()`.
-- **`lyricsMode === "strict_instrumental"` skips the lyrics LLM call entirely** — handled in `handleWriting`. Don't touch if it works.
-- **`handleVerification` re-runs critics on patched content**. If critics complain about "empty style", check that `compiledJson` in context is from `stageData`, not the stale job column.
-- **Pause-after-revision** sets `currentStage = "review"` on the job so the review endpoint (`POST /api/jobs/:id/review`) can accept it. The review endpoint checks `currentStage === "review"`.
-- **Findings parse** in pipeline init wraps `JSON.parse(job.findings)` in try/catch — if the stored JSON is malformed, it gracefully defaults to `null` instead of crashing the pipeline.
-- **Prompt injection protection**: `buildPromptContext` in `prompt-assembler.ts` spreads `...inputs` **before** reserved fields (`genreId`, `genreName`, `presetId`, `reference`, etc.) so user inputs cannot override them.
-- **Project delete cascade** (`projects.ts`) must delete in FK order: sunoTracks → generations → artifactLocks → versions → jobStageOutputs → jobEvents → criticFindings → adjustments → jobs. Missing any orphans rows.
-- **`combineSignals()`** returns `{ signal, cleanup }` — always call `cleanup()` in the `finally` block to remove abort listeners. Without it, every LLM call leaks listener closures.
-- **`JSON.parse` in DB boundary callbacks (`findings`, `artifacts`, `nlAdjustments`)** can throw on corrupted data. New pipeline init wraps findings parse in try/catch; replicate that pattern for any new JSON-column reads.
-- **Build artifacts (`.js`, `.d.ts`) in `__tests__/` are gitignored** — if `tsc --build` creates duplicate test files, delete them and rerun `npm test` to verify the count (249, not 498).
-- **No prettier config file** — prettier uses defaults. `npx prettier --check .` at root.
-- **genre-core/ui was deleted** (orphaned, no workspace registration). genre-edm/ui and genre-hiphop/ui exist as VERSION-only stubs.
+- **`compiledJson` on job row is stale** — always read from `stageData` JSON column for latest compiled output.
+- **Critic placeholders need injection** — `handleReview`/`handleVerification` must parse `compiledJson` and set `{{style}}`, `{{title}}`, `{{lyrics}}` individually on context, otherwise critics see empty strings.
+- **`artifacts` is JSON string in DB** — API returns as string. Frontend `VersionInfo` interface expects parsed. New version endpoints must call `parseVersion()`.
+- **`lyricsMode === "strict_instrumental"` skips LLM lyrics call** — handled in `handleWriting`.
+- **Pause-after-revision** sets `currentStage = "review"` so review endpoint (`POST /api/jobs/:id/review`) can pick it up. Review endpoint checks `currentStage === "review"`.
+- **Project delete cascade** must delete in FK order: sunoTracks → generations → artifactLocks → versions → jobStageOutputs → jobEvents → criticFindings → adjustments → jobs.
+- **`combineSignals()` returns `{ signal, cleanup }`** — always call `cleanup()` in `finally` to prevent listener leaks.
+- **Prompt injection protection**: `buildPromptContext` spreads `...inputs` **before** reserved fields so user inputs cannot override `genreId`, `presetId`, etc.
+- **`findings` parse** wraps `JSON.parse` in try/catch — replicate for any new JSON-column reads.
+- **Build artifacts in `__tests__/`** are gitignored — if `tsc --build` creates duplicate `.js` test files, delete them and rerun `npm test`.
+- **No prettier config** — uses defaults. `npx prettier --check .` at root.
+- **CSS variables `--acc`, `--tx`, `--dim`, `--faint`, `--line2`** are aliases for the long names — both defined. If adding a new CSS property reference, use these short aliases (they match the mockup conventions).
+- **Hash router requires exact segment counts** — `/forge` won't match `/forge/:id`. NavRail uses `session.jobId` to build correct routes. Without a job ID, RUN/MIX buttons are disabled.
+- **Server needs `data/` directory** — DB default path is `./data/track-forge.db`. The directory must exist or `createDb()` throws.
