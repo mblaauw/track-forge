@@ -13,7 +13,7 @@ npm run -w apps/server dev  # Fastify on :3000
 npm run clean               # rm -rf apps/*/dist packages/*/dist
 ```
 
-**CI** (`.github/workflows/ci.yml`): `check` job runs `tsc --build && vitest && prettier --check`.
+**CI** (`.github/workflows/ci.yml`): two jobs — `check` (tsc --build + vitest + prettier) then `lint` (tsc --noEmit). Run both locally: `npm run build && npm test && npx prettier --check . && npx tsc --noEmit`.
 
 **Build artifacts**: `tsc --build` emits `.js`/`.d.ts`/`.js.map`/`.d.ts.map` beside source files. These are gitignored. Vitest runs `.ts` only — stale `.js` in `src/` can cause build confusion; delete and rebuild if weird errors appear.
 
@@ -43,7 +43,7 @@ Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphan
 
 **AppShell** (`apps/web/src/components/AppShell.tsx`): composes NavRail + TransportBar + viewport. Route dispatch inside viewport renders one of 4 views.
 
-**CSS design tokens** (`apps/web/src/style.css`, ~2000 lines): use short aliases — `--acc` (accent green `#3DDC84`), `--tx` (text), `--dim` (muted), `--faint` (muted), `--line2` (secondary border). These are defined in `:root` alongside long names.
+**CSS design tokens** (`apps/web/src/style.css`, ~2000 lines): current theme is light (`--bg: #FFF1E5`, `--panel: #FFFFFF`). Colors use short aliases — `--acc` (accent green `#3DDC84`), `--tx` (text `#2D2A24`), `--dim` (muted), `--faint` (muted), `--line2` (secondary border). Both short and long names are defined in `:root`.
 
 **Views**:
 - **Library** (`/`): fetches `fetchJobs(100)` + `fetchGenres()`. Cards show genre badge, status badge, waveform, star/favorite, delete. Click → Studio (completed) or Forge (in_progress).
@@ -99,3 +99,4 @@ Kimi k2.5 recommended (~13s/call). DeepSeek v4 flash uses 80-92% tokens on hidde
 - **CSS variables `--acc`, `--tx`, `--dim`, `--faint`, `--line2`** are aliases for the long names — both defined. If adding a new CSS property reference, use these short aliases (they match the mockup conventions).
 - **Hash router requires exact segment counts** — `/forge` won't match `/forge/:id`. NavRail uses `session.jobId` to build correct routes. Without a job ID, RUN/MIX buttons are disabled.
 - **Server needs `data/` directory** — DB default path is `./data/track-forge.db`. The directory must exist or `createDb()` throws.
+- **Key select stores abbreviated scale** — `<option value="C maj">` splits to `["C","maj"]`. `handleKeyChange` must map `"maj"` → `"major"` and `"min"` → `"minor"` before storing in `inputs.scale`. Genre Zod schemas use `z.enum(["major", "minor"])` — `safeParse` rejects `"maj"`/`"min"`, causing silent job creation failures.
