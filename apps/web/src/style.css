@@ -1440,6 +1440,14 @@ ul, ol { list-style: none; }
   margin-top: 16px;
 }
 
+.sections-line {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line2);
+  font-size: 11px;
+  color: var(--faint);
+}
+
 /* ─── Forge ─── */
 
 .forge-header {

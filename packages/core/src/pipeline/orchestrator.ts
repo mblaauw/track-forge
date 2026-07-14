@@ -676,7 +676,9 @@ function parseBlueprint(job: Job, module: GenreModule): Record<string, unknown> 
   // Compile raw inputs into full blueprint shape if module supports it
   if (module.compileBlueprint && typeof module.compileBlueprint === "function") {
     try {
-      return module.compileBlueprint(inputs) as Record<string, unknown>;
+      const opts: Record<string, unknown> = {};
+      if (inputs.arrangement) opts.arrangementOverride = inputs.arrangement;
+      return module.compileBlueprint(inputs, opts) as Record<string, unknown>;
     } catch { /* fall through to raw inputs */ }
   }
   return inputs;

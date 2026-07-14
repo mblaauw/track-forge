@@ -16,3 +16,5 @@ track-forge.config.js
 .vscode/
 design-system/
 .playwright-mcp/
+.planning/
+data/

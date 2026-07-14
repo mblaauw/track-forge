@@ -136,7 +136,8 @@ export function CreateSession() {
     const k = inputs.key as string;
     const s = inputs.scale as string;
     const keyDisplay = !k || k === "auto" ? "" : `${k}${s === "minor" ? "m" : ""}`;
-    return `${tagLabels} · ${bpm} BPM · ${keyDisplay} · high fidelity, professional mix`;
+    const keyPart = keyDisplay ? ` · ${keyDisplay}` : "";
+    return `${tagLabels} · ${bpm} BPM${keyPart} · high fidelity, professional mix`;
   })();
 
   const filteredGenres = genres.filter((g) => GENRE_MODULES[g.id]);
@@ -145,6 +146,7 @@ export function CreateSession() {
   const estSeconds = totalBars * 4 * 60 / ((inputs.bpm as number) || 120);
   const activeCount = tags.filter((t) => !t.muted).length;
   const styleChars = stylePreviewText.length;
+  const sectionsLine = sections.length > 0 ? `${formatSectionName(sections[0]!.section)} +${sections.length - 1} more sections · ${totalBars} bars${sectionsDirty ? " · Custom arrangement" : ""}` : "";
 
   const lyricsOptions = useMemo(() => {
     switch (genreId) {
@@ -182,7 +184,8 @@ export function CreateSession() {
     const val = (e.target as HTMLSelectElement).value;
     const parts = val.split(" ");
     if (parts.length === 2) {
-      setInputs((prev) => ({ ...prev, key: parts[0]!, scale: parts[1] }));
+      const scale = parts[1] === "maj" ? "major" : parts[1] === "min" ? "minor" : parts[1]!;
+      setInputs((prev) => ({ ...prev, key: parts[0]!, scale }));
     }
   };
 
@@ -424,7 +427,7 @@ export function CreateSession() {
                 <div
                   key={i}
                   class={`arrangement-section${i === selectedSectionIdx ? " selected" : ""}`}
-                  style={{ flex: sec.bars, background: strong ? base : "#13161B", color: strong ? "#08090B" : "var(--dim)" }}
+                  style={{ flex: sec.bars, background: strong ? base : "var(--raised)", color: strong ? "#08090B" : "var(--dim)" }}
                   onClick={() => setSelectedSectionIdx(i)}
                   draggable={true}
                   onDragStart={(e: DragEvent) => { dragIdx.current = i; e.dataTransfer!.effectAllowed = "move"; }}
@@ -622,6 +625,7 @@ export function CreateSession() {
             </div>
             <div class="style-preview">
               {stylePreviewText || "Select tags to build your style"}
+              {sectionsLine && <div class="sections-line">{sectionsLine}</div>}
             </div>
           </div>
         </div>
