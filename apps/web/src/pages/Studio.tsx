@@ -272,7 +272,7 @@ export function Studio({ id }: { id: string }) {
         <div class="studio-layout">
           <div class="artifact-panel">
             <div class="artifact-panel-header">
-              Style{styleText ? ` (${styleText.length} chars)` : ""}
+              ◆ Style Prompt{styleText ? ` (${styleText.length} chars)` : ""}
             </div>
             <div class="artifact-panel-body">
               {styleText ? (
@@ -296,7 +296,7 @@ export function Studio({ id }: { id: string }) {
 
           <div class="artifact-panel">
             <div class="artifact-panel-header">
-              Lyric Sheet{parsedLyrics.totalSyllables > 0 ? ` (${parsedLyrics.totalSyllables} syllables)` : ""}
+              ◆ Lyric Sheet{parsedLyrics.totalSyllables > 0 ? ` (${parsedLyrics.totalSyllables} syllables)` : ""}
             </div>
             <div class="artifact-panel-body lyric-sheet">
               {parsedLyrics.sections.length > 0 ? (
@@ -324,7 +324,7 @@ export function Studio({ id }: { id: string }) {
 
       <div class="takes-section">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-          <h2 class="takes-title" style="margin:0;">Audio Takes</h2>
+          <h2 class="takes-title" style="margin:0;">◆ Audio Takes</h2>
           <button class="render-btn" onClick={handleNewTake}>
             <i class="ph-plus-circle" />
             Render new take

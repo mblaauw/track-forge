@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "preact/hooks";
+import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
 import { fetchGenres, createJob, type GenreInfo } from "../api";
 import { edmModule } from "@track-forge/genre-edm";
@@ -24,6 +24,10 @@ const GENRE_SUBGENRE_COUNTS: Record<string, string> = {
   dnb: "10+",
 };
 
+const GENRE_SHORT: Record<string, string> = {
+  edm: "EDM", hiphop: "HIP", pop: "POP", ambient: "AMB", dnb: "DNB",
+};
+
 const KEY_OPTIONS = [
   "C maj", "Db maj", "D maj", "Eb maj", "E maj", "F maj",
   "F# maj", "G maj", "Ab maj", "A maj", "Bb maj", "B maj",
@@ -38,6 +42,18 @@ const GENRE_COLORS: Record<string, string> = {
   ambient: "accent",
   dnb: "red",
 };
+
+const SEC_COLORS: Record<string, string> = {
+  intro: "#3a4048", build: "var(--amber)", drop: "var(--acc)", break: "#3a4048", outro: "#3a4048",
+  breakdown: "#3a4048", bridge: "var(--violet)", verse: "var(--cyan)", hook: "var(--acc)", groove: "var(--cyan)",
+  peak: "var(--acc)", pre: "var(--amber)", chorus: "var(--acc)", loop: "var(--cyan)", emerge: "var(--violet)",
+  swell: "var(--cyan)", drift: "var(--violet)", fade: "#3a4048", bloom: "var(--acc)", sparse: "#3a4048",
+  resolve: "var(--cyan)",
+};
+
+function formatSectionName(name: string): string {
+  return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const SECTION_PALETTE = ["Intro", "Build", "Drop", "Breakdown", "Bridge", "Outro"];
 
@@ -55,6 +71,7 @@ export function CreateSession() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tags, setTags] = useState<{ label: string; category: string; weight: number; muted: boolean }[]>([]);
+  const [addingCat, setAddingCat] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGenres().then(setGenres).catch(() => {});
@@ -121,6 +138,11 @@ export function CreateSession() {
   })();
 
   const filteredGenres = genres.filter((g) => GENRE_MODULES[g.id]);
+
+  const totalBars = sections.reduce((s, sec) => s + sec.bars, 0);
+  const estSeconds = totalBars * 4 * 60 / ((inputs.bpm as number) || 120);
+  const activeCount = tags.filter((t) => !t.muted).length;
+  const styleChars = stylePreviewText.length;
 
   const lyricsOptions = useMemo(() => {
     switch (genreId) {
@@ -194,6 +216,78 @@ export function CreateSession() {
     });
   };
 
+  const duplicateSection = () => {
+    const i = selectedSectionIdx;
+    if (i < 0 || i >= sections.length) return;
+    setSectionsDirty(true);
+    setSections((prev) => {
+      const arr = [...prev];
+      arr.splice(i + 1, 0, { ...arr[i]! });
+      return arr;
+    });
+    setSelectedSectionIdx(i + 1);
+  };
+
+  const removeSection = () => {
+    const i = selectedSectionIdx;
+    if (i < 0 || i >= sections.length) return;
+    setSectionsDirty(true);
+    setSections((prev) => prev.filter((_, j) => j !== i));
+    setSelectedSectionIdx(Math.max(0, i - 1));
+  };
+
+  const addSection = (type: string) => {
+    setSectionsDirty(true);
+    setSections((prev) => [...prev, { section: type, bars: 16 }]);
+    setSelectedSectionIdx(sections.length);
+  };
+
+  const dragIdx = useRef<number | null>(null);
+
+  const reorderSection = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0) return;
+    setSectionsDirty(true);
+    setSections((prev) => {
+      const arr = [...prev];
+      const [m] = arr.splice(from, 1);
+      if (!m) return prev;
+      arr.splice(to, 0, m);
+      return arr;
+    });
+    setSelectedSectionIdx(to);
+  };
+
+  const moveSection = (dir: number) => {
+    const to = selectedSectionIdx + dir;
+    if (to < 0 || to >= sections.length) return;
+    reorderSection(selectedSectionIdx, to);
+  };
+
+  const startResize = (i: number, e: PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startBars = sections[i]?.bars ?? 8;
+    const totalBars = sections.reduce((s, sec) => s + sec.bars, 0);
+    const track = (e.target as HTMLElement).closest(".arrangement-bar") as HTMLElement;
+    if (!track) return;
+    const pxPerBar = track.offsetWidth / Math.max(1, totalBars);
+
+    const move = (ev: PointerEvent) => {
+      const dBars = Math.round((ev.clientX - startX) / Math.max(4, pxPerBar) / 4) * 4;
+      setSectionsDirty(true);
+      setSections((prev) =>
+        prev.map((sec, j) => (j === i ? { ...sec, bars: Math.max(4, Math.min(128, startBars + dBars)) } : sec)),
+      );
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
   const handleSubmit = async () => {
     if (!mod) return;
     setSubmitting(true);
@@ -225,9 +319,14 @@ export function CreateSession() {
   return (
     <div class="create-layout">
       <div class="create-left">
+        <div class="create-header">
+          <div class="panel-title">New Session</div>
+          <h1 class="create-title">Compose the brief.</h1>
+          <p class="create-desc">Shape the DNA of the track. The forge turns this brief into a finished bundle — one style, one lyric, many takes.</p>
+        </div>
         {/* Foundation */}
         <div class="panel-card">
-          <div class="panel-title">Foundation</div>
+          <div class="panel-title">01 · Foundation</div>
           <div class="genre-grid">
             {filteredGenres.map((g) => {
               const dotColor = GENRE_COLORS[g.id] ?? "accent";
@@ -237,7 +336,7 @@ export function CreateSession() {
                   class={`genre-card${genreId === g.id ? " active" : ""}`}
                   onClick={() => handleGenreClick(g.id)}
                 >
-                  <div class="genre-dot" style={{ background: `var(--${dotColor})` }} />
+                  <div class="genre-square" style={{ background: `var(--${dotColor})` }}>{GENRE_SHORT[g.id] ?? g.id.toUpperCase()}</div>
                   <div class="genre-name">{g.name}</div>
                   <div class="genre-count">{GENRE_SUBGENRE_COUNTS[g.id] ?? ""} subgenres</div>
                 </button>
@@ -286,18 +385,35 @@ export function CreateSession() {
 
         {/* Arrangement */}
         <div class="panel-card">
-          <div class="panel-title">Arrangement</div>
+          <div class="arrangement-header">
+            <div>
+              <div class="panel-title">02 · Arrangement</div>
+              <p class="arrangement-help">drag to reorder · drag edge to resize · click to edit</p>
+            </div>
+            <div class="arrangement-total">{totalBars} bars · {`${Math.floor(estSeconds / 60)}:${Math.round(estSeconds % 60).toString().padStart(2, "0")}`}</div>
+          </div>
           <div class="arrangement-bar">
-            {sections.map((sec, i) => (
-              <div
-                key={i}
-                class={`arrangement-section${i === selectedSectionIdx ? " selected" : ""}`}
-                onClick={() => setSelectedSectionIdx(i)}
-              >
-                <div class="sec-label">{sec.section}</div>
-                <div class="sec-bars">{sec.bars} bars</div>
-              </div>
-            ))}
+            {sections.map((sec, i) => {
+              const base = SEC_COLORS[sec.section.toLowerCase()] ?? "#3a4048";
+              const strong = base !== "#3a4048";
+              return (
+                <div
+                  key={i}
+                  class={`arrangement-section${i === selectedSectionIdx ? " selected" : ""}`}
+                  style={{ flex: sec.bars, background: strong ? base : "#13161B", color: strong ? "#08090B" : "var(--dim)" }}
+                  onClick={() => setSelectedSectionIdx(i)}
+                  draggable={true}
+                  onDragStart={(e: DragEvent) => { dragIdx.current = i; e.dataTransfer!.effectAllowed = "move"; }}
+                  onDragOver={(e: DragEvent) => e.preventDefault()}
+                  onDrop={(e: DragEvent) => { e.preventDefault(); if (dragIdx.current != null) reorderSection(dragIdx.current, i); dragIdx.current = null; }}
+                  onDragEnd={() => { dragIdx.current = null; }}
+                >
+                  <div class="sec-label">{i === selectedSectionIdx && <span class="sec-dot" style={{ background: base }} />}{formatSectionName(sec.section)}</div>
+                  <div class="sec-bars">{sec.bars} bars</div>
+                  <span class="arrangement-grip" style={{ background: strong ? "linear-gradient(90deg,transparent,rgba(0,0,0,0.25))" : "linear-gradient(90deg,transparent,rgba(255,255,255,0.12))" }} onPointerDown={(e) => startResize(i, e)} />
+                </div>
+              );
+            })}
           </div>
           {sections.length > 0 && (
             <>
@@ -308,18 +424,17 @@ export function CreateSession() {
                   <button class="bar-btn" onClick={incrementBars}>+</button>
                 </div>
                 <span style="font-size:12px;color:var(--text-dim)">bars</span>
-                <button class="section-action-btn" onClick={() => {}}>Move</button>
-                <button class="section-action-btn" onClick={() => {}}>Duplicate</button>
-                <button class="section-action-btn" onClick={() => {}}>Remove</button>
+                <button class="bar-btn" onClick={() => moveSection(-1)} title="Move left">‹</button>
+                <button class="bar-btn" onClick={() => moveSection(1)} title="Move right">›</button>
+                <button class="section-action-btn" onClick={duplicateSection}>Duplicate</button>
+                <button class="section-action-btn" onClick={removeSection}>Remove</button>
               </div>
               <div class="preset-row" style="margin-top: 12px">
                 {SECTION_PALETTE.map((type) => (
                   <button
                     key={type}
                     class="preset-pill"
-                    onClick={() => {
-                      // addSection stub
-                    }}
+                    onClick={() => addSection(type)}
                   >
                     + {type}
                   </button>
@@ -331,7 +446,7 @@ export function CreateSession() {
 
         {/* Reference */}
         <div class="panel-card">
-          <div class="panel-title">Reference</div>
+          <div class="panel-title">03 · Reference material</div>
           <textarea
             class="reference-textarea"
             placeholder="Paste a reference track URL or description..."
@@ -363,14 +478,16 @@ export function CreateSession() {
         <div class="style-console">
           <div class="console-header">
             <span class="console-title">Style Console</span>
+            <span class="console-stats">{activeCount} active · {styleChars} chars</span>
           </div>
           <div class="console-body">
+            <p class="console-desc">Weight each descriptor's influence, mute to A/B, and watch the prompt compile live.</p>
             <div class="fingerprint-spectrum">
               {[80, 60, 90, 40, 70, 50, 85, 45, 75, 55, 65, 35].map((h, i) => (
                 <div
                   key={i}
                   class={`fingerprint-bar ${i < 4 ? "accent" : i < 8 ? "cyan" : "dim"}`}
-                  style={{ height: `${h * 0.6}px` }}
+                  style={{ height: `${h * 0.12}px` }}
                 />
               ))}
             </div>
@@ -384,56 +501,100 @@ export function CreateSession() {
                 const selectedCount = tags.filter((t) => t.category === cat.id).length;
                 return (
                   <div key={cat.id} class="category-lane">
-                    <div class="lane-dot" style={{ background: `var(--${cat.color})` }} />
-                    <span class="lane-label">{cat.name.toUpperCase()}</span>
+                    <div class="lane-header-row">
+                      <div class="lane-dot" style={{ background: `var(--${cat.color})` }} />
+                      <span class="lane-label">{cat.name.toUpperCase()}</span>
+                      <div class="lane-divider" />
+                      <span class="lane-count">{selectedCount}</span>
+                      <button class="lane-add" onClick={() => setAddingCat(addingCat === cat.id ? null : cat.id)}>+</button>
+                    </div>
                     <div class="lane-chips">
                       {cat.suggestions.slice(0, 4).map((s) => {
-                        const isSelected = tags.some((t) => t.label === s && t.category === cat.id);
+                        const tag = tags.find((t) => t.label === s && t.category === cat.id);
+                        const isSelected = !!tag;
+                        const weight = tag?.weight ?? 2;
                         return (
-                          <span
+                          <button
                             key={s}
                             class={`lane-chip${isSelected ? " active" : ""}`}
                             onClick={() => addTag(s, cat.id)}
                           >
-                            {s}
-                          </span>
+                            <span class="chip-bars">
+                              {[1, 2, 3].map((lv) => (
+                                <span
+                                  key={lv}
+                                  class="chip-bar"
+                                  style={{ height: `${3 + lv * 2.5}px`, background: lv <= weight ? `var(--${cat.color})` : "var(--line2)" }}
+                                />
+                              ))}
+                            </span>
+                            <span class="chip-label">{s}</span>
+                          </button>
                         );
                       })}
+                      {tags.filter((t) => t.category === cat.id).length === 0 && <span class="lane-empty">— empty —</span>}
                     </div>
-                    <span class="lane-count">{selectedCount}</span>
-                    <button class="lane-add">+</button>
+                    {addingCat === cat.id && (
+                      <div class="add-panel">
+                        <div class="add-suggestions">
+                        {cat.suggestions.filter((s) => !tags.some((t) => t.label === s && t.category === cat.id)).slice(0, 6).map((s) => (
+                          <button key={s} class="add-suggestion" onClick={() => { addTag(s, cat.id); }}>+ {s}</button>
+                        ))}
+                        </div>
+                        <div class="add-input-row">
+                          <input class="custom-tag-input" placeholder="custom descriptor…" onKeyDown={(e) => { if (e.key === "Enter") { const v = (e.target as HTMLInputElement).value.trim(); if (v) { addTag(v, cat.id); } (e.target as HTMLInputElement).value = ""; } }} />
+                          <button class="add-btn" onClick={() => { const inp = document.querySelector(".custom-tag-input") as HTMLInputElement; if (inp) { const v = inp.value.trim(); if (v) { addTag(v, cat.id); } inp.value = ""; } }}>Add</button>
+                          <button class="done-btn" onClick={() => setAddingCat(null)}>Done</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            {tags.length > 0 && (
+            {tags.length > 0 && (() => {
+              const firstTagCat = tags[0]!.category;
+              const firstTagCatColor = GENRE_MODULES[genreId]?.tagCategories?.find((t) => t.id === firstTagCat)?.color ?? "accent";
+              return (
               <div class="tag-channel-strip">
-                <span class="tag-strip-name">{tags[0]!.label}</span>
-                <div class="tag-weight-selector">
-                  {(["Sub", "Bal", "Dom"] as const).map((w) => (
-                    <button
-                      key={w}
-                      class={`weight-option${(w === "Sub" ? 1 : w === "Bal" ? 2 : 3) === tags[0]!.weight ? " active" : ""}`}
-                      onClick={() =>
-                        setTags((prev) =>
-                          prev.map((t, i) => (i === 0 ? { ...t, weight: w === "Sub" ? 1 : w === "Bal" ? 2 : 3 } : t))
-                        )
-                      }
-                    >
-                      {w}
-                    </button>
-                  ))}
+                <div class="tag-strip-row">
+                  <span class="tag-strip-dot" style={{ background: `var(--${firstTagCatColor})` }} />
+                  <input class="tag-strip-name-input" value={tags[0]!.label} onInput={(e) => setTags((prev) => prev.map((t, i) => (i === 0 ? { ...t, label: (e.target as HTMLInputElement).value } : t)))} />
+                  <button class="tag-remove" onClick={() => setTags((prev) => prev.filter((_, i) => i !== 0))}>
+                    <i class="ph-x" />
+                  </button>
                 </div>
-                <button class="tag-mute" onClick={() => setTags((prev) => prev.map((t, i) => (i === 0 ? { ...t, muted: !t.muted } : t)))}>
-                  <i class="ph-speaker-simple-slash" />
-                </button>
-                <button class="tag-remove" onClick={() => setTags((prev) => prev.filter((_, i) => i !== 0))}>
-                  <i class="ph-x" />
-                </button>
+                <div class="tag-strip-controls">
+                  <span class="tag-strip-label">Weight</span>
+                  <div class="tag-weight-selector">
+                    {(["Sub", "Bal", "Dom"] as const).map((w) => (
+                      <button
+                        key={w}
+                        class={`weight-option${(w === "Sub" ? 1 : w === "Bal" ? 2 : 3) === tags[0]!.weight ? " active" : ""}`}
+                        onClick={() =>
+                          setTags((prev) =>
+                            prev.map((t, i) => (i === 0 ? { ...t, weight: w === "Sub" ? 1 : w === "Bal" ? 2 : 3 } : t))
+                          )
+                        }
+                      >
+                        {w}
+                      </button>
+                    ))}
+                  </div>
+                  <button class={`tag-mute${tags[0]!.muted ? " muted" : ""}`} onClick={() => setTags((prev) => prev.map((t, i) => (i === 0 ? { ...t, muted: !t.muted } : t)))}>
+                    <i class="ph-speaker-simple-slash" />
+                    {tags[0]!.muted ? "MUTED" : "MUTE"}
+                  </button>
+                </div>
               </div>
-            )}
+              );
+            })()}
 
+            <div class="preview-header">
+              <span class="preview-label">Compiled style prompt · live</span>
+              <span class="preview-dot" />
+            </div>
             <div class="style-preview">
               {stylePreviewText || "Select tags to build your style"}
             </div>

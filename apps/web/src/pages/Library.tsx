@@ -118,8 +118,20 @@ export function Library() {
   return (
     <div>
       <div class="library-header">
-        <h1 class="library-title">Library</h1>
-        <p class="library-subtitle">Your session archive</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
+          <div>
+            <h1 class="library-title">Library</h1>
+            <p class="library-subtitle">Your session archive</p>
+          </div>
+          <button
+            onClick={() => navigate("/create")}
+            class="btn-primary gradient"
+            style={{ display: "flex", alignItems: "center", gap: 9 }}
+          >
+            <i class="ph-plus" />
+            New session
+          </button>
+        </div>
         <div class="library-controls">
           <input
             class="library-search"
@@ -167,8 +179,10 @@ export function Library() {
                 return <div class="bar" style={{ height: `${h}px` }} />;
               })}
             </div>
-            <div class="session-name">{job.name ?? "Untitled"}</div>
-            <div class="session-meta">{job.presetId} · {job.genreId}</div>
+            <div class="session-card-body">
+              <div class="session-name">{job.name ?? "Untitled"}</div>
+              <div class="session-meta">{job.presetId} · {job.genreId}</div>
+            </div>
             <div class="session-card-footer">
               <button
                 class="card-delete"
@@ -187,8 +201,10 @@ export function Library() {
           </div>
         ))}
         <div class="session-card card-add" onClick={() => navigate("/create")}>
-          <i class="ph-plus" />
-          <span>New session</span>
+          <div class="card-add-icon">
+            <i class="ph-plus" />
+          </div>
+          <span class="card-add-label">NEW SESSION</span>
         </div>
       </div>
 

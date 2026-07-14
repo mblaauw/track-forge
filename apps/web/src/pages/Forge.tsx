@@ -199,10 +199,13 @@ export function Forge({ id }: { id: string }) {
   const isDone = job?.status === "completed";
   const isFailed = job?.status === "failed";
   const isCancelled = job?.status === "cancelled";
+  const forgeHeadline = isRunning ? "Forging in progress\u2026" : isDone ? "Bundle complete." : "Ready to forge.";
 
   return (
     <div>
-      <div class="forge-header">
+      <div class="forge-header" style={{ maxWidth: 1180 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.22em", color: "var(--acc)", textTransform: "uppercase", marginBottom: 6 }}>The Forge</div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 16px 0" }}>{forgeHeadline}</h1>
         <div class="forge-progress">
           <div class="forge-progress-text">{doneCount}/{STAGES.length} stages · {Math.round(pct)}%</div>
           <div class="forge-progress-bar">
@@ -212,7 +215,7 @@ export function Forge({ id }: { id: string }) {
         <span class="forge-elapsed">{fmt(elapsed)}</span>
       </div>
 
-      <div class="forge-layout">
+      <div class="forge-layout" style={{ maxWidth: 1180 }}>
         <div class="assembly-line">
           <div class="assembly-rail">
             <div class="assembly-rail-progress" style={{ width: `${pct}%` }} />
@@ -222,7 +225,7 @@ export function Forge({ id }: { id: string }) {
             {STAGES.map((s) => (
               <div class="station" key={s.id}>
                 <span class="station-badge">{s.num}</span>
-                <div class={`station-dot${stageStatus[s.id] === "done" ? " done" : stageStatus[s.id] === "active" ? " active" : " pending"}`} />
+                <div class={`station-dot${stageStatus[s.id] === "done" ? " done" : stageStatus[s.id] === "active" ? " active" : " pending"}`} style={stageStatus[s.id] === "active" ? { animation: "tf-ring 1.2s ease-out infinite" } : undefined} />
                 <span class="station-label">{s.label}</span>
                 <span class="station-desc">{s.desc}</span>
               </div>
@@ -230,49 +233,51 @@ export function Forge({ id }: { id: string }) {
           </div>
         </div>
 
-        <div class="terminal">
-          <div class="terminal-header">
-            <div class="terminal-dot red" />
-            <div class="terminal-dot amber" />
-            <div class="terminal-dot green" />
-            <span class="terminal-title">forge.log</span>
-          </div>
-          <div class="terminal-body" ref={terminalRef}>
-            {logs.map((log, i) => (
-              <div class="log-line" key={i}>
-                <span class="log-timestamp">{log.time}</span>
-                <span class={`log-tag ${log.tag}`}>{log.tag.toUpperCase()}</span>
-                <span class="log-message">{log.msg}</span>
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18 }}>
+          <div class="terminal">
+            <div class="terminal-header">
+              <div class="terminal-dot red" />
+              <div class="terminal-dot amber" />
+              <div class="terminal-dot green" />
+              <span class="terminal-title">forge.log</span>
+            </div>
+            <div class="terminal-body" ref={terminalRef}>
+              {logs.map((log, i) => (
+                <div class="log-line" key={i}>
+                  <span class="log-timestamp">{log.time}</span>
+                  <span class={`log-tag ${log.tag}`}>{log.tag.toUpperCase()}</span>
+                  <span class="log-message">{log.msg}</span>
+                </div>
+              ))}
+              <div class="log-line">
+                <span class="log-cursor" />
               </div>
-            ))}
-            <div class="log-line">
-              <span class="log-cursor" />
             </div>
           </div>
-        </div>
 
-        <div class="run-monitor">
-          <div class="run-monitor-header">Run Monitor</div>
-          <table class="run-monitor-table">
-            <tbody>
-              <tr>
-                <td>Stage</td>
-                <td>{activeStage ? `${activeStage.label} · ${activeStage.desc}` : isDone ? "Complete" : "—"}</td>
-              </tr>
-              <tr>
-                <td>Model</td>
-                <td>kimi-k2.5</td>
-              </tr>
-              <tr>
-                <td>Elapsed</td>
-                <td>{fmt(elapsed)}</td>
-              </tr>
-              <tr>
-                <td>Est. cost</td>
-                <td>~${(Math.max(1, Math.round(elapsed / 60 * 0.02 * 100) / 100)).toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="run-monitor">
+            <div class="run-monitor-header">Run Monitor</div>
+            <table class="run-monitor-table">
+              <tbody>
+                <tr>
+                  <td>Stage</td>
+                  <td>{activeStage ? `${activeStage.label} · ${activeStage.desc}` : isDone ? "Complete" : "—"}</td>
+                </tr>
+                <tr>
+                  <td>Model</td>
+                  <td>kimi-k2.5</td>
+                </tr>
+                <tr>
+                  <td>Elapsed</td>
+                  <td>{fmt(elapsed)}</td>
+                </tr>
+                <tr>
+                  <td>Est. cost</td>
+                  <td>~${(Math.max(1, Math.round(elapsed / 60 * 0.02 * 100) / 100)).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {error && <div class="forge-error">{error}</div>}
