@@ -45,11 +45,19 @@ const GENRE_COLORS: Record<string, string> = {
 };
 
 const SEC_COLORS: Record<string, string> = {
-  intro: "#3a4048", build: "var(--amber)", drop: "var(--acc)", break: "#3a4048", outro: "#3a4048",
-  breakdown: "#3a4048", bridge: "var(--violet)", verse: "var(--cyan)", hook: "var(--acc)", groove: "var(--cyan)",
-  peak: "var(--acc)", pre: "var(--amber)", chorus: "var(--acc)", loop: "var(--cyan)", emerge: "var(--violet)",
-  swell: "var(--cyan)", drift: "var(--violet)", fade: "#3a4048", bloom: "var(--acc)", sparse: "#3a4048",
-  resolve: "var(--cyan)",
+  // Structural bookends — neutral gray
+  intro: "#3a4048", outro: "#3a4048", break: "#3a4048", fade: "#3a4048",
+  // Tension / energy build-up — amber
+  build: "var(--amber)", build_2: "var(--amber)", pre: "var(--amber)", rise: "var(--amber)",
+  // Climax / peak energy — green
+  drop: "var(--acc)", drop_2: "var(--acc)", hook: "var(--acc)", peak: "var(--acc)",
+  chorus: "var(--acc)", bloom: "var(--acc)",
+  // Narrative / flow — cyan
+  verse: "var(--cyan)", groove: "var(--cyan)", loop: "var(--cyan)",
+  swell: "var(--cyan)", resolve: "var(--cyan)",
+  // Transition / modulation — violet
+  bridge: "var(--violet)", emerge: "var(--violet)", drift: "var(--violet)",
+  breakdown: "var(--violet)", sparse: "var(--violet)",
 };
 
 function formatSectionName(name: string): string {
@@ -493,16 +501,8 @@ export function CreateSession() {
           </div>
         </div>
 
-        {error && <p class="error" style="color:var(--red);font-size:13px">{error}</p>}
-
-        <button class="btn btn-primary" style="width:100%" disabled={submitting} onClick={handleSubmit}>
-          {submitting ? "Creating…" : "Launch Session"}
-        </button>
-      </div>
-
-      {/* Style Console */}
-      <div class="create-right">
-        <div class="style-console">
+        {/* Style Console wrapped in panel-card */}
+        <div class="panel-card">
           <div class="console-header">
             <span class="console-title">Style Console</span>
             <span class="console-stats">{activeCount} active · {styleChars} chars</span>
@@ -629,6 +629,12 @@ export function CreateSession() {
             </div>
           </div>
         </div>
+
+        {error && <p class="error" style="color:var(--red);font-size:13px">{error}</p>}
+
+        <button class="btn btn-primary" style="width:100%" disabled={submitting} onClick={handleSubmit}>
+          {submitting ? "Creating…" : "Launch Session"}
+        </button>
       </div>
     </div>
   );
