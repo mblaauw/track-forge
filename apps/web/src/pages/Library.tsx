@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { useRouter } from "../lib/router";
 import { fetchJobs, deleteJob, fetchGenres, favoriteJob, type JobInfo, type GenreInfo } from "../api";
+import { useSession } from "../lib/session";
 
 function hashString(s: string): number {
   let hash = 0;
@@ -16,6 +17,7 @@ const GENRE_COLORS: Record<string, string> = {
   hiphop: "amber",
   pop: "violet",
   ambient: "accent",
+  dnb: "red",
 };
 
 function genreColorClass(id: string): string {
@@ -36,6 +38,9 @@ function statusLabel(status: string): string {
 
 export function Library() {
   const { navigate } = useRouter();
+  const { resetSession } = useSession();
+
+  useEffect(() => { resetSession(); }, []);
   const [jobs, setJobs] = useState<JobInfo[]>([]);
   const [genres, setGenres] = useState<GenreInfo[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
 import { fetchGenres, createJob, type GenreInfo } from "../api";
+import { useSession } from "../lib/session";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
 import { popModule } from "@track-forge/genre-pop";
@@ -72,6 +73,7 @@ export function CreateSession() {
   const [error, setError] = useState<string | null>(null);
   const [tags, setTags] = useState<{ label: string; category: string; weight: number; muted: boolean }[]>([]);
   const [addingCat, setAddingCat] = useState<string | null>(null);
+  const [selectedTagIdx, setSelectedTagIdx] = useState<number | null>(null);
 
   useEffect(() => {
     fetchGenres().then(setGenres).catch(() => {});
@@ -296,7 +298,7 @@ export function CreateSession() {
       const job = await createJob({
         genreId,
         presetId: presetId || mod.presets[0]?.id || "",
-        inputs,
+        inputs: { ...inputs, styleTags: tags, arrangement: sections },
         reference: reference || undefined,
         name: "Untitled Session",
       });
@@ -308,11 +310,33 @@ export function CreateSession() {
     }
   };
 
+  const { setSession, resetSession } = useSession();
+  useEffect(() => {
+    const k = inputs.key as string, sc = inputs.scale as string;
+    setSession({
+      jobId: null,
+      genreId,
+      presetId: presetId || "",
+      bpm: (inputs.bpm as number) ?? null,
+      key: !k || k === "auto" ? "" : `${k}${sc === "minor" ? "m" : ""}`,
+      status: "idle",
+      onForge: handleSubmit,
+      forgeLabel: submitting ? "CREATING…" : "FORGE",
+      forgeDisabled: submitting,
+    });
+    return () => resetSession();
+  }, [genreId, presetId, inputs.bpm, inputs.key, inputs.scale, submitting]);
+
   const addTag = (label: string, category: string) => {
     setTags((prev) => {
       const existing = prev.findIndex((t) => t.label === label && t.category === category);
-      if (existing >= 0) return prev.filter((_, i) => i !== existing);
-      return [...prev, { label, category, weight: 2, muted: false }];
+      if (existing >= 0) {
+        setSelectedTagIdx(null);
+        return prev.filter((_, i) => i !== existing);
+      }
+      const next = [...prev, { label, category, weight: 2, muted: false }];
+      setSelectedTagIdx(next.length - 1);
+      return next;
     });
   };
 
@@ -483,17 +507,21 @@ export function CreateSession() {
           <div class="console-body">
             <p class="console-desc">Weight each descriptor's influence, mute to A/B, and watch the prompt compile live.</p>
             <div class="fingerprint-spectrum">
-              {[80, 60, 90, 40, 70, 50, 85, 45, 75, 55, 65, 35].map((h, i) => (
-                <div
-                  key={i}
-                  class={`fingerprint-bar ${i < 4 ? "accent" : i < 8 ? "cyan" : "dim"}`}
-                  style={{ height: `${h * 0.12}px` }}
-                />
-              ))}
+              {(() => {
+                const cats = GENRE_MODULES[genreId]?.tagCategories ?? [];
+                const totals = cats.map((c) => ({
+                  color: c.color,
+                  weight: tags.filter((t) => t.category === c.id && !t.muted).reduce((s, t) => s + t.weight, 0),
+                }));
+                const max = Math.max(1, ...totals.map((t) => t.weight));
+                return totals.map((t, i) => (
+                  <div key={i} class={`fingerprint-bar ${t.color}`} style={{ flex: Math.max(0.2, t.weight || 0.2), height: `${8 + (t.weight / max) * 16}px`, opacity: t.weight ? 1 : 0.25 }} />
+                ));
+              })()}
             </div>
             <div class="fingerprint-label">
               <span>SIGNATURE</span>
-              <span>12 units · influence 86%</span>
+              <span>{tags.reduce((s, t) => s + (t.muted ? 0 : t.weight), 0)} units · {activeCount} active</span>
             </div>
 
             <div class="category-lanes">
@@ -509,29 +537,30 @@ export function CreateSession() {
                       <button class="lane-add" onClick={() => setAddingCat(addingCat === cat.id ? null : cat.id)}>+</button>
                     </div>
                     <div class="lane-chips">
-                      {cat.suggestions.slice(0, 4).map((s) => {
-                        const tag = tags.find((t) => t.label === s && t.category === cat.id);
-                        const isSelected = !!tag;
-                        const weight = tag?.weight ?? 2;
-                        return (
-                          <button
-                            key={s}
-                            class={`lane-chip${isSelected ? " active" : ""}`}
-                            onClick={() => addTag(s, cat.id)}
-                          >
-                            <span class="chip-bars">
-                              {[1, 2, 3].map((lv) => (
-                                <span
-                                  key={lv}
-                                  class="chip-bar"
-                                  style={{ height: `${3 + lv * 2.5}px`, background: lv <= weight ? `var(--${cat.color})` : "var(--line2)" }}
-                                />
-                              ))}
-                            </span>
-                            <span class="chip-label">{s}</span>
-                          </button>
-                        );
-                      })}
+                      {(() => {
+                        const added = tags.filter((t) => t.category === cat.id).map((t) => t.label);
+                        const labels = [...new Set([...added, ...cat.suggestions])].slice(0, 8);
+                        return labels.map((s) => {
+                          const idx = tags.findIndex((t) => t.label === s && t.category === cat.id);
+                          const tag = idx >= 0 ? tags[idx] : undefined;
+                          const isSelected = idx >= 0 && idx === selectedTagIdx;
+                          const weight = tag?.weight ?? 2;
+                          return (
+                            <button
+                              key={s}
+                              class={`lane-chip${tag ? " active" : ""}${isSelected ? " selected" : ""}${tag?.muted ? " muted" : ""}`}
+                              onClick={() => (tag ? setSelectedTagIdx(idx) : addTag(s, cat.id))}
+                            >
+                              <span class="chip-bars">
+                                {[1, 2, 3].map((lv) => (
+                                  <span key={lv} class="chip-bar" style={{ height: `${3 + lv * 2.5}px`, background: lv <= weight ? `var(--${cat.color})` : "var(--line2)" }} />
+                                ))}
+                              </span>
+                              <span class="chip-label">{s}</span>
+                            </button>
+                          );
+                        });
+                      })()}
                       {tags.filter((t) => t.category === cat.id).length === 0 && <span class="lane-empty">— empty —</span>}
                     </div>
                     {addingCat === cat.id && (
@@ -553,41 +582,37 @@ export function CreateSession() {
               })}
             </div>
 
-            {tags.length > 0 && (() => {
-              const firstTagCat = tags[0]!.category;
-              const firstTagCatColor = GENRE_MODULES[genreId]?.tagCategories?.find((t) => t.id === firstTagCat)?.color ?? "accent";
+            {selectedTagIdx != null && tags[selectedTagIdx] && (() => {
+              const i = selectedTagIdx;
+              const tag = tags[i]!;
+              const catColor = GENRE_MODULES[genreId]?.tagCategories?.find((c) => c.id === tag.category)?.color ?? "accent";
+              const setTag = (patch: Partial<typeof tag>) =>
+                setTags((prev) => prev.map((t, j) => (j === i ? { ...t, ...patch } : t)));
               return (
-              <div class="tag-channel-strip">
-                <div class="tag-strip-row">
-                  <span class="tag-strip-dot" style={{ background: `var(--${firstTagCatColor})` }} />
-                  <input class="tag-strip-name-input" value={tags[0]!.label} onInput={(e) => setTags((prev) => prev.map((t, i) => (i === 0 ? { ...t, label: (e.target as HTMLInputElement).value } : t)))} />
-                  <button class="tag-remove" onClick={() => setTags((prev) => prev.filter((_, i) => i !== 0))}>
-                    <i class="ph-x" />
-                  </button>
-                </div>
-                <div class="tag-strip-controls">
-                  <span class="tag-strip-label">Weight</span>
-                  <div class="tag-weight-selector">
-                    {(["Sub", "Bal", "Dom"] as const).map((w) => (
-                      <button
-                        key={w}
-                        class={`weight-option${(w === "Sub" ? 1 : w === "Bal" ? 2 : 3) === tags[0]!.weight ? " active" : ""}`}
-                        onClick={() =>
-                          setTags((prev) =>
-                            prev.map((t, i) => (i === 0 ? { ...t, weight: w === "Sub" ? 1 : w === "Bal" ? 2 : 3 } : t))
-                          )
-                        }
-                      >
-                        {w}
-                      </button>
-                    ))}
+                <div class="tag-channel-strip">
+                  <div class="tag-strip-row">
+                    <span class="tag-strip-dot" style={{ background: `var(--${catColor})` }} />
+                    <input class="tag-strip-name-input" value={tag.label} onInput={(e) => setTag({ label: (e.target as HTMLInputElement).value })} />
+                    <button class="tag-remove" onClick={() => { setTags((prev) => prev.filter((_, j) => j !== i)); setSelectedTagIdx(null); }}>
+                      <i class="ph-x" />
+                    </button>
                   </div>
-                  <button class={`tag-mute${tags[0]!.muted ? " muted" : ""}`} onClick={() => setTags((prev) => prev.map((t, i) => (i === 0 ? { ...t, muted: !t.muted } : t)))}>
-                    <i class="ph-speaker-simple-slash" />
-                    {tags[0]!.muted ? "MUTED" : "MUTE"}
-                  </button>
+                  <div class="tag-strip-controls">
+                    <span class="tag-strip-label">Weight</span>
+                    <div class="tag-weight-selector">
+                      {(["Sub", "Bal", "Dom"] as const).map((w) => {
+                        const wv = w === "Sub" ? 1 : w === "Bal" ? 2 : 3;
+                        return (
+                          <button key={w} class={`weight-option${wv === tag.weight ? " active" : ""}`} onClick={() => setTag({ weight: wv })}>{w}</button>
+                        );
+                      })}
+                    </div>
+                    <button class={`tag-mute${tag.muted ? " muted" : ""}`} onClick={() => setTag({ muted: !tag.muted })}>
+                      <i class="ph-speaker-simple-slash" />
+                      {tag.muted ? "MUTED" : "MUTE"}
+                    </button>
+                  </div>
                 </div>
-              </div>
               );
             })()}
 

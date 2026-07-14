@@ -9,6 +9,12 @@
   --accent: #3DDC84;
   --accent-dim: rgba(61, 220, 132, 0.15);
   --accent-glow: rgba(61, 220, 132, 0.08);
+  --acc: #3DDC84;
+  --acc-deep: #1FA862;
+  --tx: #E8E8E8;
+  --dim: #6B7280;
+  --faint: #4B5563;
+  --line2: #23272F;
   --amber: #E6B04A;
   --amber-dim: rgba(230, 176, 74, 0.15);
   --cyan: #56C7DE;
@@ -287,11 +293,16 @@ ul, ol { list-style: none; }
   width: 3px;
   border-radius: 2px;
   background: var(--line2);
-  transition: height 0.1s;
+  animation: tf-meter 0.9s ease-in-out infinite alternate;
 }
 
 .level-bar.active {
   background: var(--acc);
+}
+
+@keyframes tf-meter {
+  from { height: 4px; }
+  to { height: 20px; }
 }
 
 .transport-status {
@@ -1194,6 +1205,16 @@ ul, ol { list-style: none; }
   background: #1B2027;
   border-color: var(--acc);
   box-shadow: 0 0 0 2px rgba(61, 220, 132, 0.33);
+}
+
+.lane-chip.selected {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 2px rgba(61, 220, 132, 0.33);
+}
+
+.lane-chip.muted {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
 .add-panel {

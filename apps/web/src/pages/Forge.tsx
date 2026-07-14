@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
 import { fetchJob, startJob, cancelJob, replayJob, connectJobEvents } from "../api";
+import { useSession } from "../lib/session";
 import type { JobInfo, ProgressEvent } from "../api";
 
 const STAGES = [
@@ -200,6 +201,25 @@ export function Forge({ id }: { id: string }) {
   const isFailed = job?.status === "failed";
   const isCancelled = job?.status === "cancelled";
   const forgeHeadline = isRunning ? "Forging in progress\u2026" : isDone ? "Bundle complete." : "Ready to forge.";
+
+  const { setSession, resetSession } = useSession();
+  useEffect(() => {
+    if (!job) return;
+    const inp = job.inputs ? JSON.parse(job.inputs) : {};
+    setSession({
+      jobId: id,
+      name: job.name ?? "Untitled",
+      genreId: job.genreId,
+      presetId: job.presetId,
+      bpm: inp.bpm ?? null,
+      key: inp.key && inp.key !== "auto" ? `${inp.key}${inp.scale === "minor" ? "m" : ""}` : "",
+      status: job.status,
+      onForge: isDone ? () => navigate(`/studio/${id}`) : isPending || isCancelled ? handleStart : null,
+      forgeLabel: isDone ? "OPEN BUNDLE" : isRunning ? "FORGING\u2026" : "START FORGE",
+      forgeDisabled: isRunning,
+    });
+    return () => resetSession();
+  }, [job?.status, id]);
 
   return (
     <div>

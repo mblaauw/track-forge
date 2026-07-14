@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
 import { fetchJob, fetchVersions, fetchTakes, createTake, favoriteTake, renameJob } from "../api";
+import { useSession } from "../lib/session";
 import type { JobInfo, VersionInfo, GenerationInfo } from "../api";
 
 function hashString(s: string, seedA = 9301, seedB = 49297): number {
@@ -60,6 +61,7 @@ function parseLyricsValue(value: string): { sections: Array<{ type: string; line
 
 export function Studio({ id }: { id: string }) {
   const { params } = useRouter();
+  const { navigate } = useRouter();
   const actualId = id || params.id || "";
 
   const [job, setJob] = useState<JobInfo | null>(null);
@@ -110,9 +112,16 @@ export function Studio({ id }: { id: string }) {
   }, []);
 
   const selectedVersion = versions[selectedVersionIdx];
-  const completedGenerations = generations.filter(
-    (g) => g.audioUrl || g.status === "completed",
+  const visibleGenerations = generations.filter(
+    (g) => g.audioUrl || g.status === "completed" || g.status === "queued" || g.status === "rendering" || g.status === "pending",
   );
+
+  useEffect(() => {
+    const pending = generations.filter((g) => !g.audioUrl && g.status !== "completed" && g.status !== "failed");
+    if (pending.length === 0 || !selectedVersion) return;
+    const t = window.setInterval(() => { fetchTakes(selectedVersion.id).then(setGenerations); }, 4000);
+    return () => clearInterval(t);
+  }, [generations, selectedVersion]);
 
   const styleArtifact = selectedVersion?.artifacts?.find((a) => a.type === "style");
   const lyricsArtifact = selectedVersion?.artifacts?.find((a) => a.type === "lyrics");
@@ -123,7 +132,7 @@ export function Studio({ id }: { id: string }) {
 
   const styleCount = styleArtifact ? 1 : 0;
   const lyricCount = lyricsArtifact ? 1 : 0;
-  const takesCount = completedGenerations.length;
+  const takesCount = visibleGenerations.filter((g) => g.audioUrl || g.status === "completed").length;
 
   const handlePlay = (idx: number) => {
     if (playingIdx === idx) {
@@ -183,6 +192,25 @@ export function Studio({ id }: { id: string }) {
       console.error("Failed to create take", err);
     }
   };
+
+  const { setSession, resetSession } = useSession();
+  useEffect(() => {
+    if (!job) return;
+    const inp = job.inputs ? JSON.parse(job.inputs) : {};
+    setSession({
+      jobId: actualId,
+      name: jobName,
+      genreId: job.genreId,
+      presetId: job.presetId,
+      bpm: inp.bpm ?? null,
+      key: inp.key && inp.key !== "auto" ? `${inp.key}${inp.scale === "minor" ? "m" : ""}` : "",
+      status: job.status,
+      onForge: () => navigate(`/forge/${actualId}`),
+      forgeLabel: "RE-FORGE",
+      forgeDisabled: false,
+    });
+    return () => resetSession();
+  }, [job?.status, jobName, actualId]);
 
   const handleRename = (e: Event) => {
     const val = (e.target as HTMLInputElement).value;
@@ -330,27 +358,30 @@ export function Studio({ id }: { id: string }) {
             Render new take
           </button>
         </div>
-        {completedGenerations.length === 0 ? (
+        {visibleGenerations.length === 0 ? (
           <div style="padding:20px;text-align:center;color:var(--text-dim);">
             No takes yet
           </div>
         ) : (
           <div class="takes-list">
-            {completedGenerations.map((gen, i) => {
+            {visibleGenerations.map((gen, i) => {
               const isPlaying = playingIdx === i;
               const abState = abMap[gen.id] ?? null;
               const isFavored = gen.isFavorite ?? (favoredId === gen.id);
+              const ready = !!(gen.audioUrl || gen.status === "completed");
               return (
                 <div key={gen.id} class={`take-card${isFavored ? " favored" : ""}`}>
                   <button
                     class={`take-play${isPlaying ? " playing" : ""}`}
-                    onClick={() => handlePlay(i)}
+                    onClick={() => ready && handlePlay(i)}
+                    disabled={!ready}
+                    style={!ready ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
                   >
                     <i class={isPlaying ? "ph-pause-fill" : "ph-play-fill"} />
                   </button>
                   <div class="take-info">
                     <div class="take-title">{gen.generatedTitle || `Take ${i + 1}`}</div>
-                    <div class="take-meta">{gen.style || ""}</div>
+                    <div class="take-meta">{ready ? (gen.style || "") : "Rendering…"}</div>
                   </div>
                   <div class="take-waveform" style="position:relative;">
                     {Array.from({ length: 46 }, (_, j) => {

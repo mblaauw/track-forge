@@ -1,10 +1,13 @@
-import { Router, Route } from "./lib/router";
+import { Router } from "./lib/router";
+import { SessionProvider } from "./lib/session";
 import { AppShell } from "./components/AppShell";
 
 export function App() {
   return (
     <Router>
-      <AppShell />
+      <SessionProvider>
+        <AppShell />
+      </SessionProvider>
     </Router>
   );
 }
