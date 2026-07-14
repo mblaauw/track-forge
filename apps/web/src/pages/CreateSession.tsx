@@ -619,14 +619,18 @@ export function CreateSession() {
               );
             })()}
 
-            <div class="preview-header">
-              <span class="preview-label">Compiled style prompt · live</span>
-              <span class="preview-dot" />
-            </div>
-            <div class="style-preview">
-              {stylePreviewText || "Select tags to build your style"}
-              {sectionsLine && <div class="sections-line">{sectionsLine}</div>}
-            </div>
+          </div>
+        </div>
+
+        {/* Compiled style prompt as its own card */}
+        <div class="panel-card">
+          <div class="console-header">
+            <span class="console-title">Compiled style prompt · live</span>
+            <span class="preview-dot" />
+          </div>
+          <div class="style-preview" style="margin:0;border:none;background:var(--panel)">
+            {stylePreviewText || "Select tags to build your style"}
+            {sectionsLine && <div class="sections-line">{sectionsLine}</div>}
           </div>
         </div>
 
