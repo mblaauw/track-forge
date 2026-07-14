@@ -1,13 +1,15 @@
-import { useRouter, Link } from "../lib/router";
+import { useRouter } from "../lib/router";
+import { useSession } from "../lib/session";
 
 export function NavRail() {
-  const { path } = useRouter();
+  const { path, navigate } = useRouter();
+  const { jobId } = useSession();
 
   const links = [
-    { to: "/", code: "LIB", label: "Library", title: "Library" },
-    { to: "/create", code: "NEW", label: "Create", title: "Create" },
-    { to: "/forge", code: "RUN", label: "Forge", title: "Forge" },
-    { to: "/studio", code: "MIX", label: "Studio", title: "Studio" },
+    { to: "/", code: "LIB", label: "Library" },
+    { to: "/create", code: "NEW", label: "Create" },
+    { to: jobId ? `/forge/${jobId}` : null, code: "RUN", label: "Forge", needsJob: true },
+    { to: jobId ? `/studio/${jobId}` : null, code: "MIX", label: "Studio", needsJob: true },
   ];
 
   return (
@@ -19,14 +21,20 @@ export function NavRail() {
       </div>
       <div class="nav-items">
         {links.map((link) => {
-          const active = link.to === "/" ? path === "/" : path.startsWith(link.to);
+          const disabled = link.needsJob && !jobId;
+          const active = link.to ? (link.to === "/" ? path === "/" : path.startsWith(link.to)) : false;
           return (
-            <Link to={link.to}>
-              <button class={`nav-btn${active ? " active" : ""}`} title={link.title}>
-                <span class="nav-btn-code">{link.code}</span>
-                <span class="nav-btn-label">{link.label}</span>
-              </button>
-            </Link>
+            <button
+              key={link.code}
+              class={`nav-btn${active ? " active" : ""}`}
+              title={link.label}
+              disabled={disabled}
+              style={disabled ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
+              onClick={() => { if (!disabled && link.to) navigate(link.to); }}
+            >
+              <span class="nav-btn-code">{link.code}</span>
+              <span class="nav-btn-label">{link.label}</span>
+            </button>
           );
         })}
       </div>
