@@ -501,10 +501,10 @@ export function CreateSession() {
           </div>
         </div>
 
-        {/* Style Console wrapped in panel-card */}
+        {/* Style Console */}
         <div class="panel-card">
-          <div class="console-header">
-            <span class="console-title">Style Console</span>
+          <div class="panel-title-bar">
+            <div class="panel-title">Style Console</div>
             <span class="console-stats">{activeCount} active · {styleChars} chars</span>
           </div>
           <div class="console-body">
@@ -622,10 +622,10 @@ export function CreateSession() {
           </div>
         </div>
 
-        {/* Compiled style prompt as its own card */}
+        {/* Compiled style prompt */}
         <div class="panel-card">
-          <div class="console-header">
-            <span class="console-title">Compiled style prompt · live</span>
+          <div class="panel-title-bar">
+            <div class="panel-title">Compiled style prompt · live</div>
             <span class="preview-dot" />
           </div>
           <div class="style-preview" style="margin:0;border:none;background:var(--panel)">

@@ -675,6 +675,17 @@ ul, ol { list-style: none; }
   margin-bottom: 16px;
 }
 
+.panel-title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.panel-title-bar .panel-title {
+  margin-bottom: 0;
+}
+
 .genre-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1016,30 +1027,10 @@ ul, ol { list-style: none; }
   overflow: hidden;
 }
 
-.console-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.console-title {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  color: var(--acc);
-  text-transform: uppercase;
-}
-
 .console-stats {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--faint);
-}
-
-.console-body {
-  padding: 20px;
 }
 
 .console-desc {
