@@ -640,18 +640,6 @@ export function CreateSession() {
           </div>}
         </div>
 
-        {/* Compiled style prompt */}
-        <div class="panel-card">
-          <div class="panel-title-bar">
-            <div class="panel-title">Compiled style prompt · live</div>
-            <span class="preview-dot" />
-          </div>
-          <div class="style-preview" style="margin:0;border:none;background:var(--panel)">
-            {stylePreviewText || "Select tags to build your style"}
-            {sectionsLine && <div class="sections-line">{sectionsLine}</div>}
-          </div>
-        </div>
-
         {error && <p class="error" style="color:var(--red);font-size:13px">{error}</p>}
 
         <button class="btn btn-primary" style="width:100%" disabled={submitting} onClick={handleSubmit}>
