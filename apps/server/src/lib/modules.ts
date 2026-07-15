@@ -4,6 +4,7 @@ import { hipHopModule } from "@track-forge/genre-hiphop";
 import { popModule } from "@track-forge/genre-pop";
 import { ambientModule } from "@track-forge/genre-ambient";
 import { dnbModule } from "@track-forge/genre-dnb";
+import { listGenreConfigs } from "./genre-config.js";
 
 const MODULES: Record<string, GenreModule> = {
   edm: edmModule as unknown as GenreModule,
@@ -23,6 +24,6 @@ export function getModuleOrThrow(genreId: string): GenreModule {
   return mod;
 }
 
-export function listGenres(): { id: string; name: string }[] {
-  return Object.values(MODULES).map((m) => ({ id: m.id, name: m.name }));
+export function listGenres(): { id: string; name: string; color: string; subgenre_count: string }[] {
+  return listGenreConfigs();
 }

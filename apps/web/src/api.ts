@@ -37,6 +37,8 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 export interface GenreInfo {
   id: string;
   name: string;
+  color?: string;
+  subgenre_count?: string;
 }
 
 export interface JobInfo {
@@ -79,6 +81,28 @@ export interface VersionTreeNode extends VersionInfo {
 
 export function fetchGenres(): Promise<GenreInfo[]> {
   return api("/api/genres");
+}
+
+export interface GenrePreset {
+  id: string;
+  name: string;
+  description: string;
+  values: Record<string, unknown>;
+}
+
+export interface TagCategoryInfo {
+  id: string;
+  name: string;
+  color: string;
+  suggestions: string[];
+}
+
+export function fetchPresets(genreId: string): Promise<GenrePreset[]> {
+  return api(`/api/genres/${encodeURIComponent(genreId)}/presets`);
+}
+
+export function fetchTagCategories(genreId: string): Promise<TagCategoryInfo[]> {
+  return api(`/api/genres/${encodeURIComponent(genreId)}/tag-categories`);
 }
 
 export function createJob(body: {

@@ -524,6 +524,30 @@ export function registerJobRoutes(
     return listGenres();
   });
 
+  // ── Genre presets (from YAML config) ─────────────────────────────────
+
+  server.get("/api/genres/:id/presets", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    try {
+      const { getPresets } = await import("../lib/genre-config.js");
+      return getPresets(id);
+    } catch {
+      return reply.code(404).send({ error: `Unknown genre: ${id}` });
+    }
+  });
+
+  // ── Genre tag categories (from YAML config) ──────────────────────────
+
+  server.get("/api/genres/:id/tag-categories", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    try {
+      const { getTagCategories } = await import("../lib/genre-config.js");
+      return getTagCategories(id);
+    } catch {
+      return reply.code(404).send({ error: `Unknown genre: ${id}` });
+    }
+  });
+
   // ── Style tag suggestions (LLM-powered) ───────────────────────────────
 
   server.post("/api/jobs/style-tag-suggestions", async (req, reply) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
-import { fetchGenres, createJob, type GenreInfo } from "../api";
+import { fetchGenres, createJob, fetchPresets, fetchTagCategories, type GenreInfo, type GenrePreset, type TagCategoryInfo } from "../api";
 import { useSession } from "../lib/session";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
@@ -15,14 +15,6 @@ const GENRE_MODULES: Record<string, GenreModule> = {
   pop: popModule as unknown as GenreModule,
   ambient: ambientModule as unknown as GenreModule,
   dnb: dnbModule as unknown as GenreModule,
-};
-
-const GENRE_SUBGENRE_COUNTS: Record<string, string> = {
-  edm: "80+",
-  hiphop: "40+",
-  pop: "20+",
-  ambient: "15+",
-  dnb: "10+",
 };
 
 const KEY_OPTIONS = [
@@ -51,14 +43,6 @@ const KEY_OPTIONS = [
   "A# min",
   "B min",
 ];
-
-const GENRE_COLORS: Record<string, string> = {
-  edm: "cyan",
-  hiphop: "amber",
-  pop: "violet",
-  ambient: "accent",
-  dnb: "red",
-};
 
 const SEC_COLORS: Record<string, string> = {
   // Structural bookends — neutral gray
@@ -126,6 +110,8 @@ export function CreateSession() {
   const [addingCat, setAddingCat] = useState<string | null>(null);
   const [selectedTagIdx, setSelectedTagIdx] = useState<number | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("foundation");
+  const [presets, setPresets] = useState<GenrePreset[]>([]);
+  const [tagCategories, setTagCategories] = useState<TagCategoryInfo[]>([]);
 
   useEffect(() => {
     fetchGenres()
@@ -139,13 +125,14 @@ export function CreateSession() {
     const m = GENRE_MODULES[genreId];
     if (m) {
       setInputs({ ...(m.defaults as Record<string, unknown>) });
-      const firstPreset = m.presets[0];
-      setPresetId(firstPreset?.id ?? "");
+      fetchPresets(genreId).then(setPresets).catch(() => {});
+      fetchTagCategories(genreId).then(setTagCategories).catch(() => {});
+      setPresetId("");
       setSectionsDirty(false);
     }
   }, [genreId]);
 
-  const selectedPreset = mod?.presets.find((p) => p.id === presetId);
+  const selectedPreset = presets.find((p) => p.id === presetId);
 
   useEffect(() => {
     if (selectedPreset) {
@@ -377,7 +364,7 @@ export function CreateSession() {
     try {
       const job = await createJob({
         genreId,
-        presetId: presetId || mod.presets[0]?.id || "",
+        presetId: presetId || presets[0]?.id || "",
         inputs: { ...inputs, styleTags: tags, arrangement: sections },
         reference: reference || undefined,
         name: "Untitled Session",
@@ -442,7 +429,7 @@ export function CreateSession() {
           </p>
           <div class="fingerprint-spectrum">
             {(() => {
-              const cats = GENRE_MODULES[genreId]?.tagCategories ?? [];
+              const cats = tagCategories.length > 0 ? tagCategories : (GENRE_MODULES[genreId]?.tagCategories ?? []);
               const totals = cats.map((c) => ({
                 color: c.color,
                 weight: tags
@@ -491,7 +478,7 @@ export function CreateSession() {
           </div>
 
           <div class="category-lanes">
-            {(GENRE_MODULES[genreId]?.tagCategories ?? []).map((cat) => {
+            {(tagCategories.length > 0 ? tagCategories : GENRE_MODULES[genreId]?.tagCategories ?? []).map((cat) => {
               const selectedCount = tags.filter(
                 (t) => t.category === cat.id,
               ).length;
@@ -637,9 +624,8 @@ export function CreateSession() {
               const i = selectedTagIdx;
               const tag = tags[i]!;
               const catColor =
-                GENRE_MODULES[genreId]?.tagCategories?.find(
-                  (c) => c.id === tag.category,
-                )?.color ?? "accent";
+                (tagCategories.length > 0 ? tagCategories : GENRE_MODULES[genreId]?.tagCategories ?? [])
+                  .find((c: TagCategoryInfo) => c.id === tag.category)?.color ?? "accent";
               const setTag = (patch: Partial<typeof tag>) =>
                 setTags((prev) =>
                   prev.map((t, j) => (j === i ? { ...t, ...patch } : t)),
@@ -724,15 +710,15 @@ export function CreateSession() {
                     >
                       <div class="genre-name">{g.name}</div>
                       <div class="genre-count">
-                        {GENRE_SUBGENRE_COUNTS[g.id] ?? ""} subgenres
+                        {g.subgenre_count ?? ""} subgenres
                       </div>
                     </button>
                   );
                 })}
               </div>
-              {mod && mod.presets.length > 0 && (
+              {presets.length > 0 && (
                 <div class="preset-row">
-                  {mod.presets.map((p) => (
+                  {presets.map((p) => (
                     <button
                       key={p.id}
                       class={`preset-pill${presetId === p.id ? " active" : ""}`}
