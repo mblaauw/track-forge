@@ -49,6 +49,7 @@ export interface GenreConfigYaml {
   tag_categories: TagCategoryYaml[];
   presets: GenrePresetYaml[];
   song_structure?: SongStructureSectionYaml[];
+  taxonomy?: unknown;
 }
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "config");
@@ -105,6 +106,10 @@ export function getAdjustmentVocabulary(id: string): AdjustmentVocabularyYaml {
 
 export function getSongStructure(id: string): SongStructureSectionYaml[] {
   return loadYaml(id).song_structure ?? [];
+}
+
+export function getTaxonomy(id: string): unknown {
+  return loadYaml(id).taxonomy ?? null;
 }
 
 export function clearCache(): void {

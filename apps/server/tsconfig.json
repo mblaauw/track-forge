@@ -10,6 +10,9 @@
     { "path": "../../packages/core" },
     { "path": "../../packages/genre-core" },
     { "path": "../../packages/genre-edm" },
-    { "path": "../../packages/genre-hiphop" }
+    { "path": "../../packages/genre-hiphop" },
+    { "path": "../../packages/genre-ambient" },
+    { "path": "../../packages/genre-dnb" },
+    { "path": "../../packages/genre-pop" }
   ]
 }

@@ -4,7 +4,7 @@ import { hipHopModule } from "@track-forge/genre-hiphop";
 import { popModule } from "@track-forge/genre-pop";
 import { ambientModule } from "@track-forge/genre-ambient";
 import { dnbModule } from "@track-forge/genre-dnb";
-import { listGenreConfigs, getSongStructure, getPresets, getTagCategories } from "./genre-config.js";
+import { listGenreConfigs, getSongStructure, getPresets, getTagCategories, getTaxonomy } from "./genre-config.js";
 
 function augment(id: string, mod: GenreModule): GenreModule {
   return {
@@ -12,6 +12,7 @@ function augment(id: string, mod: GenreModule): GenreModule {
     presets: getPresets(id),
     tagCategories: getTagCategories(id) as any,
     songStructure: getSongStructure(id),
+    taxonomy: getTaxonomy(id),
   };
 }
 

@@ -84,6 +84,8 @@ export interface GenreModule<
   tagCategories?: TagCategory[];
   /** Song structure template (loaded from YAML config at runtime) */
   songStructure?: SongStructureSection[];
+  /** Taxonomy data (loaded from YAML config at runtime) */
+  taxonomy?: unknown;
   /** Compile user inputs into full blueprint shape */
   compileBlueprint: (
     inputs: TInputs,
