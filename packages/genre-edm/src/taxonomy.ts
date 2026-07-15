@@ -57,7 +57,7 @@ export interface EdmSubgenreEntry {
   /** Common arrangement section tags */
   arrangementTags: Record<string, string[]>;
   /** Short description for prompts */
-  description: string;
+  description?: string;
 }
 
 // ── Taxonomy ──────────────────────────────────────────────────────────
@@ -1143,12 +1143,12 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-export function getSubgenre(id: string): EdmSubgenreEntry | undefined {
-  return EDM_SUBGENRES.find((s) => s.id === id);
+export function getSubgenre(id: string, subgenres: EdmSubgenreEntry[] = EDM_SUBGENRES): EdmSubgenreEntry | undefined {
+  return subgenres.find((s) => s.id === id);
 }
 
-export function getSubgenresByFamily(family: EdmFamily): EdmSubgenreEntry[] {
-  return EDM_SUBGENRES.filter((s) => s.family === family);
+export function getSubgenresByFamily(family: EdmFamily, subgenres: EdmSubgenreEntry[] = EDM_SUBGENRES): EdmSubgenreEntry[] {
+  return subgenres.filter((s) => s.family === family);
 }
 
 export function getFamilyLabel(family: EdmFamily): string {
@@ -1161,8 +1161,9 @@ export function getAllFamilyOptions(): { label: string; value: EdmFamily }[] {
 
 export function getSubgenreOptions(
   family: EdmFamily,
+  subgenres: EdmSubgenreEntry[] = EDM_SUBGENRES,
 ): { label: string; value: string }[] {
-  return getSubgenresByFamily(family).map((s) => ({
+  return getSubgenresByFamily(family, subgenres).map((s) => ({
     label: s.label,
     value: s.id,
   }));
