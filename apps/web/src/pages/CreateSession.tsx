@@ -359,11 +359,11 @@ export function CreateSession() {
           <div class="panel-title">New Session</div>
         </div>
 
-        {/* Style Console — always visible */}
-        <div class="panel-card accordion-section">
+        {/* Compiled style prompt — always visible on top */}
+        <div class="panel-card">
           <div class="panel-title-bar">
-            <div class="panel-title" style="margin:0">Style Console</div>
-            <span class="console-stats">{activeCount} active · {styleChars} chars</span>
+            <div class="panel-title">Compiled style prompt · live</div>
+            <span class="preview-dot" />
           </div>
           <p class="console-desc">Weight each descriptor's influence, mute to A/B, and watch the prompt compile live.</p>
           <div class="fingerprint-spectrum">
@@ -382,6 +382,18 @@ export function CreateSession() {
           <div class="fingerprint-label">
             <span>SIGNATURE</span>
             <span>{tags.reduce((s, t) => s + (t.muted ? 0 : t.weight), 0)} units · {activeCount} active</span>
+          </div>
+          <div class="style-preview" style="margin:0;border:none;background:var(--panel)">
+            {stylePreviewText || "Select tags to build your style"}
+            {sectionsLine && <div class="sections-line">{sectionsLine}</div>}
+          </div>
+        </div>
+
+        {/* Style Console — always visible */}
+        <div class="panel-card accordion-section">
+          <div class="panel-title-bar">
+            <div class="panel-title" style="margin:0">Style Console</div>
+            <span class="console-stats">{activeCount} active · {styleChars} chars</span>
           </div>
 
           <div class="category-lanes">
