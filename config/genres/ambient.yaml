@@ -1,0 +1,120 @@
+# Ambient genre module config
+name: Ambient
+color: accent
+subgenre_count: "15+"
+
+defaults:
+  subgenre: drone
+  bpm: 65
+  key: C
+  scale: major
+  mood: "meditative"
+  complexity: 5
+  lyricsMode: strict_instrumental
+  soundscape: "ethereal"
+
+tag_policy:
+  mandatoryTags: [ambient]
+  forbiddenTags: [aggressive, rhythmic, percussive]
+  canonicalMap: {}
+
+adjustment_vocabulary:
+  styleTerms:
+    - ethereal
+    - meditative
+    - vast
+    - serene
+    - dark
+    - peaceful
+    - melancholic
+    - hypnotic
+    - weightless
+    - textural
+  structureTerms:
+    - "slow fade in"
+    - "gradual build"
+    - "long decay"
+    - "extended silence"
+    - "drone shift"
+  deliveryTerms:
+    - "sustained pads"
+    - "slow modulation"
+    - "granular texture"
+    - "field recording"
+    - "tape decay"
+
+tag_categories:
+  - id: genre
+    name: Genre
+    color: accent
+    suggestions:
+      - "Ambient Drone"
+      - Generative
+      - "Dark Ambient"
+      - "Space Music"
+      - "Nature Field"
+      - Cinematic
+      - Minimalism
+      - Isolationist
+  - id: mood
+    name: Mood
+    color: amber
+    suggestions:
+      - Meditative
+      - Serene
+      - Dark
+      - Peaceful
+      - Melancholic
+      - Ethereal
+      - Hypnotic
+      - Weightless
+  - id: inst
+    name: Instruments
+    color: cyan
+    suggestions:
+      - Pads
+      - "Field Recording"
+      - "Bell Tones"
+      - Granular
+      - "Tape Loops"
+      - Drone
+      - Strings
+      - Piano
+  - id: prod
+    name: Production
+    color: violet
+    suggestions:
+      - Reverb
+      - Delay
+      - "Tape Wear"
+      - "Granular Texture"
+      - "Slow Modulation"
+      - Saturation
+      - Panning
+      - "Space Echo"
+
+presets:
+  - id: drone_minimal
+    name: "Drone — Minimal"
+    description: "Deep meditative drone with minimal harmonic movement"
+    values:
+      subgenre: drone
+      bpm: 62
+      key: C
+      scale: major
+      mood: "meditative"
+      complexity: 3
+      lyricsMode: strict_instrumental
+      soundscape: "deep drones"
+  - id: generative_evolving
+    name: "Generative — Evolving"
+    description: "Evolving generative textures that shift over time"
+    values:
+      subgenre: generative
+      bpm: 70
+      key: E
+      scale: minor
+      mood: "serene"
+      complexity: 6
+      lyricsMode: strict_instrumental
+      soundscape: "evolving textures"

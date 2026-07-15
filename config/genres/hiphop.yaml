@@ -1,0 +1,484 @@
+# Hip-Hop genre module config
+name: Hip-Hop
+color: amber
+subgenre_count: "40+"
+
+defaults:
+  subgenre: boom_bap
+  bpm: 88
+  key: C
+  scale: minor
+  mood: ""
+  narrativeArc: braggadocio
+  rhymeStyle: end_rhyme
+  flowPattern: laid_back
+  delivery: conversational
+  productionStyle: polished
+  energy: 6
+  complexity: 5
+  lyricsMode: full_lyrics
+  customTags: ""
+  reference: ""
+
+tag_policy:
+  mandatoryTags: ["hip hop", rap]
+  forbiddenTags: []
+  canonicalMap:
+    hiphop: "hip hop"
+    "hip-hop": "hip hop"
+    "rap music": rap
+    gangsta: "gangsta rap"
+    "trap music": trap
+    "old school": "old school hip hop"
+    eastcoast: "east coast"
+    westcoast: "west coast"
+
+adjustment_vocabulary:
+  styleTerms:
+    - "add distortion on 808"
+    - "reduce hi-hat velocity"
+    - "more snare rolls"
+    - "add vinyl crackle"
+    - "pitch down samples"
+    - "layer synth pads"
+    - "add reverb to vocals"
+    - "emphasize kick pattern"
+    - "more sub bass"
+    - "add orchestral elements"
+    - "filter sweep intro"
+    - "double-time hi-hats"
+    - "add call-and-response hook"
+  structureTerms:
+    - "extend verse by 4 bars"
+    - "shorten intro"
+    - "add bridge section"
+    - "increase hook repetition"
+    - "add breakdown"
+    - "reorder sections"
+    - "add ad-lib section"
+    - "include spoken word outro"
+  deliveryTerms:
+    - "more aggressive delivery"
+    - "smoother vocal tone"
+    - "add ad-libs"
+    - "increase vocal presence"
+    - "add backing vocals"
+    - "double tracked verses"
+    - "auto-tune effect"
+    - "breathy delivery"
+    - "staccato phrasing"
+    - "melodic hook style"
+
+tag_categories:
+  - id: genre
+    name: Genre
+    color: accent
+    suggestions:
+      - "Boom Bap"
+      - Trap
+      - Lo-fi
+      - Drill
+      - Grime
+      - "Cloud Rap"
+      - Crunk
+      - G-Funk
+  - id: mood
+    name: Mood
+    color: amber
+    suggestions:
+      - Hard
+      - Chill
+      - Dark
+      - Hype
+      - Nostalgic
+      - Soulful
+      - Aggressive
+      - Introspective
+  - id: inst
+    name: Instruments
+    color: cyan
+    suggestions:
+      - "808 Bass"
+      - Hi-hats
+      - Snare
+      - Kick
+      - "Sample Chop"
+      - Strings
+      - Keys
+      - Brass
+  - id: prod
+    name: Production
+    color: violet
+    suggestions:
+      - Sidechain
+      - "Vinyl Crackle"
+      - "Tape Hiss"
+      - "Heavy 808"
+      - "Double Time"
+      - Layering
+      - Reverb
+      - Delay
+
+presets:
+  # Boom Bap
+  - id: boom_bap_classic
+    name: "Boom Bap Classic"
+    description: "Raw, gritty boom bap with hard drums and sampled loops"
+    values:
+      subgenre: boom_bap
+      bpm: 90
+      key: D
+      scale: minor
+      narrativeArc: braggadocio
+      rhymeStyle: multi_syllabic
+      flowPattern: laid_back
+      delivery: intense
+      productionStyle: vintage
+      energy: 7
+      complexity: 7
+      lyricsMode: full_lyrics
+  - id: boom_bap_jazz_rap
+    name: "Boom Bap — Jazz Rap"
+    description: "Smooth jazz-infused boom bap with dusty samples"
+    values:
+      subgenre: boom_bap
+      bpm: 85
+      key: E
+      scale: minor
+      narrativeArc: conscious
+      rhymeStyle: internal
+      flowPattern: laid_back
+      delivery: conversational
+      productionStyle: vintage
+      energy: 5
+      complexity: 7
+      lyricsMode: full_lyrics
+  - id: boom_bap_hardcore
+    name: "Boom Bap — Hardcore"
+    description: "Aggressive hardcore boom bap with rapid-fire delivery"
+    values:
+      subgenre: boom_bap
+      bpm: 94
+      key: E
+      scale: minor
+      narrativeArc: braggadocio
+      rhymeStyle: multi_syllabic
+      flowPattern: aggressive
+      delivery: intense
+      productionStyle: vintage
+      energy: 9
+      complexity: 8
+      lyricsMode: full_lyrics
+  # Trap
+  - id: trap_banger
+    name: "Trap Banger"
+    description: "Hard-hitting trap anthem with 808s and hi-hat rolls"
+    values:
+      subgenre: trap
+      bpm: 140
+      key: G
+      scale: minor
+      narrativeArc: braggadocio
+      rhymeStyle: end_rhyme
+      flowPattern: aggressive
+      delivery: intense
+      productionStyle: polished
+      energy: 9
+      complexity: 5
+      lyricsMode: full_lyrics
+  - id: trap_melodic
+    name: "Trap — Melodic"
+    description: "Melodic trap with sung hooks and emotional chord progressions"
+    values:
+      subgenre: trap
+      bpm: 145
+      key: B
+      scale: minor
+      narrativeArc: storytelling
+      rhymeStyle: internal
+      flowPattern: melodic
+      delivery: conversational
+      productionStyle: polished
+      energy: 7
+      complexity: 6
+      lyricsMode: full_lyrics
+  - id: trap_dark
+    name: "Trap — Dark"
+    description: "Dark, atmospheric trap with ominous production"
+    values:
+      subgenre: trap
+      bpm: 138
+      key: D
+      scale: minor
+      narrativeArc: introspective
+      rhymeStyle: free_form
+      flowPattern: syncopated
+      delivery: calm
+      productionStyle: electronic
+      energy: 8
+      complexity: 7
+      lyricsMode: full_lyrics
+  # Drill
+  - id: drill_uk
+    name: "Drill — UK"
+    description: "Gritty UK drill with sliding 808s and sparse percussion"
+    values:
+      subgenre: drill
+      bpm: 140
+      key: F
+      scale: minor
+      narrativeArc: party
+      rhymeStyle: slang_rhyme
+      flowPattern: aggressive
+      delivery: hype
+      productionStyle: minimal
+      energy: 8
+      complexity: 6
+      lyricsMode: full_lyrics
+  - id: drill_chicago
+    name: "Drill — Chicago"
+    description: "Raw Chicago drill with heavy bass and aggressive delivery"
+    values:
+      subgenre: drill
+      bpm: 150
+      key: D
+      scale: minor
+      narrativeArc: braggadocio
+      rhymeStyle: end_rhyme
+      flowPattern: aggressive
+      delivery: hype
+      productionStyle: polished
+      energy: 9
+      complexity: 5
+      lyricsMode: full_lyrics
+  # Lo-fi
+  - id: lo_fi_study
+    name: "Lo-fi — Study Beats"
+    description: "Chilled lo-fi beats for focused study sessions"
+    values:
+      subgenre: lo_fi
+      bpm: 75
+      key: A
+      scale: major
+      narrativeArc: introspective
+      rhymeStyle: free_form
+      flowPattern: laid_back
+      delivery: calm
+      productionStyle: lo_fi
+      energy: 3
+      complexity: 4
+      lyricsMode: instrumental
+  - id: lo_fi_chillhop
+    name: "Lo-fi — Chillhop"
+    description: "Laid-back chillhop with jazzy samples and warm textures"
+    values:
+      subgenre: lo_fi
+      bpm: 80
+      key: C
+      scale: major
+      narrativeArc: party
+      rhymeStyle: internal
+      flowPattern: laid_back
+      delivery: conversational
+      productionStyle: lo_fi
+      energy: 4
+      complexity: 5
+      lyricsMode: full_lyrics
+  - id: lo_fi_jazzhop
+    name: "Lo-fi — Jazzhop"
+    description: "Smooth jazzhop with live instrumentation and vinyl warmth"
+    values:
+      subgenre: lo_fi
+      bpm: 82
+      key: E
+      scale: major
+      narrativeArc: storytelling
+      rhymeStyle: multi_syllabic
+      flowPattern: melodic
+      delivery: conversational
+      productionStyle: lo_fi
+      energy: 5
+      complexity: 6
+      lyricsMode: full_lyrics
+  # Grime
+  - id: grime_eskibeat
+    name: "Grime — Eskibeat"
+    description: "Classic eskibeat grime with skippy percussion"
+    values:
+      subgenre: grime
+      bpm: 140
+      key: D
+      scale: minor
+      narrativeArc: braggadocio
+      rhymeStyle: internal
+      flowPattern: syncopated
+      delivery: hype
+      productionStyle: electronic
+      energy: 8
+      complexity: 8
+      lyricsMode: full_lyrics
+  - id: grime_modern
+    name: "Grime — Modern"
+    description: "Modern grime with evolved production and complex flows"
+    values:
+      subgenre: grime
+      bpm: 140
+      key: F
+      scale: minor
+      narrativeArc: abstract
+      rhymeStyle: free_form
+      flowPattern: double_time
+      delivery: hype
+      productionStyle: polished
+      energy: 9
+      complexity: 9
+      lyricsMode: full_lyrics
+  # Cloud Rap
+  - id: cloud_rap_ethereal
+    name: "Cloud Rap — Ethereal"
+    description: "Dreamy cloud rap with atmospheric production and distant vocals"
+    values:
+      subgenre: cloud_rap
+      bpm: 70
+      key: E
+      scale: major
+      narrativeArc: introspective
+      rhymeStyle: end_rhyme
+      flowPattern: melodic
+      delivery: calm
+      productionStyle: experimental
+      energy: 4
+      complexity: 6
+      lyricsMode: full_lyrics
+  - id: cloud_rap_spacey
+    name: "Cloud Rap — Spacey"
+    description: "Spacey cloud rap with psychedelic beats and trippy lyrics"
+    values:
+      subgenre: cloud_rap
+      bpm: 74
+      key: G
+      scale: minor
+      narrativeArc: storytelling
+      rhymeStyle: internal
+      flowPattern: laid_back
+      delivery: conversational
+      productionStyle: experimental
+      energy: 5
+      complexity: 7
+      lyricsMode: full_lyrics
+  # Crunk
+  - id: crunk_classic
+    name: "Crunk Classic"
+    description: "High-energy crunk with call-and-response hooks and heavy 808s"
+    values:
+      subgenre: crunk
+      bpm: 155
+      key: C
+      scale: major
+      narrativeArc: party
+      rhymeStyle: end_rhyme
+      flowPattern: aggressive
+      delivery: hype
+      productionStyle: polished
+      energy: 10
+      complexity: 4
+      lyricsMode: full_lyrics
+  - id: crunk_southern
+    name: "Crunk — Southern"
+    description: "Southern-style crunk with laid-back swing and heavy bass"
+    values:
+      subgenre: crunk
+      bpm: 150
+      key: D
+      scale: minor
+      narrativeArc: party
+      rhymeStyle: internal
+      flowPattern: syncopated
+      delivery: hype
+      productionStyle: vintage
+      energy: 9
+      complexity: 5
+      lyricsMode: full_lyrics
+  # G-Funk
+  - id: g_funk_classic
+    name: "G-Funk Classic"
+    description: "West coast G-funk with funky synths and laid-back grooves"
+    values:
+      subgenre: g_funk
+      bpm: 92
+      key: E
+      scale: major
+      narrativeArc: braggadocio
+      rhymeStyle: end_rhyme
+      flowPattern: laid_back
+      delivery: calm
+      productionStyle: polished
+      energy: 6
+      complexity: 6
+      lyricsMode: full_lyrics
+  - id: g_funk_modern
+    name: "G-Funk — Modern"
+    description: "Modern take on G-funk with contemporary production"
+    values:
+      subgenre: g_funk
+      bpm: 95
+      key: E
+      scale: minor
+      narrativeArc: storytelling
+      rhymeStyle: multi_syllabic
+      flowPattern: melodic
+      delivery: conversational
+      productionStyle: polished
+      energy: 7
+      complexity: 7
+      lyricsMode: full_lyrics
+  # Abstract
+  - id: abstract_experimental
+    name: "Abstract — Experimental"
+    description: "Experimental abstract hip-hop with unconventional structures"
+    values:
+      subgenre: abstract
+      bpm: 100
+      key: A
+      scale: minor
+      narrativeArc: abstract
+      rhymeStyle: free_form
+      flowPattern: experimental
+      delivery: conversational
+      productionStyle: experimental
+      energy: 6
+      complexity: 9
+      lyricsMode: full_lyrics
+  - id: abstract_conscious
+    name: "Abstract — Conscious"
+    description: "Conscious abstract hip-hop with deep lyrical themes"
+    values:
+      subgenre: abstract
+      bpm: 88
+      key: E
+      scale: minor
+      narrativeArc: conscious
+      rhymeStyle: multi_syllabic
+      flowPattern: laid_back
+      delivery: conversational
+      productionStyle: polished
+      energy: 5
+      complexity: 8
+      lyricsMode: full_lyrics
+  # Storytelling
+  - id: storytelling_narrative
+    name: "Storytelling — Narrative"
+    description: "Narrative-driven hip-hop with detailed storytelling"
+    values:
+      subgenre: storytelling
+      bpm: 85
+      key: A
+      scale: minor
+      narrativeArc: storytelling
+      rhymeStyle: internal
+      flowPattern: laid_back
+      delivery: conversational
+      productionStyle: polished
+      energy: 6
+      complexity: 7
+      lyricsMode: full_lyrics

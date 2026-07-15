@@ -25,14 +25,6 @@ const GENRE_SUBGENRE_COUNTS: Record<string, string> = {
   dnb: "10+",
 };
 
-const GENRE_SHORT: Record<string, string> = {
-  edm: "EDM",
-  hiphop: "HIP",
-  pop: "POP",
-  ambient: "AMB",
-  dnb: "DNB",
-};
-
 const KEY_OPTIONS = [
   "C maj",
   "Db maj",
@@ -724,19 +716,12 @@ export function CreateSession() {
             <div class="accordion-body">
               <div class="genre-grid">
                 {filteredGenres.map((g) => {
-                  const dotColor = GENRE_COLORS[g.id] ?? "accent";
-                  return (
+                return (
                     <button
                       key={g.id}
                       class={`genre-card${genreId === g.id ? " active" : ""}`}
                       onClick={() => handleGenreClick(g.id)}
                     >
-                      <div
-                        class="genre-square"
-                        style={{ background: `var(--${dotColor})` }}
-                      >
-                        {GENRE_SHORT[g.id] ?? g.id.toUpperCase()}
-                      </div>
                       <div class="genre-name">{g.name}</div>
                       <div class="genre-count">
                         {GENRE_SUBGENRE_COUNTS[g.id] ?? ""} subgenres

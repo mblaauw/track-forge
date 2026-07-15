@@ -1,0 +1,141 @@
+# Pop genre module config
+name: Pop
+color: violet
+subgenre_count: "20+"
+
+defaults:
+  subgenre: synthpop
+  bpm: 116
+  key: C
+  scale: major
+  mood: "bright and catchy"
+  energy: 6
+  complexity: 5
+  lyricsMode: full_lyrics
+  theme: "love"
+  reference: ""
+
+tag_policy:
+  mandatoryTags: [pop]
+  forbiddenTags: []
+  canonicalMap: {}
+
+adjustment_vocabulary:
+  styleTerms:
+    - catchy
+    - melodic
+    - upbeat
+    - emotional
+    - polished
+    - dreamy
+    - bright
+    - sweet
+    - hazy
+    - driving
+    - gentle
+    - anthemic
+  structureTerms:
+    - "extended intro"
+    - "short bridge"
+    - "double chorus"
+    - "instrumental break"
+    - "key change"
+    - "tag ending"
+  deliveryTerms:
+    - "breathy vocals"
+    - "smooth delivery"
+    - "layered harmonies"
+    - "belting chorus"
+    - "falsetto"
+    - "spoken word intro"
+
+tag_categories:
+  - id: genre
+    name: Genre
+    color: accent
+    suggestions:
+      - "Synth-Pop"
+      - "Dream Pop"
+      - "Dance-Pop"
+      - "Indie Pop"
+      - "Art Pop"
+      - "Power Pop"
+      - Electropop
+      - Bubblegum
+  - id: mood
+    name: Mood
+    color: amber
+    suggestions:
+      - Catchy
+      - Dreamy
+      - Upbeat
+      - Sweet
+      - Melancholic
+      - Bright
+      - Hazy
+      - Emotional
+  - id: inst
+    name: Instruments
+    color: cyan
+    suggestions:
+      - Synth
+      - Guitar
+      - Piano
+      - Strings
+      - "Drum Machine"
+      - Bass
+      - Vocals
+      - Pads
+  - id: prod
+    name: Production
+    color: violet
+    suggestions:
+      - Polished
+      - Reverb
+      - Compression
+      - Layering
+      - "Gated Reverb"
+      - "Wide Stereo"
+      - "Tape Saturation"
+      - Chorus
+
+presets:
+  - id: synthpop_chart
+    name: "Synth-Pop — Chart"
+    description: "Bright, catchy synth-pop with anthemic choruses"
+    values:
+      subgenre: synthpop
+      bpm: 116
+      key: A
+      scale: major
+      mood: "bright and catchy"
+      energy: 7
+      complexity: 5
+      lyricsMode: full_lyrics
+      theme: "love"
+  - id: dreampop_hazy
+    name: "Dream Pop — Hazy"
+    description: "Ethereal dream pop with lush textures and hazy vocals"
+    values:
+      subgenre: dreampop
+      bpm: 96
+      key: "F#"
+      scale: major
+      mood: "dreamy and ethereal"
+      energy: 5
+      complexity: 6
+      lyricsMode: full_lyrics
+      theme: "dreams"
+  - id: dancepop_upbeat
+    name: "Dance-Pop — Upbeat"
+    description: "Upbeat dance-pop with infectious grooves"
+    values:
+      subgenre: dancepop
+      bpm: 118
+      key: "C#"
+      scale: minor
+      mood: "upbeat and danceable"
+      energy: 8
+      complexity: 5
+      lyricsMode: full_lyrics
+      theme: "party"

@@ -1,0 +1,123 @@
+# Drum & Bass genre module config
+name: "Drum & Bass"
+color: red
+subgenre_count: "10+"
+
+defaults:
+  subgenre: liquid
+  bpm: 174
+  key: A
+  scale: minor
+  mood: "soulful"
+  energy: 7
+  complexity: 6
+  lyricsMode: full_lyrics
+  reference: ""
+
+tag_policy:
+  mandatoryTags: [dnb, electronic]
+  forbiddenTags: []
+  canonicalMap:
+    "drum and bass": dnb
+    "drum n bass": dnb
+
+adjustment_vocabulary:
+  styleTerms:
+    - rolling
+    - dark
+    - soulful
+    - techy
+    - liquid
+    - neuro
+    - deep
+    - minimal
+    - jump-up
+    - dancefloor
+  structureTerms:
+    - "extended intro"
+    - "double drop"
+    - "minimal break"
+    - "reese build"
+    - "amen break"
+  deliveryTerms:
+    - "tight drums"
+    - "rolling bassline"
+    - "syncopated breaks"
+    - "chopped vocals"
+    - "reese bass"
+
+tag_categories:
+  - id: genre
+    name: Genre
+    color: accent
+    suggestions:
+      - Liquid
+      - Neurofunk
+      - Jungle
+      - "Jump Up"
+      - Techstep
+      - Deep
+      - Minimal
+      - Dancefloor
+  - id: mood
+    name: Mood
+    color: amber
+    suggestions:
+      - Aggressive
+      - Soulful
+      - Dark
+      - Energetic
+      - Hypnotic
+      - Smooth
+      - Intense
+      - Rolling
+  - id: inst
+    name: Instruments
+    color: cyan
+    suggestions:
+      - "Reese Bass"
+      - Breaks
+      - "Sub Bass"
+      - "Amen Break"
+      - Synth
+      - Pad
+      - "Vocal Sample"
+      - Percussion
+  - id: prod
+    name: Production
+    color: violet
+    suggestions:
+      - "Heavy Compression"
+      - Sidechain
+      - Distortion
+      - Layering
+      - "Filter Sweeps"
+      - Reverb
+      - "Tight Mix"
+      - Phaser
+
+presets:
+  - id: liquid_soulful
+    name: "Liquid — Soulful"
+    description: "Melodic liquid D&B with soulful vocals and warm bass"
+    values:
+      subgenre: liquid
+      bpm: 174
+      key: A
+      scale: minor
+      mood: "soulful and melodic"
+      energy: 7
+      complexity: 6
+      lyricsMode: full_lyrics
+  - id: neurofunk_dark
+    name: "Neurofunk — Dark"
+    description: "Dark neurofunk with modulated bass and techy drums"
+    values:
+      subgenre: neurofunk
+      bpm: 174
+      key: F
+      scale: minor
+      mood: "dark and techy"
+      energy: 9
+      complexity: 8
+      lyricsMode: strict_instrumental
