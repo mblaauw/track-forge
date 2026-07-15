@@ -70,9 +70,8 @@ function renderLyrics(data: PopBlueprint): string {
       lines.push("");
 
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0
-          ? `  ${section.tags.join(", ")}`
-          : "";
+        const tagStr =
+          section.tags.length > 0 ? `  ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
         if (section.section === "chorus") {
           lines.push("(hook)");
@@ -91,14 +90,17 @@ function renderLyrics(data: PopBlueprint): string {
       lines.push("");
 
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0
-          ? `  ${section.tags.join(", ")}`
-          : "";
+        const tagStr =
+          section.tags.length > 0 ? `  ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
 
         if (section.section === "intro" || section.section === "outro") {
           lines.push("(instrumental)");
-        } else if (section.section === "verse" || section.section === "chorus" || section.section === "bridge") {
+        } else if (
+          section.section === "verse" ||
+          section.section === "chorus" ||
+          section.section === "bridge"
+        ) {
           lines.push("(write lyrics)");
         } else if (section.section === "pre_chorus") {
           lines.push("(build)");

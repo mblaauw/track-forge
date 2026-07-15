@@ -8,7 +8,11 @@ import {
 } from "./schema.js";
 import { HIP_HOP_PRESETS } from "./presets.js";
 import { createHipHopRenderers } from "./renderers.js";
-import { HIP_HOP_FAST_CRITIC, HIP_HOP_FULL_CRITICS, HIP_HOP_ORIGINALITY_CRITIC } from "./critics.js";
+import {
+  HIP_HOP_FAST_CRITIC,
+  HIP_HOP_FULL_CRITICS,
+  HIP_HOP_ORIGINALITY_CRITIC,
+} from "./critics.js";
 import { hipHopValidators } from "./validators.js";
 import { HIP_HOP_TAG_CATEGORIES } from "./tag-categories.js";
 
@@ -60,14 +64,14 @@ const hipHopTagPolicy = {
   mandatoryTags: ["hip hop", "rap"],
   forbiddenTags: [],
   canonicalMap: {
-    "hiphop": "hip hop",
+    hiphop: "hip hop",
     "hip-hop": "hip hop",
     "rap music": "rap",
-    "gangsta": "gangsta rap",
+    gangsta: "gangsta rap",
     "trap music": "trap",
     "old school": "old school hip hop",
-    "eastcoast": "east coast",
-    "westcoast": "west coast",
+    eastcoast: "east coast",
+    westcoast: "west coast",
   },
 };
 
@@ -144,34 +148,54 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
   presets: HIP_HOP_PRESETS,
   tagCategories: HIP_HOP_TAG_CATEGORIES,
   promptFragments: hipHopPromptFragments,
-  compileBlueprint: (inputs: HipHopInputs, options?: { arrangementOverride?: { section: string; bars: number }[] }) => HipHopBlueprintSchema.parse({
-    subgenre: inputs.subgenre,
-    bpm: inputs.bpm,
-    key: inputs.key,
-    scale: inputs.scale,
-    mood: inputs.mood,
-    narrativeArc: inputs.narrativeArc,
-    rhymeStyle: inputs.rhymeStyle,
-    flowPattern: inputs.flowPattern,
-    delivery: inputs.delivery,
-    productionStyle: inputs.productionStyle,
-    energy: inputs.energy,
-    complexity: inputs.complexity,
-    lyricsMode: inputs.lyricsMode,
-    vocalStyle: "",
-    tags: inputs.customTags ? inputs.customTags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-    negativeTags: inputs.lyricsMode === "instrumental" ? ["vocals", "singing"] : [],
-    styleClauses: [
-      { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
-      { key: "bpm", value: String(inputs.bpm), order: 1 },
-      { key: "mood", value: inputs.mood, order: 2 },
-    ],
-    songStructure: ["intro", "verse", "hook", "verse", "hook", "bridge", "hook", "outro"],
-  }),
+  compileBlueprint: (
+    inputs: HipHopInputs,
+    options?: { arrangementOverride?: { section: string; bars: number }[] },
+  ) =>
+    HipHopBlueprintSchema.parse({
+      subgenre: inputs.subgenre,
+      bpm: inputs.bpm,
+      key: inputs.key,
+      scale: inputs.scale,
+      mood: inputs.mood,
+      narrativeArc: inputs.narrativeArc,
+      rhymeStyle: inputs.rhymeStyle,
+      flowPattern: inputs.flowPattern,
+      delivery: inputs.delivery,
+      productionStyle: inputs.productionStyle,
+      energy: inputs.energy,
+      complexity: inputs.complexity,
+      lyricsMode: inputs.lyricsMode,
+      vocalStyle: "",
+      tags: inputs.customTags
+        ? inputs.customTags
+            .split(",")
+            .map((t: string) => t.trim())
+            .filter(Boolean)
+        : [],
+      negativeTags:
+        inputs.lyricsMode === "instrumental" ? ["vocals", "singing"] : [],
+      styleClauses: [
+        { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
+        { key: "bpm", value: String(inputs.bpm), order: 1 },
+        { key: "mood", value: inputs.mood, order: 2 },
+      ],
+      songStructure: [
+        "intro",
+        "verse",
+        "hook",
+        "verse",
+        "hook",
+        "bridge",
+        "hook",
+        "outro",
+      ],
+    }),
   renderers: {
     title: (data: HipHopBlueprint) => defaultRenderers.title(data),
     style: (data: HipHopBlueprint) => defaultRenderers.style(data),
-    excludedStyles: (data: HipHopBlueprint) => defaultRenderers.excludedStyles(data),
+    excludedStyles: (data: HipHopBlueprint) =>
+      defaultRenderers.excludedStyles(data),
     lyrics: (data: HipHopBlueprint) => defaultRenderers.lyrics(data),
   },
   critics: {
@@ -191,12 +215,26 @@ export default hipHopModule;
 // ── Re-exports ────────────────────────────────────────────────────────
 
 export type { HipHopInputs, HipHopBlueprint } from "./schema.js";
-export { HipHopInputSchema, HipHopBlueprintSchema, HIP_HOP_DEFAULTS, HIP_HOP_FORM_FIELDS } from "./schema.js";
+export {
+  HipHopInputSchema,
+  HipHopBlueprintSchema,
+  HIP_HOP_DEFAULTS,
+  HIP_HOP_FORM_FIELDS,
+} from "./schema.js";
 export { HIP_HOP_PRESETS } from "./presets.js";
 export { createHipHopRenderers } from "./renderers.js";
-export { HIP_HOP_FAST_CRITIC, HIP_HOP_FULL_CRITICS, HIP_HOP_ORIGINALITY_CRITIC } from "./critics.js";
+export {
+  HIP_HOP_FAST_CRITIC,
+  HIP_HOP_FULL_CRITICS,
+  HIP_HOP_ORIGINALITY_CRITIC,
+} from "./critics.js";
 export { hipHopValidators } from "./validators.js";
-export { HIP_HOP_SUBGENRES, getSubgenre, getDefaultPreset, getSubgenreOptions } from "./taxonomy.js";
+export {
+  HIP_HOP_SUBGENRES,
+  getSubgenre,
+  getDefaultPreset,
+  getSubgenreOptions,
+} from "./taxonomy.js";
 export type {
   HipHopSubgenreEntry,
   NarrativeArc,

@@ -8,8 +8,18 @@ export function NavRail() {
   const links = [
     { to: "/", code: "LIB", label: "Library" },
     { to: "/create", code: "NEW", label: "Create" },
-    { to: jobId ? `/forge/${jobId}` : null, code: "RUN", label: "Forge", needsJob: true },
-    { to: jobId ? `/studio/${jobId}` : null, code: "MIX", label: "Studio", needsJob: true },
+    {
+      to: jobId ? `/forge/${jobId}` : null,
+      code: "RUN",
+      label: "Forge",
+      needsJob: true,
+    },
+    {
+      to: jobId ? `/studio/${jobId}` : null,
+      code: "MIX",
+      label: "Studio",
+      needsJob: true,
+    },
   ];
 
   return (
@@ -22,15 +32,23 @@ export function NavRail() {
       <div class="nav-items">
         {links.map((link) => {
           const disabled = link.needsJob && !jobId;
-          const active = link.to ? (link.to === "/" ? path === "/" : path.startsWith(link.to)) : false;
+          const active = link.to
+            ? link.to === "/"
+              ? path === "/"
+              : path.startsWith(link.to)
+            : false;
           return (
             <button
               key={link.code}
               class={`nav-btn${active ? " active" : ""}`}
               title={link.label}
               disabled={disabled}
-              style={disabled ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
-              onClick={() => { if (!disabled && link.to) navigate(link.to); }}
+              style={
+                disabled ? { opacity: 0.35, cursor: "not-allowed" } : undefined
+              }
+              onClick={() => {
+                if (!disabled && link.to) navigate(link.to);
+              }}
             >
               <span class="nav-btn-code">{link.code}</span>
               <span class="nav-btn-label">{link.label}</span>

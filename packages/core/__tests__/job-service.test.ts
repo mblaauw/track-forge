@@ -3,11 +3,23 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createDb } from "../src/db/index.js";
-import { createJob, loadJob, advanceStage, failStage, completeJob, createVersion } from "../src/pipeline/job-service.js";
+import {
+  createJob,
+  loadJob,
+  advanceStage,
+  failStage,
+  completeJob,
+  createVersion,
+} from "../src/pipeline/job-service.js";
 import { schema } from "../src/db/index.js";
 import { eq } from "drizzle-orm";
 import type { Db } from "../src/db/index.js";
-import type { JobId, GenreId, PresetId, SunoArtifact } from "@track-forge/contracts";
+import type {
+  JobId,
+  GenreId,
+  PresetId,
+  SunoArtifact,
+} from "@track-forge/contracts";
 
 describe("JobService", () => {
   let db: Db;
@@ -23,7 +35,13 @@ describe("JobService", () => {
   });
 
   it("createJob creates a pending job", async () => {
-    const job = await createJob(db, "edm" as GenreId, "deep_house_chill" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "deep_house_chill" as PresetId,
+      "{}",
+      null,
+    );
     expect(job.id).toBeDefined();
     expect(job.status).toBe("pending");
     expect(job.currentStage).toBe("ref_interpretation");
@@ -36,7 +54,13 @@ describe("JobService", () => {
 
   it("createJob hashes reference material", async () => {
     const ref = "Sample reference track";
-    const job = await createJob(db, "edm" as GenreId, "deep_house_chill" as PresetId, "{}", ref);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "deep_house_chill" as PresetId,
+      "{}",
+      ref,
+    );
     expect(job.sourceHash).toBeDefined();
     expect(job.sourceHash!.length).toBeGreaterThan(0);
     expect(job.reference).toBe(ref);
@@ -48,7 +72,13 @@ describe("JobService", () => {
   });
 
   it("loadJob returns created job", async () => {
-    const created = await createJob(db, "edm" as GenreId, "deep_house_chill" as PresetId, "{}", null);
+    const created = await createJob(
+      db,
+      "edm" as GenreId,
+      "deep_house_chill" as PresetId,
+      "{}",
+      null,
+    );
     const loaded = await loadJob(db, created.id);
     expect(loaded).not.toBeNull();
     expect(loaded!.id).toBe(created.id);
@@ -56,14 +86,26 @@ describe("JobService", () => {
   });
 
   it("advanceStage updates currentStage and resets attempt counter", async () => {
-    const job = await createJob(db, "edm" as GenreId, "tech_house_driving" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "tech_house_driving" as PresetId,
+      "{}",
+      null,
+    );
     const advanced = await advanceStage(db, job.id, "planning");
     expect(advanced.currentStage).toBe("planning");
     expect(advanced.stageAttempt).toBe(0);
   });
 
   it("failStage retries same stage until maxAttempts", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const fail1 = await failStage(db, job.id, "error 1");
     expect(fail1.status).toBe("in_progress"); // retrying
     expect(fail1.stageAttempt).toBe(1);
@@ -80,15 +122,29 @@ describe("JobService", () => {
   });
 
   it("completeJob marks job completed and stage versioning", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const completed = await completeJob(db, job.id);
     expect(completed.status).toBe("completed");
     expect(completed.currentStage).toBe("versioning");
   });
 
   it("createVersion creates version with incrementing numbers", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
-    const artifacts: SunoArtifact[] = [{ type: "title", value: "Test Track", versionId: "" as any }];
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
+    const artifacts: SunoArtifact[] = [
+      { type: "title", value: "Test Track", versionId: "" as any },
+    ];
     const v1 = await createVersion(db, job.id, artifacts);
     expect(v1.number).toBe(1);
     expect(v1.status).toBe("draft");
@@ -122,15 +178,24 @@ describe("Versioning invariants", () => {
   ];
 
   it("rollback creates child version with parentVersionId set", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const v1 = await createVersion(db, job.id, baseArtifacts);
     const v2 = await createVersion(db, job.id, baseArtifacts);
 
     // Create rollback version from v1
-    const rollbackArtifacts: SunoArtifact[] = [
-      ...baseArtifacts,
-    ];
-    const rollback = await createVersion(db, job.id, rollbackArtifacts, "draft");
+    const rollbackArtifacts: SunoArtifact[] = [...baseArtifacts];
+    const rollback = await createVersion(
+      db,
+      job.id,
+      rollbackArtifacts,
+      "draft",
+    );
 
     // Manually set parentVersionId to simulate rollback
     await db
@@ -148,7 +213,13 @@ describe("Versioning invariants", () => {
   });
 
   it("promote changes status from draft to final", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const v = await createVersion(db, job.id, baseArtifacts, "draft");
     expect(v.status).toBe("draft");
     expect(v.finalizedAt).toBeNull();
@@ -170,7 +241,13 @@ describe("Versioning invariants", () => {
   });
 
   it("promote on already-final version does not change finalizedAt again", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const v = await createVersion(db, job.id, baseArtifacts, "final");
     const originalFinalized = v.finalizedAt;
 
@@ -192,13 +269,25 @@ describe("Versioning invariants", () => {
   });
 
   it("createVersion with final status sets finalizedAt", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const v = await createVersion(db, job.id, baseArtifacts, "final");
     expect(v.finalizedAt).not.toBeNull();
   });
 
   it("createVersion with draft status does not set finalizedAt", async () => {
-    const job = await createJob(db, "edm" as GenreId, "test" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "edm" as GenreId,
+      "test" as PresetId,
+      "{}",
+      null,
+    );
     const v = await createVersion(db, job.id, baseArtifacts, "draft");
     expect(v.finalizedAt).toBeNull();
   });

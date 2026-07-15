@@ -39,7 +39,8 @@ function renderExcludedStyles(data: AmbientBlueprint): string {
   ];
   if (data.complexity >= 7) excludes.push("simple", "basic");
   if (data.complexity <= 3) excludes.push("dense", "cluttered", "busy");
-  if (data.lyricsMode !== "full_lyrics") excludes.push("vocals", "singing", "lyrics", "voice");
+  if (data.lyricsMode !== "full_lyrics")
+    excludes.push("vocals", "singing", "lyrics", "voice");
   if (data.scale === "minor") excludes.push("major key", "happy");
   else excludes.push("minor key", "sad");
   return excludes.join(", ");
@@ -57,7 +58,8 @@ function renderLyrics(data: AmbientBlueprint): string {
       lines.push(`[Soundscape: ${data.soundscape}]`);
       lines.push("");
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
+        const tagStr =
+          section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
         lines.push(`(${section.bars} bars)`);
         lines.push("");
@@ -72,7 +74,8 @@ function renderLyrics(data: AmbientBlueprint): string {
       lines.push(`[Soundscape: ${data.soundscape}]`);
       lines.push("");
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
+        const tagStr =
+          section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
         lines.push("(instrumental — textural)");
         lines.push("");

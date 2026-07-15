@@ -50,10 +50,19 @@ async function run() {
     const bundle: ExportBundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      projects: [{
-        project: { id: "" as any, name: job.name ?? "Exported Job", description: null, genreId: null, createdAt: job.createdAt, updatedAt: job.updatedAt },
-        jobs: [{ job: job as any, versions: versions as any[] }],
-      }],
+      projects: [
+        {
+          project: {
+            id: "" as any,
+            name: job.name ?? "Exported Job",
+            description: null,
+            genreId: null,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
+          },
+          jobs: [{ job: job as any, versions: versions as any[] }],
+        },
+      ],
     };
 
     writeFileSync(outputPath, JSON.stringify(bundle, null, 2));
@@ -77,10 +86,19 @@ async function run() {
     const bundle: ExportBundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      projects: [{
-        project: { id: "" as any, name: "Bulk Export", description: null, genreId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        jobs: entries,
-      }],
+      projects: [
+        {
+          project: {
+            id: "" as any,
+            name: "Bulk Export",
+            description: null,
+            genreId: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          jobs: entries,
+        },
+      ],
     };
 
     writeFileSync(outputPath, JSON.stringify(bundle, null, 2));
@@ -122,7 +140,9 @@ async function run() {
           const parsed = JSON.parse(entry.job.inputs);
           const validated = mod.inputSchema.safeParse(parsed);
           if (!validated.success) {
-            throw new Error(`Invalid inputs for genre ${entry.job.genreId}: ${validated.error.message}`);
+            throw new Error(
+              `Invalid inputs for genre ${entry.job.genreId}: ${validated.error.message}`,
+            );
           }
         }
 
@@ -165,7 +185,10 @@ async function run() {
               jobId: entry.job.id,
               status: v.status ?? "draft",
               number: v.number,
-              artifacts: typeof v.artifacts === "string" ? v.artifacts : JSON.stringify(v.artifacts ?? []),
+              artifacts:
+                typeof v.artifacts === "string"
+                  ? v.artifacts
+                  : JSON.stringify(v.artifacts ?? []),
               stage: v.stage ?? null,
               parentVersionId: v.parentVersionId ?? null,
               finalizedAt: v.finalizedAt ?? null,
@@ -183,7 +206,9 @@ async function run() {
       }
     }
 
-    console.log(`Imported: ${result.imported}, Skipped: ${result.skipped}, Errors: ${result.errors.length}`);
+    console.log(
+      `Imported: ${result.imported}, Skipped: ${result.skipped}, Errors: ${result.errors.length}`,
+    );
     for (const e of result.errors) {
       console.error(`  [${e.index}] ${e.message}`);
     }

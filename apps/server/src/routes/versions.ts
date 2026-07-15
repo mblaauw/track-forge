@@ -8,7 +8,10 @@ export interface VersionRouteDeps {
   lockService: LockService;
 }
 
-export function registerVersionRoutes(server: FastifyInstance, deps: VersionRouteDeps): void {
+export function registerVersionRoutes(
+  server: FastifyInstance,
+  deps: VersionRouteDeps,
+): void {
   const { db, lockService } = deps;
 
   // ── List versions for a job ──────────────────────────────────────────
@@ -52,7 +55,8 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
 
   server.patch("/api/versions/:id/artifacts", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const body = req.body as { artifactType: string; value: string } | undefined;
+    const body = req.body as
+      { artifactType: string; value: string } | undefined;
 
     if (!body?.artifactType || body.value === undefined) {
       return reply.code(400).send({ error: "artifactType and value required" });
@@ -70,19 +74,34 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
     }
 
     const owner = `server:${process.pid}`;
-    const acquired = await lockService.acquireLock(id, body.artifactType, owner);
+    const acquired = await lockService.acquireLock(
+      id,
+      body.artifactType,
+      owner,
+    );
     if (!acquired) {
-      return reply.code(423).send({ error: `Artifact "${body.artifactType}" is locked` });
+      return reply
+        .code(423)
+        .send({ error: `Artifact "${body.artifactType}" is locked` });
     }
 
     try {
-      const artifacts = JSON.parse(version.artifacts) as Array<{ type: string; value: string; versionId?: string }>;
+      const artifacts = JSON.parse(version.artifacts) as Array<{
+        type: string;
+        value: string;
+        versionId?: string;
+      }>;
       const idx = artifacts.findIndex((a) => a.type === body.artifactType);
       if (idx === -1) {
         artifacts.push({ type: body.artifactType, value: body.value });
       } else {
-        const prev = artifacts[idx] as { type: string; value: string; versionId?: string } | undefined;
-        artifacts[idx] = { type: body.artifactType, value: body.value, versionId: prev?.versionId };
+        const prev = artifacts[idx] as
+          { type: string; value: string; versionId?: string } | undefined;
+        artifacts[idx] = {
+          type: body.artifactType,
+          value: body.value,
+          versionId: prev?.versionId,
+        };
       }
 
       await db
@@ -135,54 +154,61 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
 
   // ── Rollback: create new version from previous version's artifacts ───
 
-  server.post("/api/jobs/:jobId/versions/:versionId/rollback", async (req, reply) => {
-    const { jobId, versionId } = req.params as { jobId: string; versionId: string };
+  server.post(
+    "/api/jobs/:jobId/versions/:versionId/rollback",
+    async (req, reply) => {
+      const { jobId, versionId } = req.params as {
+        jobId: string;
+        versionId: string;
+      };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, jobId))
-      .limit(1);
+      const [job] = await db
+        .select()
+        .from(schema.jobs)
+        .where(eq(schema.jobs.id, jobId))
+        .limit(1);
 
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+      if (!job) return reply.code(404).send({ error: "Job not found" });
 
-    const [sourceVersion] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, versionId))
-      .limit(1);
+      const [sourceVersion] = await db
+        .select()
+        .from(schema.versions)
+        .where(eq(schema.versions.id, versionId))
+        .limit(1);
 
-    if (!sourceVersion) return reply.code(404).send({ error: "Source version not found" });
+      if (!sourceVersion)
+        return reply.code(404).send({ error: "Source version not found" });
 
-    const [maxVersion] = await db
-      .select({ maxNumber: schema.versions.number })
-      .from(schema.versions)
-      .where(eq(schema.versions.jobId, jobId as string))
-      .orderBy(desc(schema.versions.number))
-      .limit(1);
+      const [maxVersion] = await db
+        .select({ maxNumber: schema.versions.number })
+        .from(schema.versions)
+        .where(eq(schema.versions.jobId, jobId as string))
+        .orderBy(desc(schema.versions.number))
+        .limit(1);
 
-    const nextNumber = (maxVersion?.maxNumber ?? 0) + 1;
-    const newId = crypto.randomUUID();
-    const now = new Date().toISOString();
+      const nextNumber = (maxVersion?.maxNumber ?? 0) + 1;
+      const newId = crypto.randomUUID();
+      const now = new Date().toISOString();
 
-    await db.insert(schema.versions).values({
-      id: newId,
-      jobId: jobId as string,
-      status: "draft",
-      number: nextNumber,
-      artifacts: sourceVersion.artifacts,
-      parentVersionId: versionId,
-      createdAt: now,
-    });
+      await db.insert(schema.versions).values({
+        id: newId,
+        jobId: jobId as string,
+        status: "draft",
+        number: nextNumber,
+        artifacts: sourceVersion.artifacts,
+        parentVersionId: versionId,
+        createdAt: now,
+      });
 
-    const [created] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, newId))
-      .limit(1);
+      const [created] = await db
+        .select()
+        .from(schema.versions)
+        .where(eq(schema.versions.id, newId))
+        .limit(1);
 
-    return reply.code(201).send(created);
-  });
+      return reply.code(201).send(created);
+    },
+  );
 
   // ── Version tree ─────────────────────────────────────────────────────
 
@@ -203,7 +229,7 @@ export function registerVersionRoutes(server: FastifyInstance, deps: VersionRout
       .where(eq(schema.versions.jobId, jobId))
       .orderBy(schema.versions.number);
 
-    const versionMap = new Map<string, typeof rows[0]>();
+    const versionMap = new Map<string, (typeof rows)[0]>();
     const roots: typeof rows = [];
 
     for (const v of rows) {

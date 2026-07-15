@@ -49,7 +49,10 @@ export function registerSunoRoutes(
         await updateGeneration(db, generationId, data as any);
         req.log.info({ generationId, status }, "generation record updated");
       } catch (err) {
-        req.log.error({ generationId, err }, "failed to update generation record");
+        req.log.error(
+          { generationId, err },
+          "failed to update generation record",
+        );
       }
     }
 
@@ -77,65 +80,79 @@ export function registerSunoRoutes(
   server.get("/api/suno/jobs/:jobId/generations", async (req) => {
     const { jobId } = req.params as { jobId: string };
 
-    const limit = parseInt(String((req.query as Record<string, string>).limit ?? "10"), 10);
+    const limit = parseInt(
+      String((req.query as Record<string, string>).limit ?? "10"),
+      10,
+    );
     const records = await listGenerations(db, jobId, Math.min(limit, 50));
     return records;
   });
 
   // ── Retry failed generation ───────────────────────────────────────
 
-  server.post("/api/suno/jobs/:jobId/generations/:id/retry", async (req, reply) => {
-    const { jobId, id } = req.params as { jobId: string; id: string };
+  server.post(
+    "/api/suno/jobs/:jobId/generations/:id/retry",
+    async (req, reply) => {
+      const { jobId, id } = req.params as { jobId: string; id: string };
 
-    // Find failed generation
-    const failed = await getGeneration(db, id);
-    if (!failed) {
-      return reply.code(404).send({ error: "Generation not found" });
-    }
-    if (failed.status !== "error") {
-      return reply.code(400).send({ error: "Only failed generations can be retried" });
-    }
+      // Find failed generation
+      const failed = await getGeneration(db, id);
+      if (!failed) {
+        return reply.code(404).send({ error: "Generation not found" });
+      }
+      if (failed.status !== "error") {
+        return reply
+          .code(400)
+          .send({ error: "Only failed generations can be retried" });
+      }
 
-    // Find the job to get latest version artifacts
-    const versions = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.jobId, jobId))
-      .orderBy(desc(schema.versions.number))
-      .limit(1);
+      // Find the job to get latest version artifacts
+      const versions = await db
+        .select()
+        .from(schema.versions)
+        .where(eq(schema.versions.jobId, jobId))
+        .orderBy(desc(schema.versions.number))
+        .limit(1);
 
-    const latestVersion = versions[0];
-    if (!latestVersion) {
-      return reply.code(400).send({ error: "No version found for this job" });
-    }
+      const latestVersion = versions[0];
+      if (!latestVersion) {
+        return reply.code(400).send({ error: "No version found for this job" });
+      }
 
-    const artifacts = JSON.parse(latestVersion.artifacts as string) as SunoArtifact[];
-    const getValue = (type: string) => artifacts.find((a) => a.type === type)?.value ?? "";
+      const artifacts = JSON.parse(
+        latestVersion.artifacts as string,
+      ) as SunoArtifact[];
+      const getValue = (type: string) =>
+        artifacts.find((a) => a.type === type)?.value ?? "";
 
-    // Build payload and submit
-    const { request } = generateSunoPayload({
-      title: getValue("title"),
-      style: getValue("style"),
-      excludedStyles: getValue("excluded_styles"),
-      lyrics: getValue("lyrics"),
-    });
+      // Build payload and submit
+      const { request } = generateSunoPayload({
+        title: getValue("title"),
+        style: getValue("style"),
+        excludedStyles: getValue("excluded_styles"),
+        lyrics: getValue("lyrics"),
+      });
 
-    const result = await suno.submit(request);
+      const result = await suno.submit(request);
 
-    // Store task as generation record (individual song IDs come from polling)
-    await storeGeneration(db, {
-      id: result.taskId,
-      jobId,
-      versionId: latestVersion.id,
-      status: "queued",
-    });
+      // Store task as generation record (individual song IDs come from polling)
+      await storeGeneration(db, {
+        id: result.taskId,
+        jobId,
+        versionId: latestVersion.id,
+        status: "queued",
+      });
 
-    req.log.info({ jobId, taskId: result.taskId }, "generation task submitted");
+      req.log.info(
+        { jobId, taskId: result.taskId },
+        "generation task submitted",
+      );
 
-    return {
-      status: "retried",
-      jobId,
-      taskId: result.taskId,
-    };
-  });
+      return {
+        status: "retried",
+        jobId,
+        taskId: result.taskId,
+      };
+    },
+  );
 }

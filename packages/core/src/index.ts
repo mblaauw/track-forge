@@ -4,7 +4,12 @@ export { loadConfig } from "./config.js";
 
 // LLM client
 export { LlmClient, LlmError, createLlmClient } from "./llm/index.js";
-export type { LlmMessage, LlmRequest, LlmResponse, LlmProvider } from "./llm/index.js";
+export type {
+  LlmMessage,
+  LlmRequest,
+  LlmResponse,
+  LlmProvider,
+} from "./llm/index.js";
 
 // Suno integration
 export {
@@ -36,9 +41,42 @@ export type {
 export { createLockService, abortJob } from "./pipeline/index.js";
 export type { LockService } from "./pipeline/index.js";
 // Lyrics canonical grammar
-export { parseLyrics, serializeLyrics, isInstrumental } from "./lyrics/index.js";
+export {
+  parseLyrics,
+  serializeLyrics,
+  isInstrumental,
+} from "./lyrics/index.js";
 
 // Pipeline
-export { runPipeline, createJob, loadJob, resetJobStage, cancelJob, ReferenceCache, interpretReference, formatInterpretedRef, parseInterpretation, PromptAssembler, fillTemplate, buildPromptContext, formatControlDescriptors, parseControlDescriptors, subscribe, publish, unsubscribeAll, getJobEvents } from "./pipeline/index.js";
-export type { PipelineDeps, PipelineState, PipelineResult, PipelineEvent, PromptContext, PromptManifest } from "./pipeline/index.js";
-export type { ControlDescriptor, GenerationStage } from "@track-forge/contracts";
+export {
+  runPipeline,
+  createJob,
+  loadJob,
+  resetJobStage,
+  cancelJob,
+  ReferenceCache,
+  interpretReference,
+  formatInterpretedRef,
+  parseInterpretation,
+  PromptAssembler,
+  fillTemplate,
+  buildPromptContext,
+  formatControlDescriptors,
+  parseControlDescriptors,
+  subscribe,
+  publish,
+  unsubscribeAll,
+  getJobEvents,
+} from "./pipeline/index.js";
+export type {
+  PipelineDeps,
+  PipelineState,
+  PipelineResult,
+  PipelineEvent,
+  PromptContext,
+  PromptManifest,
+} from "./pipeline/index.js";
+export type {
+  ControlDescriptor,
+  GenerationStage,
+} from "@track-forge/contracts";

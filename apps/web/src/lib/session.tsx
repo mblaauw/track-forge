@@ -15,9 +15,16 @@ export interface SessionState {
 }
 
 const DEFAULT: SessionState = {
-  jobId: null, name: "", genreId: "", presetId: "",
-  bpm: null, key: "", status: "idle",
-  onForge: null, forgeLabel: "FORGE", forgeDisabled: true,
+  jobId: null,
+  name: "",
+  genreId: "",
+  presetId: "",
+  bpm: null,
+  key: "",
+  status: "idle",
+  onForge: null,
+  forgeLabel: "FORGE",
+  forgeDisabled: true,
 };
 
 interface SessionCtx extends SessionState {
@@ -25,15 +32,30 @@ interface SessionCtx extends SessionState {
   resetSession: () => void;
 }
 
-const Ctx = createContext<SessionCtx>({ ...DEFAULT, setSession: () => {}, resetSession: () => {} });
+const Ctx = createContext<SessionCtx>({
+  ...DEFAULT,
+  setSession: () => {},
+  resetSession: () => {},
+});
 
 export function useSession(): SessionCtx {
   return useContext(Ctx);
 }
 
-export function SessionProvider({ children }: { children: preact.ComponentChildren }) {
+export function SessionProvider({
+  children,
+}: {
+  children: preact.ComponentChildren;
+}) {
   const [state, setState] = useState<SessionState>(DEFAULT);
-  const setSession = useCallback((patch: Partial<SessionState>) => setState((s) => ({ ...s, ...patch })), []);
+  const setSession = useCallback(
+    (patch: Partial<SessionState>) => setState((s) => ({ ...s, ...patch })),
+    [],
+  );
   const resetSession = useCallback(() => setState(DEFAULT), []);
-  return <Ctx.Provider value={{ ...state, setSession, resetSession }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ ...state, setSession, resetSession }}>
+      {children}
+    </Ctx.Provider>
+  );
 }

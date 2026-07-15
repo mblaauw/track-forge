@@ -105,7 +105,8 @@ export const HIP_HOP_PRESETS: GenrePreset[] = [
   {
     id: "gangsta_story",
     name: "Gangsta Story",
-    description: "Cinematic street narrative with heavy bass and raw storytelling",
+    description:
+      "Cinematic street narrative with heavy bass and raw storytelling",
     values: {
       subgenre: "gangsta_rap",
       bpm: 88,
@@ -225,7 +226,8 @@ export const HIP_HOP_PRESETS: GenrePreset[] = [
   {
     id: "emo_melancholy",
     name: "Emo Melancholy",
-    description: "Emotional, introspective emo rap with rock-influenced melodies",
+    description:
+      "Emotional, introspective emo rap with rock-influenced melodies",
     values: {
       subgenre: "emo_rap",
       bpm: 160,
@@ -265,7 +267,8 @@ export const HIP_HOP_PRESETS: GenrePreset[] = [
   {
     id: "jazz_rap_sophisticated",
     name: "Jazz Rap Sophisticated",
-    description: "Intellectual jazz rap with live instrumentation and complex lyricism",
+    description:
+      "Intellectual jazz rap with live instrumentation and complex lyricism",
     values: {
       subgenre: "jazz_rap",
       bpm: 92,
@@ -305,7 +308,8 @@ export const HIP_HOP_PRESETS: GenrePreset[] = [
   {
     id: "alternative_experimental",
     name: "Alternative Experimental",
-    description: "Genre-blending experimental hip-hop with non-traditional structures",
+    description:
+      "Genre-blending experimental hip-hop with non-traditional structures",
     values: {
       subgenre: "alternative_hip_hop",
       bpm: 95,
@@ -385,7 +389,8 @@ export const HIP_HOP_PRESETS: GenrePreset[] = [
   {
     id: "trap_b_romantic",
     name: "Trap&B Romantic",
-    description: "Smooth trap&B with melodic rap-sung delivery and romantic themes",
+    description:
+      "Smooth trap&B with melodic rap-sung delivery and romantic themes",
     values: {
       subgenre: "trap_b",
       bpm: 130,

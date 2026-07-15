@@ -2,14 +2,22 @@ import type { FastifyInstance } from "fastify";
 import { eq, inArray } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
-import type { JobExport, ProjectExport, ExportBundle, ImportResult } from "@track-forge/contracts";
+import type {
+  JobExport,
+  ProjectExport,
+  ExportBundle,
+  ImportResult,
+} from "@track-forge/contracts";
 import { getModule } from "../lib/modules.js";
 
 export interface ImportExportRouteDeps {
   db: Db;
 }
 
-export function registerImportExportRoutes(server: FastifyInstance, deps: ImportExportRouteDeps): void {
+export function registerImportExportRoutes(
+  server: FastifyInstance,
+  deps: ImportExportRouteDeps,
+): void {
   const { db } = deps;
 
   // ── Export single project ─────────────────────────────────────────
@@ -73,10 +81,19 @@ export function registerImportExportRoutes(server: FastifyInstance, deps: Import
     const bundle: ExportBundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      projects: [{
-        project: { id: job.projectId ?? ("job-" + job.id) as any, name: job.name ?? "Exported Job", description: null, genreId: job.genreId as any, createdAt: job.createdAt, updatedAt: job.updatedAt },
-        jobs: [{ job: job as any, versions: versions as any[] }],
-      }],
+      projects: [
+        {
+          project: {
+            id: job.projectId ?? (("job-" + job.id) as any),
+            name: job.name ?? "Exported Job",
+            description: null,
+            genreId: job.genreId as any,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
+          },
+          jobs: [{ job: job as any, versions: versions as any[] }],
+        },
+      ],
     };
 
     return bundle;
@@ -88,7 +105,9 @@ export function registerImportExportRoutes(server: FastifyInstance, deps: Import
     const body = req.body as ExportBundle | undefined;
 
     if (!body || body.formatVersion !== 1) {
-      return reply.code(400).send({ error: "Invalid or missing formatVersion. Expected 1." });
+      return reply
+        .code(400)
+        .send({ error: "Invalid or missing formatVersion. Expected 1." });
     }
 
     const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
@@ -173,7 +192,10 @@ export function registerImportExportRoutes(server: FastifyInstance, deps: Import
                 jobId: entry.job.id,
                 status: v.status ?? "draft",
                 number: v.number,
-                artifacts: typeof v.artifacts === "string" ? v.artifacts : JSON.stringify(v.artifacts ?? []),
+                artifacts:
+                  typeof v.artifacts === "string"
+                    ? v.artifacts
+                    : JSON.stringify(v.artifacts ?? []),
                 stage: v.stage ?? null,
                 parentVersionId: v.parentVersionId ?? null,
                 finalizedAt: v.finalizedAt ?? null,

@@ -33,7 +33,11 @@ export class SunoClient {
   private appConfig: Pick<Config, "publicBaseUrl">;
   private log: Logger;
 
-  constructor(cfg: SunoClientConfig, appConfig: Pick<Config, "publicBaseUrl">, logger: Logger) {
+  constructor(
+    cfg: SunoClientConfig,
+    appConfig: Pick<Config, "publicBaseUrl">,
+    logger: Logger,
+  ) {
     this.cfg = cfg;
     this.appConfig = appConfig;
     this.log = logger.child({ module: "suno-client" });
@@ -42,7 +46,8 @@ export class SunoClient {
   // ── Submit generation (v1 API) ─────────────────────────────────
 
   async submit(request: SunoGenerateRequest): Promise<SunoSubmitResult> {
-    const callBackUrl = request.callBackUrl ?? resolveCallbackUrl(this.appConfig);
+    const callBackUrl =
+      request.callBackUrl ?? resolveCallbackUrl(this.appConfig);
 
     const body: Record<string, unknown> = {
       customMode: true,
@@ -81,7 +86,10 @@ export class SunoClient {
       body.personaModel = request.personaModel ?? "style_persona";
     }
 
-    this.log.info({ title: request.title, model: request.model }, "submitting generation to Suno API v1");
+    this.log.info(
+      { title: request.title, model: request.model },
+      "submitting generation to Suno API v1",
+    );
 
     const res = await this.fetch("/api/v1/generate", {
       method: "POST",
@@ -95,7 +103,9 @@ export class SunoClient {
     };
 
     if (json.code !== 200 || !json.data?.taskId) {
-      throw new Error(`Suno API error: ${json.msg ?? "unknown"} (code ${json.code})`);
+      throw new Error(
+        `Suno API error: ${json.msg ?? "unknown"} (code ${json.code})`,
+      );
     }
 
     return {
@@ -125,7 +135,9 @@ export class SunoClient {
     };
 
     if (json.code !== 200 || !json.data) {
-      throw new Error(`Suno API error fetching status: ${json.msg ?? "unknown"}`);
+      throw new Error(
+        `Suno API error fetching status: ${json.msg ?? "unknown"}`,
+      );
     }
 
     return normalizeTaskResponse(taskId, json.data);
@@ -152,7 +164,9 @@ export class SunoClient {
       delay = Math.min(delay * 2, maxBackoff);
     }
 
-    throw new Error(`Suno task ${taskId} timed out after ${timeoutMs ?? this.cfg.pollTimeoutMs}ms`);
+    throw new Error(
+      `Suno task ${taskId} timed out after ${timeoutMs ?? this.cfg.pollTimeoutMs}ms`,
+    );
   }
 
   // ── Internal fetch helper ──────────────────────────────────────

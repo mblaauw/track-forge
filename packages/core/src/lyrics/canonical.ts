@@ -1,4 +1,8 @@
-import type { LyricsDocument, LyricsSection, SectionType } from "@track-forge/contracts";
+import type {
+  LyricsDocument,
+  LyricsSection,
+  SectionType,
+} from "@track-forge/contracts";
 
 // ── Regex patterns ────────────────────────────────────────────────────
 
@@ -145,9 +149,10 @@ export function serializeLyrics(doc: LyricsDocument): string {
   for (let i = 0; i < doc.sections.length; i++) {
     const section = doc.sections[i]!;
 
-    const header = section.tags.length > 0
-      ? `[${section.label ?? capitalize(section.type)} — ${section.tags.join(", ")}]`
-      : `[${section.label ?? capitalize(section.type)}]`;
+    const header =
+      section.tags.length > 0
+        ? `[${section.label ?? capitalize(section.type)} — ${section.tags.join(", ")}]`
+        : `[${section.label ?? capitalize(section.type)}]`;
     lines.push(header);
 
     if (section.bars > 0) {

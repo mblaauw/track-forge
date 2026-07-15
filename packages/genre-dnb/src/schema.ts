@@ -9,7 +9,11 @@ export const DnbInputSchema = z.object({
   mood: z.string(),
   energy: z.number().int().min(1).max(10),
   complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum(["strict_instrumental", "guided_instrumental", "full_lyrics"]),
+  lyricsMode: z.enum([
+    "strict_instrumental",
+    "guided_instrumental",
+    "full_lyrics",
+  ]),
   reference: z.string().optional(),
 });
 
@@ -35,7 +39,11 @@ export const DnbBlueprintSchema = z.object({
   mood: z.string(),
   energy: z.number().int().min(1).max(10),
   complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum(["strict_instrumental", "guided_instrumental", "full_lyrics"]),
+  lyricsMode: z.enum([
+    "strict_instrumental",
+    "guided_instrumental",
+    "full_lyrics",
+  ]),
   arrangement: z.array(
     z.object({
       section: z.string(),
@@ -64,15 +72,28 @@ export interface ArrangementSection {
 
 export function compileBlueprint(
   inputs: DnbInputs,
-  options?: { arrangementOverride?: { section: string; bars: number; tags?: string[] }[] },
+  options?: {
+    arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+  },
 ): DnbBlueprint {
-  const arrangement = options?.arrangementOverride ?? buildDefaultArrangement(inputs.energy, inputs.complexity);
-  const tags = [inputs.subgenre.replace(/_/g, " "), "drum & bass", "electronic"];
+  const arrangement =
+    options?.arrangementOverride ??
+    buildDefaultArrangement(inputs.energy, inputs.complexity);
+  const tags = [
+    inputs.subgenre.replace(/_/g, " "),
+    "drum & bass",
+    "electronic",
+  ];
   const negativeTags: string[] = [];
-  if (inputs.lyricsMode !== "full_lyrics") negativeTags.push("vocals", "singing", "lyrics", "voice");
+  if (inputs.lyricsMode !== "full_lyrics")
+    negativeTags.push("vocals", "singing", "lyrics", "voice");
 
   const styleClauses = [
-    { key: "genre", value: `Drum & Bass — ${inputs.subgenre.replace(/_/g, " ")}`, order: 0 },
+    {
+      key: "genre",
+      value: `Drum & Bass — ${inputs.subgenre.replace(/_/g, " ")}`,
+      order: 0,
+    },
     { key: "bpm", value: String(inputs.bpm), order: 1 },
     { key: "key", value: inputs.key, order: 2 },
     { key: "scale", value: inputs.scale, order: 3 },
@@ -107,12 +128,32 @@ export function buildDefaultArrangement(
   const outroBars = 8 + Math.round(complexity * 0.4);
 
   return [
-    { section: "intro", bars: introBars, tags: ["atmospheric", "filtered", "amen build"] },
-    { section: "break", bars: breakBars, tags: ["stripped", "rolling hats", "sub"] },
-    { section: "drop", bars: dropBars, tags: ["full", "reese bass", "driving breaks"] },
-    { section: "break", bars: breakBars, tags: ["stripped", "atmospheric", "pad swell"] },
+    {
+      section: "intro",
+      bars: introBars,
+      tags: ["atmospheric", "filtered", "amen build"],
+    },
+    {
+      section: "break",
+      bars: breakBars,
+      tags: ["stripped", "rolling hats", "sub"],
+    },
+    {
+      section: "drop",
+      bars: dropBars,
+      tags: ["full", "reese bass", "driving breaks"],
+    },
+    {
+      section: "break",
+      bars: breakBars,
+      tags: ["stripped", "atmospheric", "pad swell"],
+    },
     { section: "drop", bars: dropBars, tags: ["full", "variation", "layered"] },
-    { section: "outro", bars: outroBars, tags: ["filtered", "fading", "sub roll"] },
+    {
+      section: "outro",
+      bars: outroBars,
+      tags: ["filtered", "fading", "sub roll"],
+    },
   ];
 }
 
@@ -123,7 +164,12 @@ export const DNB_FORM_FIELDS: FormFieldDescriptor[] = [
     type: "select",
     options: [],
   },
-  { key: "bpm", label: "BPM", type: "number", constraints: { min: 160, max: 180 } },
+  {
+    key: "bpm",
+    label: "BPM",
+    type: "number",
+    constraints: { min: 160, max: 180 },
+  },
   { key: "key", label: "Key", type: "text" },
   {
     key: "scale",

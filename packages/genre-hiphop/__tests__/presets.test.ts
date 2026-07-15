@@ -36,7 +36,10 @@ describe("Hip-Hop presets", () => {
         reference: "",
       };
       const result = HipHopInputSchema.safeParse(full);
-      expect(result.success, `${p.id}: ${JSON.stringify(result.error?.issues)}`).toBe(true);
+      expect(
+        result.success,
+        `${p.id}: ${JSON.stringify(result.error?.issues)}`,
+      ).toBe(true);
     }
   });
 });

@@ -44,7 +44,10 @@ export async function interpretReference(
   // Call LLM
   const response = await llm.complete({
     messages: [
-      { role: "system", content: "You are a music analysis assistant. Return only valid JSON." },
+      {
+        role: "system",
+        content: "You are a music analysis assistant. Return only valid JSON.",
+      },
       { role: "user", content: INTERPRET_PROMPT + reference },
     ],
     temperature: 0.3,
@@ -132,30 +135,45 @@ export function formatInterpretedRef(ref: InterpretedReference): string {
   lines.push(`Mood: ${ref.mood}`);
   lines.push(`Tempo: ${ref.tempo}`);
   if (ref.key) lines.push(`Key: ${ref.key}`);
-  if (ref.structure.length > 0) lines.push(`Structure: ${ref.structure.join(", ")}`);
-  if (ref.instrumentation.length > 0) lines.push(`Instrumentation: ${ref.instrumentation.join(", ")}`);
-  if (ref.production.length > 0) lines.push(`Production: ${ref.production.join(", ")}`);
-  if (ref.lyricalThemes.length > 0) lines.push(`Lyrical Themes: ${ref.lyricalThemes.join(", ")}`);
+  if (ref.structure.length > 0)
+    lines.push(`Structure: ${ref.structure.join(", ")}`);
+  if (ref.instrumentation.length > 0)
+    lines.push(`Instrumentation: ${ref.instrumentation.join(", ")}`);
+  if (ref.production.length > 0)
+    lines.push(`Production: ${ref.production.join(", ")}`);
+  if (ref.lyricalThemes.length > 0)
+    lines.push(`Lyrical Themes: ${ref.lyricalThemes.join(", ")}`);
   if (ref.vocalStyle) lines.push(`Vocal Style: ${ref.vocalStyle}`);
   if (ref.rhymeScheme) lines.push(`Rhyme Scheme: ${ref.rhymeScheme}`);
-  if (ref.suggestedTags.length > 0) lines.push(`Suggested Tags: ${ref.suggestedTags.join(", ")}`);
-  if (ref.negativeTags.length > 0) lines.push(`Avoid: ${ref.negativeTags.join(", ")}`);
+  if (ref.suggestedTags.length > 0)
+    lines.push(`Suggested Tags: ${ref.suggestedTags.join(", ")}`);
+  if (ref.negativeTags.length > 0)
+    lines.push(`Avoid: ${ref.negativeTags.join(", ")}`);
   return lines.join("\n");
 }
 
 // ── Field helpers ─────────────────────────────────────────────────────
 
-function stringField(obj: Record<string, unknown>, key: string, fallback: string): string {
+function stringField(
+  obj: Record<string, unknown>,
+  key: string,
+  fallback: string,
+): string {
   const v = obj[key];
   return typeof v === "string" && v.length > 0 ? v : fallback;
 }
 
-function nullableString(obj: Record<string, unknown>, key: string): string | null {
+function nullableString(
+  obj: Record<string, unknown>,
+  key: string,
+): string | null {
   const v = obj[key];
   return typeof v === "string" && v.length > 0 ? v : null;
 }
 
 function stringArray(obj: Record<string, unknown>, key: string): string[] {
   const v = obj[key];
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  return Array.isArray(v)
+    ? v.filter((x): x is string => typeof x === "string")
+    : [];
 }

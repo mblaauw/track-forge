@@ -24,13 +24,19 @@ describe("EDM validators", () => {
     });
 
     it("rejects unknown subgenre", () => {
-      const errors = EDM_VALIDATORS.input({ ...validInput, subgenre: "nonexistent_style" });
+      const errors = EDM_VALIDATORS.input({
+        ...validInput,
+        subgenre: "nonexistent_style",
+      });
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].field).toBe("subgenre");
     });
 
     it("rejects subgenre not belonging to family", () => {
-      const errors = EDM_VALIDATORS.input({ ...validInput, subgenre: "dubstep" });
+      const errors = EDM_VALIDATORS.input({
+        ...validInput,
+        subgenre: "dubstep",
+      });
       expect(errors.some((e) => e.field === "family")).toBe(true);
     });
 
@@ -64,22 +70,33 @@ describe("EDM validators", () => {
     };
 
     it("accepts valid blueprint", () => {
-      const errors = EDM_VALIDATORS.blueprint(validBp as unknown as Record<string, unknown>);
+      const errors = EDM_VALIDATORS.blueprint(
+        validBp as unknown as Record<string, unknown>,
+      );
       expect(errors).toHaveLength(0);
     });
 
     it("rejects missing subgenre", () => {
-      const errors = EDM_VALIDATORS.blueprint({ ...validBp, subgenre: "" } as unknown as Record<string, unknown>);
+      const errors = EDM_VALIDATORS.blueprint({
+        ...validBp,
+        subgenre: "",
+      } as unknown as Record<string, unknown>);
       expect(errors.some((e) => e.field === "subgenre")).toBe(true);
     });
 
     it("rejects empty arrangement", () => {
-      const errors = EDM_VALIDATORS.blueprint({ ...validBp, arrangement: [] } as unknown as Record<string, unknown>);
+      const errors = EDM_VALIDATORS.blueprint({
+        ...validBp,
+        arrangement: [],
+      } as unknown as Record<string, unknown>);
       expect(errors.some((e) => e.field === "arrangement")).toBe(true);
     });
 
     it("rejects missing styleClauses", () => {
-      const errors = EDM_VALIDATORS.blueprint({ ...validBp, styleClauses: [] } as unknown as Record<string, unknown>);
+      const errors = EDM_VALIDATORS.blueprint({
+        ...validBp,
+        styleClauses: [],
+      } as unknown as Record<string, unknown>);
       expect(errors.some((e) => e.field === "styleClauses")).toBe(true);
     });
   });

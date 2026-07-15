@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { HIP_HOP_SUBGENRES, getSubgenre, getDefaultPreset, getSubgenreOptions } from "../src/taxonomy.js";
+import {
+  HIP_HOP_SUBGENRES,
+  getSubgenre,
+  getDefaultPreset,
+  getSubgenreOptions,
+} from "../src/taxonomy.js";
 
 describe("Hip-Hop taxonomy", () => {
   it("has 22 subgenres", () => {

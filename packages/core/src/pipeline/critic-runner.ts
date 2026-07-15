@@ -1,4 +1,8 @@
-import type { CriticFinding, CriticSeverity, AutoFixPolicy } from "@track-forge/contracts";
+import type {
+  CriticFinding,
+  CriticSeverity,
+  AutoFixPolicy,
+} from "@track-forge/contracts";
 import type { GenreCritics, CriticDefinition } from "@track-forge/genre-core";
 import type { LlmClient } from "../llm/index.js";
 import type { PromptContext } from "./types.js";
@@ -52,7 +56,11 @@ async function runSingleCritic(
 
   const response = await llm.complete({
     messages: [
-      { role: "system", content: "You are a music production critic. Review the following song data and return findings as a JSON array. Each finding must have: severity (error|warning|suggestion), field (string), message (string), autoFixPolicy (required|preferred|skipped), patchType (optional), suggestedValue (optional)." },
+      {
+        role: "system",
+        content:
+          "You are a music production critic. Review the following song data and return findings as a JSON array. Each finding must have: severity (error|warning|suggestion), field (string), message (string), autoFixPolicy (required|preferred|skipped), patchType (optional), suggestedValue (optional).",
+      },
       { role: "user", content: prompt },
     ],
     temperature: 0.3,
@@ -96,7 +104,9 @@ export function parseFindings(text: string): CriticFinding[] {
       const parsed = JSON.parse(match[0]) as unknown[];
       return parsed.filter(isValidFinding).map(normalizeFinding);
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
 
   return [];
 }

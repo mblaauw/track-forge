@@ -54,8 +54,7 @@ export function generateSunoPayload(
   input: SunoPayloadInput,
   capabilities?: SunoCapabilities,
 ): { request: SunoGenerateRequest; warnings: PayloadWarning[] } {
-  const caps =
-    capabilities ?? getCapabilities(input.modelVersion);
+  const caps = capabilities ?? getCapabilities(input.modelVersion);
   const warnings: PayloadWarning[] = [];
 
   // ── Model version ────────────────────────────────────────────────

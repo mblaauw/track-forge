@@ -64,11 +64,19 @@ export interface ArrangementSection {
   tags: string[];
 }
 
-export function compileBlueprint(inputs: PopInputs, options?: { arrangementOverride?: { section: string; bars: number; tags?: string[] }[] }): PopBlueprint {
-  const arrangement = options?.arrangementOverride ?? buildDefaultArrangement(inputs.energy, inputs.complexity);
+export function compileBlueprint(
+  inputs: PopInputs,
+  options?: {
+    arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+  },
+): PopBlueprint {
+  const arrangement =
+    options?.arrangementOverride ??
+    buildDefaultArrangement(inputs.energy, inputs.complexity);
   const tags: string[] = [inputs.subgenre, "pop"];
   const negativeTags: string[] = [];
-  if (inputs.lyricsMode === "instrumental") negativeTags.push("vocals", "singing", "lyrics", "voice");
+  if (inputs.lyricsMode === "instrumental")
+    negativeTags.push("vocals", "singing", "lyrics", "voice");
 
   const styleClauses = [
     { key: "genre", value: inputs.subgenre, order: 0 },
@@ -97,7 +105,10 @@ export function compileBlueprint(inputs: PopInputs, options?: { arrangementOverr
   });
 }
 
-export function buildDefaultArrangement(energy: number, complexity: number): ArrangementSection[] {
+export function buildDefaultArrangement(
+  energy: number,
+  complexity: number,
+): ArrangementSection[] {
   const sectionBars = 8 + Math.round(complexity * 0.5);
   const chorusBars = 16 + Math.round(energy * 0.8);
 
@@ -105,7 +116,11 @@ export function buildDefaultArrangement(energy: number, complexity: number): Arr
     { section: "intro", bars: sectionBars, tags: ["instrumental", "pads"] },
     { section: "verse", bars: sectionBars, tags: ["stripped", "vocals"] },
     { section: "pre_chorus", bars: 8, tags: ["building", "layered"] },
-    { section: "chorus", bars: chorusBars, tags: ["full", "hook", "energetic"] },
+    {
+      section: "chorus",
+      bars: chorusBars,
+      tags: ["full", "hook", "energetic"],
+    },
     { section: "bridge", bars: 8, tags: ["stripped", "introspective"] },
     { section: "outro", bars: sectionBars, tags: ["fading", "reverb"] },
   ];
@@ -113,7 +128,12 @@ export function buildDefaultArrangement(energy: number, complexity: number): Arr
 
 export const POP_FORM_FIELDS: FormFieldDescriptor[] = [
   { key: "subgenre", label: "Subgenre", type: "text" },
-  { key: "bpm", label: "BPM", type: "number", constraints: { min: 60, max: 180 } },
+  {
+    key: "bpm",
+    label: "BPM",
+    type: "number",
+    constraints: { min: 60, max: 180 },
+  },
   { key: "key", label: "Key", type: "text" },
   {
     key: "scale",
@@ -125,8 +145,18 @@ export const POP_FORM_FIELDS: FormFieldDescriptor[] = [
     ],
   },
   { key: "mood", label: "Mood", type: "text" },
-  { key: "energy", label: "Energy", type: "number", constraints: { min: 1, max: 10 } },
-  { key: "complexity", label: "Complexity", type: "number", constraints: { min: 1, max: 10 } },
+  {
+    key: "energy",
+    label: "Energy",
+    type: "number",
+    constraints: { min: 1, max: 10 },
+  },
+  {
+    key: "complexity",
+    label: "Complexity",
+    type: "number",
+    constraints: { min: 1, max: 10 },
+  },
   {
     key: "lyricsMode",
     label: "Lyrics Mode",

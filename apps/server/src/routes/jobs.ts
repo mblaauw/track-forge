@@ -1,8 +1,21 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, LlmClient, SunoClient } from "@track-forge/core";
-import { createJob, runPipeline, schema, resetJobStage, cancelJob, generateSunoPayload, abortJob, publish } from "@track-forge/core";
-import type { GenerationStage, CriticFinding, SunoArtifact } from "@track-forge/contracts";
+import {
+  createJob,
+  runPipeline,
+  schema,
+  resetJobStage,
+  cancelJob,
+  generateSunoPayload,
+  abortJob,
+  publish,
+} from "@track-forge/core";
+import type {
+  GenerationStage,
+  CriticFinding,
+  SunoArtifact,
+} from "@track-forge/contracts";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import { getModuleOrThrow } from "../lib/modules.js";
@@ -14,7 +27,10 @@ export interface JobRouteDeps {
   suno: SunoClient;
 }
 
-export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): void {
+export function registerJobRoutes(
+  server: FastifyInstance,
+  deps: JobRouteDeps,
+): void {
   const { db, config, llm, suno } = deps;
 
   // ── Create job ───────────────────────────────────────────────────────
@@ -40,7 +56,9 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     const parsed = mod.inputSchema.safeParse(inputs);
     if (!parsed.success) {
-      return reply.code(400).send({ error: "Invalid inputs", details: parsed.error.issues });
+      return reply
+        .code(400)
+        .send({ error: "Invalid inputs", details: parsed.error.issues });
     }
 
     const job = await createJob(
@@ -215,20 +233,28 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     if (genIds.length > 0) {
       for (const gid of genIds) {
-        await db.delete(schema.sunoTracks).where(eq(schema.sunoTracks.generationId, gid));
+        await db
+          .delete(schema.sunoTracks)
+          .where(eq(schema.sunoTracks.generationId, gid));
       }
     }
     if (versionIds.length > 0) {
       for (const vid of versionIds) {
-        await db.delete(schema.artifactLocks).where(eq(schema.artifactLocks.versionId, vid));
+        await db
+          .delete(schema.artifactLocks)
+          .where(eq(schema.artifactLocks.versionId, vid));
       }
     }
 
     await db.delete(schema.generations).where(eq(schema.generations.jobId, id));
     await db.delete(schema.versions).where(eq(schema.versions.jobId, id));
-    await db.delete(schema.jobStageOutputs).where(eq(schema.jobStageOutputs.jobId, id));
+    await db
+      .delete(schema.jobStageOutputs)
+      .where(eq(schema.jobStageOutputs.jobId, id));
     await db.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, id));
-    await db.delete(schema.criticFindings).where(eq(schema.criticFindings.jobId, id));
+    await db
+      .delete(schema.criticFindings)
+      .where(eq(schema.criticFindings.jobId, id));
     await db.delete(schema.adjustments).where(eq(schema.adjustments.jobId, id));
     await db.delete(schema.jobs).where(eq(schema.jobs.id, id));
 
@@ -242,9 +268,10 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     const body = req.body as { nlAdjustments?: unknown } | undefined;
     let nlValue: string | null = null;
     if (body?.nlAdjustments !== undefined) {
-      nlValue = typeof body.nlAdjustments === "string"
-        ? body.nlAdjustments
-        : JSON.stringify(body.nlAdjustments);
+      nlValue =
+        typeof body.nlAdjustments === "string"
+          ? body.nlAdjustments
+          : JSON.stringify(body.nlAdjustments);
     }
 
     const [job] = await db
@@ -287,7 +314,8 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       return reply.code(400).send({ error: "Job must be at review stage" });
     }
 
-    const finalFindings = body?.findings ?? (job.findings ? JSON.parse(job.findings) : []);
+    const finalFindings =
+      body?.findings ?? (job.findings ? JSON.parse(job.findings) : []);
     const now = new Date().toISOString();
 
     await db
@@ -324,7 +352,9 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
 
     if (!job) return reply.code(404).send({ error: "Job not found" });
     if (job.status !== "completed" && job.status !== "failed") {
-      return reply.code(400).send({ error: "Job must be completed or failed to replay" });
+      return reply
+        .code(400)
+        .send({ error: "Job must be completed or failed to replay" });
     }
 
     const stage = body?.stage ?? "ref_interpretation";
@@ -415,7 +445,10 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     // Background execution — fire and forget
     runPipeline(id, pipelineDeps, mod)
       .then((result) => {
-        req.log.info({ jobId: id, success: result.success }, "pipeline completed");
+        req.log.info(
+          { jobId: id, success: result.success },
+          "pipeline completed",
+        );
       })
       .catch((err) => {
         req.log.error({ jobId: id, err }, "pipeline error");
@@ -445,11 +478,16 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       .orderBy(desc(schema.versions.number))
       .limit(1);
 
-    let title = ""; let style = ""; let excludedStyles = ""; let lyrics = "";
+    let title = "";
+    let style = "";
+    let excludedStyles = "";
+    let lyrics = "";
     const latestVersion = versions[0];
 
     if (latestVersion) {
-      const artifacts = JSON.parse(latestVersion.artifacts as string) as SunoArtifact[];
+      const artifacts = JSON.parse(
+        latestVersion.artifacts as string,
+      ) as SunoArtifact[];
       for (const a of artifacts) {
         if (a.type === "title") title = a.value;
         else if (a.type === "style") style = a.value;
@@ -469,7 +507,13 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
       ? `${config.publicBaseUrl.replace(/\/+$/, "")}/api/suno/callback`
       : undefined;
 
-    const result = generateSunoPayload({ title, style, excludedStyles, lyrics, callbackUrl });
+    const result = generateSunoPayload({
+      title,
+      style,
+      excludedStyles,
+      lyrics,
+      callbackUrl,
+    });
     return { ...result, callbackUrl };
   });
 
@@ -501,7 +545,10 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     }
 
     const promptTemplate = module.promptFragments?.style_tag_suggestions;
-    if (!promptTemplate) return reply.code(400).send({ error: "No tag suggestion prompt for this genre" });
+    if (!promptTemplate)
+      return reply
+        .code(400)
+        .send({ error: "No tag suggestion prompt for this genre" });
 
     const context: Record<string, unknown> = {
       subgenre: presetId?.replace(/_/g, " ") ?? "",
@@ -521,7 +568,11 @@ export function registerJobRoutes(server: FastifyInstance, deps: JobRouteDeps): 
     try {
       const result = await llm.complete({
         messages: [
-          { role: "system", content: "You are a music production expert. Return ONLY valid JSON." },
+          {
+            role: "system",
+            content:
+              "You are a music production expert. Return ONLY valid JSON.",
+          },
           { role: "user", content: prompt },
         ],
         maxTokens: 1024,

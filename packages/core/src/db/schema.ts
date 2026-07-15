@@ -46,12 +46,16 @@ export const jobs = sqliteTable("jobs", {
   error: text("error"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-  isFavorite: integer("is_favorite", { mode: "boolean" }).notNull().default(false),
+  isFavorite: integer("is_favorite", { mode: "boolean" })
+    .notNull()
+    .default(false),
 });
 
 export const versions = sqliteTable("versions", {
   id: text("id").primaryKey(),
-  jobId: text("job_id").notNull().references(() => jobs.id),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id),
   status: text("status").notNull().default("draft"),
   number: integer("number").notNull(),
   /** JSON-encoded SunoArtifact[] */
@@ -66,7 +70,9 @@ export const versions = sqliteTable("versions", {
 
 export const jobStageOutputs = sqliteTable("job_stage_outputs", {
   id: text("id").primaryKey(),
-  jobId: text("job_id").notNull().references(() => jobs.id),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id),
   stage: text("stage").notNull(),
   outputJson: text("output_json").notNull(),
   promptManifestJson: text("prompt_manifest_json"),
@@ -75,7 +81,9 @@ export const jobStageOutputs = sqliteTable("job_stage_outputs", {
 
 export const generations = sqliteTable("generations", {
   id: text("id").primaryKey(),
-  jobId: text("job_id").notNull().references(() => jobs.id),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id),
   versionId: text("version_id").references(() => versions.id),
   status: text("status").notNull().default("queued"),
   audioUrl: text("audio_url"),
@@ -87,7 +95,9 @@ export const generations = sqliteTable("generations", {
   error: text("error"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-  isFavorite: integer("is_favorite", { mode: "boolean" }).notNull().default(false),
+  isFavorite: integer("is_favorite", { mode: "boolean" })
+    .notNull()
+    .default(false),
   seed: integer("seed"),
 });
 

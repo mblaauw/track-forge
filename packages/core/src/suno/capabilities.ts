@@ -22,7 +22,7 @@ export interface SunoCapabilities {
 // ── Registry (limits per sunoapi.org docs) ────────────────────────
 
 const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
-  "V4": {
+  V4: {
     maxLyricsLength: 3000,
     maxStyleLength: 200,
     maxTitleLength: 80,
@@ -31,7 +31,7 @@ const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "V4_5": {
+  V4_5: {
     maxLyricsLength: 5000,
     maxStyleLength: 1000,
     maxTitleLength: 100,
@@ -40,7 +40,7 @@ const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "V4_5PLUS": {
+  V4_5PLUS: {
     maxLyricsLength: 5000,
     maxStyleLength: 1000,
     maxTitleLength: 100,
@@ -49,7 +49,7 @@ const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "V4_5ALL": {
+  V4_5ALL: {
     maxLyricsLength: 5000,
     maxStyleLength: 1000,
     maxTitleLength: 80,
@@ -58,7 +58,7 @@ const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "V5": {
+  V5: {
     maxLyricsLength: 5000,
     maxStyleLength: 1000,
     maxTitleLength: 100,
@@ -67,7 +67,7 @@ const CAPABILITIES: Record<SunoModelVersion, SunoCapabilities> = {
     supportsCallbacks: true,
     maxBatchSize: 2,
   },
-  "V5_5": {
+  V5_5: {
     maxLyricsLength: 5000,
     maxStyleLength: 1000,
     maxTitleLength: 100,
@@ -98,5 +98,3 @@ export function getCapabilities(
   }
   return DEFAULT_CAPABILITIES;
 }
-
-

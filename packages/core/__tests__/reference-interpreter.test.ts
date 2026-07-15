@@ -13,7 +13,11 @@ const hash = "test-hash" as SourceHash;
 // ── Mock LLM ──────────────────────────────────────────────────────────
 
 function mockLlm(response: LlmResponse): LlmClient {
-  return { async complete() { return response; } } as unknown as LlmClient;
+  return {
+    async complete() {
+      return response;
+    },
+  } as unknown as LlmClient;
 }
 
 // ── Sample JSON returned by LLM ───────────────────────────────────────
@@ -43,7 +47,15 @@ describe("parseInterpretation", () => {
     expect(result.mood).toBe("dark and aggressive with melodic hooks");
     expect(result.tempo).toBe("140 BPM");
     expect(result.key).toBe("D minor");
-    expect(result.structure).toEqual(["intro", "verse", "chorus", "verse", "chorus", "bridge", "outro"]);
+    expect(result.structure).toEqual([
+      "intro",
+      "verse",
+      "chorus",
+      "verse",
+      "chorus",
+      "bridge",
+      "outro",
+    ]);
     expect(result.instrumentation).toContain("808 drums");
     expect(result.suggestedTags).toContain("trap");
     expect(result.negativeTags).toContain("acoustic");
@@ -75,7 +87,11 @@ describe("parseInterpretation", () => {
   });
 
   it("filters non-string array entries", () => {
-    const withBad = JSON.stringify({ genre: "jazz", structure: ["verse", 42, "chorus"], suggestedTags: ["cool", null] });
+    const withBad = JSON.stringify({
+      genre: "jazz",
+      structure: ["verse", 42, "chorus"],
+      suggestedTags: ["cool", null],
+    });
     const result = parseInterpretation(withBad, hash);
     expect(result.structure).toEqual(["verse", "chorus"]);
     expect(result.suggestedTags).toEqual(["cool"]);
@@ -96,7 +112,10 @@ describe("formatInterpretedRef", () => {
   });
 
   it("handles minimal reference", () => {
-    const ref = parseInterpretation('{"genre":"unknown","mood":"","tempo":""}', hash);
+    const ref = parseInterpretation(
+      '{"genre":"unknown","mood":"","tempo":""}',
+      hash,
+    );
     const formatted = formatInterpretedRef(ref);
     expect(formatted).toContain("Genre: unknown");
     expect(formatted).not.toContain("Key:");
@@ -140,7 +159,10 @@ describe("interpretReference", () => {
   });
 
   it("handles LLM returning non-JSON gracefully", async () => {
-    const llm = mockLlm({ content: "The song has a rock feel with guitars.", model: "test" });
+    const llm = mockLlm({
+      content: "The song has a rock feel with guitars.",
+      model: "test",
+    });
     const result = await interpretReference("ref", hash, llm);
 
     expect(result.genre).toBe("unknown");

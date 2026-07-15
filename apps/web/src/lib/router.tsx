@@ -7,7 +7,11 @@ interface RouterCtx {
   navigate: (path: string) => void;
 }
 
-const RouterContext = createContext<RouterCtx>({ path: "/", params: {}, navigate: () => {} });
+const RouterContext = createContext<RouterCtx>({
+  path: "/",
+  params: {},
+  navigate: () => {},
+});
 
 export function useRouter(): RouterCtx {
   return useContext(RouterContext);
@@ -57,7 +61,7 @@ function match(pattern: string, current: string): RouteMatch {
   if (patParts.length !== curParts.length) {
     return { matched: false, params: {} };
   }
-    const params: Record<string, string> = {};
+  const params: Record<string, string> = {};
   const matched = patParts.every((p, i) => {
     if (p.startsWith(":")) {
       params[p.slice(1)] = curParts[i]!;
@@ -68,14 +72,26 @@ function match(pattern: string, current: string): RouteMatch {
   return { matched, params };
 }
 
-export function Route({ path, component }: { path: string; component: (props: { params: Record<string, string> }) => preact.VNode }) {
+export function Route({
+  path,
+  component,
+}: {
+  path: string;
+  component: (props: { params: Record<string, string> }) => preact.VNode;
+}) {
   const { path: current } = useRouter();
   const result = match(path, current);
   if (!result.matched) return null;
   return component({ params: result.params });
 }
 
-export function Link({ to, children }: { to: string; children: preact.ComponentChildren }) {
+export function Link({
+  to,
+  children,
+}: {
+  to: string;
+  children: preact.ComponentChildren;
+}) {
   const { navigate } = useRouter();
   return (
     <a

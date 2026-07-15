@@ -34,7 +34,10 @@ export const hipHopValidators: GenreValidators<HipHopInputs> = {
     }
 
     // Validate complexity
-    if (inputs.complexity != null && (inputs.complexity < 1 || inputs.complexity > 10)) {
+    if (
+      inputs.complexity != null &&
+      (inputs.complexity < 1 || inputs.complexity > 10)
+    ) {
       errors.push({
         field: "complexity",
         message: `Complexity must be between 1 and 10, got ${inputs.complexity}`,
@@ -48,14 +51,20 @@ export const hipHopValidators: GenreValidators<HipHopInputs> = {
     const errors: ValidationError[] = [];
 
     if (!data || typeof data !== "object") {
-      errors.push({ field: "blueprint", message: "Blueprint must be an object" });
+      errors.push({
+        field: "blueprint",
+        message: "Blueprint must be an object",
+      });
       return errors;
     }
 
     const bp = data as Record<string, unknown>;
 
     if (!bp.subgenre || typeof bp.subgenre !== "string") {
-      errors.push({ field: "blueprint.subgenre", message: "Subgenre is required" });
+      errors.push({
+        field: "blueprint.subgenre",
+        message: "Subgenre is required",
+      });
     }
 
     if (!bp.bpm || typeof bp.bpm !== "number") {
@@ -66,12 +75,22 @@ export const hipHopValidators: GenreValidators<HipHopInputs> = {
       errors.push({ field: "blueprint.tags", message: "Tags array required" });
     }
 
-    if (!bp.songStructure || !Array.isArray(bp.songStructure) || bp.songStructure.length === 0) {
-      errors.push({ field: "blueprint.songStructure", message: "Song structure required" });
+    if (
+      !bp.songStructure ||
+      !Array.isArray(bp.songStructure) ||
+      bp.songStructure.length === 0
+    ) {
+      errors.push({
+        field: "blueprint.songStructure",
+        message: "Song structure required",
+      });
     }
 
     if (!bp.styleClauses || !Array.isArray(bp.styleClauses)) {
-      errors.push({ field: "blueprint.styleClauses", message: "Style clauses required" });
+      errors.push({
+        field: "blueprint.styleClauses",
+        message: "Style clauses required",
+      });
     }
 
     return errors;

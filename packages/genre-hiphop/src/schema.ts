@@ -47,13 +47,7 @@ export const HipHopInputSchema = z.object({
     ] as const)
     .default("laid_back"),
   delivery: z
-    .enum([
-      "calm",
-      "intense",
-      "conversational",
-      "hype",
-      "whispered",
-    ] as const)
+    .enum(["calm", "intense", "conversational", "hype", "whispered"] as const)
     .default("conversational"),
   productionStyle: z
     .enum([
@@ -69,7 +63,9 @@ export const HipHopInputSchema = z.object({
     .default("polished"),
   energy: z.number().int().min(1).max(10).default(6),
   complexity: z.number().int().min(1).max(10).default(5),
-  lyricsMode: z.enum(["instrumental", "full_lyrics"] as const).default("full_lyrics"),
+  lyricsMode: z
+    .enum(["instrumental", "full_lyrics"] as const)
+    .default("full_lyrics"),
   customTags: z.string().default(""),
   reference: z.string().default(""),
 });
@@ -114,13 +110,7 @@ export const HipHopBlueprintSchema = z.object({
     ] as const)
     .default("laid_back"),
   delivery: z
-    .enum([
-      "calm",
-      "intense",
-      "conversational",
-      "hype",
-      "whispered",
-    ] as const)
+    .enum(["calm", "intense", "conversational", "hype", "whispered"] as const)
     .default("conversational"),
   productionStyle: z
     .enum([
@@ -145,7 +135,7 @@ export const HipHopBlueprintSchema = z.object({
       key: z.string(),
       value: z.string(),
       order: z.number(),
-    })
+    }),
   ),
   songStructure: z.array(z.string()),
 });
@@ -156,7 +146,9 @@ export type HipHopBlueprint = z.input<typeof HipHopBlueprintSchema>;
 
 const defaultSubgenre = "boom_bap";
 
-export function buildHipHopDefaults(overrides?: Partial<HipHopInputs>): HipHopInputs {
+export function buildHipHopDefaults(
+  overrides?: Partial<HipHopInputs>,
+): HipHopInputs {
   const preset = getSubgenreEntryOrFallback(defaultSubgenre);
   return {
     subgenre: defaultSubgenre,
@@ -192,7 +184,12 @@ export const HIP_HOP_FORM_FIELDS: FormFieldDescriptor[] = [
     type: "select",
     options: HIP_HOP_SUBGENRES.map((s) => ({ label: s.label, value: s.id })),
   },
-  { key: "bpm", label: "BPM", type: "number", constraints: { min: 50, max: 200 } },
+  {
+    key: "bpm",
+    label: "BPM",
+    type: "number",
+    constraints: { min: 50, max: 200 },
+  },
   {
     key: "narrativeArc",
     label: "Narrative Arc",
@@ -258,8 +255,18 @@ export const HIP_HOP_FORM_FIELDS: FormFieldDescriptor[] = [
       { label: "Live Instruments", value: "live_instruments" },
     ],
   },
-  { key: "energy", label: "Energy", type: "number", constraints: { min: 1, max: 10 } },
-  { key: "complexity", label: "Lyrical Complexity", type: "number", constraints: { min: 1, max: 10 } },
+  {
+    key: "energy",
+    label: "Energy",
+    type: "number",
+    constraints: { min: 1, max: 10 },
+  },
+  {
+    key: "complexity",
+    label: "Lyrical Complexity",
+    type: "number",
+    constraints: { min: 1, max: 10 },
+  },
   {
     key: "lyricsMode",
     label: "Lyrics Mode",

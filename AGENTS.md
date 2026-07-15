@@ -19,19 +19,19 @@ npm run clean               # rm -rf apps/*/dist packages/*/dist
 
 ## Workspaces
 
-| Path | Package | Purpose |
-|------|---------|---------|
-| `apps/server` | `@track-forge/server` | Fastify API server. Entry: `src/index.ts` |
-| `apps/web` | `@track-forge/web` | Preact SPA (Vite). 4-views: Library, Create, Forge, Studio |
-| `packages/contracts` | `@track-forge/contracts` | Shared Zod schemas, branded IDs (`JobId`, `VersionId`, etc.), types |
-| `packages/core` | `@track-forge/core` | Pipeline engine, DB (SQLite+drizzle), LLM/Suno clients, orchestration |
-| `packages/genre-core` | `@track-forge/genre-core` | `GenreModule` interface + `TagCategory` type |
-| `packages/genre-edm` | `@track-forge/genre-edm` | EDM genre module |
-| `packages/genre-hiphop` | `@track-forge/genre-hiphop` | Hip-Hop genre module |
-| `packages/genre-pop` | `@track-forge/genre-pop` | Pop genre module (3 presets) |
-| `packages/genre-ambient` | `@track-forge/genre-ambient` | Ambient genre module (2 presets) |
-| `packages/genre-dnb` | `@track-forge/genre-dnb` | Drum & Bass genre module (2 presets) |
-| `packages/test-support` | `@track-forge/test-support` | Shared test helpers |
+| Path                     | Package                      | Purpose                                                               |
+| ------------------------ | ---------------------------- | --------------------------------------------------------------------- |
+| `apps/server`            | `@track-forge/server`        | Fastify API server. Entry: `src/index.ts`                             |
+| `apps/web`               | `@track-forge/web`           | Preact SPA (Vite). 4-views: Library, Create, Forge, Studio            |
+| `packages/contracts`     | `@track-forge/contracts`     | Shared Zod schemas, branded IDs (`JobId`, `VersionId`, etc.), types   |
+| `packages/core`          | `@track-forge/core`          | Pipeline engine, DB (SQLite+drizzle), LLM/Suno clients, orchestration |
+| `packages/genre-core`    | `@track-forge/genre-core`    | `GenreModule` interface + `TagCategory` type                          |
+| `packages/genre-edm`     | `@track-forge/genre-edm`     | EDM genre module                                                      |
+| `packages/genre-hiphop`  | `@track-forge/genre-hiphop`  | Hip-Hop genre module                                                  |
+| `packages/genre-pop`     | `@track-forge/genre-pop`     | Pop genre module (3 presets)                                          |
+| `packages/genre-ambient` | `@track-forge/genre-ambient` | Ambient genre module (2 presets)                                      |
+| `packages/genre-dnb`     | `@track-forge/genre-dnb`     | Drum & Bass genre module (2 presets)                                  |
+| `packages/test-support`  | `@track-forge/test-support`  | Shared test helpers                                                   |
 
 Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphaned stub dirs). Build now runs `tsc -p tsconfig.json` only.
 
@@ -46,6 +46,7 @@ Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphan
 **CSS design tokens** (`apps/web/src/style.css`, ~2000 lines): current theme is light (`--bg: #FFF1E5`, `--panel: #FFFFFF`). Colors use short aliases — `--acc` (accent green `#3DDC84`), `--tx` (text `#2D2A24`), `--dim` (muted), `--faint` (muted), `--line2` (secondary border). Both short and long names are defined in `:root`.
 
 **Views**:
+
 - **Library** (`/`): fetches `fetchJobs(100)` + `fetchGenres()`. Cards show genre badge, status badge, waveform, star/favorite, delete. Click → Studio (completed) or Forge (in_progress).
 - **Create** (`/create`): genre selection from real modules, presets from `module.presets`, arrangement from `compileBlueprint()`, Style Console with tag categories from `module.tagCategories`.
 - **Forge** (`/forge/:id`): fetches job, connects SSE via `connectJobEvents(id, handlers)`. 8-stage assembly line. Actions depend on job status.
@@ -56,9 +57,11 @@ Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphan
 **Server routes** (`apps/server/src/routes/*`): jobs, versions, projects, health, suno, events, import-export.
 
 **Pipeline stages** (`packages/core/src/pipeline/orchestrator.ts`):
+
 ```
 ref_interpretation → planning → style_writing → compilation → review → revision → verification → versioning
 ```
+
 Stage state on `PipelineState`, persisted as JSON in `job.stageData`.
 
 **SSE**: `GET /api/jobs/:id/events` streams `{ jobId, stage, status, message?, tag?, elapsedMs?, error?, timestamp }`. History replay on reconnect.

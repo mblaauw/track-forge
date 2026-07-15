@@ -11,7 +11,10 @@ import type { Config } from "@track-forge/contracts";
 
 // Minimal mock LLM
 const mockLlm = {
-  complete: async () => ({ content: "mock response", usage: { prompt: 0, completion: 0 } }),
+  complete: async () => ({
+    content: "mock response",
+    usage: { prompt: 0, completion: 0 },
+  }),
 };
 
 // Minimal mock Suno
@@ -21,7 +24,10 @@ const mockSuno = {
   waitForCompletion: async () => null,
 };
 
-function createTestDeps(db: Db, configOverrides: Partial<Config> = {}): PipelineDeps {
+function createTestDeps(
+  db: Db,
+  configOverrides: Partial<Config> = {},
+): PipelineDeps {
   return {
     db,
     llm: mockLlm as any,
@@ -67,7 +73,18 @@ describe("Jobs routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 120, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 120,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     expect(res.statusCode).toBe(201);
@@ -84,7 +101,18 @@ describe("Jobs routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 9999, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 9999,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     expect(res.statusCode).toBe(400);
@@ -111,7 +139,18 @@ describe("Jobs routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 120, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 120,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     await server.inject({
@@ -120,7 +159,23 @@ describe("Jobs routes", () => {
       payload: {
         genreId: "hiphop",
         presetId: "boom_bap_classic",
-        inputs: { subgenre: "boom_bap", bpm: 90, key: "C", scale: "minor", mood: "", narrativeArc: "braggadocio", rhymeStyle: "end_rhyme", flowPattern: "laid_back", delivery: "conversational", productionStyle: "polished", energy: 6, complexity: 5, lyricsMode: "full_lyrics", customTags: "", reference: "" },
+        inputs: {
+          subgenre: "boom_bap",
+          bpm: 90,
+          key: "C",
+          scale: "minor",
+          mood: "",
+          narrativeArc: "braggadocio",
+          rhymeStyle: "end_rhyme",
+          flowPattern: "laid_back",
+          delivery: "conversational",
+          productionStyle: "polished",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "full_lyrics",
+          customTags: "",
+          reference: "",
+        },
       },
     });
 
@@ -138,18 +193,40 @@ describe("Jobs routes", () => {
       payload: {
         genreId: "hiphop",
         presetId: "boom_bap_classic",
-        inputs: { subgenre: "boom_bap", bpm: 90, key: "C", scale: "minor", mood: "", narrativeArc: "braggadocio", rhymeStyle: "end_rhyme", flowPattern: "laid_back", delivery: "conversational", productionStyle: "polished", energy: 6, complexity: 5, lyricsMode: "full_lyrics", customTags: "", reference: "" },
+        inputs: {
+          subgenre: "boom_bap",
+          bpm: 90,
+          key: "C",
+          scale: "minor",
+          mood: "",
+          narrativeArc: "braggadocio",
+          rhymeStyle: "end_rhyme",
+          flowPattern: "laid_back",
+          delivery: "conversational",
+          productionStyle: "polished",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "full_lyrics",
+          customTags: "",
+          reference: "",
+        },
       },
     });
     const created = JSON.parse(createRes.payload);
 
-    const getRes = await server.inject({ method: "GET", url: `/api/jobs/${created.id}` });
+    const getRes = await server.inject({
+      method: "GET",
+      url: `/api/jobs/${created.id}`,
+    });
     expect(getRes.statusCode).toBe(200);
     expect(JSON.parse(getRes.payload).id).toBe(created.id);
   });
 
   it("GET /api/jobs/:id returns 404 for missing", async () => {
-    const res = await server.inject({ method: "GET", url: "/api/jobs/nonexistent-id" });
+    const res = await server.inject({
+      method: "GET",
+      url: "/api/jobs/nonexistent-id",
+    });
     expect(res.statusCode).toBe(404);
   });
 

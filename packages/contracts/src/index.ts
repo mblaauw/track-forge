@@ -13,7 +13,8 @@ export const GenerationStage = {
   Verification: "verification",
   Versioning: "versioning",
 } as const;
-export type GenerationStage = (typeof GenerationStage)[keyof typeof GenerationStage];
+export type GenerationStage =
+  (typeof GenerationStage)[keyof typeof GenerationStage];
 
 export const JobStatus = {
   Pending: "pending",
@@ -53,7 +54,8 @@ export const SunoArtifactType = {
   NegativeTags: "negative_tags",
   PatchNotes: "patch_notes",
 } as const;
-export type SunoArtifactType = (typeof SunoArtifactType)[keyof typeof SunoArtifactType];
+export type SunoArtifactType =
+  (typeof SunoArtifactType)[keyof typeof SunoArtifactType];
 
 export interface SunoArtifact {
   type: SunoArtifactType;
@@ -113,14 +115,16 @@ export interface LyricsWriterResult {
   document: LyricsDocument;
 }
 
-export type LyricsFormat = "strict_instrumental" | "guided_instrumental" | "full_lyrics";
+export type LyricsFormat =
+  "strict_instrumental" | "guided_instrumental" | "full_lyrics";
 
 export const SunoInstrumentalMode = {
   Strict: "strict",
   Guided: "guided",
   FullLyrics: "full_lyrics",
 } as const;
-export type SunoInstrumentalMode = (typeof SunoInstrumentalMode)[keyof typeof SunoInstrumentalMode];
+export type SunoInstrumentalMode =
+  (typeof SunoInstrumentalMode)[keyof typeof SunoInstrumentalMode];
 
 // ── Control descriptors (structured NL adjustments) ───────────────────
 
@@ -321,7 +325,9 @@ export const ConfigSchema = z.object({
   /** DB path (absolute or relative to CWD) */
   dbPath: z.string().default("./data/track-forge.db"),
   /** Log level */
-  logLevel: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
+  logLevel: z
+    .enum(["trace", "debug", "info", "warn", "error", "fatal"])
+    .default("info"),
   /** Port for HTTP server */
   port: z.number().int().positive().default(3000),
   /** Host to bind (127.0.0.1 for dev safety, 0.0.0.0 for production) */
@@ -329,7 +335,9 @@ export const ConfigSchema = z.object({
   /** Path to built web GUI (set in production for static serving) */
   staticDir: z.string().optional(),
   /** LLM provider config */
-  llmProvider: z.enum(["openai", "anthropic", "ollama", "openai-compatible"]).default("openai"),
+  llmProvider: z
+    .enum(["openai", "anthropic", "ollama", "openai-compatible"])
+    .default("openai"),
   llmApiKey: z.string().optional(),
   llmBaseUrl: z.string().optional(),
   llmModel: z.string().default("gpt-4o"),
@@ -344,7 +352,8 @@ export const CriticSeverity = {
   Warning: "warning",
   Suggestion: "suggestion",
 } as const;
-export type CriticSeverity = (typeof CriticSeverity)[keyof typeof CriticSeverity];
+export type CriticSeverity =
+  (typeof CriticSeverity)[keyof typeof CriticSeverity];
 
 export const AutoFixPolicy = {
   Required: "required",

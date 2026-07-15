@@ -115,15 +115,16 @@ export async function getJobEvents(
     .orderBy(desc(schema.jobEvents.sequence))
     .limit(limit);
 
-  const rows = afterSequence > 0
-    ? await db
-        .select()
-        .from(schema.jobEvents)
-        .where(
-          sql`${schema.jobEvents.jobId} = ${jobId} AND ${schema.jobEvents.sequence} > ${afterSequence}`,
-        )
-        .orderBy(schema.jobEvents.sequence)
-    : await query;
+  const rows =
+    afterSequence > 0
+      ? await db
+          .select()
+          .from(schema.jobEvents)
+          .where(
+            sql`${schema.jobEvents.jobId} = ${jobId} AND ${schema.jobEvents.sequence} > ${afterSequence}`,
+          )
+          .orderBy(schema.jobEvents.sequence)
+      : await query;
 
   // Reverse to chronological order
   return rows.reverse() as unknown as JobEvent[];

@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createDb } from "../src/db/index.js";
-import { createJob, loadJob, advanceStage, failStage, resetJobStage } from "../src/pipeline/job-service.js";
+import {
+  createJob,
+  loadJob,
+  advanceStage,
+  failStage,
+  resetJobStage,
+} from "../src/pipeline/job-service.js";
 import { runPipeline } from "../src/pipeline/orchestrator.js";
 import { generateSunoPayload } from "../src/suno/payload.js";
 import { schema } from "../src/db/index.js";
@@ -11,14 +17,25 @@ import { eq } from "drizzle-orm";
 import type { PipelineDeps } from "../src/pipeline/types.js";
 import type { Db } from "../src/db/index.js";
 import type { GenreModule } from "@track-forge/genre-core";
-import type { JobId, GenreId, PresetId, SunoArtifact, CriticFinding, GenerationStage } from "@track-forge/contracts";
+import type {
+  JobId,
+  GenreId,
+  PresetId,
+  SunoArtifact,
+  CriticFinding,
+  GenerationStage,
+} from "@track-forge/contracts";
 
 // ── Simple mock objects matching the shape used by pipeline ──────────
 
 function mockLlm() {
   return {
     async complete() {
-      return { content: "Mock analysis result for testing.", model: "mock", usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 } };
+      return {
+        content: "Mock analysis result for testing.",
+        model: "mock",
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      };
     },
   };
 }
@@ -29,10 +46,18 @@ function mockSuno() {
       return { ids: ["mock-id"], callbackConfigured: false };
     },
     async getGenerationStatus() {
-      return { id: "mock-id", status: "completed" as const, audioUrl: "https://example.com/audio.mp3" };
+      return {
+        id: "mock-id",
+        status: "completed" as const,
+        audioUrl: "https://example.com/audio.mp3",
+      };
     },
     async waitForCompletion() {
-      return { id: "mock-id", status: "completed" as const, audioUrl: "https://example.com/audio.mp3" };
+      return {
+        id: "mock-id",
+        status: "completed" as const,
+        audioUrl: "https://example.com/audio.mp3",
+      };
     },
   };
 }
@@ -46,7 +71,11 @@ const mockModule: GenreModule = {
   blueprintSchema: null as any,
   defaults: {},
   form: [],
-  adjustmentVocabulary: { styleTerms: [], structureTerms: [], deliveryTerms: [] },
+  adjustmentVocabulary: {
+    styleTerms: [],
+    structureTerms: [],
+    deliveryTerms: [],
+  },
   tagPolicy: { mandatoryTags: [], forbiddenTags: [], canonicalMap: {} },
   presets: [],
   promptFragments: {},
@@ -81,7 +110,13 @@ describe("Pipeline orchestrator", () => {
   });
 
   it("runs full pipeline and creates version", async () => {
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, JSON.stringify({ mood: "test" }), "some reference");
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      JSON.stringify({ mood: "test" }),
+      "some reference",
+    );
     const deps: PipelineDeps = {
       db,
       llm: mockLlm() as any,
@@ -118,13 +153,21 @@ describe("Pipeline orchestrator", () => {
     const brokenModule: GenreModule = {
       ...mockModule,
       renderers: {
-        title: () => { throw new Error("render fail"); },
+        title: () => {
+          throw new Error("render fail");
+        },
         style: () => "",
         excludedStyles: () => "",
         lyrics: () => "",
       },
     };
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", "ref");
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      "ref",
+    );
     const deps: PipelineDeps = {
       db,
       llm: mockLlm() as any,
@@ -153,8 +196,11 @@ describe("Versioning invariants", () => {
 
   async function runPipelineAndGetResult() {
     const job = await createJob(
-      db, "test-genre" as GenreId, "test-preset" as PresetId,
-      JSON.stringify({ mood: "test" }), "some reference",
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      JSON.stringify({ mood: "test" }),
+      "some reference",
     );
     const deps: PipelineDeps = {
       db,
@@ -247,8 +293,8 @@ describe("Versioning invariants", () => {
 
     const artifacts = JSON.parse(version!.artifacts) as SunoArtifact[];
     const titleArtifacts = artifacts.filter((a) => a.type === "title");
-    const patchNotes = titleArtifacts.filter(
-      (a) => a.value.startsWith("Patches:"),
+    const patchNotes = titleArtifacts.filter((a) =>
+      a.value.startsWith("Patches:"),
     );
     expect(patchNotes).toHaveLength(0);
   });
@@ -294,7 +340,13 @@ describe("E2E - Review to revision flow", () => {
   };
 
   it("pauses pipeline after review when human-review findings remain", async () => {
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      null,
+    );
     const deps: PipelineDeps = {
       db,
       llm: {
@@ -302,14 +354,26 @@ describe("E2E - Review to revision flow", () => {
           // Return findings that require human review (autoFixPolicy: skipped)
           return {
             content: JSON.stringify([
-              { severity: "suggestion", field: "title", message: "Title could be more punchy", autoFixPolicy: "skipped" },
+              {
+                severity: "suggestion",
+                field: "title",
+                message: "Title could be more punchy",
+                autoFixPolicy: "skipped",
+              },
             ]),
             model: "mock",
           };
         },
       } as any,
       suno: mockSuno() as any,
-      config: { sunoBaseUrl: "https://api.sunomusic.com/v1", logLevel: "fatal" as any, port: 0, llmProvider: "openai", llmModel: "gpt-4o", dbPath: ":memory:" } as any,
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
     };
 
     const result = await runPipeline(job.id, deps, pauseModule);
@@ -325,7 +389,13 @@ describe("E2E - Review to revision flow", () => {
   });
 
   it("resumes and completes after review submits filtered findings", async () => {
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      null,
+    );
     const deps: PipelineDeps = {
       db,
       llm: {
@@ -333,14 +403,26 @@ describe("E2E - Review to revision flow", () => {
           // First call (planning) returns a plan, review returns findings
           return {
             content: JSON.stringify([
-              { severity: "suggestion", field: "title", message: "Needs work", autoFixPolicy: "skipped" },
+              {
+                severity: "suggestion",
+                field: "title",
+                message: "Needs work",
+                autoFixPolicy: "skipped",
+              },
             ]),
             model: "mock",
           };
         },
       } as any,
       suno: mockSuno() as any,
-      config: { sunoBaseUrl: "https://api.sunomusic.com/v1", logLevel: "fatal" as any, port: 0, llmProvider: "openai", llmModel: "gpt-4o", dbPath: ":memory:" } as any,
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
     };
 
     // First run pauses
@@ -365,13 +447,27 @@ describe("E2E - Review to revision flow", () => {
       db,
       llm: mockLlm() as any,
       suno: mockSuno() as any,
-      config: { sunoBaseUrl: "https://api.sunomusic.com/v1", logLevel: "fatal" as any, port: 0, llmProvider: "openai", llmModel: "gpt-4o", dbPath: ":memory:" } as any,
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
     };
 
     const resumeResult = await runPipeline(job.id, resumeDeps, mockModule);
     if (!resumeResult.success) {
       const j2 = await loadJob(db, job.id);
-      console.log("Resume failed. Job:", JSON.stringify({ stage: j2?.currentStage, status: j2?.status, error: j2?.error }));
+      console.log(
+        "Resume failed. Job:",
+        JSON.stringify({
+          stage: j2?.currentStage,
+          status: j2?.status,
+          error: j2?.error,
+        }),
+      );
     }
     expect(resumeResult.success).toBe(true);
     expect(resumeResult.versionId).toBeTruthy();
@@ -394,13 +490,21 @@ describe("E2E - Error recovery", () => {
   });
 
   it("stage fails then retry with fixed module succeeds", async () => {
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      null,
+    );
 
     // Run with broken module (renderer fails) → pipeline fails
     const brokenModule: GenreModule = {
       ...mockModule,
       renderers: {
-        title: () => { throw new Error("renderer crash"); },
+        title: () => {
+          throw new Error("renderer crash");
+        },
         style: () => "",
         excludedStyles: () => "",
         lyrics: () => "",
@@ -426,7 +530,14 @@ describe("E2E - Error recovery", () => {
       db,
       llm: mockLlm() as any,
       suno: mockSuno() as any,
-      config: { sunoBaseUrl: "https://api.sunomusic.com/v1", logLevel: "fatal" as any, port: 0, llmProvider: "openai", llmModel: "gpt-4o", dbPath: ":memory:" } as any,
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
     };
     const retryResult = await runPipeline(job.id, retryDeps, mockModule);
     expect(retryResult.success).toBe(true);
@@ -450,12 +561,25 @@ describe("E2E - Suno payload round-trip through pipeline", () => {
   });
 
   it("pipeline artifacts produce a valid SunoGenerateRequest", async () => {
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      null,
+    );
     const deps: PipelineDeps = {
       db,
       llm: mockLlm() as any,
       suno: mockSuno() as any,
-      config: { sunoBaseUrl: "https://api.sunomusic.com/v1", logLevel: "fatal" as any, port: 0, llmProvider: "openai", llmModel: "gpt-4o", dbPath: ":memory:" } as any,
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
     };
 
     const result = await runPipeline(job.id, deps, mockModule);
@@ -472,7 +596,8 @@ describe("E2E - Suno payload round-trip through pipeline", () => {
     // Extract each artifact type
     const title = artifacts.find((a) => a.type === "title")?.value ?? "";
     const style = artifacts.find((a) => a.type === "style")?.value ?? "";
-    const excludedStyles = artifacts.find((a) => a.type === "excluded_styles")?.value ?? "";
+    const excludedStyles =
+      artifacts.find((a) => a.type === "excluded_styles")?.value ?? "";
     const lyrics = artifacts.find((a) => a.type === "lyrics")?.value ?? "";
 
     // Generate Suno payload from artifacts
@@ -499,12 +624,25 @@ describe("E2E - Suno payload round-trip through pipeline", () => {
       },
     };
 
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", null);
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      null,
+    );
     const deps: PipelineDeps = {
       db,
       llm: mockLlm() as any,
       suno: mockSuno() as any,
-      config: { sunoBaseUrl: "https://api.sunomusic.com/v1", logLevel: "fatal" as any, port: 0, llmProvider: "openai", llmModel: "gpt-4o", dbPath: ":memory:" } as any,
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
     };
 
     const result = await runPipeline(job.id, deps, instrumentalModule);
@@ -518,11 +656,15 @@ describe("E2E - Suno payload round-trip through pipeline", () => {
     const artifacts = JSON.parse(version!.artifacts) as SunoArtifact[];
     const lyrics = artifacts.find((a) => a.type === "lyrics")?.value ?? "";
     const style = artifacts.find((a) => a.type === "style")?.value ?? "";
-    const excludedStyles = artifacts.find((a) => a.type === "excluded_styles")?.value ?? "";
+    const excludedStyles =
+      artifacts.find((a) => a.type === "excluded_styles")?.value ?? "";
     const title = artifacts.find((a) => a.type === "title")?.value ?? "";
 
     const { request: payload } = generateSunoPayload({
-      title, style, excludedStyles, lyrics,
+      title,
+      style,
+      excludedStyles,
+      lyrics,
     });
 
     expect(payload.instrumental).toBe(true);

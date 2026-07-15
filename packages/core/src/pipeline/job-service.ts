@@ -64,7 +64,11 @@ export async function createJob(
 }
 
 export async function loadJob(db: Db, jobId: JobId): Promise<Job | null> {
-  const rows = await db.select().from(schema.jobs).where(eq(schema.jobs.id, jobId)).limit(1);
+  const rows = await db
+    .select()
+    .from(schema.jobs)
+    .where(eq(schema.jobs.id, jobId))
+    .limit(1);
   return (rows[0] ?? null) as Job | null;
 }
 
@@ -134,10 +138,7 @@ export async function failStage(
   return loadJobOrThrow(db, jobId);
 }
 
-export async function completeJob(
-  db: Db,
-  jobId: JobId,
-): Promise<Job> {
+export async function completeJob(db: Db, jobId: JobId): Promise<Job> {
   const now = new Date().toISOString();
   await db
     .update(schema.jobs)
@@ -165,10 +166,7 @@ export async function resetJobStage(
   return loadJobOrThrow(db, jobId);
 }
 
-export async function cancelJob(
-  db: Db,
-  jobId: JobId,
-): Promise<Job> {
+export async function cancelJob(db: Db, jobId: JobId): Promise<Job> {
   const now = new Date().toISOString();
   await db
     .update(schema.jobs)
@@ -189,7 +187,7 @@ export async function createVersion(
   artifacts: SunoArtifact[],
   status: VersionStatus = "draft",
 ): Promise<Version> {
-  const versionNumber = await countVersions(db, jobId) + 1;
+  const versionNumber = (await countVersions(db, jobId)) + 1;
   const id = crypto.randomUUID() as VersionId;
   const now = new Date().toISOString();
 
@@ -206,7 +204,10 @@ export async function createVersion(
   return loadVersionOrThrow(db, id);
 }
 
-async function loadVersionOrThrow(db: Db, versionId: VersionId): Promise<Version> {
+async function loadVersionOrThrow(
+  db: Db,
+  versionId: VersionId,
+): Promise<Version> {
   const rows = await db
     .select()
     .from(schema.versions)

@@ -143,7 +143,7 @@ function buildArrangementDescription(structure: string[], bpm: number): string {
 }
 
 export function createHipHopRenderers(
-  subgenreEntry?: HipHopSubgenreEntry
+  subgenreEntry?: HipHopSubgenreEntry,
 ): GenreRenderers<HipHopBlueprint> {
   return {
     title(data: HipHopBlueprint): string {
@@ -179,9 +179,13 @@ export function createHipHopRenderers(
       }
 
       // Narrative & Delivery
-      lines.push(`Narrative: ${NARRATIVE_LABELS[data.narrativeArc!] ?? data.narrativeArc}`);
+      lines.push(
+        `Narrative: ${NARRATIVE_LABELS[data.narrativeArc!] ?? data.narrativeArc}`,
+      );
       lines.push(`Flow: ${FLOW_LABELS[data.flowPattern!] ?? data.flowPattern}`);
-      lines.push(`Delivery: ${DELIVERY_LABELS[data.delivery!] ?? data.delivery}`);
+      lines.push(
+        `Delivery: ${DELIVERY_LABELS[data.delivery!] ?? data.delivery}`,
+      );
 
       // Vocal style
       if (data.vocalStyle) {
@@ -189,8 +193,12 @@ export function createHipHopRenderers(
       }
 
       // Production
-      lines.push(`Production: ${PRODUCTION_LABELS[data.productionStyle!] ?? data.productionStyle}`);
-      lines.push(`Energy: ${data.energy}/10 | Lyrical Complexity: ${data.complexity}/10`);
+      lines.push(
+        `Production: ${PRODUCTION_LABELS[data.productionStyle!] ?? data.productionStyle}`,
+      );
+      lines.push(
+        `Energy: ${data.energy}/10 | Lyrical Complexity: ${data.complexity}/10`,
+      );
 
       // Tags
       const tags = [...data.tags];
@@ -214,19 +222,28 @@ export function createHipHopRenderers(
       if (data.energy <= 4) exclusions.push("high-energy, aggressive, hype");
       else if (data.energy >= 8) exclusions.push("low-energy, slow, lethargic");
 
-      if (data.complexity <= 3) exclusions.push("complex lyricism, dense wordplay");
-      else if (data.complexity >= 8) exclusions.push("simple, repetitive, basic");
+      if (data.complexity <= 3)
+        exclusions.push("complex lyricism, dense wordplay");
+      else if (data.complexity >= 8)
+        exclusions.push("simple, repetitive, basic");
 
-      if (data.scale === "major") exclusions.push("dark, melancholy, minor-key");
+      if (data.scale === "major")
+        exclusions.push("dark, melancholy, minor-key");
       else exclusions.push("bright, happy, major-key");
 
       // Flow-based
-      if (data.flowPattern === "laid_back") exclusions.push("rapid-fire, double-time delivery");
-      if (data.flowPattern === "aggressive") exclusions.push("relaxed, calm delivery");
-      if (data.flowPattern === "melodic") exclusions.push("aggressive shouting");
+      if (data.flowPattern === "laid_back")
+        exclusions.push("rapid-fire, double-time delivery");
+      if (data.flowPattern === "aggressive")
+        exclusions.push("relaxed, calm delivery");
+      if (data.flowPattern === "melodic")
+        exclusions.push("aggressive shouting");
 
       // Production-based
-      if (data.productionStyle === "lo_fi" || data.productionStyle === "vintage") {
+      if (
+        data.productionStyle === "lo_fi" ||
+        data.productionStyle === "vintage"
+      ) {
         exclusions.push("polished, clean, modern production");
       }
       if (data.productionStyle === "polished") {
@@ -234,8 +251,12 @@ export function createHipHopRenderers(
       }
 
       // Narrative-based
-      if (data.narrativeArc === "party") exclusions.push("dark, melancholic themes");
-      if (data.narrativeArc === "conscious" || data.narrativeArc === "introspective") {
+      if (data.narrativeArc === "party")
+        exclusions.push("dark, melancholic themes");
+      if (
+        data.narrativeArc === "conscious" ||
+        data.narrativeArc === "introspective"
+      ) {
         exclusions.push("mindless party lyrics");
       }
 
@@ -258,12 +279,15 @@ export function createHipHopRenderers(
         switch (section) {
           case "intro":
             lines.push(`[Intro]`);
-            lines.push(`(Build atmosphere — ${data.mood || "setting the mood"})`);
+            lines.push(
+              `(Build atmosphere — ${data.mood || "setting the mood"})`,
+            );
             break;
           case "verse":
             lines.push(`[Verse]`);
             lines.push(`(${getVersePrompt(data)})`);
-            for (const l of getVerseThemes(data.narrativeArc!, data.mood)) lines.push(l);
+            for (const l of getVerseThemes(data.narrativeArc!, data.mood))
+              lines.push(l);
             break;
           case "hook":
             lines.push(`[Hook]`);

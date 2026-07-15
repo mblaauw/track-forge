@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { parseLyrics, serializeLyrics, isInstrumental } from "../src/lyrics/canonical.js";
+import {
+  parseLyrics,
+  serializeLyrics,
+  isInstrumental,
+} from "../src/lyrics/canonical.js";
 
 // ── Sample fixture: guided instrumental EDM ───────────────────────────
 
@@ -141,7 +145,9 @@ describe("parseLyrics", () => {
   });
 
   it("resolves section type aliases", () => {
-    const doc = parseLyrics("[Pre-Chorus]\n(4 bars)\n[Pre Chorus]\n(4 bars)\n[prechorus]");
+    const doc = parseLyrics(
+      "[Pre-Chorus]\n(4 bars)\n[Pre Chorus]\n(4 bars)\n[prechorus]",
+    );
 
     expect(doc.sections).toHaveLength(3);
     expect(doc.sections[0]!.type).toBe("pre_chorus");
@@ -213,7 +219,9 @@ describe("parse → serialize roundtrip", () => {
     for (let i = 0; i < doc.sections.length; i++) {
       expect(reparsed.sections[i]!.type).toBe(doc.sections[i]!.type);
       expect(reparsed.sections[i]!.bars).toBe(doc.sections[i]!.bars);
-      expect(reparsed.sections[i]!.instrumental).toBe(doc.sections[i]!.instrumental);
+      expect(reparsed.sections[i]!.instrumental).toBe(
+        doc.sections[i]!.instrumental,
+      );
       expect(reparsed.sections[i]!.tags).toEqual(doc.sections[i]!.tags);
       expect(reparsed.sections[i]!.lines).toEqual(doc.sections[i]!.lines);
     }

@@ -6,8 +6,5 @@
   },
   "include": ["src"],
   "exclude": ["src/ui"],
-  "references": [
-    { "path": "../contracts" },
-    { "path": "../genre-core" }
-  ]
+  "references": [{ "path": "../contracts" }, { "path": "../genre-core" }]
 }

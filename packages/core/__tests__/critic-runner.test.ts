@@ -9,7 +9,12 @@ describe("parseFindings", () => {
 
   it("extracts JSON array from plain text", () => {
     const text = JSON.stringify([
-      { severity: "error", field: "style", message: "BPM too high", autoFixPolicy: "required" },
+      {
+        severity: "error",
+        field: "style",
+        message: "BPM too high",
+        autoFixPolicy: "required",
+      },
     ]);
     const findings = parseFindings(text);
     expect(findings).toHaveLength(1);
@@ -22,8 +27,18 @@ describe("parseFindings", () => {
       "Here are my findings:",
       "```json",
       JSON.stringify([
-        { severity: "error", field: "style", message: "BPM too high", autoFixPolicy: "required" },
-        { severity: "warning", field: "lyrics", message: "Low energy", autoFixPolicy: "preferred" },
+        {
+          severity: "error",
+          field: "style",
+          message: "BPM too high",
+          autoFixPolicy: "required",
+        },
+        {
+          severity: "warning",
+          field: "lyrics",
+          message: "Low energy",
+          autoFixPolicy: "preferred",
+        },
       ]),
       "```",
     ].join("\n");
@@ -40,10 +55,7 @@ describe("parseFindings", () => {
   });
 
   it("normalizes missing fields to defaults", () => {
-    const text = JSON.stringify([
-      { severity: "error" },
-      {},
-    ]);
+    const text = JSON.stringify([{ severity: "error" }, {}]);
     const findings = parseFindings(text);
     expect(findings).toHaveLength(2);
     expect(findings[0].field).toBe("unknown");
@@ -70,11 +82,21 @@ describe("parseFindings", () => {
   it("handles multiple arrays in text by using first match", () => {
     const text = [
       JSON.stringify([
-        { severity: "error", field: "style", message: "Issue 1", autoFixPolicy: "required" },
+        {
+          severity: "error",
+          field: "style",
+          message: "Issue 1",
+          autoFixPolicy: "required",
+        },
       ]),
       "Some text",
       JSON.stringify([
-        { severity: "warning", field: "lyrics", message: "Issue 2", autoFixPolicy: "preferred" },
+        {
+          severity: "warning",
+          field: "lyrics",
+          message: "Issue 2",
+          autoFixPolicy: "preferred",
+        },
       ]),
     ].join("\n");
 
@@ -87,7 +109,12 @@ describe("parseFindings", () => {
     const text = [
       "```",
       JSON.stringify([
-        { severity: "error", field: "style", message: "Bad tags", autoFixPolicy: "required" },
+        {
+          severity: "error",
+          field: "style",
+          message: "Bad tags",
+          autoFixPolicy: "required",
+        },
       ]),
       "```",
     ].join("\n");

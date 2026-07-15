@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { ConfigSchema, GenerationStage, JobStatus, VersionStatus, SunoArtifactType, CriticSeverity, AutoFixPolicy, PatchType } from "../src/index.js";
+import {
+  ConfigSchema,
+  GenerationStage,
+  JobStatus,
+  VersionStatus,
+  SunoArtifactType,
+  CriticSeverity,
+  AutoFixPolicy,
+  PatchType,
+} from "../src/index.js";
 
 describe("ConfigSchema", () => {
   it("applies defaults for empty input", () => {

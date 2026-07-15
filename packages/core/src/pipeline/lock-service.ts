@@ -53,9 +53,14 @@ export function createLockService(db: Db) {
     return true;
   }
 
-  async function releaseLock(versionId: string, artifactType: string): Promise<void> {
+  async function releaseLock(
+    versionId: string,
+    artifactType: string,
+  ): Promise<void> {
     const key = lockKey(versionId, artifactType);
-    await db.delete(schema.artifactLocks).where(eq(schema.artifactLocks.id, key));
+    await db
+      .delete(schema.artifactLocks)
+      .where(eq(schema.artifactLocks.id, key));
   }
 
   async function renewLock(
@@ -112,7 +117,13 @@ export function createLockService(db: Db) {
     return () => clearInterval(timer);
   }
 
-  return { acquireLock, releaseLock, renewLock, cleanExpiredLocks, startHeartbeat };
+  return {
+    acquireLock,
+    releaseLock,
+    renewLock,
+    cleanExpiredLocks,
+    startHeartbeat,
+  };
 }
 
 export type LockService = ReturnType<typeof createLockService>;

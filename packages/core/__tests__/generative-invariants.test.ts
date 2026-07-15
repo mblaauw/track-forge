@@ -18,7 +18,11 @@ function mockLlm(response?: string) {
   const content = response ?? "Mock result.";
   return {
     async complete() {
-      return { content, model: "mock", usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 } };
+      return {
+        content,
+        model: "mock",
+        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      };
     },
   };
 }
@@ -29,10 +33,18 @@ function mockSuno() {
       return { ids: ["mock-id"], callbackConfigured: false };
     },
     async getGenerationStatus() {
-      return { id: "mock-id", status: "completed" as const, audioUrl: "https://example.com/audio.mp3" };
+      return {
+        id: "mock-id",
+        status: "completed" as const,
+        audioUrl: "https://example.com/audio.mp3",
+      };
     },
     async waitForCompletion() {
-      return { id: "mock-id", status: "completed" as const, audioUrl: "https://example.com/audio.mp3" };
+      return {
+        id: "mock-id",
+        status: "completed" as const,
+        audioUrl: "https://example.com/audio.mp3",
+      };
     },
   };
 }
@@ -44,7 +56,11 @@ const mockModule: GenreModule = {
   blueprintSchema: null as any,
   defaults: {},
   form: [],
-  adjustmentVocabulary: { styleTerms: [], structureTerms: [], deliveryTerms: [] },
+  adjustmentVocabulary: {
+    styleTerms: [],
+    structureTerms: [],
+    deliveryTerms: [],
+  },
   tagPolicy: { mandatoryTags: [], forbiddenTags: [], canonicalMap: {} },
   presets: [],
   promptFragments: {},
@@ -147,32 +163,63 @@ describe("Generative invariants", () => {
   });
 
   it("LLM rawStyle affects compiled Style artifact", async () => {
-    const llm = mockLlm(JSON.stringify({
-      ...JSON.parse(styleResultJson),
-      descriptiveStyle: "LLM-custom style: ambient piano with heavy bass",
-    }));
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, "{}", "ref");
-    const deps: PipelineDeps = { db, llm: llm as any, suno: mockSuno() as any, config: {} as any };
+    const llm = mockLlm(
+      JSON.stringify({
+        ...JSON.parse(styleResultJson),
+        descriptiveStyle: "LLM-custom style: ambient piano with heavy bass",
+      }),
+    );
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      "{}",
+      "ref",
+    );
+    const deps: PipelineDeps = {
+      db,
+      llm: llm as any,
+      suno: mockSuno() as any,
+      config: {} as any,
+    };
 
     const result = await runPipeline(job.id, deps, mockModule);
     expect(result.success).toBe(true);
 
-    const rows = await db.select().from(schema.versions).where(eq(schema.versions.jobId, job.id));
+    const rows = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, job.id));
     const artifacts = rows[0]?.artifacts ? JSON.parse(rows[0].artifacts) : [];
     const styleArtifact = artifacts.find((a: any) => a.type === "style");
     expect(styleArtifact?.value).toContain("LLM-custom style");
   });
 
   it("Raw artist reference is absent from writer prompts and artifacts", async () => {
-    const reference = "Kendrick Lamar - HUMBLE. This song is about staying humble";
+    const reference =
+      "Kendrick Lamar - HUMBLE. This song is about staying humble";
     const llm = mockLlm(styleResultJson);
-    const job = await createJob(db, "test-genre" as GenreId, "test-preset" as PresetId, JSON.stringify({ mood: "test" }), reference);
-    const deps: PipelineDeps = { db, llm: llm as any, suno: mockSuno() as any, config: {} as any };
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      JSON.stringify({ mood: "test" }),
+      reference,
+    );
+    const deps: PipelineDeps = {
+      db,
+      llm: llm as any,
+      suno: mockSuno() as any,
+      config: {} as any,
+    };
 
     const result = await runPipeline(job.id, deps, mockModule);
     expect(result.success).toBe(true);
 
-    const rows = await db.select().from(schema.versions).where(eq(schema.versions.jobId, job.id));
+    const rows = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, job.id));
     const artifacts = rows[0]?.artifacts ? JSON.parse(rows[0].artifacts) : [];
     for (const a of artifacts) {
       expect(a.value).not.toContain("Kendrick Lamar");

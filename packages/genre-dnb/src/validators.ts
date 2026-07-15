@@ -6,7 +6,10 @@ export const DNB_VALIDATORS: GenreValidators<DnbInputs> = {
     const errors: { field: string; message: string }[] = [];
 
     if (inputs.bpm < 160 || inputs.bpm > 180) {
-      errors.push({ field: "bpm", message: `BPM ${inputs.bpm} outside D&B range 160-180` });
+      errors.push({
+        field: "bpm",
+        message: `BPM ${inputs.bpm} outside D&B range 160-180`,
+      });
     }
 
     if (inputs.energy < 1 || inputs.energy > 10) {
@@ -28,10 +31,16 @@ export const DNB_VALIDATORS: GenreValidators<DnbInputs> = {
       errors.push({ field: "subgenre", message: "Blueprint missing subgenre" });
     }
     if (!bp.arrangement || bp.arrangement.length === 0) {
-      errors.push({ field: "arrangement", message: "Blueprint must have at least one arrangement section" });
+      errors.push({
+        field: "arrangement",
+        message: "Blueprint must have at least one arrangement section",
+      });
     }
     if (!bp.styleClauses || bp.styleClauses.length === 0) {
-      errors.push({ field: "styleClauses", message: "Blueprint must have style clauses" });
+      errors.push({
+        field: "styleClauses",
+        message: "Blueprint must have style clauses",
+      });
     }
     if (bp.bpm < 160 || bp.bpm > 180) {
       errors.push({ field: "bpm", message: `BPM ${bp.bpm} out of D&B range` });

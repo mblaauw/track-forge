@@ -66,7 +66,7 @@ export const popModule: GenreModule<PopInputs, PopBlueprint> = {
     planning:
       "Describe a {{subgenre}} Pop track arrangement: {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, verse, pre-chorus, chorus, bridge, outro) with energy arc and production notes.\n{{nlAdjustments}}",
     style:
-      "Suno AI style for {{subgenre}} Pop ({{bpm}}BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10).\n{{nlAdjustments}}\nReturn ONLY valid JSON:\n{\"titleCandidates\":[\"title1\",\"title2\"],\"descriptiveStyle\":\"...\",\"negativeTags\":[\"...\"],\"bpm\":128,\"key\":\"C\",\"vocalDescription\":\"...\"}",
+      'Suno AI style for {{subgenre}} Pop ({{bpm}}BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10).\n{{nlAdjustments}}\nReturn ONLY valid JSON:\n{"titleCandidates":["title1","title2"],"descriptiveStyle":"...","negativeTags":["..."],"bpm":128,"key":"C","vocalDescription":"..."}',
     lyrics_full:
       "Write lyrics for a {{subgenre}} Pop track. Include verse, chorus, bridge structure with a strong, memorable hook. Theme: {{theme}}.\n{{nlAdjustments}}",
     lyrics_hook:
@@ -85,7 +85,12 @@ export const popModule: GenreModule<PopInputs, PopBlueprint> = {
 
 export default popModule;
 
-export { PopInputSchema, PopBlueprintSchema, POP_DEFAULTS, compileBlueprint as popCompileBlueprint } from "./schema.js";
+export {
+  PopInputSchema,
+  PopBlueprintSchema,
+  POP_DEFAULTS,
+  compileBlueprint as popCompileBlueprint,
+} from "./schema.js";
 export type { PopInputs, PopBlueprint } from "./schema.js";
 export { POP_PRESETS } from "./presets.js";
 export { POP_TAG_CATEGORIES } from "./tag-categories.js";

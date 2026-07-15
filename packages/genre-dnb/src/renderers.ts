@@ -31,7 +31,8 @@ function renderStyle(data: DnbBlueprint): string {
   if (data.energy >= 8) clauses.push("High energy, intense.");
   else if (data.energy <= 4) clauses.push("Low energy, laid back.");
 
-  if (data.complexity >= 8) clauses.push("Complex arrangement, intricate breaks.");
+  if (data.complexity >= 8)
+    clauses.push("Complex arrangement, intricate breaks.");
   else if (data.complexity <= 3) clauses.push("Minimal arrangement.");
 
   const sectionNames = data.arrangement.map((a) => a.section).join(", ");
@@ -83,9 +84,8 @@ function renderLyrics(data: DnbBlueprint): string {
       lines.push("");
 
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0
-          ? ` — ${section.tags.join(", ")}`
-          : "";
+        const tagStr =
+          section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
         lines.push(`(${section.bars} bars)`);
         lines.push("");
@@ -100,9 +100,8 @@ function renderLyrics(data: DnbBlueprint): string {
       lines.push("");
 
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0
-          ? ` — ${section.tags.join(", ")}`
-          : "";
+        const tagStr =
+          section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
 
         if (section.section === "intro") {

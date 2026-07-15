@@ -1,4 +1,8 @@
-import type { GenerationStage, InterpretedReference, ControlDescriptor } from "@track-forge/contracts";
+import type {
+  GenerationStage,
+  InterpretedReference,
+  ControlDescriptor,
+} from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { PromptContext, PromptManifest } from "./types.js";
 import { formatInterpretedRef } from "./reference-interpreter.js";
@@ -12,7 +16,12 @@ import { formatInterpretedRef } from "./reference-interpreter.js";
 const FRAGMENT_KEYS: Record<string, string[]> = {
   planning: ["planning"],
   style_writing: ["style_writing", "style"],
-  lyrics_writing: ["lyrics_writing", "lyrics_full", "lyrics_instrumental", "lyrics"],
+  lyrics_writing: [
+    "lyrics_writing",
+    "lyrics_full",
+    "lyrics_instrumental",
+    "lyrics",
+  ],
   compilation: ["compilation"],
   review: ["review"],
   revision: ["revision"],
@@ -133,7 +142,8 @@ function resolveKey(key: string, context: PromptContext): unknown {
 export function formatControlDescriptors(
   descriptors: ControlDescriptor[] | null | string,
 ): string {
-  if (!descriptors || (Array.isArray(descriptors) && descriptors.length === 0)) return "";
+  if (!descriptors || (Array.isArray(descriptors) && descriptors.length === 0))
+    return "";
 
   if (typeof descriptors === "string") return descriptors;
 
@@ -149,7 +159,9 @@ export function formatControlDescriptors(
  * Parse raw nlAdjustments string into ControlDescriptor[].
  * Backward compat: plain text becomes a single descriptor.
  */
-export function parseControlDescriptors(raw: string | null): ControlDescriptor[] | null {
+export function parseControlDescriptors(
+  raw: string | null,
+): ControlDescriptor[] | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
@@ -157,7 +169,9 @@ export function parseControlDescriptors(raw: string | null): ControlDescriptor[]
   } catch {
     /* not JSON — treat as plain text */
   }
-  return [{ parameter: "instruction", operator: "set", value: raw, confidence: 0.3 }];
+  return [
+    { parameter: "instruction", operator: "set", value: raw, confidence: 0.3 },
+  ];
 }
 
 // ── Reference sanitizer ────────────────────────────────────────────────
@@ -205,7 +219,9 @@ export function buildPromptContext(params: {
   if (params.inputs) {
     try {
       Object.assign(inputs, JSON.parse(params.inputs));
-    } catch { /* ignore parse errors */ }
+    } catch {
+      /* ignore parse errors */
+    }
   }
 
   const context: PromptContext = {
@@ -215,7 +231,9 @@ export function buildPromptContext(params: {
     genreName: params.genreName,
     presetId: params.presetId,
     reference: sanitizeReference(params.reference, params.interpretedRef),
-    interpretedRef: params.interpretedRef ? formatInterpretedRef(params.interpretedRef) : null,
+    interpretedRef: params.interpretedRef
+      ? formatInterpretedRef(params.interpretedRef)
+      : null,
     nlAdjustments: formatControlDescriptors(params.nlAdjustments ?? null),
   };
 

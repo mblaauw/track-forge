@@ -1,12 +1,25 @@
 const API_BASE =
-  (typeof import.meta !== "undefined" && (import.meta as unknown as Record<string, unknown>).env
-    ? ((import.meta as unknown as Record<string, unknown>).env as Record<string, string>).VITE_API_BASE ?? ""
-    : "");
+  typeof import.meta !== "undefined" &&
+  (import.meta as unknown as Record<string, unknown>).env
+    ? ((
+        (import.meta as unknown as Record<string, unknown>).env as Record<
+          string,
+          string
+        >
+      ).VITE_API_BASE ?? "")
+    : "";
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
-  const hasBody = !!(init?.body && typeof init.body === "string" && init.body.length > 0);
+  const hasBody = !!(
+    init?.body &&
+    typeof init.body === "string" &&
+    init.body.length > 0
+  );
   const res = await fetch(`${API_BASE}${url}`, {
-    headers: { ...(hasBody ? { "Content-Type": "application/json" } : {}), ...init?.headers },
+    headers: {
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
+      ...init?.headers,
+    },
     ...init,
   });
   if (!res.ok) {
@@ -86,14 +99,19 @@ export function renameJob(id: string, name: string): Promise<JobInfo> {
 }
 
 export function favoriteJob(id: string): Promise<JobInfo> {
-  return api(`/api/jobs/${encodeURIComponent(id)}/favorite`, { method: "PATCH" });
+  return api(`/api/jobs/${encodeURIComponent(id)}/favorite`, {
+    method: "PATCH",
+  });
 }
 
 export function deleteJob(id: string): Promise<void> {
   return api(`/api/jobs/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
-export function updateJobInputs(id: string, patch: { inputs?: Record<string, unknown>; name?: string }): Promise<JobInfo> {
+export function updateJobInputs(
+  id: string,
+  patch: { inputs?: Record<string, unknown>; name?: string },
+): Promise<JobInfo> {
   return api(`/api/jobs/${encodeURIComponent(id)}/inputs`, {
     method: "PATCH",
     body: JSON.stringify(patch),
@@ -108,29 +126,42 @@ export function fetchJob(id: string): Promise<JobInfo> {
   return api(`/api/jobs/${encodeURIComponent(id)}`);
 }
 
-export function startJob(id: string): Promise<{ status: string; jobId: string }> {
+export function startJob(
+  id: string,
+): Promise<{ status: string; jobId: string }> {
   return api(`/api/jobs/${encodeURIComponent(id)}/start`, { method: "POST" });
 }
 
-export function cancelJob(id: string): Promise<{ status: string; jobId: string }> {
+export function cancelJob(
+  id: string,
+): Promise<{ status: string; jobId: string }> {
   return api(`/api/jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" });
 }
 
-export function replayJob(id: string, stage?: string): Promise<{ status: string; jobId: string }> {
+export function replayJob(
+  id: string,
+  stage?: string,
+): Promise<{ status: string; jobId: string }> {
   return api(`/api/jobs/${encodeURIComponent(id)}/replay`, {
     method: "POST",
     body: JSON.stringify(stage ? { stage } : {}),
   });
 }
 
-export function retryJob(id: string): Promise<{ status: string; jobId: string }> {
+export function retryJob(
+  id: string,
+): Promise<{ status: string; jobId: string }> {
   return api(`/api/jobs/${encodeURIComponent(id)}/retry`, { method: "POST" });
 }
 
 /** Parse artifacts from JSON string to array (server returns string) */
 function parseVersion(v: VersionInfo): VersionInfo {
   if (typeof v.artifacts === "string") {
-    try { v.artifacts = JSON.parse(v.artifacts); } catch { v.artifacts = []; }
+    try {
+      v.artifacts = JSON.parse(v.artifacts);
+    } catch {
+      v.artifacts = [];
+    }
   }
   return v;
 }
@@ -142,19 +173,31 @@ function parseVersionTree(v: VersionTreeNode): VersionTreeNode {
 }
 
 export function fetchVersions(jobId: string): Promise<VersionInfo[]> {
-  return api<VersionInfo[]>(`/api/jobs/${encodeURIComponent(jobId)}/versions`).then((vs) => vs.map(parseVersion));
+  return api<VersionInfo[]>(
+    `/api/jobs/${encodeURIComponent(jobId)}/versions`,
+  ).then((vs) => vs.map(parseVersion));
 }
 
 export function promoteVersion(id: string): Promise<VersionInfo> {
-  return api<VersionInfo>(`/api/versions/${encodeURIComponent(id)}/promote`, { method: "POST" }).then(parseVersion);
+  return api<VersionInfo>(`/api/versions/${encodeURIComponent(id)}/promote`, {
+    method: "POST",
+  }).then(parseVersion);
 }
 
-export function rollbackToVersion(jobId: string, versionId: string): Promise<VersionInfo> {
-  return api<VersionInfo>(`/api/jobs/${encodeURIComponent(jobId)}/versions/${encodeURIComponent(versionId)}/rollback`, { method: "POST" }).then(parseVersion);
+export function rollbackToVersion(
+  jobId: string,
+  versionId: string,
+): Promise<VersionInfo> {
+  return api<VersionInfo>(
+    `/api/jobs/${encodeURIComponent(jobId)}/versions/${encodeURIComponent(versionId)}/rollback`,
+    { method: "POST" },
+  ).then(parseVersion);
 }
 
 export function fetchVersionTree(jobId: string): Promise<VersionTreeNode[]> {
-  return api<VersionTreeNode[]>(`/api/jobs/${encodeURIComponent(jobId)}/versions/tree`).then((vs) => vs.map(parseVersionTree));
+  return api<VersionTreeNode[]>(
+    `/api/jobs/${encodeURIComponent(jobId)}/versions/tree`,
+  ).then((vs) => vs.map(parseVersionTree));
 }
 
 // ── Payload preview ──────────────────────────────────────────────────
@@ -172,9 +215,7 @@ export interface PayloadPreviewResult {
   warnings: Array<{ field: string; message: string }>;
 }
 
-export function fetchPayloadPreview(
-  id: string,
-): Promise<PayloadPreviewResult> {
+export function fetchPayloadPreview(id: string): Promise<PayloadPreviewResult> {
   return api(`/api/jobs/${encodeURIComponent(id)}/payload-preview`);
 }
 
@@ -194,7 +235,15 @@ export function submitReview(
 
 export function setNlAdjustments(
   id: string,
-  nlAdjustments: string | { parameter: string; operator: string; value: unknown; confidence: number }[] | null,
+  nlAdjustments:
+    | string
+    | {
+        parameter: string;
+        operator: string;
+        value: unknown;
+        confidence: number;
+      }[]
+    | null,
 ): Promise<JobInfo> {
   return api(`/api/jobs/${encodeURIComponent(id)}/nl-adjustments`, {
     method: "PATCH",
@@ -258,7 +307,9 @@ export function fetchGenerations(
   jobId: string,
   limit = 10,
 ): Promise<GenerationInfo[]> {
-  return api(`/api/suno/jobs/${encodeURIComponent(jobId)}/generations?limit=${limit}`);
+  return api(
+    `/api/suno/jobs/${encodeURIComponent(jobId)}/generations?limit=${limit}`,
+  );
 }
 
 export function retryGeneration(
@@ -276,11 +327,15 @@ export function fetchTakes(versionId: string): Promise<GenerationInfo[]> {
 }
 
 export function createTake(versionId: string): Promise<GenerationInfo> {
-  return api(`/api/versions/${encodeURIComponent(versionId)}/takes`, { method: "POST" });
+  return api(`/api/versions/${encodeURIComponent(versionId)}/takes`, {
+    method: "POST",
+  });
 }
 
 export function favoriteTake(takeId: string): Promise<GenerationInfo> {
-  return api(`/api/takes/${encodeURIComponent(takeId)}/favorite`, { method: "PATCH" });
+  return api(`/api/takes/${encodeURIComponent(takeId)}/favorite`, {
+    method: "PATCH",
+  });
 }
 
 // ── Import / Export ─────────────────────────────────────────────────
@@ -323,7 +378,9 @@ export function connectJobEvents(
   jobId: string,
   handlers: JobEventHandlers,
 ): () => void {
-  const es = new EventSource(`${API_BASE}/api/jobs/${encodeURIComponent(jobId)}/events`);
+  const es = new EventSource(
+    `${API_BASE}/api/jobs/${encodeURIComponent(jobId)}/events`,
+  );
 
   es.addEventListener("connected", () => {
     handlers.onConnected?.();

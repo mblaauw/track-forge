@@ -1,4 +1,13 @@
-import type { Job, Config, InterpretedReference, GenerationStage, StyleWriterResult, LyricsWriterResult, ControlDescriptor, LyricsFormat } from "@track-forge/contracts";
+import type {
+  Job,
+  Config,
+  InterpretedReference,
+  GenerationStage,
+  StyleWriterResult,
+  LyricsWriterResult,
+  ControlDescriptor,
+  LyricsFormat,
+} from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { Db } from "../db/index.js";
 import type { LlmClient } from "../llm/index.js";

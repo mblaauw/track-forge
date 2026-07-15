@@ -40,7 +40,10 @@ export interface GenreModule<
   /** Tag categories for the Style Console UI */
   tagCategories: TagCategory[];
   /** Compile user inputs into full blueprint shape */
-  compileBlueprint: (inputs: TInputs, options?: { arrangementOverride?: { section: string; bars: number }[] }) => TBlueprintData;
+  compileBlueprint: (
+    inputs: TInputs,
+    options?: { arrangementOverride?: { section: string; bars: number }[] },
+  ) => TBlueprintData;
   /** Renderers produce Suno-ready artifacts from blueprint */
   renderers: GenreRenderers<TBlueprintData>;
   /** Critic function table */

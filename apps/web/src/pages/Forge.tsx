@@ -1,17 +1,43 @@
 import { useEffect, useState, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
-import { fetchJob, startJob, cancelJob, replayJob, connectJobEvents } from "../api";
+import {
+  fetchJob,
+  startJob,
+  cancelJob,
+  replayJob,
+  connectJobEvents,
+} from "../api";
 import { useSession } from "../lib/session";
 import type { JobInfo, ProgressEvent } from "../api";
 
 const STAGES = [
-  { id: "ref_interpretation" as const, num: "01", label: "Reference", desc: "Analyzing input" },
+  {
+    id: "ref_interpretation" as const,
+    num: "01",
+    label: "Reference",
+    desc: "Analyzing input",
+  },
   { id: "planning" as const, num: "02", label: "Plan", desc: "Song structure" },
-  { id: "style_writing" as const, num: "03", label: "Style", desc: "Sound design" },
-  { id: "compilation" as const, num: "04", label: "Compose", desc: "Arrangement" },
+  {
+    id: "style_writing" as const,
+    num: "03",
+    label: "Style",
+    desc: "Sound design",
+  },
+  {
+    id: "compilation" as const,
+    num: "04",
+    label: "Compose",
+    desc: "Arrangement",
+  },
   { id: "review" as const, num: "05", label: "Review", desc: "Quality check" },
   { id: "revision" as const, num: "06", label: "Polish", desc: "Refinement" },
-  { id: "verification" as const, num: "07", label: "Verify", desc: "Final checks" },
+  {
+    id: "verification" as const,
+    num: "07",
+    label: "Verify",
+    desc: "Final checks",
+  },
   { id: "versioning" as const, num: "08", label: "Version", desc: "Finalize" },
 ];
 
@@ -33,7 +59,9 @@ function fmt(seconds: number): string {
 export function Forge({ id }: { id: string }) {
   const { navigate } = useRouter();
   const [job, setJob] = useState<JobInfo | null>(null);
-  const [stageStatus, setStageStatus] = useState<Record<string, "pending" | "active" | "done">>({});
+  const [stageStatus, setStageStatus] = useState<
+    Record<string, "pending" | "active" | "done">
+  >({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -63,17 +91,27 @@ export function Forge({ id }: { id: string }) {
         } else {
           STAGE_IDS.forEach((s, i) => {
             if (i < idx) ss[s] = "done";
-            else if (i === idx) ss[s] = j.status === "in_progress" ? "active" : "pending";
+            else if (i === idx)
+              ss[s] = j.status === "in_progress" ? "active" : "pending";
             else ss[s] = "pending";
           });
         }
         setStageStatus(ss);
 
         const l: LogEntry[] = [];
-        l.push({ time: fmt(0), tag: "info", msg: `Job: ${j.name ?? "Untitled"} · ${j.genreId}` });
+        l.push({
+          time: fmt(0),
+          tag: "info",
+          msg: `Job: ${j.name ?? "Untitled"} · ${j.genreId}`,
+        });
         if (j.status === "in_progress") {
           const activeStage = STAGES.find((s) => s.id === j.currentStage);
-          if (activeStage) l.push({ time: fmt(0), tag: "stage", msg: `${activeStage.label}...` });
+          if (activeStage)
+            l.push({
+              time: fmt(0),
+              tag: "stage",
+              msg: `${activeStage.label}...`,
+            });
         }
         setLogs(l);
       })
@@ -84,7 +122,8 @@ export function Forge({ id }: { id: string }) {
   useEffect(() => {
     if (!job || job.status !== "in_progress") return;
 
-    const labelOf = (stageId: string) => STAGES.find((s) => s.id === stageId)?.label ?? stageId;
+    const labelOf = (stageId: string) =>
+      STAGES.find((s) => s.id === stageId)?.label ?? stageId;
 
     const unsubscribe = connectJobEvents(id, {
       onProgress: (e: ProgressEvent) => {
@@ -93,24 +132,51 @@ export function Forge({ id }: { id: string }) {
 
         if (e.status === "started") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "active" }));
-          setLogs((prev) => [...prev, { time: fmt(now), tag: "stage", msg: `${label}...` }]);
-          if (e.message) setLogs((prev) => [...prev, { time: fmt(now), tag: "info", msg: e.message! }]);
+          setLogs((prev) => [
+            ...prev,
+            { time: fmt(now), tag: "stage", msg: `${label}...` },
+          ]);
+          if (e.message)
+            setLogs((prev) => [
+              ...prev,
+              { time: fmt(now), tag: "info", msg: e.message! },
+            ]);
         } else if (e.status === "completed") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "done" }));
-          setLogs((prev) => [...prev, { time: fmt(now), tag: "done", msg: `${label} complete` }]);
+          setLogs((prev) => [
+            ...prev,
+            { time: fmt(now), tag: "done", msg: `${label} complete` },
+          ]);
           if (e.stage === "versioning") {
             fetchJob(id).then((j) => setJob(j));
           }
         } else if (e.status === "error") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "pending" }));
-          setLogs((prev) => [...prev, { time: fmt(now), tag: "error", msg: `${label} failed: ${e.error ?? "Unknown"}` }]);
+          setLogs((prev) => [
+            ...prev,
+            {
+              time: fmt(now),
+              tag: "error",
+              msg: `${label} failed: ${e.error ?? "Unknown"}`,
+            },
+          ]);
         }
       },
       onConnected: () => {
-        setLogs((prev) => [...prev, { time: fmt(secondsRef.current), tag: "info", msg: "Connected" }]);
+        setLogs((prev) => [
+          ...prev,
+          { time: fmt(secondsRef.current), tag: "info", msg: "Connected" },
+        ]);
       },
       onError: () => {
-        setLogs((prev) => [...prev, { time: fmt(secondsRef.current), tag: "error", msg: "Connection lost" }]);
+        setLogs((prev) => [
+          ...prev,
+          {
+            time: fmt(secondsRef.current),
+            tag: "error",
+            msg: "Connection lost",
+          },
+        ]);
       },
     });
 
@@ -156,7 +222,10 @@ export function Forge({ id }: { id: string }) {
         if (j.status === "in_progress") next[STAGE_IDS[0]!] = "active";
         return next;
       });
-      setLogs((prev) => [...prev, { time: fmt(0), tag: "stage", msg: "Forge started..." }]);
+      setLogs((prev) => [
+        ...prev,
+        { time: fmt(0), tag: "stage", msg: "Forge started..." },
+      ]);
     } catch (e: any) {
       setError(e.message);
     }
@@ -174,7 +243,10 @@ export function Forge({ id }: { id: string }) {
         });
         return next;
       });
-      setLogs((prev) => [...prev, { time: fmt(elapsed), tag: "warn", msg: "Cancelled by user" }]);
+      setLogs((prev) => [
+        ...prev,
+        { time: fmt(elapsed), tag: "warn", msg: "Cancelled by user" },
+      ]);
     } catch (e: any) {
       setError(e.message);
     }
@@ -186,7 +258,10 @@ export function Forge({ id }: { id: string }) {
       const j = await fetchJob(id);
       setJob(j);
       setError(null);
-      setLogs((prev) => [...prev, { time: fmt(elapsed), tag: "stage", msg: "Retrying..." }]);
+      setLogs((prev) => [
+        ...prev,
+        { time: fmt(elapsed), tag: "stage", msg: "Retrying..." },
+      ]);
     } catch (e: any) {
       setError(e.message);
     }
@@ -200,7 +275,11 @@ export function Forge({ id }: { id: string }) {
   const isDone = job?.status === "completed";
   const isFailed = job?.status === "failed";
   const isCancelled = job?.status === "cancelled";
-  const forgeHeadline = isRunning ? "Forging in progress\u2026" : isDone ? "Bundle complete." : "Ready to forge.";
+  const forgeHeadline = isRunning
+    ? "Forging in progress\u2026"
+    : isDone
+      ? "Bundle complete."
+      : "Ready to forge.";
 
   const { setSession, resetSession } = useSession();
   useEffect(() => {
@@ -212,10 +291,21 @@ export function Forge({ id }: { id: string }) {
       genreId: job.genreId,
       presetId: job.presetId,
       bpm: inp.bpm ?? null,
-      key: inp.key && inp.key !== "auto" ? `${inp.key}${inp.scale === "minor" ? "m" : ""}` : "",
+      key:
+        inp.key && inp.key !== "auto"
+          ? `${inp.key}${inp.scale === "minor" ? "m" : ""}`
+          : "",
       status: job.status,
-      onForge: isDone ? () => navigate(`/studio/${id}`) : isPending || isCancelled ? handleStart : null,
-      forgeLabel: isDone ? "OPEN BUNDLE" : isRunning ? "FORGING\u2026" : "START FORGE",
+      onForge: isDone
+        ? () => navigate(`/studio/${id}`)
+        : isPending || isCancelled
+          ? handleStart
+          : null,
+      forgeLabel: isDone
+        ? "OPEN BUNDLE"
+        : isRunning
+          ? "FORGING\u2026"
+          : "START FORGE",
       forgeDisabled: isRunning,
     });
     return () => resetSession();
@@ -224,10 +314,25 @@ export function Forge({ id }: { id: string }) {
   return (
     <div>
       <div class="forge-header" style={{ maxWidth: 1180 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 10, letterSpacing: "0.22em", color: "var(--acc)", textTransform: "uppercase", marginBottom: 6 }}>The Forge</div>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 16px 0" }}>{forgeHeadline}</h1>
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            color: "var(--acc)",
+            textTransform: "uppercase",
+            marginBottom: 6,
+          }}
+        >
+          The Forge
+        </div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 16px 0" }}>
+          {forgeHeadline}
+        </h1>
         <div class="forge-progress">
-          <div class="forge-progress-text">{doneCount}/{STAGES.length} stages · {Math.round(pct)}%</div>
+          <div class="forge-progress-text">
+            {doneCount}/{STAGES.length} stages · {Math.round(pct)}%
+          </div>
           <div class="forge-progress-bar">
             <div class="forge-progress-fill" style={{ width: `${pct}%` }} />
           </div>
@@ -245,7 +350,14 @@ export function Forge({ id }: { id: string }) {
             {STAGES.map((s) => (
               <div class="station" key={s.id}>
                 <span class="station-badge">{s.num}</span>
-                <div class={`station-dot${stageStatus[s.id] === "done" ? " done" : stageStatus[s.id] === "active" ? " active" : " pending"}`} style={stageStatus[s.id] === "active" ? { animation: "tf-ring 1.2s ease-out infinite" } : undefined} />
+                <div
+                  class={`station-dot${stageStatus[s.id] === "done" ? " done" : stageStatus[s.id] === "active" ? " active" : " pending"}`}
+                  style={
+                    stageStatus[s.id] === "active"
+                      ? { animation: "tf-ring 1.2s ease-out infinite" }
+                      : undefined
+                  }
+                />
                 <span class="station-label">{s.label}</span>
                 <span class="station-desc">{s.desc}</span>
               </div>
@@ -253,7 +365,9 @@ export function Forge({ id }: { id: string }) {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18 }}>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18 }}
+        >
           <div class="terminal">
             <div class="terminal-header">
               <div class="terminal-dot red" />
@@ -265,7 +379,9 @@ export function Forge({ id }: { id: string }) {
               {logs.map((log, i) => (
                 <div class="log-line" key={i}>
                   <span class="log-timestamp">{log.time}</span>
-                  <span class={`log-tag ${log.tag}`}>{log.tag.toUpperCase()}</span>
+                  <span class={`log-tag ${log.tag}`}>
+                    {log.tag.toUpperCase()}
+                  </span>
                   <span class="log-message">{log.msg}</span>
                 </div>
               ))}
@@ -281,7 +397,13 @@ export function Forge({ id }: { id: string }) {
               <tbody>
                 <tr>
                   <td>Stage</td>
-                  <td>{activeStage ? `${activeStage.label} · ${activeStage.desc}` : isDone ? "Complete" : "—"}</td>
+                  <td>
+                    {activeStage
+                      ? `${activeStage.label} · ${activeStage.desc}`
+                      : isDone
+                        ? "Complete"
+                        : "—"}
+                  </td>
                 </tr>
                 <tr>
                   <td>Model</td>
@@ -293,7 +415,13 @@ export function Forge({ id }: { id: string }) {
                 </tr>
                 <tr>
                   <td>Est. cost</td>
-                  <td>~${(Math.max(1, Math.round(elapsed / 60 * 0.02 * 100) / 100)).toFixed(2)}</td>
+                  <td>
+                    ~$
+                    {Math.max(
+                      1,
+                      Math.round((elapsed / 60) * 0.02 * 100) / 100,
+                    ).toFixed(2)}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -304,19 +432,32 @@ export function Forge({ id }: { id: string }) {
 
         <div class="forge-actions">
           {isPending && !isRunning && (
-            <button class="btn-primary" onClick={handleStart}>Start Forge</button>
+            <button class="btn-primary" onClick={handleStart}>
+              Start Forge
+            </button>
           )}
           {isRunning && (
-            <button class="btn-secondary danger" onClick={handleCancel}>Cancel</button>
+            <button class="btn-secondary danger" onClick={handleCancel}>
+              Cancel
+            </button>
           )}
           {isDone && (
-            <button class="btn-primary" onClick={() => navigate(`/studio/${id}`)}>Open Bundle</button>
+            <button
+              class="btn-primary"
+              onClick={() => navigate(`/studio/${id}`)}
+            >
+              Open Bundle
+            </button>
           )}
           {isFailed && (
-            <button class="btn-primary" onClick={handleRetry}>Retry</button>
+            <button class="btn-primary" onClick={handleRetry}>
+              Retry
+            </button>
           )}
           {isCancelled && (
-            <button class="btn-primary" onClick={handleStart}>Restart</button>
+            <button class="btn-primary" onClick={handleStart}>
+              Restart
+            </button>
           )}
         </div>
       </div>

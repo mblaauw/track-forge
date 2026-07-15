@@ -28,7 +28,10 @@ describe("Hip-Hop validators", () => {
     });
 
     it("rejects unknown subgenre", () => {
-      const errors = hipHopValidators.input({ ...validInput, subgenre: "bogus_style" });
+      const errors = hipHopValidators.input({
+        ...validInput,
+        subgenre: "bogus_style",
+      });
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].field).toBe("subgenre");
     });
@@ -79,13 +82,21 @@ describe("Hip-Hop validators", () => {
     });
 
     it("rejects missing tags array", () => {
-      const errors = hipHopValidators.blueprint({ ...validBp, tags: undefined });
+      const errors = hipHopValidators.blueprint({
+        ...validBp,
+        tags: undefined,
+      });
       expect(errors.some((e) => e.field === "blueprint.tags")).toBe(true);
     });
 
     it("rejects missing songStructure", () => {
-      const errors = hipHopValidators.blueprint({ ...validBp, songStructure: [] });
-      expect(errors.some((e) => e.field === "blueprint.songStructure")).toBe(true);
+      const errors = hipHopValidators.blueprint({
+        ...validBp,
+        songStructure: [],
+      });
+      expect(errors.some((e) => e.field === "blueprint.songStructure")).toBe(
+        true,
+      );
     });
 
     it("rejects non-object blueprint", () => {

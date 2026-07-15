@@ -21,7 +21,11 @@ export const EdmInputSchema = z.object({
   /** Complexity level 1-10 */
   complexity: z.number().int().min(1).max(10),
   /** Lyrics mode */
-  lyricsMode: z.enum(["guided_instrumental", "strict_instrumental", "full_lyrics"]),
+  lyricsMode: z.enum([
+    "guided_instrumental",
+    "strict_instrumental",
+    "full_lyrics",
+  ]),
   /** Custom tags to include */
   customTags: z.array(z.string()),
   /** Reference tracks or materials */
@@ -64,7 +68,11 @@ export const EdmBlueprintSchema = z.object({
   /** Complexity (1-10) */
   complexity: z.number().int().min(1).max(10),
   /** Lyrics mode (subsumes vocal treatment) */
-  lyricsMode: z.enum(["guided_instrumental", "strict_instrumental", "full_lyrics"]),
+  lyricsMode: z.enum([
+    "guided_instrumental",
+    "strict_instrumental",
+    "full_lyrics",
+  ]),
   /** Ordered arrangement sections */
   arrangement: z.array(
     z.object({
@@ -98,11 +106,19 @@ export interface ArrangementSection {
 }
 
 /** Compile user inputs into full blueprint shape */
-export function compileBlueprint(inputs: EdmInputs, options?: { arrangementOverride?: { section: string; bars: number; tags?: string[] }[] }): EdmBlueprint {
-  const arrangement = options?.arrangementOverride ?? buildDefaultArrangement(inputs.energy, inputs.complexity);
+export function compileBlueprint(
+  inputs: EdmInputs,
+  options?: {
+    arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+  },
+): EdmBlueprint {
+  const arrangement =
+    options?.arrangementOverride ??
+    buildDefaultArrangement(inputs.energy, inputs.complexity);
   const tags = [...inputs.customTags, "electronic"];
   const negativeTags: string[] = [];
-  if (inputs.lyricsMode !== "full_lyrics") negativeTags.push("vocals", "singing", "lyrics", "voice");
+  if (inputs.lyricsMode !== "full_lyrics")
+    negativeTags.push("vocals", "singing", "lyrics", "voice");
 
   const styleClauses = [
     { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
@@ -139,9 +155,17 @@ export function buildDefaultArrangement(
 
   return [
     { section: "intro", bars: baseBars, tags: ["filtered", "atmospheric"] },
-    { section: "build", bars: 8, tags: ["layered", "rising", "percussion build"] },
+    {
+      section: "build",
+      bars: 8,
+      tags: ["layered", "rising", "percussion build"],
+    },
     { section: "drop", bars: dropBars, tags: ["full", "driving"] },
-    { section: "breakdown", bars: breakdownBars, tags: ["stripped", "atmospheric"] },
+    {
+      section: "breakdown",
+      bars: breakdownBars,
+      tags: ["stripped", "atmospheric"],
+    },
     { section: "build_2", bars: 8, tags: ["layered", "rising", "tension"] },
     { section: "drop_2", bars: dropBars, tags: ["full", "variation"] },
     { section: "bridge", bars: 8, tags: ["transition"] },
@@ -166,7 +190,12 @@ export const EDM_FORM_FIELDS: FormFieldDescriptor[] = [
     type: "select",
     options: [], // populated dynamically based on family
   },
-  { key: "bpm", label: "BPM", type: "number", constraints: { min: 60, max: 220 } },
+  {
+    key: "bpm",
+    label: "BPM",
+    type: "number",
+    constraints: { min: 60, max: 220 },
+  },
   { key: "key", label: "Key", type: "text" },
   {
     key: "scale",

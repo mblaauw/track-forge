@@ -31,7 +31,10 @@ describe("EDM presets", () => {
         customTags: [],
       };
       const result = EdmInputSchema.safeParse(full);
-      expect(result.success, `${p.id}: ${JSON.stringify(result.error?.issues)}`).toBe(true);
+      expect(
+        result.success,
+        `${p.id}: ${JSON.stringify(result.error?.issues)}`,
+      ).toBe(true);
     }
   });
 

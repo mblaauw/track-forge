@@ -20,7 +20,8 @@ export const DNB_PRESETS: GenrePreset[] = [
   {
     id: "neurofunk_dark",
     name: "Neurofunk — Dark",
-    description: "Dark, techy neurofunk with complex bass and sci-fi atmospheres",
+    description:
+      "Dark, techy neurofunk with complex bass and sci-fi atmospheres",
     values: {
       subgenre: "neurofunk",
       bpm: 174,

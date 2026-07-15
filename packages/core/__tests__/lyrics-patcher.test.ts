@@ -1,15 +1,36 @@
 import { describe, it, expect } from "vitest";
 import type { LyricsDocument, SurgicalPatch } from "@track-forge/contracts";
-import { applyLyricsPatch, isLyricsSectionPatch } from "../src/pipeline/lyrics-patcher.js";
+import {
+  applyLyricsPatch,
+  isLyricsSectionPatch,
+} from "../src/pipeline/lyrics-patcher.js";
 
 const sampleDoc: LyricsDocument = {
   bpm: 140,
   key: "Am",
   genre: "Hip-Hop",
   sections: [
-    { type: "verse", lines: ["line 1", "line 2"], bars: 8, tags: ["energetic"], instrumental: false },
-    { type: "hook", lines: ["hook line"], bars: 4, tags: ["catchy"], instrumental: false },
-    { type: "bridge", lines: ["bridge line"], bars: 6, tags: ["build"], instrumental: false },
+    {
+      type: "verse",
+      lines: ["line 1", "line 2"],
+      bars: 8,
+      tags: ["energetic"],
+      instrumental: false,
+    },
+    {
+      type: "hook",
+      lines: ["hook line"],
+      bars: 4,
+      tags: ["catchy"],
+      instrumental: false,
+    },
+    {
+      type: "bridge",
+      lines: ["bridge line"],
+      bars: 6,
+      tags: ["build"],
+      instrumental: false,
+    },
   ],
   metadata: {},
 };
@@ -26,7 +47,9 @@ describe("isLyricsSectionPatch", () => {
   });
 
   it("returns false for non-section patch types", () => {
-    expect(isLyricsSectionPatch("replace_style_description" as any)).toBe(false);
+    expect(isLyricsSectionPatch("replace_style_description" as any)).toBe(
+      false,
+    );
     expect(isLyricsSectionPatch("merge_field" as any)).toBe(false);
     expect(isLyricsSectionPatch("remove_field" as any)).toBe(false);
   });
@@ -39,7 +62,13 @@ describe("applyLyricsPatch", () => {
       target: "lyrics",
       value: JSON.stringify({
         index: 1,
-        section: { type: "verse", lines: ["new line"], bars: 12, tags: ["dark"], instrumental: false },
+        section: {
+          type: "verse",
+          lines: ["new line"],
+          bars: 12,
+          tags: ["dark"],
+          instrumental: false,
+        },
       }),
       description: "Replace hook with second verse",
     };
@@ -57,7 +86,13 @@ describe("applyLyricsPatch", () => {
       target: "lyrics",
       value: JSON.stringify({
         index: 1,
-        section: { type: "pre_chorus", lines: ["build up"], bars: 2, tags: [], instrumental: false },
+        section: {
+          type: "pre_chorus",
+          lines: ["build up"],
+          bars: 2,
+          tags: [],
+          instrumental: false,
+        },
       }),
       description: "Add pre-chorus",
     };
@@ -76,7 +111,12 @@ describe("applyLyricsPatch", () => {
     };
     const result = applyLyricsPatch(sampleJson, patch);
     const doc = JSON.parse(result) as LyricsDocument;
-    expect(doc.sections[0]!.lines).toEqual(["line 1", "line 2", "line 3", "line 4"]);
+    expect(doc.sections[0]!.lines).toEqual([
+      "line 1",
+      "line 2",
+      "line 3",
+      "line 4",
+    ]);
   });
 
   it("changes bar count", () => {
@@ -107,7 +147,16 @@ describe("applyLyricsPatch", () => {
     const patch: SurgicalPatch = {
       type: "replace_section" as any,
       target: "lyrics",
-      value: JSON.stringify({ index: 0, section: { type: "verse", lines: [], bars: 0, tags: [], instrumental: false } }),
+      value: JSON.stringify({
+        index: 0,
+        section: {
+          type: "verse",
+          lines: [],
+          bars: 0,
+          tags: [],
+          instrumental: false,
+        },
+      }),
       description: "",
     };
     const result = applyLyricsPatch("not-json", patch);
@@ -118,7 +167,16 @@ describe("applyLyricsPatch", () => {
     const patch: SurgicalPatch = {
       type: "replace_section" as any,
       target: "lyrics",
-      value: JSON.stringify({ index: 99, section: { type: "verse", lines: [], bars: 0, tags: [], instrumental: false } }),
+      value: JSON.stringify({
+        index: 99,
+        section: {
+          type: "verse",
+          lines: [],
+          bars: 0,
+          tags: [],
+          instrumental: false,
+        },
+      }),
       description: "",
     };
     const result = applyLyricsPatch(sampleJson, patch);

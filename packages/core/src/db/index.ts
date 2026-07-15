@@ -1,5 +1,8 @@
 import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import {
+  drizzle,
+  type BetterSQLite3Database,
+} from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema.js";
 
 export type Db = BetterSQLite3Database<typeof schema>;
@@ -77,13 +80,31 @@ export function createDb(dbPath: string): Db {
 
   // ── Migrate existing databases ──────────────────────────────────────
 
-  try { sqlite.exec(`ALTER TABLE versions ADD COLUMN stage TEXT`); } catch {}
-  try { sqlite.exec(`ALTER TABLE versions ADD COLUMN parent_version_id TEXT`); } catch {}
-  try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN stage_data TEXT`); } catch {}
-  try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN project_id TEXT`); } catch {}
-  try { sqlite.exec(`ALTER TABLE jobs ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`); } catch {}
-  try { sqlite.exec(`ALTER TABLE generations ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`); } catch {}
-  try { sqlite.exec(`ALTER TABLE generations ADD COLUMN seed INTEGER`); } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE versions ADD COLUMN stage TEXT`);
+  } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE versions ADD COLUMN parent_version_id TEXT`);
+  } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE jobs ADD COLUMN stage_data TEXT`);
+  } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE jobs ADD COLUMN project_id TEXT`);
+  } catch {}
+  try {
+    sqlite.exec(
+      `ALTER TABLE jobs ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`,
+    );
+  } catch {}
+  try {
+    sqlite.exec(
+      `ALTER TABLE generations ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0`,
+    );
+  } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE generations ADD COLUMN seed INTEGER`);
+  } catch {}
 
   sqlite.exec(`CREATE TABLE IF NOT EXISTS generations (
     id TEXT PRIMARY KEY,
@@ -121,10 +142,18 @@ export function createDb(dbPath: string): Db {
     timestamp TEXT NOT NULL
   )`);
   // Migrate: add sequence column to existing tables
-  try { sqlite.exec(`ALTER TABLE job_events ADD COLUMN sequence INTEGER`); } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE job_events ADD COLUMN sequence INTEGER`);
+  } catch {}
   // Backfill sequence for existing rows (order by timestamp)
-  try { sqlite.exec(`UPDATE job_events SET sequence = rowid WHERE sequence IS NULL`); } catch {}
-  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_job_events_job_sequence ON job_events(job_id, sequence)`);
+  try {
+    sqlite.exec(
+      `UPDATE job_events SET sequence = rowid WHERE sequence IS NULL`,
+    );
+  } catch {}
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_job_events_job_sequence ON job_events(job_id, sequence)`,
+  );
   sqlite.exec(`CREATE TABLE IF NOT EXISTS critic_findings (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL REFERENCES jobs(id),

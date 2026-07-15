@@ -5,7 +5,8 @@ export const AMBIENT_PRESETS: GenrePreset[] = [
   {
     id: "drone_minimal",
     name: "Drone — Minimal",
-    description: "Deep, meditative drone with minimal evolution and sustained tones",
+    description:
+      "Deep, meditative drone with minimal evolution and sustained tones",
     values: {
       subgenre: "drone",
       bpm: 62,

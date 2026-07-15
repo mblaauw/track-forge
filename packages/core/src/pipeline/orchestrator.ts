@@ -12,7 +12,12 @@ import {
   AutoFixPolicy,
 } from "@track-forge/contracts";
 import type { GenreModule, GenreCritics } from "@track-forge/genre-core";
-import type { PipelineDeps, PipelineState, PipelineResult, PromptContext } from "./types.js";
+import type {
+  PipelineDeps,
+  PipelineState,
+  PipelineResult,
+  PromptContext,
+} from "./types.js";
 import { eq } from "drizzle-orm";
 import { schema } from "../db/index.js";
 import {
@@ -26,8 +31,15 @@ import {
 } from "./job-service.js";
 import type { StageData } from "./job-service.js";
 import { ReferenceCache } from "./reference-cache.js";
-import { interpretReference, formatInterpretedRef } from "./reference-interpreter.js";
-import { PromptAssembler, buildPromptContext, parseControlDescriptors } from "./prompt-assembler.js";
+import {
+  interpretReference,
+  formatInterpretedRef,
+} from "./reference-interpreter.js";
+import {
+  PromptAssembler,
+  buildPromptContext,
+  parseControlDescriptors,
+} from "./prompt-assembler.js";
 import { runCritics } from "./critic-runner.js";
 import { publish } from "./events.js";
 import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
@@ -98,8 +110,9 @@ async function handlePlanning(
     interpretedRef,
     nlAdjustments: state.nlAdjustments,
   });
-  const prompt = assembler.resolvePrompt("planning", context)
-    ?? `Create a song plan based on:\n${job.inputs ?? "{}"}`;
+  const prompt =
+    assembler.resolvePrompt("planning", context) ??
+    `Create a song plan based on:\n${job.inputs ?? "{}"}`;
 
   const response = await deps.llm.complete({
     messages: [{ role: "user", content: prompt }],
@@ -118,11 +131,16 @@ async function handleWriting(
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const { job, module, songPlan, interpretedRef } = state;
-  if (!songPlan) throw new Error("Pipeline state missing songPlan before writing");
+  if (!songPlan)
+    throw new Error("Pipeline state missing songPlan before writing");
 
   // Check lyrics mode — skip LLM call for strict_instrumental
   let inputs: Record<string, unknown> = {};
-  try { inputs = JSON.parse(job.inputs ?? "{}"); } catch { /* ignore */ }
+  try {
+    inputs = JSON.parse(job.inputs ?? "{}");
+  } catch {
+    /* ignore */
+  }
   const lyricsMode = String(inputs.lyricsMode ?? inputs.lyricsFormat ?? "");
   const isStrictInstrumental = lyricsMode === "strict_instrumental";
 
@@ -139,10 +157,12 @@ async function handleWriting(
   // Inject plan into context for {{plan}} placeholder
   context.plan = songPlan;
 
-  const stylePrompt = assembler.resolvePrompt("style_writing", context)
-    ?? `Generate Suno style description based on:\n${songPlan}`;
+  const stylePrompt =
+    assembler.resolvePrompt("style_writing", context) ??
+    `Generate Suno style description based on:\n${songPlan}`;
 
-  if (deps.signal?.aborted) throw new DOMException("Job cancelled", "AbortError");
+  if (deps.signal?.aborted)
+    throw new DOMException("Job cancelled", "AbortError");
 
   if (isStrictInstrumental) {
     // Skip lyrics LLM — renderer will produce empty lyrics
@@ -162,8 +182,9 @@ async function handleWriting(
     };
   }
 
-  const lyricsPrompt = assembler.resolvePrompt("lyrics_writing", context)
-    ?? `Generate Suno lyrics/structure based on:\n${songPlan}`;
+  const lyricsPrompt =
+    assembler.resolvePrompt("lyrics_writing", context) ??
+    `Generate Suno lyrics/structure based on:\n${songPlan}`;
 
   const [styleResult, lyricsResult] = await Promise.all([
     deps.llm.complete({
@@ -192,18 +213,27 @@ async function handleWriting(
 
 // ── Stage: Compilation ────────────────────────────────────────────────
 
-async function handleCompilation(
-  state: PipelineState,
-): Promise<PipelineState> {
-  const { job, module, styleWriterResult, lyricsWriterResult, songPlan, interpretedRef } = state;
+async function handleCompilation(state: PipelineState): Promise<PipelineState> {
+  const {
+    job,
+    module,
+    styleWriterResult,
+    lyricsWriterResult,
+    songPlan,
+    interpretedRef,
+  } = state;
   if (!styleWriterResult || !lyricsWriterResult) {
-    throw new Error("Pipeline state missing style/lyrics results before compilation");
+    throw new Error(
+      "Pipeline state missing style/lyrics results before compilation",
+    );
   }
 
   const bp = parseBlueprint(job, module) as Record<string, unknown>;
 
   // Extract lyrics format from inputs if present
-  const lyricsFormat = (bp.lyricsMode ?? bp.lyricsFormat ?? null) as LyricsFormat | null;
+  const lyricsFormat = (bp.lyricsMode ??
+    bp.lyricsFormat ??
+    null) as LyricsFormat | null;
 
   // Use the assembler for compilation context (includes raw outputs for potential fragment use)
   const assembler = new PromptAssembler(module);
@@ -222,12 +252,15 @@ async function handleCompilation(
   context.compilation = JSON.stringify(bp);
 
   // Blend structured writer results into compiled artifacts
-  const styleText = styleWriterResult.descriptiveStyle || module.renderers.style(bp);
+  const styleText =
+    styleWriterResult.descriptiveStyle || module.renderers.style(bp);
   const excludedText = module.renderers.excludedStyles(bp);
-  const titleText = styleWriterResult.titleCandidates[0] ?? module.renderers.title(bp);
-  const lyricsText = (lyricsWriterResult.document.sections.length > 0
-    ? serializeLyrics(lyricsWriterResult.document)
-    : null) ?? module.renderers.lyrics(bp);
+  const titleText =
+    styleWriterResult.titleCandidates[0] ?? module.renderers.title(bp);
+  const lyricsText =
+    (lyricsWriterResult.document.sections.length > 0
+      ? serializeLyrics(lyricsWriterResult.document)
+      : null) ?? module.renderers.lyrics(bp);
 
   const compiled: Record<string, string> = {
     title: titleText,
@@ -244,9 +277,13 @@ async function handleCompilation(
   let compiledJson = JSON.stringify(compiled);
 
   // Run blueprint validators
-  const blueprintErrors = module.validators.blueprint(bp as Record<string, unknown>);
+  const blueprintErrors = module.validators.blueprint(
+    bp as Record<string, unknown>,
+  );
   if (blueprintErrors.length > 0) {
-    throw new Error(`Blueprint validation failed: ${blueprintErrors.map((e) => `${e.field}: ${e.message}`).join("; ")}`);
+    throw new Error(
+      `Blueprint validation failed: ${blueprintErrors.map((e) => `${e.field}: ${e.message}`).join("; ")}`,
+    );
   }
 
   return { ...state, compiledJson, lyricsFormat };
@@ -259,7 +296,8 @@ async function handleReview(
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const { compiledJson, job, module, interpretedRef } = state;
-  if (!compiledJson) throw new Error("Pipeline state missing compiledJson before review");
+  if (!compiledJson)
+    throw new Error("Pipeline state missing compiledJson before review");
 
   const context = buildPromptContext({
     genreId: module.id,
@@ -271,8 +309,12 @@ async function handleReview(
     nlAdjustments: state.nlAdjustments,
   });
   context.compiledJson = compiledJson;
-  context.styleResult = state.styleWriterResult ? JSON.stringify(state.styleWriterResult) : "";
-  context.lyricsResult = state.lyricsWriterResult ? JSON.stringify(state.lyricsWriterResult.document) : "";
+  context.styleResult = state.styleWriterResult
+    ? JSON.stringify(state.styleWriterResult)
+    : "";
+  context.lyricsResult = state.lyricsWriterResult
+    ? JSON.stringify(state.lyricsWriterResult.document)
+    : "";
   context.songPlan = state.songPlan ?? "";
 
   // Inject individual compiled fields for critic {{placeholders}}
@@ -282,34 +324,46 @@ async function handleReview(
     context.style = compiled.style ?? "";
     context.lyrics = compiled.lyrics ?? "";
     context.excluded_styles = compiled.excludedStyles ?? "";
-  } catch { /* compiledJson parse failed */ }
+  } catch {
+    /* compiledJson parse failed */
+  }
 
   let useFullCritics = false;
   try {
     const inputs = JSON.parse(job.inputs ?? "{}") as Record<string, unknown>;
     useFullCritics = inputs.fullReview === true;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
-  const rawFindings = await runCritics(module.critics, context, deps.llm, {
-    full: useFullCritics,
-  }, deps.signal);
+  const rawFindings = await runCritics(
+    module.critics,
+    context,
+    deps.llm,
+    {
+      full: useFullCritics,
+    },
+    deps.signal,
+  );
 
-  const findings = Array.isArray(rawFindings) ? rawFindings.filter(Boolean) : rawFindings;
+  const findings = Array.isArray(rawFindings)
+    ? rawFindings.filter(Boolean)
+    : rawFindings;
   return { ...state, findings };
 }
 
 // ── Stage: Revision ───────────────────────────────────────────────────
 
-async function handleRevision(
-  state: PipelineState,
-): Promise<PipelineState> {
+async function handleRevision(state: PipelineState): Promise<PipelineState> {
   const { compiledJson, findings, job, module } = state;
 
   // When restarting from review pause, load state from job columns
   const effCompiled = compiledJson ?? job.compiledJson;
   const effFindings: CriticFinding[] | null = findings
     ? (findings as unknown as CriticFinding[])
-    : (job.findings ? JSON.parse(job.findings) as CriticFinding[] : null);
+    : job.findings
+      ? (JSON.parse(job.findings) as CriticFinding[])
+      : null;
 
   if (!effCompiled || !effFindings || effFindings.length === 0) {
     return state;
@@ -326,7 +380,12 @@ async function handleRevision(
       });
     }
 
-    if (f.autoFixPolicy === "preferred" && f.patchType && f.suggestedValue && f.severity === "warning") {
+    if (
+      f.autoFixPolicy === "preferred" &&
+      f.patchType &&
+      f.suggestedValue &&
+      f.severity === "warning"
+    ) {
       patches.push({
         type: f.patchType as PatchType,
         target: f.field,
@@ -409,7 +468,9 @@ async function handleVerification(
     const bp = parseBlueprint(job, module) as Record<string, unknown>;
     const errors = module.validators.blueprint(bp);
     if (errors.length > 0) {
-      throw new Error(`Verification failed after revision: ${errors.map((e) => e.message).join("; ")}`);
+      throw new Error(
+        `Verification failed after revision: ${errors.map((e) => e.message).join("; ")}`,
+      );
     }
 
     // Re-run critics on patched content
@@ -430,18 +491,30 @@ async function handleVerification(
       context.style = c.style ?? "";
       context.lyrics = c.lyrics ?? "";
       context.excluded_styles = c.excludedStyles ?? "";
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
-    const recheckFindings = await runCritics(module.critics, context, deps.llm, {
-      full: false,
-    }, deps.signal);
+    const recheckFindings = await runCritics(
+      module.critics,
+      context,
+      deps.llm,
+      {
+        full: false,
+      },
+      deps.signal,
+    );
 
-    if (Array.isArray(recheckFindings) && recheckFindings.some(
-      (f) => f && f.autoFixPolicy === "required",
-    )) {
-      throw new Error(`Verification failed: ${recheckFindings
-        .filter((f) => f && f.autoFixPolicy === "required")
-        .map((f) => f!.message).join("; ")}`);
+    if (
+      Array.isArray(recheckFindings) &&
+      recheckFindings.some((f) => f && f.autoFixPolicy === "required")
+    ) {
+      throw new Error(
+        `Verification failed: ${recheckFindings
+          .filter((f) => f && f.autoFixPolicy === "required")
+          .map((f) => f!.message)
+          .join("; ")}`,
+      );
     }
   }
 
@@ -455,7 +528,8 @@ async function handleVersioning(
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const { job, compiledJson } = state;
-  if (!compiledJson) throw new Error("Pipeline state missing compiledJson before versioning");
+  if (!compiledJson)
+    throw new Error("Pipeline state missing compiledJson before versioning");
 
   const compiled = JSON.parse(compiledJson) as Record<string, string>;
 
@@ -471,7 +545,11 @@ async function handleVersioning(
   const artifacts: SunoArtifact[] = [
     { type: "title", value: compiled.title ?? "", versionId: vid },
     { type: "style", value: compiled.style ?? "", versionId: vid },
-    { type: "excluded_styles", value: compiled.excludedStyles ?? "", versionId: vid },
+    {
+      type: "excluded_styles",
+      value: compiled.excludedStyles ?? "",
+      versionId: vid,
+    },
     { type: "lyrics", value: compiled.lyrics ?? "", versionId: vid },
   ];
 
@@ -479,19 +557,39 @@ async function handleVersioning(
   const { styleWriterResult } = state;
   if (styleWriterResult) {
     if (styleWriterResult.bpm !== null) {
-      artifacts.push({ type: "bpm", value: String(styleWriterResult.bpm), versionId: vid });
+      artifacts.push({
+        type: "bpm",
+        value: String(styleWriterResult.bpm),
+        versionId: vid,
+      });
     }
     if (styleWriterResult.key) {
-      artifacts.push({ type: "key", value: styleWriterResult.key, versionId: vid });
+      artifacts.push({
+        type: "key",
+        value: styleWriterResult.key,
+        versionId: vid,
+      });
     }
     if (styleWriterResult.vocalDescription) {
-      artifacts.push({ type: "vocal_description", value: styleWriterResult.vocalDescription, versionId: vid });
+      artifacts.push({
+        type: "vocal_description",
+        value: styleWriterResult.vocalDescription,
+        versionId: vid,
+      });
     }
     if (styleWriterResult.negativeTags.length > 0) {
-      artifacts.push({ type: "negative_tags", value: styleWriterResult.negativeTags.join(", "), versionId: vid });
+      artifacts.push({
+        type: "negative_tags",
+        value: styleWriterResult.negativeTags.join(", "),
+        versionId: vid,
+      });
     }
     if (styleWriterResult.titleCandidates.length > 1) {
-      artifacts.push({ type: "title", value: styleWriterResult.titleCandidates.slice(1).join(" | "), versionId: vid });
+      artifacts.push({
+        type: "title",
+        value: styleWriterResult.titleCandidates.slice(1).join(" | "),
+        versionId: vid,
+      });
     }
   }
 
@@ -539,7 +637,15 @@ export async function runPipeline(
     styleWriterResult: null,
     lyricsWriterResult: null,
     compiledJson: job.compiledJson ?? null,
-    findings: job.findings ? (() => { try { return JSON.parse(job.findings) as unknown[]; } catch { return null; } })() : null,
+    findings: job.findings
+      ? (() => {
+          try {
+            return JSON.parse(job.findings) as unknown[];
+          } catch {
+            return null;
+          }
+        })()
+      : null,
     appliedPatch: null,
     versionId: null,
     nlAdjustments: parseControlDescriptors(job.nlAdjustments),
@@ -554,14 +660,17 @@ export async function runPipeline(
     initialState.songPlan = saved.songPlan ?? null;
     initialState.styleWriterResult = saved.styleWriterResult ?? null;
     initialState.lyricsWriterResult = saved.lyricsWriterResult ?? null;
-    initialState.findings = saved.findings ?? (initialState.findings ?? null);
+    initialState.findings = saved.findings ?? initialState.findings ?? null;
     initialState.appliedPatch = saved.appliedPatch ?? null;
     initialState.lyricsFormat = saved.lyricsFormat ?? null;
   }
 
   let state = initialState;
 
-  const stageHandlers: Record<string, (s: PipelineState, d: PipelineDeps) => Promise<PipelineState>> = {
+  const stageHandlers: Record<
+    string,
+    (s: PipelineState, d: PipelineDeps) => Promise<PipelineState>
+  > = {
     ref_interpretation: handleRefInterpretation,
     planning: handlePlanning,
     style_writing: handleWriting,
@@ -578,18 +687,33 @@ export async function runPipeline(
     // Process all stages before versioning
     while (currentStage !== "versioning") {
       if (deps.signal?.aborted) {
-        await publish(deps.db, state.job.id, { stage: currentStage, status: "error", error: "Cancelled" });
+        await publish(deps.db, state.job.id, {
+          stage: currentStage,
+          status: "error",
+          error: "Cancelled",
+        });
         cleanupJob(state.job.id);
-        return { success: false, jobId: state.job.id, versionId: null, error: "Cancelled by user" };
+        return {
+          success: false,
+          jobId: state.job.id,
+          versionId: null,
+          error: "Cancelled by user",
+        };
       }
       const handler = stageHandlers[currentStage];
       if (!handler) {
         throw new Error(`No handler for stage: ${currentStage}`);
       }
 
-      await publish(deps.db, state.job.id, { stage: currentStage, status: "started" });
+      await publish(deps.db, state.job.id, {
+        stage: currentStage,
+        status: "started",
+      });
       state = await handler(state, deps);
-      await publish(deps.db, state.job.id, { stage: currentStage, status: "completed" });
+      await publish(deps.db, state.job.id, {
+        stage: currentStage,
+        status: "completed",
+      });
 
       // Persist state after each stage
       const stageData: StageData = {
@@ -606,8 +730,11 @@ export async function runPipeline(
 
       // ── Pause after revision if human-review findings remain ────────
       if (currentStage === "revision" && state.findings) {
-        const remainingFindings = (state.findings as unknown as CriticFinding[]).filter(
-          (f) => f.autoFixPolicy === "skipped" || !f.patchType || !f.suggestedValue,
+        const remainingFindings = (
+          state.findings as unknown as CriticFinding[]
+        ).filter(
+          (f) =>
+            f.autoFixPolicy === "skipped" || !f.patchType || !f.suggestedValue,
         );
         if (remainingFindings.length > 0) {
           const now = new Date().toISOString();
@@ -634,9 +761,15 @@ export async function runPipeline(
 
     // Final versioning stage (handles completion internally)
     if (currentStage === "versioning") {
-      await publish(deps.db, state.job.id, { stage: currentStage, status: "started" });
+      await publish(deps.db, state.job.id, {
+        stage: currentStage,
+        status: "started",
+      });
       state = await handleVersioning(state, deps);
-      await publish(deps.db, state.job.id, { stage: currentStage, status: "completed" });
+      await publish(deps.db, state.job.id, {
+        stage: currentStage,
+        status: "completed",
+      });
     }
 
     cleanupJob(state.job.id);
@@ -647,15 +780,30 @@ export async function runPipeline(
       error: null,
     };
   } catch (err) {
-    const isTimeout = err instanceof Error && (
-      err.message === "Request timed out" ||
-      (err.cause instanceof Error && err.cause.message === "Request timed out")
-    );
-    const isCancel = (err instanceof DOMException && err.name === "AbortError" && !isTimeout)
-      || err instanceof DOMException && (err as any).cause?.message === "Cancelled by user";
-    const errorMsg = isCancel ? "Cancelled by user" : isTimeout ? "LLM request timed out" : err instanceof Error ? err.message : String(err);
+    const isTimeout =
+      err instanceof Error &&
+      (err.message === "Request timed out" ||
+        (err.cause instanceof Error &&
+          err.cause.message === "Request timed out"));
+    const isCancel =
+      (err instanceof DOMException &&
+        err.name === "AbortError" &&
+        !isTimeout) ||
+      (err instanceof DOMException &&
+        (err as any).cause?.message === "Cancelled by user");
+    const errorMsg = isCancel
+      ? "Cancelled by user"
+      : isTimeout
+        ? "LLM request timed out"
+        : err instanceof Error
+          ? err.message
+          : String(err);
     if (!isCancel) {
-      await publish(deps.db, job.id, { stage: currentStage, status: "error", error: errorMsg });
+      await publish(deps.db, job.id, {
+        stage: currentStage,
+        status: "error",
+        error: errorMsg,
+      });
       await failStage(deps.db, job.id, errorMsg);
     }
     cleanupJob(job.id);
@@ -665,7 +813,10 @@ export async function runPipeline(
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function parseBlueprint(job: Job, module: GenreModule): Record<string, unknown> {
+function parseBlueprint(
+  job: Job,
+  module: GenreModule,
+): Record<string, unknown> {
   if (!job.inputs) return {};
   let inputs: Record<string, unknown>;
   try {
@@ -674,12 +825,17 @@ function parseBlueprint(job: Job, module: GenreModule): Record<string, unknown> 
     return {};
   }
   // Compile raw inputs into full blueprint shape if module supports it
-  if (module.compileBlueprint && typeof module.compileBlueprint === "function") {
+  if (
+    module.compileBlueprint &&
+    typeof module.compileBlueprint === "function"
+  ) {
     try {
       const opts: Record<string, unknown> = {};
       if (inputs.arrangement) opts.arrangementOverride = inputs.arrangement;
       return module.compileBlueprint(inputs, opts) as Record<string, unknown>;
-    } catch { /* fall through to raw inputs */ }
+    } catch {
+      /* fall through to raw inputs */
+    }
   }
   return inputs;
 }
@@ -687,17 +843,25 @@ function parseBlueprint(job: Job, module: GenreModule): Record<string, unknown> 
 function tryParseStyleResult(content: string): StyleWriterResult {
   try {
     const parsed = JSON.parse(content);
-    if (parsed && typeof parsed === "object" && Array.isArray(parsed.titleCandidates)) {
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      Array.isArray(parsed.titleCandidates)
+    ) {
       return {
         titleCandidates: parsed.titleCandidates ?? [],
         descriptiveStyle: String(parsed.descriptiveStyle ?? parsed.style ?? ""),
-        negativeTags: Array.isArray(parsed.negativeTags) ? parsed.negativeTags : [],
+        negativeTags: Array.isArray(parsed.negativeTags)
+          ? parsed.negativeTags
+          : [],
         bpm: typeof parsed.bpm === "number" ? parsed.bpm : null,
         key: typeof parsed.key === "string" ? parsed.key : null,
         vocalDescription: String(parsed.vocalDescription ?? parsed.vocal ?? ""),
       };
     }
-  } catch { /* not JSON */ }
+  } catch {
+    /* not JSON */
+  }
   return {
     titleCandidates: [],
     descriptiveStyle: content,
@@ -714,10 +878,16 @@ function tryParseLyricsResult(content: string): LyricsWriterResult {
     if (parsed && typeof parsed === "object" && parsed.document) {
       return { document: parsed.document };
     }
-    if (parsed && typeof parsed === "object" && Array.isArray(parsed.sections)) {
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      Array.isArray(parsed.sections)
+    ) {
       return { document: parsed as any };
     }
-  } catch { /* not JSON */ }
+  } catch {
+    /* not JSON */
+  }
   return {
     document: {
       sections: [],
@@ -725,5 +895,3 @@ function tryParseLyricsResult(content: string): LyricsWriterResult {
     },
   };
 }
-
-

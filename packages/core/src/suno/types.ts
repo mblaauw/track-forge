@@ -1,7 +1,8 @@
 // ── Suno API types ────────────────────────────────────────────────
 
 /** Model versions supported by sunoapi.org (V4 to V5_5) */
-export type SunoModelVersion = "V4" | "V4_5" | "V4_5PLUS" | "V4_5ALL" | "V5" | "V5_5";
+export type SunoModelVersion =
+  "V4" | "V4_5" | "V4_5PLUS" | "V4_5ALL" | "V5" | "V5_5";
 
 /** Request body for Suno API /api/v1/generate (custom mode) */
 export interface SunoGenerateRequest {
@@ -37,10 +38,7 @@ export interface SunoGenerateRequest {
 
 /** Suno generation status */
 export type SunoGenerationStatus =
-  | "queued"
-  | "processing"
-  | "completed"
-  | "error";
+  "queued" | "processing" | "completed" | "error";
 
 /** Response from Suno API record-info endpoint */
 export interface SunoFeedItem {

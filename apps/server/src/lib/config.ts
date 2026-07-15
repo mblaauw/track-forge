@@ -11,6 +11,7 @@ export function initConfig(): Config {
 }
 
 export function getConfig(): Config {
-  if (!_config) throw new Error("Config not initialized. Call initConfig() first.");
+  if (!_config)
+    throw new Error("Config not initialized. Call initConfig() first.");
   return _config;
 }

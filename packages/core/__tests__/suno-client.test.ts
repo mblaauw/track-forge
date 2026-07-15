@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SunoClient, createSunoClientConfig, normalizeTaskResponse } from "../src/suno/index.js";
+import {
+  SunoClient,
+  createSunoClientConfig,
+  normalizeTaskResponse,
+} from "../src/suno/index.js";
 import type { SunoClientConfig } from "../src/suno/index.js";
 import type { Config } from "@track-forge/contracts";
 
@@ -16,7 +20,9 @@ const MIN_APP_CONFIG: Pick<Config, "publicBaseUrl"> = {
 };
 
 function makeClient() {
-  return new SunoClient(MIN_CONFIG, MIN_APP_CONFIG, { child: () => ({ info: () => {} }) } as any);
+  return new SunoClient(MIN_CONFIG, MIN_APP_CONFIG, {
+    child: () => ({ info: () => {} }),
+  } as any);
 }
 
 describe("SunoClient.submit", () => {
@@ -27,7 +33,11 @@ describe("SunoClient.submit", () => {
   it("sends POST /api/v1/generate with expected body", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ code: 200, msg: "success", data: { taskId: "task-001" } }),
+      json: async () => ({
+        code: 200,
+        msg: "success",
+        data: { taskId: "task-001" },
+      }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -46,7 +56,7 @@ describe("SunoClient.submit", () => {
     expect(url).toBe("https://api.sunomusic.com/v1/api/v1/generate");
     expect(opts.method).toBe("POST");
     expect(opts.headers).toMatchObject({
-      "Authorization": "Bearer test-token-123",
+      Authorization: "Bearer test-token-123",
       "Content-Type": "application/json",
     });
 
@@ -59,7 +69,11 @@ describe("SunoClient.submit", () => {
   it("includes optional fields when provided", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ code: 200, msg: "success", data: { taskId: "task-002" } }),
+      json: async () => ({
+        code: 200,
+        msg: "success",
+        data: { taskId: "task-002" },
+      }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -86,7 +100,11 @@ describe("SunoClient.submit", () => {
   it("includes persona fields when personaId provided", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ code: 200, msg: "success", data: { taskId: "task-003" } }),
+      json: async () => ({
+        code: 200,
+        msg: "success",
+        data: { taskId: "task-003" },
+      }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -108,7 +126,11 @@ describe("SunoClient.submit", () => {
   it("includes callBackUrl when publicBaseUrl is configured", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ code: 200, msg: "success", data: { taskId: "task-004" } }),
+      json: async () => ({
+        code: 200,
+        msg: "success",
+        data: { taskId: "task-004" },
+      }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -127,7 +149,9 @@ describe("SunoClient.submit", () => {
     });
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.callBackUrl).toBe("https://myapp.example.com/api/suno/callback");
+    expect(body.callBackUrl).toBe(
+      "https://myapp.example.com/api/suno/callback",
+    );
     expect(body).toMatchSnapshot();
   });
 
@@ -139,13 +163,15 @@ describe("SunoClient.submit", () => {
     vi.stubGlobal("fetch", mockFetch);
 
     const client = makeClient();
-    await expect(client.submit({
-      customMode: true,
-      instrumental: false,
-      model: "V4_5ALL",
-      title: "Fail",
-      style: "Style",
-    })).rejects.toThrow("Suno API error");
+    await expect(
+      client.submit({
+        customMode: true,
+        instrumental: false,
+        model: "V4_5ALL",
+        title: "Fail",
+        style: "Style",
+      }),
+    ).rejects.toThrow("Suno API error");
   });
 });
 

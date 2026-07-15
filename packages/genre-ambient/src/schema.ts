@@ -7,7 +7,11 @@ export const AmbientInputSchema = z.object({
   scale: z.enum(["major", "minor"]),
   mood: z.string(),
   complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum(["strict_instrumental", "guided_instrumental", "full_lyrics"]),
+  lyricsMode: z.enum([
+    "strict_instrumental",
+    "guided_instrumental",
+    "full_lyrics",
+  ]),
   soundscape: z.string(),
 });
 
@@ -31,7 +35,11 @@ export const AmbientBlueprintSchema = z.object({
   scale: z.enum(["major", "minor"]),
   mood: z.string(),
   complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum(["strict_instrumental", "guided_instrumental", "full_lyrics"]),
+  lyricsMode: z.enum([
+    "strict_instrumental",
+    "guided_instrumental",
+    "full_lyrics",
+  ]),
   soundscape: z.string(),
   arrangement: z.array(
     z.object({
@@ -61,12 +69,22 @@ export interface ArrangementSection {
 
 export function compileBlueprint(
   inputs: AmbientInputs,
-  options?: { arrangementOverride?: { section: string; bars: number; tags?: string[] }[] },
+  options?: {
+    arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+  },
 ): AmbientBlueprint {
-  const arrangement = options?.arrangementOverride ?? buildDefaultArrangement(inputs.complexity);
+  const arrangement =
+    options?.arrangementOverride ?? buildDefaultArrangement(inputs.complexity);
   const tags = ["ambient", inputs.soundscape];
-  const negativeTags: string[] = ["aggressive", "rhythmic", "percussive", "driving", "beat-driven"];
-  if (inputs.lyricsMode !== "full_lyrics") negativeTags.push("vocals", "singing", "lyrics", "voice");
+  const negativeTags: string[] = [
+    "aggressive",
+    "rhythmic",
+    "percussive",
+    "driving",
+    "beat-driven",
+  ];
+  if (inputs.lyricsMode !== "full_lyrics")
+    negativeTags.push("vocals", "singing", "lyrics", "voice");
 
   const styleClauses = [
     { key: "genre", value: "ambient", order: 0 },
@@ -93,17 +111,35 @@ export function compileBlueprint(
   });
 }
 
-export function buildDefaultArrangement(complexity: number): ArrangementSection[] {
+export function buildDefaultArrangement(
+  complexity: number,
+): ArrangementSection[] {
   const emergeBars = 12 + Math.round(complexity * 1.5);
   const swellBars = 16 + Math.round(complexity * 2);
   const driftBars = 16 + Math.round(complexity * 1.5);
   const fadeBars = 12 + Math.round(complexity * 1.5);
 
   return [
-    { section: "emerge", bars: emergeBars, tags: ["spacious", "texture build", "slow entry"] },
-    { section: "swell", bars: swellBars, tags: ["layered", "evolving", "deepening"] },
-    { section: "drift", bars: driftBars, tags: ["floating", "wide", "textural"] },
-    { section: "fade", bars: fadeBars, tags: ["dissolving", "sparse", "receding"] },
+    {
+      section: "emerge",
+      bars: emergeBars,
+      tags: ["spacious", "texture build", "slow entry"],
+    },
+    {
+      section: "swell",
+      bars: swellBars,
+      tags: ["layered", "evolving", "deepening"],
+    },
+    {
+      section: "drift",
+      bars: driftBars,
+      tags: ["floating", "wide", "textural"],
+    },
+    {
+      section: "fade",
+      bars: fadeBars,
+      tags: ["dissolving", "sparse", "receding"],
+    },
   ];
 }
 
@@ -111,7 +147,12 @@ import type { FormFieldDescriptor } from "@track-forge/genre-core";
 
 export const AMBIENT_FORM_FIELDS: FormFieldDescriptor[] = [
   { key: "subgenre", label: "Subgenre", type: "text" },
-  { key: "bpm", label: "BPM", type: "number", constraints: { min: 40, max: 120 } },
+  {
+    key: "bpm",
+    label: "BPM",
+    type: "number",
+    constraints: { min: 40, max: 120 },
+  },
   { key: "key", label: "Key", type: "text" },
   {
     key: "scale",

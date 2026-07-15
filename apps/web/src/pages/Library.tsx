@@ -1,12 +1,19 @@
 import { useEffect, useState } from "preact/hooks";
 import { useRouter } from "../lib/router";
-import { fetchJobs, deleteJob, fetchGenres, favoriteJob, type JobInfo, type GenreInfo } from "../api";
+import {
+  fetchJobs,
+  deleteJob,
+  fetchGenres,
+  favoriteJob,
+  type JobInfo,
+  type GenreInfo,
+} from "../api";
 import { useSession } from "../lib/session";
 
 function hashString(s: string): number {
   let hash = 0;
   for (let i = 0; i < s.length; i++) {
-    hash = ((hash << 5) - hash) + s.charCodeAt(i);
+    hash = (hash << 5) - hash + s.charCodeAt(i);
     hash |= 0;
   }
   return Math.abs(hash);
@@ -40,7 +47,9 @@ export function Library() {
   const { navigate } = useRouter();
   const { resetSession } = useSession();
 
-  useEffect(() => { resetSession(); }, []);
+  useEffect(() => {
+    resetSession();
+  }, []);
   const [jobs, setJobs] = useState<JobInfo[]>([]);
   const [genres, setGenres] = useState<GenreInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +83,11 @@ export function Library() {
     e.stopPropagation();
     try {
       const updated = await favoriteJob(id);
-      setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, isFavorite: updated.isFavorite } : j)));
+      setJobs((prev) =>
+        prev.map((j) =>
+          j.id === id ? { ...j, isFavorite: updated.isFavorite } : j,
+        ),
+      );
     } catch (err) {
       console.error(err);
     }
@@ -109,10 +122,22 @@ export function Library() {
         <div class="card-grid">
           {Array.from({ length: 4 }, (_, i) => (
             <div class="session-card skeleton" key={i}>
-              <div class="skeleton-block" style={{ height: 20, width: "40%", borderRadius: 4 }} />
-              <div class="skeleton-block" style={{ height: 30, width: "100%", borderRadius: 2 }} />
-              <div class="skeleton-block" style={{ height: 16, width: "60%", borderRadius: 4 }} />
-              <div class="skeleton-block" style={{ height: 12, width: "40%", borderRadius: 4 }} />
+              <div
+                class="skeleton-block"
+                style={{ height: 20, width: "40%", borderRadius: 4 }}
+              />
+              <div
+                class="skeleton-block"
+                style={{ height: 30, width: "100%", borderRadius: 2 }}
+              />
+              <div
+                class="skeleton-block"
+                style={{ height: 16, width: "60%", borderRadius: 4 }}
+              />
+              <div
+                class="skeleton-block"
+                style={{ height: 12, width: "40%", borderRadius: 4 }}
+              />
             </div>
           ))}
         </div>
@@ -123,7 +148,14 @@ export function Library() {
   return (
     <div>
       <div class="library-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            marginBottom: 20,
+          }}
+        >
           <div>
             <h1 class="library-title">Library</h1>
             <p class="library-subtitle">Your session archive</p>
@@ -171,7 +203,9 @@ export function Library() {
         {filtered.map((job) => (
           <div class="session-card" onClick={() => cardClick(job)} key={job.id}>
             <div class="session-card-top">
-              <span class={`session-genre-badge ${genreColorClass(job.genreId)}`}>
+              <span
+                class={`session-genre-badge ${genreColorClass(job.genreId)}`}
+              >
                 {genreMap[job.genreId] ?? job.genreId}
               </span>
               <span class={`session-status-badge ${statusLabel(job.status)}`}>
@@ -186,7 +220,9 @@ export function Library() {
             </div>
             <div class="session-card-body">
               <div class="session-name">{job.name ?? "Untitled"}</div>
-              <div class="session-meta">{job.presetId} · {job.genreId}</div>
+              <div class="session-meta">
+                {job.presetId} · {job.genreId}
+              </div>
             </div>
             <div class="session-card-footer">
               <button
@@ -214,7 +250,9 @@ export function Library() {
       </div>
 
       {filtered.length === 0 && !loading && (
-        <div style={{ textAlign: "center", padding: 60, color: "var(--text-dim)" }}>
+        <div
+          style={{ textAlign: "center", padding: 60, color: "var(--text-dim)" }}
+        >
           <p style={{ fontSize: 16, marginBottom: 8 }}>No sessions found</p>
           <p style={{ fontSize: 13 }}>
             {search

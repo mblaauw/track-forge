@@ -1,4 +1,9 @@
-import type { LyricsDocument, LyricsSection, PatchType, SurgicalPatch } from "@track-forge/contracts";
+import type {
+  LyricsDocument,
+  LyricsSection,
+  PatchType,
+  SurgicalPatch,
+} from "@track-forge/contracts";
 
 // ── Patch data shapes ───────────────────────────────────────────────────
 

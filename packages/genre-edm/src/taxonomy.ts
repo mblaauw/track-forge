@@ -71,7 +71,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [110, 125],
     bpmDefault: 120,
     scale: "minor",
-    characteristics: ["warm", "soulful", "groovy", "jazzy chords", "subby bass", "lush pads"],
+    characteristics: [
+      "warm",
+      "soulful",
+      "groovy",
+      "jazzy chords",
+      "subby bass",
+      "lush pads",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["filtered", "atmospheric", "pads"],
@@ -88,7 +95,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [120, 128],
     bpmDefault: 125,
     scale: "minor",
-    characteristics: ["driving", "minimal", "loopy", "punchy kick", "acid elements", "groove"],
+    characteristics: [
+      "driving",
+      "minimal",
+      "loopy",
+      "punchy kick",
+      "acid elements",
+      "groove",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["percussive", "filtered"],
@@ -96,7 +110,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["stripped", "fx"],
       outro: ["filtered", "percussion"],
     },
-    description: "Minimal, driving house with loop-based grooves and punchy percussion.",
+    description:
+      "Minimal, driving house with loop-based grooves and punchy percussion.",
   },
   {
     id: "progressive_house",
@@ -105,7 +120,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [125, 135],
     bpmDefault: 128,
     scale: "minor",
-    characteristics: ["building", "atmospheric", "melodic", "long transitions", "euphoric"],
+    characteristics: [
+      "building",
+      "atmospheric",
+      "melodic",
+      "long transitions",
+      "euphoric",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["building", "atmospheric"],
@@ -113,7 +134,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["emotional", "pads", "plucks"],
       outro: ["fading", "atmospheric"],
     },
-    description: "Building, euphoric house with long transitions and melodic peaks.",
+    description:
+      "Building, euphoric house with long transitions and melodic peaks.",
   },
   {
     id: "tropical_house",
@@ -122,7 +144,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [95, 115],
     bpmDefault: 105,
     scale: "major",
-    characteristics: ["laid-back", "sunny", "acoustic elements", "steel drums", "warm"],
+    characteristics: [
+      "laid-back",
+      "sunny",
+      "acoustic elements",
+      "steel drums",
+      "warm",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["acoustic", "sunny", "guitar"],
@@ -130,7 +158,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["chilled", "piano"],
       outro: ["acoustic", "fade"],
     },
-    description: "Laid-back, sunny house with acoustic instruments and warm vibes.",
+    description:
+      "Laid-back, sunny house with acoustic instruments and warm vibes.",
   },
   {
     id: "future_house",
@@ -139,7 +168,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [122, 128],
     bpmDefault: 126,
     scale: "minor",
-    characteristics: ["bouncy", "synth-driven", "pitch-bent chords", "funky", "digital"],
+    characteristics: [
+      "bouncy",
+      "synth-driven",
+      "pitch-bent chords",
+      "funky",
+      "digital",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["filtered", "synth"],
@@ -147,7 +182,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["melodic", "synth pads"],
       outro: ["filtered", "fade"],
     },
-    description: "Bouncy, synth-driven house with pitch-bent chords and funky groove.",
+    description:
+      "Bouncy, synth-driven house with pitch-bent chords and funky groove.",
   },
   {
     id: "garage_house",
@@ -156,7 +192,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [125, 135],
     bpmDefault: 130,
     scale: "minor",
-    characteristics: ["swinging", "shuffling hats", "subby bass", "chopped vocals", "skippy"],
+    characteristics: [
+      "swinging",
+      "shuffling hats",
+      "subby bass",
+      "chopped vocals",
+      "skippy",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["shuffling", "percussive"],
@@ -164,7 +206,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["vocal", "stripped"],
       outro: ["shuffling", "fade"],
     },
-    description: "Swinging garage rhythm with shuffling hi-hats and chopped vocal samples.",
+    description:
+      "Swinging garage rhythm with shuffling hi-hats and chopped vocal samples.",
   },
 
   // ── Techno ─────────────────────────────────────────────────────────
@@ -175,7 +218,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [125, 135],
     bpmDefault: 130,
     scale: "minor",
-    characteristics: ["futuristic", "soulful", "analog", "minimal", "hypnotic", "deep"],
+    characteristics: [
+      "futuristic",
+      "soulful",
+      "analog",
+      "minimal",
+      "hypnotic",
+      "deep",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["hypnotic", "analog"],
@@ -192,7 +242,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [125, 135],
     bpmDefault: 130,
     scale: "minor",
-    characteristics: ["stripped", "repetitive", "micro-sounds", "subtle evolution", "functional"],
+    characteristics: [
+      "stripped",
+      "repetitive",
+      "micro-sounds",
+      "subtle evolution",
+      "functional",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["stripped", "percussive"],
@@ -200,7 +256,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["quiet", "textural"],
       outro: ["stripped", "fade"],
     },
-    description: "Stripped-back, repetitive techno with subtle micro-sound evolution.",
+    description:
+      "Stripped-back, repetitive techno with subtle micro-sound evolution.",
   },
   {
     id: "industrial_techno",
@@ -209,7 +266,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [130, 150],
     bpmDefault: 140,
     scale: "minor",
-    characteristics: ["aggressive", "distorted", "harsh", "mechanical", "dark", "relentless"],
+    characteristics: [
+      "aggressive",
+      "distorted",
+      "harsh",
+      "mechanical",
+      "dark",
+      "relentless",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["building", "noise"],
@@ -217,7 +281,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["dark", "atmospheric"],
       outro: ["decaying", "noise"],
     },
-    description: "Aggressive, distorted techno with mechanical and dark textures.",
+    description:
+      "Aggressive, distorted techno with mechanical and dark textures.",
   },
   {
     id: "melodic_techno",
@@ -226,7 +291,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [120, 130],
     bpmDefault: 125,
     scale: "minor",
-    characteristics: ["emotional", "atmospheric", "melodic leads", "rich pads", "driving"],
+    characteristics: [
+      "emotional",
+      "atmospheric",
+      "melodic leads",
+      "rich pads",
+      "driving",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["atmospheric", "building"],
@@ -234,7 +305,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["atmospheric", "pads", "strings"],
       outro: ["fading", "atmospheric"],
     },
-    description: "Emotional, atmospheric techno with melodic leads and rich pads.",
+    description:
+      "Emotional, atmospheric techno with melodic leads and rich pads.",
   },
   {
     id: "hard_techno",
@@ -243,7 +315,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [145, 160],
     bpmDefault: 150,
     scale: "minor",
-    characteristics: ["hard", "fast", "distorted kick", "industrial", "intense", "relentless"],
+    characteristics: [
+      "hard",
+      "fast",
+      "distorted kick",
+      "industrial",
+      "intense",
+      "relentless",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["building", "percussive"],
@@ -251,7 +330,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["dark", "minimal"],
       outro: ["relentless", "fade"],
     },
-    description: "Hard, fast techno with distorted kicks and relentless energy.",
+    description:
+      "Hard, fast techno with distorted kicks and relentless energy.",
   },
   {
     id: "dub_techno",
@@ -260,7 +340,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [115, 125],
     bpmDefault: 120,
     scale: "minor",
-    characteristics: ["dubby", "reverb-drenched", "echo", "spacey", "minimal", "deep"],
+    characteristics: [
+      "dubby",
+      "reverb-drenched",
+      "echo",
+      "spacey",
+      "minimal",
+      "deep",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["spacey", "echo"],
@@ -279,7 +366,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [135, 145],
     bpmDefault: 140,
     scale: "minor",
-    characteristics: ["euphoric", "emotional", "soaring leads", "arpeggios", "build-ups", "anthemic"],
+    characteristics: [
+      "euphoric",
+      "emotional",
+      "soaring leads",
+      "arpeggios",
+      "build-ups",
+      "anthemic",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["atmospheric", "building"],
@@ -288,7 +382,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["emotional", "piano", "strings"],
       outro: ["fading", "atmospheric"],
     },
-    description: "Euphoric trance with soaring leads, emotional breakdowns, and anthemic drops.",
+    description:
+      "Euphoric trance with soaring leads, emotional breakdowns, and anthemic drops.",
   },
   {
     id: "progressive_trance",
@@ -297,7 +392,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [130, 138],
     bpmDefault: 134,
     scale: "minor",
-    characteristics: ["evolving", "groovy", "subtle builds", "deep", "atmospheric", "driving"],
+    characteristics: [
+      "evolving",
+      "groovy",
+      "subtle builds",
+      "deep",
+      "atmospheric",
+      "driving",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["deep", "atmospheric"],
@@ -306,7 +408,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["atmospheric", "deep"],
       outro: ["fading", "evolving"],
     },
-    description: "Evolving, groovy trance with subtle builds and deep atmospheres.",
+    description:
+      "Evolving, groovy trance with subtle builds and deep atmospheres.",
   },
   {
     id: "psytrance",
@@ -315,7 +418,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [140, 150],
     bpmDefault: 145,
     scale: "minor",
-    characteristics: ["psychedelic", "rolling bass", "trippy", "layered", "fast", "complex"],
+    characteristics: [
+      "psychedelic",
+      "rolling bass",
+      "trippy",
+      "layered",
+      "fast",
+      "complex",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["psychedelic", "building"],
@@ -324,7 +434,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["trippy", "atmospheric", "fx"],
       outro: ["fading", "psychedelic"],
     },
-    description: "Fast, psychedelic trance with rolling bass and complex layered sounds.",
+    description:
+      "Fast, psychedelic trance with rolling bass and complex layered sounds.",
   },
   {
     id: "vocal_trance",
@@ -333,7 +444,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [132, 140],
     bpmDefault: 136,
     scale: "minor",
-    characteristics: ["vocal-driven", "emotional", "melodic", "anthemic", "radio-friendly"],
+    characteristics: [
+      "vocal-driven",
+      "emotional",
+      "melodic",
+      "anthemic",
+      "radio-friendly",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["atmospheric", "vocal intro"],
@@ -342,7 +459,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["vocal", "piano", "emotional"],
       outro: ["fading", "vocal"],
     },
-    description: "Vocal-driven trance with emotional melodies and radio-friendly arrangements.",
+    description:
+      "Vocal-driven trance with emotional melodies and radio-friendly arrangements.",
   },
   {
     id: "tech_trance",
@@ -351,7 +469,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [138, 145],
     bpmDefault: 140,
     scale: "minor",
-    characteristics: ["driving", "techno-influenced", "acid lines", "hard", "energetic"],
+    characteristics: [
+      "driving",
+      "techno-influenced",
+      "acid lines",
+      "hard",
+      "energetic",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["driving", "percussive"],
@@ -360,7 +484,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["stripped", "fx"],
       outro: ["driving", "fade"],
     },
-    description: "Techno-influenced trance with acid lines and hard, driving energy.",
+    description:
+      "Techno-influenced trance with acid lines and hard, driving energy.",
   },
 
   // ── Breakbeat ──────────────────────────────────────────────────────
@@ -371,7 +496,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [130, 140],
     bpmDefault: 135,
     scale: "minor",
-    characteristics: ["funky breaks", "syncopated", "bass-heavy", "chopped beats", "energetic"],
+    characteristics: [
+      "funky breaks",
+      "syncopated",
+      "bass-heavy",
+      "chopped beats",
+      "energetic",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["percussive", "beat build"],
@@ -379,7 +510,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["atmospheric", "stripped"],
       outro: ["beat fade", "percussive"],
     },
-    description: "Funky, syncopated breakbeats with heavy bass and chopped rhythms.",
+    description:
+      "Funky, syncopated breakbeats with heavy bass and chopped rhythms.",
   },
   {
     id: "big_beat",
@@ -388,7 +520,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [110, 140],
     bpmDefault: 125,
     scale: "minor",
-    characteristics: ["heavy breaks", "fat bass", "dirty", "sample-heavy", "rock-influenced"],
+    characteristics: [
+      "heavy breaks",
+      "fat bass",
+      "dirty",
+      "sample-heavy",
+      "rock-influenced",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["building", "sample"],
@@ -396,7 +534,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["stripped", "sample"],
       outro: ["heavy", "fade"],
     },
-    description: "Heavy, breakbeat-driven tracks with fat bass and rock energy.",
+    description:
+      "Heavy, breakbeat-driven tracks with fat bass and rock energy.",
   },
   {
     id: "progressive_breaks",
@@ -405,7 +544,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [125, 135],
     bpmDefault: 130,
     scale: "minor",
-    characteristics: ["melodic", "atmospheric breaks", "building", "deep", "evolving"],
+    characteristics: [
+      "melodic",
+      "atmospheric breaks",
+      "building",
+      "deep",
+      "evolving",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["atmospheric", "building"],
@@ -413,7 +558,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["atmospheric", "emotional"],
       outro: ["fading", "atmospheric"],
     },
-    description: "Melodic, atmospheric breakbeat with deep, evolving arrangements.",
+    description:
+      "Melodic, atmospheric breakbeat with deep, evolving arrangements.",
   },
 
   // ── D&B ─────────────────────────────────────────────────────────────
@@ -424,7 +570,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [165, 175],
     bpmDefault: 174,
     scale: "minor",
-    characteristics: ["melodic", "soulful", "rolling", "warm bass", "jazz-influenced", "smooth"],
+    characteristics: [
+      "melodic",
+      "soulful",
+      "rolling",
+      "warm bass",
+      "jazz-influenced",
+      "smooth",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["melodic", "atmospheric"],
@@ -432,7 +585,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["emotional", "piano", "vocal"],
       outro: ["rolling", "fade"],
     },
-    description: "Melodic, soulful drum & bass with rolling basslines and jazz influences.",
+    description:
+      "Melodic, soulful drum & bass with rolling basslines and jazz influences.",
   },
   {
     id: "neurofunk",
@@ -441,7 +595,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [170, 178],
     bpmDefault: 174,
     scale: "minor",
-    characteristics: ["techy", "complex bass", "dark", "sci-fi", "chopped", "intricate"],
+    characteristics: [
+      "techy",
+      "complex bass",
+      "dark",
+      "sci-fi",
+      "chopped",
+      "intricate",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["dark", "techy"],
@@ -449,7 +610,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["dark", "atmospheric", "sci-fi"],
       outro: ["techy", "fade"],
     },
-    description: "Dark, techy drum & bass with complex neuro bass and sci-fi atmospheres.",
+    description:
+      "Dark, techy drum & bass with complex neuro bass and sci-fi atmospheres.",
   },
   {
     id: "jump_up",
@@ -458,7 +620,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [170, 176],
     bpmDefault: 174,
     scale: "minor",
-    characteristics: ["bouncy", "aggressive bass", "dancefloor", "wobble", "energetic"],
+    characteristics: [
+      "bouncy",
+      "aggressive bass",
+      "dancefloor",
+      "wobble",
+      "energetic",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["building", "percussive"],
@@ -466,7 +634,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["stripped", "fx"],
       outro: ["bouncy", "fade"],
     },
-    description: "Bouncy, aggressive drum & bass with wobble basses and dancefloor energy.",
+    description:
+      "Bouncy, aggressive drum & bass with wobble basses and dancefloor energy.",
   },
   {
     id: "atmospheric_dnb",
@@ -475,7 +644,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [160, 170],
     bpmDefault: 165,
     scale: "minor",
-    characteristics: ["ambient", "spacious", "ethereal", "deep pads", "intelligent", "moody"],
+    characteristics: [
+      "ambient",
+      "spacious",
+      "ethereal",
+      "deep pads",
+      "intelligent",
+      "moody",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["ambient", "spacious"],
@@ -483,7 +659,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["ambient", "pads", "moody"],
       outro: ["ambient", "fading"],
     },
-    description: "Ambient, spacious drum & bass with ethereal pads and deep atmospheres.",
+    description:
+      "Ambient, spacious drum & bass with ethereal pads and deep atmospheres.",
   },
 
   // ── Bass ────────────────────────────────────────────────────────────
@@ -494,7 +671,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [135, 145],
     bpmDefault: 140,
     scale: "minor",
-    characteristics: ["half-time", "heavy wobble bass", "dark", "sparse", "massive drops"],
+    characteristics: [
+      "half-time",
+      "heavy wobble bass",
+      "dark",
+      "sparse",
+      "massive drops",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["building", "atmospheric"],
@@ -503,7 +686,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["dark", "stripped"],
       outro: ["fading", "sub"],
     },
-    description: "Half-time bass music with heavy wobble basses and massive drops.",
+    description:
+      "Half-time bass music with heavy wobble basses and massive drops.",
   },
   {
     id: "future_bass",
@@ -512,7 +696,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [140, 150],
     bpmDefault: 145,
     scale: "major",
-    characteristics: ["bright", "synth-heavy", "chord stabs", "melodic", "emotional"],
+    characteristics: [
+      "bright",
+      "synth-heavy",
+      "chord stabs",
+      "melodic",
+      "emotional",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["bright", "synth"],
@@ -520,7 +710,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["emotional", "chords", "vocal"],
       outro: ["synth", "fade"],
     },
-    description: "Bright, synth-heavy bass music with chord stabs and emotional melodies.",
+    description:
+      "Bright, synth-heavy bass music with chord stabs and emotional melodies.",
   },
   {
     id: "trap",
@@ -529,7 +720,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [130, 160],
     bpmDefault: 140,
     scale: "minor",
-    characteristics: ["heavy 808s", "rolling hi-hats", "dark", "cinematic", "hard snares"],
+    characteristics: [
+      "heavy 808s",
+      "rolling hi-hats",
+      "dark",
+      "cinematic",
+      "hard snares",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["cinematic", "building"],
@@ -538,7 +735,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["dark", "stripped"],
       outro: ["808", "fade"],
     },
-    description: "Heavy 808-driven bass music with rolling hi-hats and dark atmospheres.",
+    description:
+      "Heavy 808-driven bass music with rolling hi-hats and dark atmospheres.",
   },
   {
     id: "uk_garage_bass",
@@ -547,7 +745,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [130, 140],
     bpmDefault: 135,
     scale: "minor",
-    characteristics: ["2-step", "shuffling", "sub bass", "chopped vocals", "swinging"],
+    characteristics: [
+      "2-step",
+      "shuffling",
+      "sub bass",
+      "chopped vocals",
+      "swinging",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["shuffling", "percussive"],
@@ -564,7 +768,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [140, 150],
     bpmDefault: 145,
     scale: "minor",
-    characteristics: ["minimal wobble", "repetitive", "heavy", "syncopated", "triplet-based"],
+    characteristics: [
+      "minimal wobble",
+      "repetitive",
+      "heavy",
+      "syncopated",
+      "triplet-based",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["building", "percussive"],
@@ -572,7 +782,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["stripped", "fx"],
       outro: ["heavy", "fade"],
     },
-    description: "Minimal wobble bass pattern with repetitive, syncopated triplet rhythms.",
+    description:
+      "Minimal wobble bass pattern with repetitive, syncopated triplet rhythms.",
   },
 
   // ── Hardcore ────────────────────────────────────────────────────────
@@ -583,7 +794,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [145, 160],
     bpmDefault: 150,
     scale: "minor",
-    characteristics: ["hard kick", "distorted bass", "anthemic leads", "euphoric", "climactic"],
+    characteristics: [
+      "hard kick",
+      "distorted bass",
+      "anthemic leads",
+      "euphoric",
+      "climactic",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["building", "atmospheric"],
@@ -592,7 +809,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["emotional", "melodic"],
       outro: ["fading", "anthemic"],
     },
-    description: "Hard-hitting style with distorted kicks and euphoric, anthemic leads.",
+    description:
+      "Hard-hitting style with distorted kicks and euphoric, anthemic leads.",
   },
   {
     id: "gabber",
@@ -601,7 +819,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [150, 200],
     bpmDefault: 170,
     scale: "minor",
-    characteristics: ["extremely fast", "distorted kick", "aggressive", "raw", "intense"],
+    characteristics: [
+      "extremely fast",
+      "distorted kick",
+      "aggressive",
+      "raw",
+      "intense",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["building", "percussive"],
@@ -609,7 +833,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["dark", "stripped"],
       outro: ["fast", "fade"],
     },
-    description: "Extremely fast hardcore with distorted kicks and raw aggression.",
+    description:
+      "Extremely fast hardcore with distorted kicks and raw aggression.",
   },
   {
     id: "happy_hardcore",
@@ -618,7 +843,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [160, 180],
     bpmDefault: 170,
     scale: "major",
-    characteristics: ["upbeat", "bouncy", "melodic", "cheerful", "fast piano", "positive"],
+    characteristics: [
+      "upbeat",
+      "bouncy",
+      "melodic",
+      "cheerful",
+      "fast piano",
+      "positive",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["cheerful", "melodic"],
@@ -626,7 +858,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["piano", "vocal", "positive"],
       outro: ["bouncy", "fade"],
     },
-    description: "Upbeat, bouncy hardcore with fast piano and positive melodies.",
+    description:
+      "Upbeat, bouncy hardcore with fast piano and positive melodies.",
   },
 
   // ── Electro ─────────────────────────────────────────────────────────
@@ -637,7 +870,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [125, 130],
     bpmDefault: 128,
     scale: "minor",
-    characteristics: ["dirty bass", "aggressive leads", "punchy", "electro synths", "filtered"],
+    characteristics: [
+      "dirty bass",
+      "aggressive leads",
+      "punchy",
+      "electro synths",
+      "filtered",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["filtered", "building"],
@@ -645,7 +884,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["stripped", "synth"],
       outro: ["filtered", "fade"],
     },
-    description: "Dirty basslines and aggressive electro synths with punchy drops.",
+    description:
+      "Dirty basslines and aggressive electro synths with punchy drops.",
   },
   {
     id: "electroclash",
@@ -654,7 +894,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [120, 140],
     bpmDefault: 130,
     scale: "minor",
-    characteristics: ["retro", "vocoded", "analog synths", "dance-punk", "sleazy", "raw"],
+    characteristics: [
+      "retro",
+      "vocoded",
+      "analog synths",
+      "dance-punk",
+      "sleazy",
+      "raw",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["retro", "analog"],
@@ -662,7 +909,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["vocoded", "synth"],
       outro: ["analog", "fade"],
     },
-    description: "Retro electro with analog synths, vocoded vocals, and raw dance-punk energy.",
+    description:
+      "Retro electro with analog synths, vocoded vocals, and raw dance-punk energy.",
   },
   {
     id: "glitch",
@@ -671,7 +919,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [110, 140],
     bpmDefault: 125,
     scale: "minor",
-    characteristics: ["glitchy", "bit-crushed", "stuttering", "IDM-influenced", "experimental"],
+    characteristics: [
+      "glitchy",
+      "bit-crushed",
+      "stuttering",
+      "IDM-influenced",
+      "experimental",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["glitchy", "experimental"],
@@ -679,7 +933,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       breakdown: ["abstract", "textural"],
       outro: ["glitchy", "decaying"],
     },
-    description: "Glitchy, experimental electro with bit-crushed sounds and IDM influences.",
+    description:
+      "Glitchy, experimental electro with bit-crushed sounds and IDM influences.",
   },
 
   // ── Downtempo ───────────────────────────────────────────────────────
@@ -690,7 +945,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [80, 110],
     bpmDefault: 90,
     scale: "major",
-    characteristics: ["relaxed", "ambient", "smooth", "melodic", "warm", "laid-back"],
+    characteristics: [
+      "relaxed",
+      "ambient",
+      "smooth",
+      "melodic",
+      "warm",
+      "laid-back",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["ambient", "relaxed"],
@@ -698,7 +960,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       chorus: ["warm", "full"],
       outro: ["ambient", "fading"],
     },
-    description: "Relaxed, ambient downtempo with smooth melodies and warm textures.",
+    description:
+      "Relaxed, ambient downtempo with smooth melodies and warm textures.",
   },
   {
     id: "trip_hop",
@@ -707,7 +970,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [70, 100],
     bpmDefault: 85,
     scale: "minor",
-    characteristics: ["dark", "downtempo beats", "haunting", "soul samples", "moody", "slow"],
+    characteristics: [
+      "dark",
+      "downtempo beats",
+      "haunting",
+      "soul samples",
+      "moody",
+      "slow",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["dark", "atmospheric"],
@@ -724,7 +994,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [60, 90],
     bpmDefault: 75,
     scale: "minor",
-    characteristics: ["textural", "evolving", "spacious", "drone", "meditative", "atmospheric"],
+    characteristics: [
+      "textural",
+      "evolving",
+      "spacious",
+      "drone",
+      "meditative",
+      "atmospheric",
+    ],
     vocalMode: "none",
     arrangementTags: {
       intro: ["spacious", "drone"],
@@ -732,7 +1009,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       peak: ["full", "textural"],
       outro: ["fading", "spacious"],
     },
-    description: "Textural, evolving ambient with spacious drones and meditative atmospheres.",
+    description:
+      "Textural, evolving ambient with spacious drones and meditative atmospheres.",
   },
   {
     id: "lo_fi_beats",
@@ -741,7 +1019,14 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [70, 90],
     bpmDefault: 80,
     scale: "major",
-    characteristics: ["warm", "dusty", "crackling", "sample-based", "chilled", "nostalgic"],
+    characteristics: [
+      "warm",
+      "dusty",
+      "crackling",
+      "sample-based",
+      "chilled",
+      "nostalgic",
+    ],
     vocalMode: "vocals_hook",
     arrangementTags: {
       intro: ["crackling", "dusty"],
@@ -749,7 +1034,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       chorus: ["warm", "full"],
       outro: ["crackling", "fading"],
     },
-    description: "Warm, dusty lo-fi beats with crackling vinyl and nostalgic samples.",
+    description:
+      "Warm, dusty lo-fi beats with crackling vinyl and nostalgic samples.",
   },
 
   // ── Pop ─────────────────────────────────────────────────────────────
@@ -760,7 +1046,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [100, 130],
     bpmDefault: 118,
     scale: "major",
-    characteristics: ["catchy", "upbeat", "radio-friendly", "four-on-the-floor", "accessible"],
+    characteristics: [
+      "catchy",
+      "upbeat",
+      "radio-friendly",
+      "four-on-the-floor",
+      "accessible",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["catchy", "instrumental"],
@@ -769,7 +1061,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       bridge: ["stripped", "build"],
       outro: ["chorus", "fade"],
     },
-    description: "Catchy, upbeat dance-pop with radio-friendly hooks and energetic beats.",
+    description:
+      "Catchy, upbeat dance-pop with radio-friendly hooks and energetic beats.",
   },
   {
     id: "synth_pop",
@@ -778,7 +1071,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [100, 140],
     bpmDefault: 120,
     scale: "minor",
-    characteristics: ["synth-driven", "melodic", "retro", "clean vocals", "new wave"],
+    characteristics: [
+      "synth-driven",
+      "melodic",
+      "retro",
+      "clean vocals",
+      "new wave",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["synth", "melodic"],
@@ -787,7 +1086,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       bridge: ["stripped", "synth solo"],
       outro: ["synth", "fade"],
     },
-    description: "Synth-driven pop with melodic hooks and clean, new wave-inspired vocals.",
+    description:
+      "Synth-driven pop with melodic hooks and clean, new wave-inspired vocals.",
   },
   {
     id: "nu_disco",
@@ -796,7 +1096,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [110, 125],
     bpmDefault: 118,
     scale: "major",
-    characteristics: ["funky", "disco-inspired", "groovy bass", "strings", "four-on-the-floor"],
+    characteristics: [
+      "funky",
+      "disco-inspired",
+      "groovy bass",
+      "strings",
+      "four-on-the-floor",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["funky", "strings"],
@@ -805,7 +1111,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       bridge: ["stripped", "bass solo"],
       outro: ["funky", "fade"],
     },
-    description: "Funky, disco-inspired pop with groovy basslines and string sections.",
+    description:
+      "Funky, disco-inspired pop with groovy basslines and string sections.",
   },
   {
     id: "futurepop",
@@ -814,7 +1121,13 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
     bpmRange: [120, 140],
     bpmDefault: 130,
     scale: "minor",
-    characteristics: ["electronic", "anthemic", "dark pop", "synth-heavy", "emotional"],
+    characteristics: [
+      "electronic",
+      "anthemic",
+      "dark pop",
+      "synth-heavy",
+      "emotional",
+    ],
     vocalMode: "vocals_full",
     arrangementTags: {
       intro: ["synth", "atmospheric"],
@@ -823,7 +1136,8 @@ export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
       bridge: ["stripped", "synth"],
       outro: ["fading", "atmospheric"],
     },
-    description: "Electronic, anthemic pop with dark synths and emotional melodies.",
+    description:
+      "Electronic, anthemic pop with dark synths and emotional melodies.",
   },
 ];
 
@@ -845,6 +1159,11 @@ export function getAllFamilyOptions(): { label: string; value: EdmFamily }[] {
   return EdmFamily.map((f) => ({ label: familyLabels[f], value: f }));
 }
 
-export function getSubgenreOptions(family: EdmFamily): { label: string; value: string }[] {
-  return getSubgenresByFamily(family).map((s) => ({ label: s.label, value: s.id }));
+export function getSubgenreOptions(
+  family: EdmFamily,
+): { label: string; value: string }[] {
+  return getSubgenresByFamily(family).map((s) => ({
+    label: s.label,
+    value: s.id,
+  }));
 }

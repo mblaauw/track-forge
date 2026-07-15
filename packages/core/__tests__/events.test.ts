@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { subscribe, publish, unsubscribeAll, resetTestCounters } from "../src/pipeline/events.js";
+import {
+  subscribe,
+  publish,
+  unsubscribeAll,
+  resetTestCounters,
+} from "../src/pipeline/events.js";
 
 describe("EventBus", () => {
   const jobId = "test-job-1";
@@ -46,7 +51,10 @@ describe("EventBus", () => {
     subscribe(jobId, (e) => ev1.push(e));
     subscribe(jobId, (e) => ev2.push(e));
 
-    await publish(undefined, jobId, { stage: "compilation", status: "completed" });
+    await publish(undefined, jobId, {
+      stage: "compilation",
+      status: "completed",
+    });
     expect(ev1).toHaveLength(1);
     expect(ev2).toHaveLength(1);
   });

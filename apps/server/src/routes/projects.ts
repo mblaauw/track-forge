@@ -9,7 +9,10 @@ export interface ProjectRouteDeps {
   config: Config;
 }
 
-export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRouteDeps): void {
+export function registerProjectRoutes(
+  server: FastifyInstance,
+  deps: ProjectRouteDeps,
+): void {
   const { db } = deps;
 
   // ── Get project ────────────────────────────────────────────────────────
@@ -66,7 +69,9 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
     return {
       totalJobs: Number(totalJobs?.value ?? 0),
       draftCount: Number(draftCount?.value ?? 0),
-      jobsByStatus: Object.fromEntries(statusRows.map((r) => [r.status, Number(r.count)])),
+      jobsByStatus: Object.fromEntries(
+        statusRows.map((r) => [r.status, Number(r.count)]),
+      ),
       latestActivity: latestJob?.updatedAt ?? null,
     };
   });
@@ -156,7 +161,9 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
     if (!project) return reply.code(404).send({ error: "Project not found" });
 
     // Cascade: delete all FK children before parent tables
-    await db.delete(schema.projectDrafts).where(eq(schema.projectDrafts.projectId, id));
+    await db
+      .delete(schema.projectDrafts)
+      .where(eq(schema.projectDrafts.projectId, id));
 
     const projectJobs = await db
       .select()
@@ -165,29 +172,49 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
 
     for (const job of projectJobs) {
       // Gather version and generation IDs for this job
-      const versionIds = (await db
-        .select({ id: schema.versions.id })
-        .from(schema.versions)
-        .where(eq(schema.versions.jobId, job.id))).map((r) => r.id);
+      const versionIds = (
+        await db
+          .select({ id: schema.versions.id })
+          .from(schema.versions)
+          .where(eq(schema.versions.jobId, job.id))
+      ).map((r) => r.id);
 
-      const genIds = (await db
-        .select({ id: schema.generations.id })
-        .from(schema.generations)
-        .where(eq(schema.generations.jobId, job.id))).map((r) => r.id);
+      const genIds = (
+        await db
+          .select({ id: schema.generations.id })
+          .from(schema.generations)
+          .where(eq(schema.generations.jobId, job.id))
+      ).map((r) => r.id);
 
       // Delete FK children in dependency order
       if (genIds.length > 0) {
-        await db.delete(schema.sunoTracks).where(inArray(schema.sunoTracks.generationId, genIds));
-        await db.delete(schema.generations).where(inArray(schema.generations.id, genIds));
+        await db
+          .delete(schema.sunoTracks)
+          .where(inArray(schema.sunoTracks.generationId, genIds));
+        await db
+          .delete(schema.generations)
+          .where(inArray(schema.generations.id, genIds));
       }
       if (versionIds.length > 0) {
-        await db.delete(schema.artifactLocks).where(inArray(schema.artifactLocks.versionId, versionIds));
-        await db.delete(schema.versions).where(eq(schema.versions.jobId, job.id));
+        await db
+          .delete(schema.artifactLocks)
+          .where(inArray(schema.artifactLocks.versionId, versionIds));
+        await db
+          .delete(schema.versions)
+          .where(eq(schema.versions.jobId, job.id));
       }
-      await db.delete(schema.jobStageOutputs).where(eq(schema.jobStageOutputs.jobId, job.id));
-      await db.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, job.id));
-      await db.delete(schema.criticFindings).where(eq(schema.criticFindings.jobId, job.id));
-      await db.delete(schema.adjustments).where(eq(schema.adjustments.jobId, job.id));
+      await db
+        .delete(schema.jobStageOutputs)
+        .where(eq(schema.jobStageOutputs.jobId, job.id));
+      await db
+        .delete(schema.jobEvents)
+        .where(eq(schema.jobEvents.jobId, job.id));
+      await db
+        .delete(schema.criticFindings)
+        .where(eq(schema.criticFindings.jobId, job.id));
+      await db
+        .delete(schema.adjustments)
+        .where(eq(schema.adjustments.jobId, job.id));
     }
     await db.delete(schema.jobs).where(eq(schema.jobs.projectId, id));
     await db.delete(schema.projects).where(eq(schema.projects.id, id));
@@ -242,7 +269,8 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
     const inputs = (body.inputs as string) ?? null;
     const reference = (body.reference as string) ?? null;
     const rawNl = body.nlAdjustments;
-    const nlAdjustments = typeof rawNl === "string" ? rawNl : rawNl ? JSON.stringify(rawNl) : null;
+    const nlAdjustments =
+      typeof rawNl === "string" ? rawNl : rawNl ? JSON.stringify(rawNl) : null;
 
     const [project] = await db
       .select()
@@ -289,10 +317,14 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
     const inputs = body.inputs as string | undefined | null;
     const reference = body.reference as string | undefined | null;
     const rawNl = body.nlAdjustments;
-    const nlAdjustments = rawNl === undefined ? undefined
-      : rawNl === null ? null
-      : typeof rawNl === "string" ? rawNl
-      : JSON.stringify(rawNl);
+    const nlAdjustments =
+      rawNl === undefined
+        ? undefined
+        : rawNl === null
+          ? null
+          : typeof rawNl === "string"
+            ? rawNl
+            : JSON.stringify(rawNl);
 
     const [draft] = await db
       .select()
@@ -338,7 +370,9 @@ export function registerProjectRoutes(server: FastifyInstance, deps: ProjectRout
 
     if (!draft) return reply.code(404).send({ error: "Draft not found" });
 
-    await db.delete(schema.projectDrafts).where(eq(schema.projectDrafts.id, id));
+    await db
+      .delete(schema.projectDrafts)
+      .where(eq(schema.projectDrafts.id, id));
     return reply.code(204).send();
   });
 

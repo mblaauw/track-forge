@@ -105,16 +105,17 @@ function renderLyrics(data: EdmBlueprint): string {
     case "guided_instrumental": {
       // Instrumental arrangement tags
       lines.push(`[${data.bpm} BPM]`);
-      lines.push(`[Key: ${data.key !== "auto" ? data.key : "determined by generation"}]`);
+      lines.push(
+        `[Key: ${data.key !== "auto" ? data.key : "determined by generation"}]`,
+      );
       if (data.subgenre) {
         lines.push(`[Genre: ${data.subgenre.replace(/_/g, " ")}]`);
       }
       lines.push("");
 
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0
-          ? ` — ${section.tags.join(", ")}`
-          : "";
+        const tagStr =
+          section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
         lines.push(`(${section.bars} bars)`);
         lines.push("");
@@ -125,22 +126,29 @@ function renderLyrics(data: EdmBlueprint): string {
     case "full_lyrics": {
       // Full lyrics structure with section markers
       lines.push(`[${data.bpm} BPM]`);
-      lines.push(`[Key: ${data.key !== "auto" ? data.key : "determined by generation"}]`);
+      lines.push(
+        `[Key: ${data.key !== "auto" ? data.key : "determined by generation"}]`,
+      );
       lines.push(`[Genre: ${data.subgenre.replace(/_/g, " ")}]`);
       lines.push("");
 
       for (const section of data.arrangement) {
-        const tagStr = section.tags.length > 0
-          ? ` — ${section.tags.join(", ")}`
-          : "";
+        const tagStr =
+          section.tags.length > 0 ? ` — ${section.tags.join(", ")}` : "";
         lines.push(`[${capitalize(section.section)}]${tagStr}`);
 
         // If it's a verse/chorus section, suggest lyrical content
-        if (section.section.includes("intro") || section.section.includes("build")) {
+        if (
+          section.section.includes("intro") ||
+          section.section.includes("build")
+        ) {
           lines.push("(instrumental)");
         } else if (section.section.includes("drop")) {
           lines.push("(instrumental)");
-        } else if (section.section.includes("breakdown") || section.section.includes("bridge")) {
+        } else if (
+          section.section.includes("breakdown") ||
+          section.section.includes("bridge")
+        ) {
           lines.push("(instrumental — atmospheric)");
         } else if (section.section.includes("outro")) {
           lines.push("(instrumental)");

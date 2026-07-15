@@ -10,7 +10,10 @@ import type { Db } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 
 const mockLlm = {
-  complete: async () => ({ content: "mock response", usage: { prompt: 0, completion: 0 } }),
+  complete: async () => ({
+    content: "mock response",
+    usage: { prompt: 0, completion: 0 },
+  }),
 };
 
 const mockSuno = {
@@ -64,7 +67,18 @@ describe("Import / Export routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 120, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 120,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     const created = JSON.parse(createRes.payload);
@@ -99,7 +113,18 @@ describe("Import / Export routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 120, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 120,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     const r2 = await server.inject({
@@ -108,7 +133,23 @@ describe("Import / Export routes", () => {
       payload: {
         genreId: "hiphop",
         presetId: "boom_bap_classic",
-        inputs: { subgenre: "boom_bap", bpm: 90, key: "C", scale: "minor", mood: "", narrativeArc: "braggadocio", rhymeStyle: "end_rhyme", flowPattern: "laid_back", delivery: "conversational", productionStyle: "polished", energy: 6, complexity: 5, lyricsMode: "full_lyrics", customTags: "", reference: "" },
+        inputs: {
+          subgenre: "boom_bap",
+          bpm: 90,
+          key: "C",
+          scale: "minor",
+          mood: "",
+          narrativeArc: "braggadocio",
+          rhymeStyle: "end_rhyme",
+          flowPattern: "laid_back",
+          delivery: "conversational",
+          productionStyle: "polished",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "full_lyrics",
+          customTags: "",
+          reference: "",
+        },
       },
     });
     const j1 = JSON.parse(r1.payload);
@@ -141,7 +182,18 @@ describe("Import / Export routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 120, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 120,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     const original = JSON.parse(createRes.payload);
@@ -185,7 +237,18 @@ describe("Import / Export routes", () => {
       payload: {
         genreId: "edm",
         presetId: "deep_house_chill",
-        inputs: { family: "house", subgenre: "deep_house", bpm: 120, key: "auto", scale: "minor", mood: "warm", energy: 6, complexity: 5, lyricsMode: "guided_instrumental", customTags: [] },
+        inputs: {
+          family: "house",
+          subgenre: "deep_house",
+          bpm: 120,
+          key: "auto",
+          scale: "minor",
+          mood: "warm",
+          energy: 6,
+          complexity: 5,
+          lyricsMode: "guided_instrumental",
+          customTags: [],
+        },
       },
     });
     const original = JSON.parse(createRes.payload);
@@ -212,23 +275,34 @@ describe("Import / Export routes", () => {
     const bundle = {
       formatVersion: 1,
       exportedAt: new Date().toISOString(),
-      projects: [{
-        project: { id: "__bulk", name: "Test Import", description: null, genreId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        jobs: [{
-          job: {
-            id: "test-import-bad-genre",
-            genreId: "nonexistent_genre",
-            presetId: "test",
-            status: "pending",
-            currentStage: "ref_interpretation",
-            inputs: "{}",
-            stageAttempt: 0,
+      projects: [
+        {
+          project: {
+            id: "__bulk",
+            name: "Test Import",
+            description: null,
+            genreId: null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          versions: [],
-        }],
-      }],
+          jobs: [
+            {
+              job: {
+                id: "test-import-bad-genre",
+                genreId: "nonexistent_genre",
+                presetId: "test",
+                status: "pending",
+                currentStage: "ref_interpretation",
+                inputs: "{}",
+                stageAttempt: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              versions: [],
+            },
+          ],
+        },
+      ],
     };
 
     const res = await server.inject({

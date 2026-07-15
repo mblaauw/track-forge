@@ -4,7 +4,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve, extname } from "node:path";
 import { initConfig } from "./lib/config.js";
 import { initDb } from "./lib/db.js";
-import { SunoClient, createSunoClientConfig, createLlmClient, createLockService } from "@track-forge/core";
+import {
+  SunoClient,
+  createSunoClientConfig,
+  createLlmClient,
+  createLockService,
+} from "@track-forge/core";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerJobRoutes } from "./routes/jobs.js";
 import { registerVersionRoutes } from "./routes/versions.js";
@@ -42,7 +47,9 @@ const start = async () => {
   try {
     const host = config.host || "127.0.0.1";
     if (host === "0.0.0.0") {
-      logger.warn("Binding to 0.0.0.0 — accessible from all network interfaces. For dev safety, set host to 127.0.0.1");
+      logger.warn(
+        "Binding to 0.0.0.0 — accessible from all network interfaces. For dev safety, set host to 127.0.0.1",
+      );
     }
     await server.listen({ port: config.port, host });
   } catch (err) {
@@ -56,7 +63,10 @@ const start = async () => {
 if (config.staticDir) {
   const staticPath = resolve(config.staticDir);
   if (!existsSync(staticPath)) {
-    logger.warn({ staticDir: config.staticDir }, "Static dir not found — GUI won't be served");
+    logger.warn(
+      { staticDir: config.staticDir },
+      "Static dir not found — GUI won't be served",
+    );
   } else {
     const MIME: Record<string, string> = {
       ".html": "text/html; charset=utf-8",

@@ -14,8 +14,14 @@ export function AppShell() {
       <main class="viewport">
         <Route path="/" component={({ params }) => <Library />} />
         <Route path="/create" component={({ params }) => <CreateSession />} />
-        <Route path="/forge/:id" component={({ params }) => <Forge id={params.id ?? ""} />} />
-        <Route path="/studio/:id" component={({ params }) => <Studio id={params.id ?? ""} />} />
+        <Route
+          path="/forge/:id"
+          component={({ params }) => <Forge id={params.id ?? ""} />}
+        />
+        <Route
+          path="/studio/:id"
+          component={({ params }) => <Studio id={params.id ?? ""} />}
+        />
       </main>
     </>
   );

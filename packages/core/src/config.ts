@@ -37,8 +37,10 @@ export function loadConfig(cwd = process.cwd()): Config {
   const merged = {
     ...fileConfig,
     sunoBaseUrl: envStr("TRACK_FORGE_SUNO_BASE_URL") ?? fileConfig.sunoBaseUrl,
-    sunoAuthToken: envStr("TRACK_FORGE_SUNO_AUTH_TOKEN") ?? fileConfig.sunoAuthToken,
-    publicBaseUrl: envStr("TRACK_FORGE_PUBLIC_BASE_URL") ?? fileConfig.publicBaseUrl,
+    sunoAuthToken:
+      envStr("TRACK_FORGE_SUNO_AUTH_TOKEN") ?? fileConfig.sunoAuthToken,
+    publicBaseUrl:
+      envStr("TRACK_FORGE_PUBLIC_BASE_URL") ?? fileConfig.publicBaseUrl,
     dbPath: envStr("TRACK_FORGE_DB_PATH") ?? fileConfig.dbPath,
     logLevel: envStr("TRACK_FORGE_LOG_LEVEL") ?? fileConfig.logLevel,
     port: envInt("TRACK_FORGE_PORT") ?? fileConfig.port,

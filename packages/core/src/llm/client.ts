@@ -1,5 +1,10 @@
 import type { Config } from "@track-forge/contracts";
-import type { LlmRequest, LlmResponse, LlmProvider, ProviderConfig } from "./types.js";
+import type {
+  LlmRequest,
+  LlmResponse,
+  LlmProvider,
+  ProviderConfig,
+} from "./types.js";
 import { PROVIDER_DEFAULTS } from "./types.js";
 
 // ── Factory ──────────────────────────────────────────────────────────
@@ -16,7 +21,10 @@ export function createLlmClient(
   logger?: LlmLogger,
 ): LlmClient {
   const model = config.llmModel ?? "gpt-4o";
-  const baseUrl = config.llmBaseUrl ?? PROVIDER_DEFAULTS[config.llmProvider]?.baseUrl ?? "http://localhost:11434";
+  const baseUrl =
+    config.llmBaseUrl ??
+    PROVIDER_DEFAULTS[config.llmProvider]?.baseUrl ??
+    "http://localhost:11434";
   const providerConfig: ProviderConfig = {
     provider: config.llmProvider,
     apiKey: config.llmApiKey,
@@ -38,22 +46,28 @@ export class LlmClient {
   }
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
-    this.logger?.debug({
-      prompt: req.messages[0]?.content?.slice(0, 500),
-      messages: req.messages.length,
-      temperature: req.temperature ?? 0.7,
-      maxTokens: req.maxTokens ?? 2048,
-      model: this.cfg.model,
-    }, "LLM request");
+    this.logger?.debug(
+      {
+        prompt: req.messages[0]?.content?.slice(0, 500),
+        messages: req.messages.length,
+        temperature: req.temperature ?? 0.7,
+        maxTokens: req.maxTokens ?? 2048,
+        model: this.cfg.model,
+      },
+      "LLM request",
+    );
 
     const response = await this._complete(req);
 
-    this.logger?.debug({
-      content: response.content.slice(0, 500),
-      reasoningContent: response.reasoningContent?.slice(0, 2000),
-      usage: response.usage,
-      model: response.model,
-    }, "LLM response");
+    this.logger?.debug(
+      {
+        content: response.content.slice(0, 500),
+        reasoningContent: response.reasoningContent?.slice(0, 2000),
+        usage: response.usage,
+        model: response.model,
+      },
+      "LLM response",
+    );
 
     return response;
   }
@@ -74,7 +88,10 @@ export class LlmClient {
 
   private async openaiComplete(req: LlmRequest): Promise<LlmResponse> {
     const timeoutController = new AbortController();
-    const timeout = setTimeout(() => timeoutController.abort(new Error("Request timed out")), 180_000);
+    const timeout = setTimeout(
+      () => timeoutController.abort(new Error("Request timed out")),
+      180_000,
+    );
     const combined = combineSignals(req.signal, timeoutController.signal);
 
     try {
@@ -95,20 +112,24 @@ export class LlmClient {
 
       clearTimeout(timeout);
       if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
-    }
+        const body = await res.text().catch(() => "");
+        throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
+      }
 
-    const json = (await res.json()) as {
-      choices: { message: { content: string; reasoning_content?: string } }[];
-      model: string;
-      usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-    };
+      const json = (await res.json()) as {
+        choices: { message: { content: string; reasoning_content?: string } }[];
+        model: string;
+        usage?: {
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+        };
+      };
 
-    return {
-      content: json.choices[0]?.message?.content ?? "",
-      model: json.model,
-      reasoningContent: json.choices[0]?.message?.reasoning_content,
+      return {
+        content: json.choices[0]?.message?.content ?? "",
+        model: json.model,
+        reasoningContent: json.choices[0]?.message?.reasoning_content,
         usage: json.usage
           ? {
               promptTokens: json.usage.prompt_tokens,
@@ -206,7 +227,10 @@ export class LlmClient {
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /** Combine two AbortSignals into one — fires when either aborts */
-function combineSignals(s1: AbortSignal | undefined, s2: AbortSignal): { signal: AbortSignal; cleanup: () => void } {
+function combineSignals(
+  s1: AbortSignal | undefined,
+  s2: AbortSignal,
+): { signal: AbortSignal; cleanup: () => void } {
   if (!s1) return { signal: s2, cleanup: () => {} };
   const c = new AbortController();
   const onAbort = () => {
