@@ -52,13 +52,35 @@ npm run clean               # rm -rf apps/*/dist packages/*/dist
 
 ## Genre config (static data)
 
-Genre presets, tag categories, defaults, tag policies, and adjustment vocabularies live in `config/genres/*.yaml` — version-controlled, no DB required. The server loads them at startup via `apps/server/src/lib/genre-config.ts` and serves them through:
+Genre presets, tag categories, defaults, tag policies, adjustment vocabularies, song structures, **and taxonomy** (subgenre entries with BPM ranges, characteristics, descriptions) live in `config/genres/*.yaml` — version-controlled, no DB required. The server loads them at startup via `apps/server/src/lib/genre-config.ts` and serves them through:
 
 - `GET /api/genres` — includes `color` and `subgenre_count`
 - `GET /api/genres/:id/presets` — presets with values
 - `GET /api/genres/:id/tag-categories` — category definitions with suggestions
 
 The executable parts (renderers, critics, validators, `compileBlueprint()`, `promptFragments`) remain TypeScript code in `packages/genre-*`.
+
+### YAML fields per genre
+
+| Field | EDM | Hip-Hop | Pop | Ambient | DnB |
+|---|---|---|---|---|---|
+| `song_structure` | yes | yes | yes | yes | yes |
+| `taxonomy.subgenres` | 43 entries | 22 entries | — | — | — |
+| `presets` | 17 | 21 | 3 | 2 | 2 |
+| `tag_categories` | yes | yes | yes | yes | yes |
+
+### Runtime injection
+
+`apps/server/src/lib/modules.ts` augments each `GenreModule` with YAML data at init:
+- `presets`, `tagCategories`, `songStructure`, `taxonomy` are injected via `augment()`
+- The TS genre modules carry minimal fallback arrays for static init (form options, defaults); the YAML files are the canonical rich source
+
+### YAML-only data (not duplicated in TS)
+
+- `song_structure` — section templates with bar formulas
+- `taxonomy.subgenres[].description, .characteristics, .arrangementTags, .vocalStyle, .tags` — renderer enrichment data
+- `presets` — full preset definitions
+- `tag_categories` — complete category definitions
 
 
 ## Backend architecture
