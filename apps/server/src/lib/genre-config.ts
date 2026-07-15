@@ -33,6 +33,12 @@ interface TagPolicyYaml {
   canonicalMap: Record<string, string>;
 }
 
+interface SongStructureSectionYaml {
+  section: string;
+  bars: number | { base: number; per_energy?: number; per_complexity?: number };
+  tags: string[];
+}
+
 export interface GenreConfigYaml {
   name: string;
   color: string;
@@ -42,6 +48,7 @@ export interface GenreConfigYaml {
   adjustment_vocabulary: AdjustmentVocabularyYaml;
   tag_categories: TagCategoryYaml[];
   presets: GenrePresetYaml[];
+  song_structure?: SongStructureSectionYaml[];
 }
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "config");
@@ -94,6 +101,10 @@ export function getTagPolicy(id: string): TagPolicyYaml {
 
 export function getAdjustmentVocabulary(id: string): AdjustmentVocabularyYaml {
   return loadYaml(id).adjustment_vocabulary;
+}
+
+export function getSongStructure(id: string): SongStructureSectionYaml[] {
+  return loadYaml(id).song_structure ?? [];
 }
 
 export function clearCache(): void {

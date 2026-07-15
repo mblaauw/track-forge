@@ -1,5 +1,48 @@
 import type { z } from "zod";
 
+// ── Song structure (arrangement config) ───────────────────────────────
+
+/**
+ * Bar specification for a song structure section.
+ * A plain number means a fixed bar count.
+ * An object means "base + round(energy * per_energy + complexity * per_complexity)".
+ */
+export type SongStructureBarSpec =
+  | number
+  | { base: number; per_energy?: number; per_complexity?: number };
+
+/** A single section in the song structure template */
+export interface SongStructureSection {
+  section: string;
+  bars: SongStructureBarSpec;
+  tags: string[];
+}
+
+/** A computed arrangement section (bars resolved to a concrete number) */
+export interface ArrangementSection {
+  section: string;
+  bars: number;
+  tags: string[];
+}
+
+/**
+ * Compute a concrete bar count from a SongStructureBarSpec and input values.
+ * Static numbers pass through; object specs are evaluated as:
+ *   base + round(energy * per_energy + complexity * per_complexity)
+ */
+export function computeBars(
+  spec: SongStructureBarSpec,
+  inputs: { energy?: number; complexity?: number },
+): number {
+  if (typeof spec === "number") return spec;
+  let total = spec.base;
+  if (spec.per_energy && inputs.energy != null)
+    total += inputs.energy * spec.per_energy;
+  if (spec.per_complexity && inputs.complexity != null)
+    total += inputs.complexity * spec.per_complexity;
+  return Math.round(total);
+}
+
 // ── Genre module contract ────────────────────────────────────────────
 
 /**
@@ -39,10 +82,15 @@ export interface GenreModule<
   promptFragments: Record<string, string>;
   /** Tag categories for the Style Console UI */
   tagCategories: TagCategory[];
+  /** Song structure template (loaded from YAML config at runtime) */
+  songStructure?: SongStructureSection[];
   /** Compile user inputs into full blueprint shape */
   compileBlueprint: (
     inputs: TInputs,
-    options?: { arrangementOverride?: { section: string; bars: number }[] },
+    options?: {
+      arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+      songStructure?: SongStructureSection[];
+    },
   ) => TBlueprintData;
   /** Renderers produce Suno-ready artifacts from blueprint */
   renderers: GenreRenderers<TBlueprintData>;

@@ -76,13 +76,13 @@ export const hipHopValidators: GenreValidators<HipHopInputs> = {
     }
 
     if (
-      !bp.songStructure ||
-      !Array.isArray(bp.songStructure) ||
-      bp.songStructure.length === 0
+      !bp.arrangement ||
+      !Array.isArray(bp.arrangement) ||
+      bp.arrangement.length === 0
     ) {
       errors.push({
-        field: "blueprint.songStructure",
-        message: "Song structure required",
+        field: "blueprint.arrangement",
+        message: "Arrangement required",
       });
     }
 

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import type { FormFieldDescriptor } from "@track-forge/genre-core";
+import {
+  type ArrangementSection,
+  type SongStructureSection,
+  computeBars,
+  type FormFieldDescriptor,
+} from "@track-forge/genre-core";
 
 export const DnbInputSchema = z.object({
   subgenre: z.string().min(1, "Select a subgenre"),
@@ -64,21 +69,37 @@ export const DnbBlueprintSchema = z.object({
 
 export type DnbBlueprint = z.infer<typeof DnbBlueprintSchema>;
 
-export interface ArrangementSection {
-  section: string;
-  bars: number;
-  tags: string[];
-}
+export const DNB_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
+  { section: "intro", bars: { base: 8, per_complexity: 0.3 }, tags: ["atmospheric", "filtered", "amen build"] },
+  { section: "break", bars: { base: 8, per_complexity: 0.5 }, tags: ["stripped", "rolling hats", "sub"] },
+  { section: "drop", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "reese bass", "driving breaks"] },
+  { section: "break", bars: { base: 8, per_complexity: 0.5 }, tags: ["stripped", "atmospheric", "pad swell"] },
+  { section: "drop", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "variation", "layered"] },
+  { section: "outro", bars: { base: 8, per_complexity: 0.4 }, tags: ["filtered", "fading", "sub roll"] },
+];
 
 export function compileBlueprint(
   inputs: DnbInputs,
   options?: {
     arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+    songStructure?: SongStructureSection[];
   },
 ): DnbBlueprint {
-  const arrangement =
-    options?.arrangementOverride ??
-    buildDefaultArrangement(inputs.energy, inputs.complexity);
+  let arrangement: ArrangementSection[];
+  if (options?.arrangementOverride) {
+    arrangement = options.arrangementOverride.map((s) => ({
+      section: s.section,
+      bars: s.bars,
+      tags: s.tags ?? [],
+    }));
+  } else {
+    const template = options?.songStructure ?? DNB_DEFAULT_SONG_STRUCTURE;
+    arrangement = template.map((s) => ({
+      section: s.section,
+      bars: computeBars(s.bars, inputs),
+      tags: s.tags,
+    }));
+  }
   const tags = [
     inputs.subgenre.replace(/_/g, " "),
     "drum & bass",
@@ -116,45 +137,6 @@ export function compileBlueprint(
     tags,
     negativeTags,
   });
-}
-
-export function buildDefaultArrangement(
-  energy: number,
-  complexity: number,
-): ArrangementSection[] {
-  const introBars = 8 + Math.round(complexity * 0.3);
-  const breakBars = 8 + Math.round(complexity * 0.5);
-  const dropBars = 16 + Math.round(energy * 1.2);
-  const outroBars = 8 + Math.round(complexity * 0.4);
-
-  return [
-    {
-      section: "intro",
-      bars: introBars,
-      tags: ["atmospheric", "filtered", "amen build"],
-    },
-    {
-      section: "break",
-      bars: breakBars,
-      tags: ["stripped", "rolling hats", "sub"],
-    },
-    {
-      section: "drop",
-      bars: dropBars,
-      tags: ["full", "reese bass", "driving breaks"],
-    },
-    {
-      section: "break",
-      bars: breakBars,
-      tags: ["stripped", "atmospheric", "pad swell"],
-    },
-    { section: "drop", bars: dropBars, tags: ["full", "variation", "layered"] },
-    {
-      section: "outro",
-      bars: outroBars,
-      tags: ["filtered", "fading", "sub roll"],
-    },
-  ];
 }
 
 export const DNB_FORM_FIELDS: FormFieldDescriptor[] = [

@@ -68,7 +68,7 @@ describe("Hip-Hop validators", () => {
       tags: ["hip hop", "rap"],
       negativeTags: [],
       styleClauses: [{ key: "genre", value: "boom bap", order: 1 }],
-      songStructure: ["intro", "verse", "chorus", "outro"],
+      arrangement: [{ section: "intro", bars: 8, tags: [] }, { section: "verse", bars: 16, tags: [] }, { section: "chorus", bars: 8, tags: [] }, { section: "outro", bars: 8, tags: [] }],
     };
 
     it("accepts valid blueprint", () => {
@@ -89,12 +89,12 @@ describe("Hip-Hop validators", () => {
       expect(errors.some((e) => e.field === "blueprint.tags")).toBe(true);
     });
 
-    it("rejects missing songStructure", () => {
+    it("rejects missing arrangement", () => {
       const errors = hipHopValidators.blueprint({
         ...validBp,
-        songStructure: [],
+        arrangement: [],
       });
-      expect(errors.some((e) => e.field === "blueprint.songStructure")).toBe(
+      expect(errors.some((e) => e.field === "blueprint.arrangement")).toBe(
         true,
       );
     });

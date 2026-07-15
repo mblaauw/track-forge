@@ -139,3 +139,23 @@ presets:
       complexity: 5
       lyricsMode: full_lyrics
       theme: "party"
+
+song_structure:
+  - section: intro
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [instrumental, pads]
+  - section: verse
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [stripped, vocals]
+  - section: pre_chorus
+    bars: 8
+    tags: [building, layered]
+  - section: chorus
+    bars: { base: 16, per_energy: 0.8 }
+    tags: [full, hook, energetic]
+  - section: bridge
+    bars: 8
+    tags: [stripped, introspective]
+  - section: outro
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [fading, reverb]

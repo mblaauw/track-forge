@@ -272,11 +272,10 @@ export function createHipHopRenderers(
         return "";
       }
 
-      const sections = data.songStructure;
       const lines: string[] = [];
 
-      for (const section of sections) {
-        switch (section) {
+      for (const section of data.arrangement) {
+        switch (section.section) {
           case "intro":
             lines.push(`[Intro]`);
             lines.push(

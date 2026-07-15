@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { createEdmRenderers } from "../src/renderers.js";
-import { buildDefaultArrangement, EdmBlueprintSchema } from "../src/schema.js";
+import { EDM_DEFAULT_SONG_STRUCTURE, EdmBlueprintSchema } from "../src/schema.js";
+import { computeBars } from "@track-forge/genre-core";
 
 function makeBlueprint(overrides: Record<string, unknown> = {}) {
+  const inputs = { energy: 6, complexity: 5 };
   const base = {
     subgenre: "deep_house",
     bpm: 120,
@@ -12,7 +14,11 @@ function makeBlueprint(overrides: Record<string, unknown> = {}) {
     energy: 6,
     complexity: 5,
     lyricsMode: "guided_instrumental" as const,
-    arrangement: buildDefaultArrangement(6, 5),
+    arrangement: EDM_DEFAULT_SONG_STRUCTURE.map((s) => ({
+      section: s.section,
+      bars: computeBars(s.bars, inputs),
+      tags: s.tags,
+    })),
     styleClauses: [{ key: "genre", value: "deep house", order: 1 }],
     tags: ["electronic", "deep house"],
     negativeTags: ["acoustic"],

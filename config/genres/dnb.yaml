@@ -121,3 +121,23 @@ presets:
       energy: 9
       complexity: 8
       lyricsMode: strict_instrumental
+
+song_structure:
+  - section: intro
+    bars: { base: 8, per_complexity: 0.3 }
+    tags: [atmospheric, filtered, amen build]
+  - section: break
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [stripped, rolling hats, sub]
+  - section: drop
+    bars: { base: 16, per_energy: 1.2 }
+    tags: [full, reese bass, driving breaks]
+  - section: break
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [stripped, atmospheric, pad swell]
+  - section: drop
+    bars: { base: 16, per_energy: 1.2 }
+    tags: [full, variation, layered]
+  - section: outro
+    bars: { base: 8, per_complexity: 0.4 }
+    tags: [filtered, fading, sub roll]

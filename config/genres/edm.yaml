@@ -337,3 +337,29 @@ presets:
       energy: 7
       complexity: 5
       lyricsMode: full_lyrics
+
+song_structure:
+  - section: intro
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [filtered, atmospheric]
+  - section: build
+    bars: 8
+    tags: [layered, rising, percussion build]
+  - section: drop
+    bars: { base: 16, per_energy: 1.2 }
+    tags: [full, driving]
+  - section: breakdown
+    bars: { base: 8, per_complexity: 0.8 }
+    tags: [stripped, atmospheric]
+  - section: build_2
+    bars: 8
+    tags: [layered, rising, tension]
+  - section: drop_2
+    bars: { base: 16, per_energy: 1.2 }
+    tags: [full, variation]
+  - section: bridge
+    bars: 8
+    tags: [transition]
+  - section: outro
+    bars: { base: 8, per_complexity: 0.5 }
+    tags: [filtered, fading]

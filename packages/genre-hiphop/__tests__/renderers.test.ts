@@ -21,7 +21,14 @@ function makeBlueprint(overrides: Record<string, unknown> = {}) {
     tags: ["hip hop", "rap", "boom bap"],
     negativeTags: ["pop"],
     styleClauses: [{ key: "genre", value: "boom bap", order: 1 }],
-    songStructure: ["intro", "verse", "chorus", "verse", "chorus", "outro"],
+    arrangement: [
+      { section: "intro", bars: 8, tags: [] },
+      { section: "verse", bars: 16, tags: [] },
+      { section: "chorus", bars: 8, tags: [] },
+      { section: "verse", bars: 16, tags: [] },
+      { section: "chorus", bars: 8, tags: [] },
+      { section: "outro", bars: 8, tags: [] },
+    ],
   };
   return HipHopBlueprintSchema.parse({ ...base, ...overrides });
 }

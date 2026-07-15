@@ -156,6 +156,9 @@ async function handleWriting(
   });
   // Inject plan into context for {{plan}} placeholder
   context.plan = songPlan;
+  context.songStructure = (module as any).songStructure
+    ?.map((s: any) => s.section)
+    .join(", ") ?? "";
 
   const stylePrompt =
     assembler.resolvePrompt("style_writing", context) ??
@@ -250,6 +253,10 @@ async function handleCompilation(state: PipelineState): Promise<PipelineState> {
   context.lyricsDocument = JSON.stringify(lyricsWriterResult.document);
   context.songPlan = songPlan ?? "";
   context.compilation = JSON.stringify(bp);
+  const bpArr = (bp as any).arrangement;
+  context.songStructure = Array.isArray(bpArr)
+    ? bpArr.map((s: any) => s.section).join(", ")
+    : (module as any).songStructure?.map((s: any) => s.section).join(", ") ?? "";
 
   // Blend structured writer results into compiled artifacts
   const styleText =
@@ -309,6 +316,9 @@ async function handleReview(
     nlAdjustments: state.nlAdjustments,
   });
   context.compiledJson = compiledJson;
+  context.songStructure = (module as any).songStructure
+    ?.map((s: any) => s.section)
+    .join(", ") ?? "";
   context.styleResult = state.styleWriterResult
     ? JSON.stringify(state.styleWriterResult)
     : "";
@@ -483,6 +493,9 @@ async function handleVerification(
       interpretedRef: state.interpretedRef,
     });
     context.compiledJson = compiledJson;
+    context.songStructure = (module as any).songStructure
+      ?.map((s: any) => s.section)
+      .join(", ") ?? "";
 
     // Inject individual compiled fields for critic {{placeholders}}
     try {

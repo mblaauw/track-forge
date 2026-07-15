@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { StyleClause } from "@track-forge/contracts";
 import {
+  type ArrangementSection,
+  type SongStructureSection,
+  computeBars,
+} from "@track-forge/genre-core";
+import {
   type NarrativeArc,
   type RhymeStyle,
   type FlowPattern,
@@ -137,7 +142,13 @@ export const HipHopBlueprintSchema = z.object({
       order: z.number(),
     }),
   ),
-  songStructure: z.array(z.string()),
+  arrangement: z.array(
+    z.object({
+      section: z.string(),
+      bars: z.number().int().positive(),
+      tags: z.array(z.string()),
+    }),
+  ),
 });
 
 export type HipHopBlueprint = z.input<typeof HipHopBlueprintSchema>;

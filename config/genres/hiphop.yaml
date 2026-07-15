@@ -482,3 +482,29 @@ presets:
       energy: 6
       complexity: 7
       lyricsMode: full_lyrics
+
+song_structure:
+  - section: intro
+    bars: 8
+    tags: []
+  - section: verse
+    bars: 16
+    tags: []
+  - section: hook
+    bars: 8
+    tags: []
+  - section: verse
+    bars: 16
+    tags: []
+  - section: hook
+    bars: 8
+    tags: []
+  - section: bridge
+    bars: 8
+    tags: []
+  - section: hook
+    bars: 8
+    tags: []
+  - section: outro
+    bars: 8
+    tags: []

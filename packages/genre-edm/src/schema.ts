@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { EdmFamily } from "./taxonomy.js";
+import {
+  type ArrangementSection,
+  type SongStructureSection,
+  computeBars,
+} from "@track-forge/genre-core";
 
 // ── Input schema — user-facing form fields ────────────────────────────
 
@@ -99,22 +104,41 @@ export type EdmBlueprint = z.infer<typeof EdmBlueprintSchema>;
 
 // ── Default arrangement builder ───────────────────────────────────────
 
-export interface ArrangementSection {
-  section: string;
-  bars: number;
-  tags: string[];
-}
+/** EDM song structure fallback used when no YAML config is loaded */
+export const EDM_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
+  { section: "intro", bars: { base: 8, per_complexity: 0.5 }, tags: ["filtered", "atmospheric"] },
+  { section: "build", bars: 8, tags: ["layered", "rising", "percussion build"] },
+  { section: "drop", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "driving"] },
+  { section: "breakdown", bars: { base: 8, per_complexity: 0.8 }, tags: ["stripped", "atmospheric"] },
+  { section: "build_2", bars: 8, tags: ["layered", "rising", "tension"] },
+  { section: "drop_2", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "variation"] },
+  { section: "bridge", bars: 8, tags: ["transition"] },
+  { section: "outro", bars: { base: 8, per_complexity: 0.5 }, tags: ["filtered", "fading"] },
+];
 
 /** Compile user inputs into full blueprint shape */
 export function compileBlueprint(
   inputs: EdmInputs,
   options?: {
     arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+    songStructure?: SongStructureSection[];
   },
 ): EdmBlueprint {
-  const arrangement =
-    options?.arrangementOverride ??
-    buildDefaultArrangement(inputs.energy, inputs.complexity);
+  let arrangement: ArrangementSection[];
+  if (options?.arrangementOverride) {
+    arrangement = options.arrangementOverride.map((s) => ({
+      section: s.section,
+      bars: s.bars,
+      tags: s.tags ?? [],
+    }));
+  } else {
+    const template = options?.songStructure ?? EDM_DEFAULT_SONG_STRUCTURE;
+    arrangement = template.map((s) => ({
+      section: s.section,
+      bars: computeBars(s.bars, inputs),
+      tags: s.tags,
+    }));
+  }
   const tags = [...inputs.customTags, "electronic"];
   const negativeTags: string[] = [];
   if (inputs.lyricsMode !== "full_lyrics")
@@ -142,35 +166,6 @@ export function compileBlueprint(
     tags,
     negativeTags,
   });
-}
-
-/** Build standard EDM arrangement based on subgenre characteristics */
-export function buildDefaultArrangement(
-  energy: number,
-  complexity: number,
-): ArrangementSection[] {
-  const baseBars = 8 + Math.round(complexity * 0.5);
-  const dropBars = 16 + Math.round(energy * 1.2);
-  const breakdownBars = 8 + Math.round(complexity * 0.8);
-
-  return [
-    { section: "intro", bars: baseBars, tags: ["filtered", "atmospheric"] },
-    {
-      section: "build",
-      bars: 8,
-      tags: ["layered", "rising", "percussion build"],
-    },
-    { section: "drop", bars: dropBars, tags: ["full", "driving"] },
-    {
-      section: "breakdown",
-      bars: breakdownBars,
-      tags: ["stripped", "atmospheric"],
-    },
-    { section: "build_2", bars: 8, tags: ["layered", "rising", "tension"] },
-    { section: "drop_2", bars: dropBars, tags: ["full", "variation"] },
-    { section: "bridge", bars: 8, tags: ["transition"] },
-    { section: "outro", bars: baseBars, tags: ["filtered", "fading"] },
-  ];
 }
 
 // ── Form field descriptors ────────────────────────────────────────────

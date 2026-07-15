@@ -1,4 +1,5 @@
-import type { GenreModule } from "@track-forge/genre-core";
+import type { GenreModule, SongStructureSection, ArrangementSection } from "@track-forge/genre-core";
+import { computeBars } from "@track-forge/genre-core";
 import type { HipHopInputs, HipHopBlueprint } from "./schema.js";
 import {
   HipHopInputSchema,
@@ -130,6 +131,17 @@ Verify subgenre conventions, lyrical complexity, and production style.`,
 
 const defaultRenderers = createHipHopRenderers();
 
+export const HIP_HOP_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
+  { section: "intro", bars: 8, tags: [] },
+  { section: "verse", bars: 16, tags: [] },
+  { section: "hook", bars: 8, tags: [] },
+  { section: "verse", bars: 16, tags: [] },
+  { section: "hook", bars: 8, tags: [] },
+  { section: "bridge", bars: 8, tags: [] },
+  { section: "hook", bars: 8, tags: [] },
+  { section: "outro", bars: 8, tags: [] },
+];
+
 export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
   id: "hiphop",
   name: "Hip-Hop",
@@ -150,9 +162,28 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
   promptFragments: hipHopPromptFragments,
   compileBlueprint: (
     inputs: HipHopInputs,
-    options?: { arrangementOverride?: { section: string; bars: number }[] },
-  ) =>
-    HipHopBlueprintSchema.parse({
+    options?: {
+      arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+      songStructure?: SongStructureSection[];
+    },
+  ) => {
+    let arrangement: ArrangementSection[];
+    if (options?.arrangementOverride) {
+      arrangement = options.arrangementOverride.map((s) => ({
+        section: s.section,
+        bars: s.bars,
+        tags: s.tags ?? [],
+      }));
+    } else {
+      const template =
+        options?.songStructure ?? HIP_HOP_DEFAULT_SONG_STRUCTURE;
+      arrangement = template.map((s) => ({
+        section: s.section,
+        bars: computeBars(s.bars, inputs),
+        tags: s.tags,
+      }));
+    }
+    return HipHopBlueprintSchema.parse({
       subgenre: inputs.subgenre,
       bpm: inputs.bpm,
       key: inputs.key,
@@ -180,17 +211,9 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
         { key: "bpm", value: String(inputs.bpm), order: 1 },
         { key: "mood", value: inputs.mood, order: 2 },
       ],
-      songStructure: [
-        "intro",
-        "verse",
-        "hook",
-        "verse",
-        "hook",
-        "bridge",
-        "hook",
-        "outro",
-      ],
-    }),
+      arrangement,
+    });
+  },
   renderers: {
     title: (data: HipHopBlueprint) => defaultRenderers.title(data),
     style: (data: HipHopBlueprint) => defaultRenderers.style(data),

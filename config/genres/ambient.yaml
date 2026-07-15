@@ -118,3 +118,17 @@ presets:
       complexity: 6
       lyricsMode: strict_instrumental
       soundscape: "evolving textures"
+
+song_structure:
+  - section: emerge
+    bars: { base: 12, per_complexity: 1.5 }
+    tags: [spacious, texture build, slow entry]
+  - section: swell
+    bars: { base: 16, per_complexity: 2 }
+    tags: [layered, evolving, deepening]
+  - section: drift
+    bars: { base: 16, per_complexity: 1.5 }
+    tags: [floating, wide, textural]
+  - section: fade
+    bars: { base: 12, per_complexity: 1.5 }
+    tags: [dissolving, sparse, receding]

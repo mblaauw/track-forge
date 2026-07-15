@@ -4,14 +4,18 @@ import { hipHopModule } from "@track-forge/genre-hiphop";
 import { popModule } from "@track-forge/genre-pop";
 import { ambientModule } from "@track-forge/genre-ambient";
 import { dnbModule } from "@track-forge/genre-dnb";
-import { listGenreConfigs } from "./genre-config.js";
+import { listGenreConfigs, getSongStructure } from "./genre-config.js";
+
+function augment(id: string, mod: GenreModule): GenreModule {
+  return { ...mod, songStructure: getSongStructure(id) };
+}
 
 const MODULES: Record<string, GenreModule> = {
-  edm: edmModule as unknown as GenreModule,
-  hiphop: hipHopModule as unknown as GenreModule,
-  pop: popModule as unknown as GenreModule,
-  ambient: ambientModule as unknown as GenreModule,
-  dnb: dnbModule as unknown as GenreModule,
+  edm: augment("edm", edmModule as unknown as GenreModule),
+  hiphop: augment("hiphop", hipHopModule as unknown as GenreModule),
+  pop: augment("pop", popModule as unknown as GenreModule),
+  ambient: augment("ambient", ambientModule as unknown as GenreModule),
+  dnb: augment("dnb", dnbModule as unknown as GenreModule),
 };
 
 export function getModule(genreId: string): GenreModule | undefined {

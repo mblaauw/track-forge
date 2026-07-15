@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  type ArrangementSection,
+  type SongStructureSection,
+  computeBars,
+  type FormFieldDescriptor,
+} from "@track-forge/genre-core";
 
 export const AmbientInputSchema = z.object({
   subgenre: z.string().min(1, "Select a subgenre"),
@@ -61,20 +67,35 @@ export const AmbientBlueprintSchema = z.object({
 
 export type AmbientBlueprint = z.infer<typeof AmbientBlueprintSchema>;
 
-export interface ArrangementSection {
-  section: string;
-  bars: number;
-  tags: string[];
-}
+export const AMBIENT_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
+  { section: "emerge", bars: { base: 12, per_complexity: 1.5 }, tags: ["spacious", "texture build", "slow entry"] },
+  { section: "swell", bars: { base: 16, per_complexity: 2 }, tags: ["layered", "evolving", "deepening"] },
+  { section: "drift", bars: { base: 16, per_complexity: 1.5 }, tags: ["floating", "wide", "textural"] },
+  { section: "fade", bars: { base: 12, per_complexity: 1.5 }, tags: ["dissolving", "sparse", "receding"] },
+];
 
 export function compileBlueprint(
   inputs: AmbientInputs,
   options?: {
     arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+    songStructure?: SongStructureSection[];
   },
 ): AmbientBlueprint {
-  const arrangement =
-    options?.arrangementOverride ?? buildDefaultArrangement(inputs.complexity);
+  let arrangement: ArrangementSection[];
+  if (options?.arrangementOverride) {
+    arrangement = options.arrangementOverride.map((s) => ({
+      section: s.section,
+      bars: s.bars,
+      tags: s.tags ?? [],
+    }));
+  } else {
+    const template = options?.songStructure ?? AMBIENT_DEFAULT_SONG_STRUCTURE;
+    arrangement = template.map((s) => ({
+      section: s.section,
+      bars: computeBars(s.bars, inputs),
+      tags: s.tags,
+    }));
+  }
   const tags = ["ambient", inputs.soundscape];
   const negativeTags: string[] = [
     "aggressive",
@@ -110,40 +131,6 @@ export function compileBlueprint(
     negativeTags,
   });
 }
-
-export function buildDefaultArrangement(
-  complexity: number,
-): ArrangementSection[] {
-  const emergeBars = 12 + Math.round(complexity * 1.5);
-  const swellBars = 16 + Math.round(complexity * 2);
-  const driftBars = 16 + Math.round(complexity * 1.5);
-  const fadeBars = 12 + Math.round(complexity * 1.5);
-
-  return [
-    {
-      section: "emerge",
-      bars: emergeBars,
-      tags: ["spacious", "texture build", "slow entry"],
-    },
-    {
-      section: "swell",
-      bars: swellBars,
-      tags: ["layered", "evolving", "deepening"],
-    },
-    {
-      section: "drift",
-      bars: driftBars,
-      tags: ["floating", "wide", "textural"],
-    },
-    {
-      section: "fade",
-      bars: fadeBars,
-      tags: ["dissolving", "sparse", "receding"],
-    },
-  ];
-}
-
-import type { FormFieldDescriptor } from "@track-forge/genre-core";
 
 export const AMBIENT_FORM_FIELDS: FormFieldDescriptor[] = [
   { key: "subgenre", label: "Subgenre", type: "text" },

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import type { FormFieldDescriptor } from "@track-forge/genre-core";
+import {
+  type ArrangementSection,
+  type SongStructureSection,
+  computeBars,
+  type FormFieldDescriptor,
+} from "@track-forge/genre-core";
 
 export const PopInputSchema = z.object({
   subgenre: z.string(),
@@ -58,21 +63,37 @@ export const POP_DEFAULTS: PopInputs = {
   reference: undefined,
 };
 
-export interface ArrangementSection {
-  section: string;
-  bars: number;
-  tags: string[];
-}
+export const POP_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
+  { section: "intro", bars: { base: 8, per_complexity: 0.5 }, tags: ["instrumental", "pads"] },
+  { section: "verse", bars: { base: 8, per_complexity: 0.5 }, tags: ["stripped", "vocals"] },
+  { section: "pre_chorus", bars: 8, tags: ["building", "layered"] },
+  { section: "chorus", bars: { base: 16, per_energy: 0.8 }, tags: ["full", "hook", "energetic"] },
+  { section: "bridge", bars: 8, tags: ["stripped", "introspective"] },
+  { section: "outro", bars: { base: 8, per_complexity: 0.5 }, tags: ["fading", "reverb"] },
+];
 
 export function compileBlueprint(
   inputs: PopInputs,
   options?: {
     arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+    songStructure?: SongStructureSection[];
   },
 ): PopBlueprint {
-  const arrangement =
-    options?.arrangementOverride ??
-    buildDefaultArrangement(inputs.energy, inputs.complexity);
+  let arrangement: ArrangementSection[];
+  if (options?.arrangementOverride) {
+    arrangement = options.arrangementOverride.map((s) => ({
+      section: s.section,
+      bars: s.bars,
+      tags: s.tags ?? [],
+    }));
+  } else {
+    const template = options?.songStructure ?? POP_DEFAULT_SONG_STRUCTURE;
+    arrangement = template.map((s) => ({
+      section: s.section,
+      bars: computeBars(s.bars, inputs),
+      tags: s.tags,
+    }));
+  }
   const tags: string[] = [inputs.subgenre, "pop"];
   const negativeTags: string[] = [];
   if (inputs.lyricsMode === "instrumental")
@@ -103,27 +124,6 @@ export function compileBlueprint(
     tags,
     negativeTags,
   });
-}
-
-export function buildDefaultArrangement(
-  energy: number,
-  complexity: number,
-): ArrangementSection[] {
-  const sectionBars = 8 + Math.round(complexity * 0.5);
-  const chorusBars = 16 + Math.round(energy * 0.8);
-
-  return [
-    { section: "intro", bars: sectionBars, tags: ["instrumental", "pads"] },
-    { section: "verse", bars: sectionBars, tags: ["stripped", "vocals"] },
-    { section: "pre_chorus", bars: 8, tags: ["building", "layered"] },
-    {
-      section: "chorus",
-      bars: chorusBars,
-      tags: ["full", "hook", "energetic"],
-    },
-    { section: "bridge", bars: 8, tags: ["stripped", "introspective"] },
-    { section: "outro", bars: sectionBars, tags: ["fading", "reverb"] },
-  ];
 }
 
 export const POP_FORM_FIELDS: FormFieldDescriptor[] = [

@@ -117,7 +117,14 @@ describe("Generative invariants", () => {
       complexity: 6,
       productionStyle: "electronic",
       lyricsMode: "full_lyrics",
-      songStructure: ["intro", "verse", "hook", "verse", "hook", "outro"],
+      arrangement: [
+        { section: "intro", bars: 8, tags: [] },
+        { section: "verse", bars: 16, tags: [] },
+        { section: "hook", bars: 8, tags: [] },
+        { section: "verse", bars: 16, tags: [] },
+        { section: "hook", bars: 8, tags: [] },
+        { section: "outro", bars: 8, tags: [] },
+      ],
       tags: ["trap"],
     });
 
