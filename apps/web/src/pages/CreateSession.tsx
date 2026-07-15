@@ -357,9 +357,126 @@ export function CreateSession() {
       <div class="create-left">
         <div class="create-header">
           <div class="panel-title">New Session</div>
-          <h1 class="create-title">Compose the brief.</h1>
-          <p class="create-desc">Shape the DNA of the track. The forge turns this brief into a finished bundle — one style, one lyric, many takes.</p>
         </div>
+
+        {/* Style Console — always visible */}
+        <div class="panel-card accordion-section">
+          <div class="panel-title-bar">
+            <div class="panel-title" style="margin:0">Style Console</div>
+            <span class="console-stats">{activeCount} active · {styleChars} chars</span>
+          </div>
+          <p class="console-desc">Weight each descriptor's influence, mute to A/B, and watch the prompt compile live.</p>
+          <div class="fingerprint-spectrum">
+            {(() => {
+              const cats = GENRE_MODULES[genreId]?.tagCategories ?? [];
+              const totals = cats.map((c) => ({
+                color: c.color,
+                weight: tags.filter((t) => t.category === c.id && !t.muted).reduce((s, t) => s + t.weight, 0),
+              }));
+              const max = Math.max(1, ...totals.map((t) => t.weight));
+              return totals.map((t, i) => (
+                <div key={i} class={`fingerprint-bar ${t.color}`} style={{ flex: Math.max(0.2, t.weight || 0.2), height: `${8 + (t.weight / max) * 16}px`, opacity: t.weight ? 1 : 0.25 }} />
+              ));
+            })()}
+          </div>
+          <div class="fingerprint-label">
+            <span>SIGNATURE</span>
+            <span>{tags.reduce((s, t) => s + (t.muted ? 0 : t.weight), 0)} units · {activeCount} active</span>
+          </div>
+
+          <div class="category-lanes">
+            {(GENRE_MODULES[genreId]?.tagCategories ?? []).map((cat) => {
+              const selectedCount = tags.filter((t) => t.category === cat.id).length;
+              return (
+                <div key={cat.id} class="category-lane">
+                  <div class="lane-header-row">
+                    <div class="lane-dot" style={{ background: `var(--${cat.color})` }} />
+                    <span class="lane-label">{cat.name.toUpperCase()}</span>
+                    <div class="lane-divider" />
+                    <span class="lane-count">{selectedCount}</span>
+                    <button class="lane-add" onClick={() => setAddingCat(addingCat === cat.id ? null : cat.id)}>+</button>
+                  </div>
+                  <div class="lane-chips">
+                    {(() => {
+                      const added = tags.filter((t) => t.category === cat.id).map((t) => t.label);
+                      const labels = [...new Set([...added, ...cat.suggestions])].slice(0, 8);
+                      return labels.map((s) => {
+                        const idx = tags.findIndex((t) => t.label === s && t.category === cat.id);
+                        const tag = idx >= 0 ? tags[idx] : undefined;
+                        const isSelected = idx >= 0 && idx === selectedTagIdx;
+                        const weight = tag?.weight ?? 2;
+                        return (
+                          <button
+                            key={s}
+                            class={`lane-chip${tag ? " active" : ""}${isSelected ? " selected" : ""}${tag?.muted ? " muted" : ""}`}
+                            onClick={() => (tag ? setSelectedTagIdx(idx) : addTag(s, cat.id))}
+                          >
+                            <span class="chip-bars">
+                              {[1, 2, 3].map((lv) => (
+                                <span key={lv} class="chip-bar" style={{ height: `${3 + lv * 2.5}px`, background: lv <= weight ? `var(--${cat.color})` : "var(--line2)" }} />
+                              ))}
+                            </span>
+                            <span class="chip-label">{s}</span>
+                          </button>
+                        );
+                      });
+                    })()}
+                    {tags.filter((t) => t.category === cat.id).length === 0 && <span class="lane-empty">— empty —</span>}
+                  </div>
+                  {addingCat === cat.id && (
+                    <div class="add-panel">
+                      <div class="add-suggestions">
+                      {cat.suggestions.filter((s) => !tags.some((t) => t.label === s && t.category === cat.id)).slice(0, 6).map((s) => (
+                        <button key={s} class="add-suggestion" onClick={() => { addTag(s, cat.id); }}>+ {s}</button>
+                      ))}
+                      </div>
+                      <div class="add-input-row">
+                        <input class="custom-tag-input" placeholder="custom descriptor…" onKeyDown={(e) => { if (e.key === "Enter") { const v = (e.target as HTMLInputElement).value.trim(); if (v) { addTag(v, cat.id); } (e.target as HTMLInputElement).value = ""; } }} />
+                        <button class="add-btn" onClick={() => { const inp = document.querySelector(".custom-tag-input") as HTMLInputElement; if (inp) { const v = inp.value.trim(); if (v) { addTag(v, cat.id); } inp.value = ""; } }}>Add</button>
+                        <button class="done-btn" onClick={() => setAddingCat(null)}>Done</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {selectedTagIdx != null && tags[selectedTagIdx] && (() => {
+            const i = selectedTagIdx;
+            const tag = tags[i]!;
+            const catColor = GENRE_MODULES[genreId]?.tagCategories?.find((c) => c.id === tag.category)?.color ?? "accent";
+            const setTag = (patch: Partial<typeof tag>) =>
+              setTags((prev) => prev.map((t, j) => (j === i ? { ...t, ...patch } : t)));
+            return (
+              <div class="tag-channel-strip">
+                <div class="tag-strip-row">
+                  <span class="tag-strip-dot" style={{ background: `var(--${catColor})` }} />
+                  <input class="tag-strip-name-input" value={tag.label} onInput={(e) => setTag({ label: (e.target as HTMLInputElement).value })} />
+                  <button class="tag-remove" onClick={() => { setTags((prev) => prev.filter((_, j) => j !== i)); setSelectedTagIdx(null); }}>
+                    <i class="ph-x" />
+                  </button>
+                </div>
+                <div class="tag-strip-controls">
+                  <span class="tag-strip-label">Weight</span>
+                  <div class="tag-weight-selector">
+                    {(["Sub", "Bal", "Dom"] as const).map((w) => {
+                      const wv = w === "Sub" ? 1 : w === "Bal" ? 2 : 3;
+                      return (
+                        <button key={w} class={`weight-option${wv === tag.weight ? " active" : ""}`} onClick={() => setTag({ weight: wv })}>{w}</button>
+                      );
+                    })}
+                  </div>
+                  <button class={`tag-mute${tag.muted ? " muted" : ""}`} onClick={() => setTag({ muted: !tag.muted })}>
+                    <i class="ph-speaker-simple-slash" />
+                    {tag.muted ? "MUTED" : "MUTE"}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
         {/* Foundation accordion */}
         <div class="panel-card accordion-section">
           <button class="accordion-header" onClick={() => setOpenSection(openSection === "foundation" ? null : "foundation")}>
@@ -476,13 +593,7 @@ export function CreateSession() {
                 </div>
                 <div class="preset-row" style="margin-top: 12px">
                   {SECTION_PALETTE.map((type) => (
-                    <button
-                      key={type}
-                      class="preset-pill"
-                      onClick={() => addSection(type)}
-                    >
-                      + {type}
-                    </button>
+                    <button key={type} class="preset-pill" onClick={() => addSection(type)}>+ {type}</button>
                   ))}
                 </div>
               </>
@@ -514,127 +625,6 @@ export function CreateSession() {
                 </button>
               ))}
             </div>
-          </div>}
-        </div>
-
-        {/* Style Console accordion */}
-        <div class="panel-card accordion-section">
-          <button class="accordion-header" onClick={() => setOpenSection(openSection === "console" ? null : "console")}>
-            <div class="panel-title" style="margin:0">Style Console</div>
-            <span class="accordion-chevron">{openSection === "console" ? "▾" : "▸"}</span>
-          </button>
-          {openSection === "console" && <div class="accordion-body">
-            <p class="console-desc">Weight each descriptor's influence, mute to A/B, and watch the prompt compile live.</p>
-            <div class="fingerprint-spectrum">
-              {(() => {
-                const cats = GENRE_MODULES[genreId]?.tagCategories ?? [];
-                const totals = cats.map((c) => ({
-                  color: c.color,
-                  weight: tags.filter((t) => t.category === c.id && !t.muted).reduce((s, t) => s + t.weight, 0),
-                }));
-                const max = Math.max(1, ...totals.map((t) => t.weight));
-                return totals.map((t, i) => (
-                  <div key={i} class={`fingerprint-bar ${t.color}`} style={{ flex: Math.max(0.2, t.weight || 0.2), height: `${8 + (t.weight / max) * 16}px`, opacity: t.weight ? 1 : 0.25 }} />
-                ));
-              })()}
-            </div>
-            <div class="fingerprint-label">
-              <span>SIGNATURE</span>
-              <span>{tags.reduce((s, t) => s + (t.muted ? 0 : t.weight), 0)} units · {activeCount} active</span>
-            </div>
-
-            <div class="category-lanes">
-              {(GENRE_MODULES[genreId]?.tagCategories ?? []).map((cat) => {
-                const selectedCount = tags.filter((t) => t.category === cat.id).length;
-                return (
-                  <div key={cat.id} class="category-lane">
-                    <div class="lane-header-row">
-                      <div class="lane-dot" style={{ background: `var(--${cat.color})` }} />
-                      <span class="lane-label">{cat.name.toUpperCase()}</span>
-                      <div class="lane-divider" />
-                      <span class="lane-count">{selectedCount}</span>
-                      <button class="lane-add" onClick={() => setAddingCat(addingCat === cat.id ? null : cat.id)}>+</button>
-                    </div>
-                    <div class="lane-chips">
-                      {(() => {
-                        const added = tags.filter((t) => t.category === cat.id).map((t) => t.label);
-                        const labels = [...new Set([...added, ...cat.suggestions])].slice(0, 8);
-                        return labels.map((s) => {
-                          const idx = tags.findIndex((t) => t.label === s && t.category === cat.id);
-                          const tag = idx >= 0 ? tags[idx] : undefined;
-                          const isSelected = idx >= 0 && idx === selectedTagIdx;
-                          const weight = tag?.weight ?? 2;
-                          return (
-                            <button
-                              key={s}
-                              class={`lane-chip${tag ? " active" : ""}${isSelected ? " selected" : ""}${tag?.muted ? " muted" : ""}`}
-                              onClick={() => (tag ? setSelectedTagIdx(idx) : addTag(s, cat.id))}
-                            >
-                              <span class="chip-bars">
-                                {[1, 2, 3].map((lv) => (
-                                  <span key={lv} class="chip-bar" style={{ height: `${3 + lv * 2.5}px`, background: lv <= weight ? `var(--${cat.color})` : "var(--line2)" }} />
-                                ))}
-                              </span>
-                              <span class="chip-label">{s}</span>
-                            </button>
-                          );
-                        });
-                      })()}
-                      {tags.filter((t) => t.category === cat.id).length === 0 && <span class="lane-empty">— empty —</span>}
-                    </div>
-                    {addingCat === cat.id && (
-                      <div class="add-panel">
-                        <div class="add-suggestions">
-                        {cat.suggestions.filter((s) => !tags.some((t) => t.label === s && t.category === cat.id)).slice(0, 6).map((s) => (
-                          <button key={s} class="add-suggestion" onClick={() => { addTag(s, cat.id); }}>+ {s}</button>
-                        ))}
-                        </div>
-                        <div class="add-input-row">
-                          <input class="custom-tag-input" placeholder="custom descriptor…" onKeyDown={(e) => { if (e.key === "Enter") { const v = (e.target as HTMLInputElement).value.trim(); if (v) { addTag(v, cat.id); } (e.target as HTMLInputElement).value = ""; } }} />
-                          <button class="add-btn" onClick={() => { const inp = document.querySelector(".custom-tag-input") as HTMLInputElement; if (inp) { const v = inp.value.trim(); if (v) { addTag(v, cat.id); } inp.value = ""; } }}>Add</button>
-                          <button class="done-btn" onClick={() => setAddingCat(null)}>Done</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {selectedTagIdx != null && tags[selectedTagIdx] && (() => {
-              const i = selectedTagIdx;
-              const tag = tags[i]!;
-              const catColor = GENRE_MODULES[genreId]?.tagCategories?.find((c) => c.id === tag.category)?.color ?? "accent";
-              const setTag = (patch: Partial<typeof tag>) =>
-                setTags((prev) => prev.map((t, j) => (j === i ? { ...t, ...patch } : t)));
-              return (
-                <div class="tag-channel-strip">
-                  <div class="tag-strip-row">
-                    <span class="tag-strip-dot" style={{ background: `var(--${catColor})` }} />
-                    <input class="tag-strip-name-input" value={tag.label} onInput={(e) => setTag({ label: (e.target as HTMLInputElement).value })} />
-                    <button class="tag-remove" onClick={() => { setTags((prev) => prev.filter((_, j) => j !== i)); setSelectedTagIdx(null); }}>
-                      <i class="ph-x" />
-                    </button>
-                  </div>
-                  <div class="tag-strip-controls">
-                    <span class="tag-strip-label">Weight</span>
-                    <div class="tag-weight-selector">
-                      {(["Sub", "Bal", "Dom"] as const).map((w) => {
-                        const wv = w === "Sub" ? 1 : w === "Bal" ? 2 : 3;
-                        return (
-                          <button key={w} class={`weight-option${wv === tag.weight ? " active" : ""}`} onClick={() => setTag({ weight: wv })}>{w}</button>
-                        );
-                      })}
-                    </div>
-                    <button class={`tag-mute${tag.muted ? " muted" : ""}`} onClick={() => setTag({ muted: !tag.muted })}>
-                      <i class="ph-speaker-simple-slash" />
-                      {tag.muted ? "MUTED" : "MUTE"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-
           </div>}
         </div>
 
