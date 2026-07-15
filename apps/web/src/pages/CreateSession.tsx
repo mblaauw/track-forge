@@ -82,6 +82,7 @@ export function CreateSession() {
   const [tags, setTags] = useState<{ label: string; category: string; weight: number; muted: boolean }[]>([]);
   const [addingCat, setAddingCat] = useState<string | null>(null);
   const [selectedTagIdx, setSelectedTagIdx] = useState<number | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>("foundation");
 
   useEffect(() => {
     fetchGenres().then(setGenres).catch(() => {});
@@ -359,155 +360,170 @@ export function CreateSession() {
           <h1 class="create-title">Compose the brief.</h1>
           <p class="create-desc">Shape the DNA of the track. The forge turns this brief into a finished bundle — one style, one lyric, many takes.</p>
         </div>
-        {/* Foundation */}
-        <div class="panel-card">
-          <div class="panel-title">01 · Foundation</div>
-          <div class="genre-grid">
-            {filteredGenres.map((g) => {
-              const dotColor = GENRE_COLORS[g.id] ?? "accent";
-              return (
-                <button
-                  key={g.id}
-                  class={`genre-card${genreId === g.id ? " active" : ""}`}
-                  onClick={() => handleGenreClick(g.id)}
-                >
-                  <div class="genre-square" style={{ background: `var(--${dotColor})` }}>{GENRE_SHORT[g.id] ?? g.id.toUpperCase()}</div>
-                  <div class="genre-name">{g.name}</div>
-                  <div class="genre-count">{GENRE_SUBGENRE_COUNTS[g.id] ?? ""} subgenres</div>
-                </button>
-              );
-            })}
-          </div>
-          {mod && mod.presets.length > 0 && (
-            <div class="preset-row">
-              {mod.presets.map((p) => (
-                <button
-                  key={p.id}
-                  class={`preset-pill${presetId === p.id ? " active" : ""}`}
-                  onClick={() => handlePresetClick(p.id)}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
-          <div class="create-control-row" style="margin-top: 16px">
-            <div class="control-group">
-              <span class="control-label">Tempo</span>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input
-                  class="tempo-slider"
-                  type="range"
-                  min="60"
-                  max="200"
-                  value={(inputs.bpm as number) ?? 120}
-                  onInput={handleTempoChange}
-                />
-                <span class="tempo-value">{(inputs.bpm as number) ?? 120}</span>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Key</span>
-              <select class="key-select" value={currentKey} onChange={handleKeyChange}>
-                <option value="" disabled>Select key</option>
-                {KEY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Arrangement */}
-        <div class="panel-card">
-          <div class="arrangement-header">
-            <div>
-              <div class="panel-title">02 · Arrangement</div>
-              <p class="arrangement-help">drag to reorder · drag edge to resize · click to edit</p>
-            </div>
-            <div class="arrangement-total">{totalBars} bars · {`${Math.floor(estSeconds / 60)}:${Math.round(estSeconds % 60).toString().padStart(2, "0")}`}</div>
-          </div>
-          <div class="arrangement-bar">
-            {sections.map((sec, i) => {
-              const base = SEC_COLORS[sec.section.toLowerCase()] ?? "#3a4048";
-              const strong = base !== "#3a4048";
-              return (
-                <div
-                  key={i}
-                  class={`arrangement-section${i === selectedSectionIdx ? " selected" : ""}`}
-                  style={{ flex: sec.bars, background: strong ? base : "var(--raised)", color: strong ? "#08090B" : "var(--dim)" }}
-                  onClick={() => setSelectedSectionIdx(i)}
-                  draggable={true}
-                  onDragStart={(e: DragEvent) => { dragIdx.current = i; e.dataTransfer!.effectAllowed = "move"; }}
-                  onDragOver={(e: DragEvent) => e.preventDefault()}
-                  onDrop={(e: DragEvent) => { e.preventDefault(); if (dragIdx.current != null) reorderSection(dragIdx.current, i); dragIdx.current = null; }}
-                  onDragEnd={() => { dragIdx.current = null; }}
-                >
-                  <div class="sec-label">{i === selectedSectionIdx && <span class="sec-dot" style={{ background: base }} />}{formatSectionName(sec.section)}</div>
-                  <div class="sec-bars">{sec.bars} bars</div>
-                  <span class="arrangement-grip" style={{ background: strong ? "linear-gradient(90deg,transparent,rgba(0,0,0,0.25))" : "linear-gradient(90deg,transparent,rgba(255,255,255,0.12))" }} onPointerDown={(e) => startResize(i, e)} />
-                </div>
-              );
-            })}
-          </div>
-          {sections.length > 0 && (
-            <>
-              <div class="arrangement-editor" style="margin-top: 12px">
-                <div class="bar-control">
-                  <button class="bar-btn" onClick={decrementBars}>−</button>
-                  <span class="bar-count">{sections[selectedSectionIdx]?.bars ?? 0}</span>
-                  <button class="bar-btn" onClick={incrementBars}>+</button>
-                </div>
-                <span style="font-size:12px;color:var(--text-dim)">bars</span>
-                <button class="bar-btn" onClick={() => moveSection(-1)} title="Move left">‹</button>
-                <button class="bar-btn" onClick={() => moveSection(1)} title="Move right">›</button>
-                <button class="section-action-btn" onClick={duplicateSection}>Duplicate</button>
-                <button class="section-action-btn" onClick={removeSection}>Remove</button>
-              </div>
-              <div class="preset-row" style="margin-top: 12px">
-                {SECTION_PALETTE.map((type) => (
+        {/* Foundation accordion */}
+        <div class="panel-card accordion-section">
+          <button class="accordion-header" onClick={() => setOpenSection(openSection === "foundation" ? null : "foundation")}>
+            <div class="panel-title" style="margin:0">01 · Foundation</div>
+            <span class="accordion-chevron">{openSection === "foundation" ? "▾" : "▸"}</span>
+          </button>
+          {openSection === "foundation" && <div class="accordion-body">
+            <div class="genre-grid">
+              {filteredGenres.map((g) => {
+                const dotColor = GENRE_COLORS[g.id] ?? "accent";
+                return (
                   <button
-                    key={type}
-                    class="preset-pill"
-                    onClick={() => addSection(type)}
+                    key={g.id}
+                    class={`genre-card${genreId === g.id ? " active" : ""}`}
+                    onClick={() => handleGenreClick(g.id)}
                   >
-                    + {type}
+                    <div class="genre-square" style={{ background: `var(--${dotColor})` }}>{GENRE_SHORT[g.id] ?? g.id.toUpperCase()}</div>
+                    <div class="genre-name">{g.name}</div>
+                    <div class="genre-count">{GENRE_SUBGENRE_COUNTS[g.id] ?? ""} subgenres</div>
+                  </button>
+                );
+              })}
+            </div>
+            {mod && mod.presets.length > 0 && (
+              <div class="preset-row">
+                {mod.presets.map((p) => (
+                  <button
+                    key={p.id}
+                    class={`preset-pill${presetId === p.id ? " active" : ""}`}
+                    onClick={() => handlePresetClick(p.id)}
+                  >
+                    {p.name}
                   </button>
                 ))}
               </div>
-            </>
-          )}
+            )}
+            <div class="create-control-row" style="margin-top: 16px">
+              <div class="control-group">
+                <span class="control-label">Tempo</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input
+                    class="tempo-slider"
+                    type="range"
+                    min="60"
+                    max="200"
+                    value={(inputs.bpm as number) ?? 120}
+                    onInput={handleTempoChange}
+                  />
+                  <span class="tempo-value">{(inputs.bpm as number) ?? 120}</span>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Key</span>
+                <select class="key-select" value={currentKey} onChange={handleKeyChange}>
+                  <option value="" disabled>Select key</option>
+                  {KEY_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>}
         </div>
 
-        {/* Reference */}
-        <div class="panel-card">
-          <div class="panel-title">03 · Reference material</div>
-          <textarea
-            class="reference-textarea"
-            placeholder="Paste a reference track URL or description..."
-            value={reference}
-            onInput={(e) => setReference((e.target as HTMLTextAreaElement).value)}
-          />
-          <div class="lyrics-mode-row">
-            {lyricsOptions.map((opt) => (
-              <button
-                key={opt.value}
-                class={`lyrics-mode-btn${lyricsMode === opt.value ? " active" : ""}`}
-                onClick={() => handleLyricsModeChange(opt.value)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+        {/* Arrangement accordion */}
+        <div class="panel-card accordion-section">
+          <button class="accordion-header" onClick={() => setOpenSection(openSection === "arrangement" ? null : "arrangement")}>
+            <div class="panel-title" style="margin:0">02 · Arrangement</div>
+            <span class="accordion-chevron">{openSection === "arrangement" ? "▾" : "▸"}</span>
+          </button>
+          {openSection === "arrangement" && <div class="accordion-body">
+            <div class="arrangement-header">
+              <div>
+                <p class="arrangement-help">drag to reorder · drag edge to resize · click to edit</p>
+              </div>
+              <div class="arrangement-total">{totalBars} bars · {`${Math.floor(estSeconds / 60)}:${Math.round(estSeconds % 60).toString().padStart(2, "0")}`}</div>
+            </div>
+            <div class="arrangement-bar">
+              {sections.map((sec, i) => {
+                const base = SEC_COLORS[sec.section.toLowerCase()] ?? "#3a4048";
+                const strong = base !== "#3a4048";
+                return (
+                  <div
+                    key={i}
+                    class={`arrangement-section${i === selectedSectionIdx ? " selected" : ""}`}
+                    style={{ flex: sec.bars, background: strong ? base : "var(--raised)", color: strong ? "#08090B" : "var(--dim)" }}
+                    onClick={() => setSelectedSectionIdx(i)}
+                    draggable={true}
+                    onDragStart={(e: DragEvent) => { dragIdx.current = i; e.dataTransfer!.effectAllowed = "move"; }}
+                    onDragOver={(e: DragEvent) => e.preventDefault()}
+                    onDrop={(e: DragEvent) => { e.preventDefault(); if (dragIdx.current != null) reorderSection(dragIdx.current, i); dragIdx.current = null; }}
+                    onDragEnd={() => { dragIdx.current = null; }}
+                  >
+                    <div class="sec-label">{i === selectedSectionIdx && <span class="sec-dot" style={{ background: base }} />}{formatSectionName(sec.section)}</div>
+                    <div class="sec-bars">{sec.bars} bars</div>
+                    <span class="arrangement-grip" style={{ background: strong ? "linear-gradient(90deg,transparent,rgba(0,0,0,0.25))" : "linear-gradient(90deg,transparent,rgba(255,255,255,0.12))" }} onPointerDown={(e) => startResize(i, e)} />
+                  </div>
+                );
+              })}
+            </div>
+            {sections.length > 0 && (
+              <>
+                <div class="arrangement-editor" style="margin-top: 12px">
+                  <div class="bar-control">
+                    <button class="bar-btn" onClick={decrementBars}>−</button>
+                    <span class="bar-count">{sections[selectedSectionIdx]?.bars ?? 0}</span>
+                    <button class="bar-btn" onClick={incrementBars}>+</button>
+                  </div>
+                  <span style="font-size:12px;color:var(--text-dim)">bars</span>
+                  <button class="bar-btn" onClick={() => moveSection(-1)} title="Move left">‹</button>
+                  <button class="bar-btn" onClick={() => moveSection(1)} title="Move right">›</button>
+                  <button class="section-action-btn" onClick={duplicateSection}>Duplicate</button>
+                  <button class="section-action-btn" onClick={removeSection}>Remove</button>
+                </div>
+                <div class="preset-row" style="margin-top: 12px">
+                  {SECTION_PALETTE.map((type) => (
+                    <button
+                      key={type}
+                      class="preset-pill"
+                      onClick={() => addSection(type)}
+                    >
+                      + {type}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>}
         </div>
 
-        {/* Style Console */}
-        <div class="panel-card">
-          <div class="panel-title-bar">
-            <div class="panel-title">Style Console</div>
-            <span class="console-stats">{activeCount} active · {styleChars} chars</span>
-          </div>
-          <div class="console-body">
+        {/* Reference accordion */}
+        <div class="panel-card accordion-section">
+          <button class="accordion-header" onClick={() => setOpenSection(openSection === "reference" ? null : "reference")}>
+            <div class="panel-title" style="margin:0">03 · Reference material</div>
+            <span class="accordion-chevron">{openSection === "reference" ? "▾" : "▸"}</span>
+          </button>
+          {openSection === "reference" && <div class="accordion-body">
+            <textarea
+              class="reference-textarea"
+              placeholder="Paste a reference track URL or description..."
+              value={reference}
+              onInput={(e) => setReference((e.target as HTMLTextAreaElement).value)}
+            />
+            <div class="lyrics-mode-row">
+              {lyricsOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  class={`lyrics-mode-btn${lyricsMode === opt.value ? " active" : ""}`}
+                  onClick={() => handleLyricsModeChange(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>}
+        </div>
+
+        {/* Style Console accordion */}
+        <div class="panel-card accordion-section">
+          <button class="accordion-header" onClick={() => setOpenSection(openSection === "console" ? null : "console")}>
+            <div class="panel-title" style="margin:0">Style Console</div>
+            <span class="accordion-chevron">{openSection === "console" ? "▾" : "▸"}</span>
+          </button>
+          {openSection === "console" && <div class="accordion-body">
             <p class="console-desc">Weight each descriptor's influence, mute to A/B, and watch the prompt compile live.</p>
             <div class="fingerprint-spectrum">
               {(() => {
@@ -619,7 +635,7 @@ export function CreateSession() {
               );
             })()}
 
-          </div>
+          </div>}
         </div>
 
         {/* Compiled style prompt */}
