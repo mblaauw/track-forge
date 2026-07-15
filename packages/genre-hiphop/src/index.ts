@@ -7,7 +7,6 @@ import {
   HIP_HOP_DEFAULTS,
   HIP_HOP_FORM_FIELDS,
 } from "./schema.js";
-import { HIP_HOP_PRESETS } from "./presets.js";
 import { createHipHopRenderers } from "./renderers.js";
 import {
   HIP_HOP_FAST_CRITIC,
@@ -15,7 +14,6 @@ import {
   HIP_HOP_ORIGINALITY_CRITIC,
 } from "./critics.js";
 import { hipHopValidators } from "./validators.js";
-import { HIP_HOP_TAG_CATEGORIES } from "./tag-categories.js";
 
 // ── Adjustment vocabulary ─────────────────────────────────────────────
 
@@ -157,8 +155,6 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
   // Generation
   adjustmentVocabulary: hipHopAdjustmentVocabulary,
   tagPolicy: hipHopTagPolicy,
-  presets: HIP_HOP_PRESETS,
-  tagCategories: HIP_HOP_TAG_CATEGORIES,
   promptFragments: hipHopPromptFragments,
   compileBlueprint: (
     inputs: HipHopInputs,
@@ -244,7 +240,6 @@ export {
   HIP_HOP_DEFAULTS,
   HIP_HOP_FORM_FIELDS,
 } from "./schema.js";
-export { HIP_HOP_PRESETS } from "./presets.js";
 export { createHipHopRenderers } from "./renderers.js";
 export {
   HIP_HOP_FAST_CRITIC,

@@ -7,11 +7,9 @@ import {
   compileBlueprint,
 } from "./schema.js";
 import { DNB_FORM_FIELDS } from "./schema.js";
-import { DNB_PRESETS } from "./presets.js";
 import { createDnbRenderers } from "./renderers.js";
 import { DNB_CRITICS } from "./critics.js";
 import { DNB_VALIDATORS } from "./validators.js";
-import { DNB_TAG_CATEGORIES } from "./tag-categories.js";
 
 export {
   DnbInputSchema,
@@ -20,10 +18,8 @@ export {
   compileBlueprint as dnbCompileBlueprint,
 } from "./schema.js";
 export type { DnbInputs, DnbBlueprint } from "./schema.js";
-export { DNB_PRESETS } from "./presets.js";
 export { DNB_CRITICS } from "./critics.js";
 export { DNB_VALIDATORS } from "./validators.js";
-export { DNB_TAG_CATEGORIES } from "./tag-categories.js";
 
 export const dnbModule: GenreModule<DnbInputs, DnbBlueprint> = {
   id: "dnb",
@@ -86,8 +82,6 @@ export const dnbModule: GenreModule<DnbInputs, DnbBlueprint> = {
       neuro: "neurofunk",
     },
   },
-  presets: DNB_PRESETS,
-  tagCategories: DNB_TAG_CATEGORIES,
   promptFragments: {
     planning:
       "Describe a Drum & Bass track arrangement: {{subgenre}}, {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, break, drop, outro) with energy arc and bass production notes.\n{{nlAdjustments}}",

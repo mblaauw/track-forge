@@ -7,8 +7,6 @@ import {
   compileBlueprint,
   POP_FORM_FIELDS,
 } from "./schema.js";
-import { POP_PRESETS } from "./presets.js";
-import { POP_TAG_CATEGORIES } from "./tag-categories.js";
 import { createPopRenderers } from "./renderers.js";
 import { POP_CRITICS } from "./critics.js";
 import { POP_VALIDATORS } from "./validators.js";
@@ -60,8 +58,6 @@ export const popModule: GenreModule<PopInputs, PopBlueprint> = {
       "pop song": "pop",
     },
   },
-  presets: POP_PRESETS,
-  tagCategories: POP_TAG_CATEGORIES,
   promptFragments: {
     planning:
       "Describe a {{subgenre}} Pop track arrangement: {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, verse, pre-chorus, chorus, bridge, outro) with energy arc and production notes.\n{{nlAdjustments}}",
@@ -92,7 +88,5 @@ export {
   compileBlueprint as popCompileBlueprint,
 } from "./schema.js";
 export type { PopInputs, PopBlueprint } from "./schema.js";
-export { POP_PRESETS } from "./presets.js";
-export { POP_TAG_CATEGORIES } from "./tag-categories.js";
 export { POP_CRITICS } from "./critics.js";
 export { POP_VALIDATORS } from "./validators.js";

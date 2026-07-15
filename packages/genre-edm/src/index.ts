@@ -14,11 +14,9 @@ import {
   compileBlueprint,
 } from "./schema.js";
 import { EDM_FORM_FIELDS } from "./schema.js";
-import { EDM_PRESETS } from "./presets.js";
 import { createEdmRenderers } from "./renderers.js";
 import { EDM_CRITICS } from "./critics.js";
 import { EDM_VALIDATORS } from "./validators.js";
-import { EDM_TAG_CATEGORIES } from "./tag-categories.js";
 
 // ── Re-exports ────────────────────────────────────────────────────────
 
@@ -29,7 +27,6 @@ export {
   compileBlueprint as edmCompileBlueprint,
 } from "./schema.js";
 export type { EdmInputs, EdmBlueprint } from "./schema.js";
-export { EDM_PRESETS } from "./presets.js";
 export { EDM_CRITICS } from "./critics.js";
 export { EDM_VALIDATORS } from "./validators.js";
 export {
@@ -110,8 +107,6 @@ export const edmModule: GenreModule<EdmInputs, EdmBlueprint> = {
       "4x4": "four-on-the-floor",
     },
   },
-  presets: EDM_PRESETS,
-  tagCategories: EDM_TAG_CATEGORIES,
   promptFragments: {
     planning:
       "Describe a {{subgenre}} EDM track arrangement: {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, build, drop, breakdown, outro) with energy arc and production notes.\n{{nlAdjustments}}",

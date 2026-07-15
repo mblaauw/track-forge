@@ -7,11 +7,9 @@ import {
   compileBlueprint,
 } from "./schema.js";
 import { AMBIENT_FORM_FIELDS } from "./schema.js";
-import { AMBIENT_PRESETS } from "./presets.js";
 import { createAmbientRenderers } from "./renderers.js";
 import { AMBIENT_CRITICS } from "./critics.js";
 import { AMBIENT_VALIDATORS } from "./validators.js";
-import { AMBIENT_TAG_CATEGORIES } from "./tag-categories.js";
 
 export {
   AmbientInputSchema,
@@ -20,10 +18,8 @@ export {
   compileBlueprint as ambientCompileBlueprint,
 } from "./schema.js";
 export type { AmbientInputs, AmbientBlueprint } from "./schema.js";
-export { AMBIENT_PRESETS } from "./presets.js";
 export { AMBIENT_CRITICS } from "./critics.js";
 export { AMBIENT_VALIDATORS } from "./validators.js";
-export { AMBIENT_TAG_CATEGORIES } from "./tag-categories.js";
 
 export const ambientModule: GenreModule<AmbientInputs, AmbientBlueprint> = {
   id: "ambient",
@@ -80,8 +76,6 @@ export const ambientModule: GenreModule<AmbientInputs, AmbientBlueprint> = {
       background: "ambient",
     },
   },
-  presets: AMBIENT_PRESETS,
-  tagCategories: AMBIENT_TAG_CATEGORIES,
   promptFragments: {
     planning:
       "Describe an ambient {{subgenre}} piece: {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, {{soundscape}} soundscape, complexity {{complexity}}/10. Outline slow-evolving sections (emerge, swell, drift, fade) with textural notes and spatial production cues.\n{{nlAdjustments}}",

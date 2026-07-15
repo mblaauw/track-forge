@@ -76,12 +76,12 @@ export interface GenreModule<
   adjustmentVocabulary: AdjustmentVocabulary;
   /** Tag compilation policy */
   tagPolicy: TagPolicy;
-  /** Named presets */
-  presets: GenrePreset[];
+  /** Named presets (loaded from YAML config at runtime) */
+  presets?: GenrePreset[];
   /** LLM prompt fragments keyed by stage */
   promptFragments: Record<string, string>;
-  /** Tag categories for the Style Console UI */
-  tagCategories: TagCategory[];
+  /** Tag categories for the Style Console UI (loaded from YAML config at runtime) */
+  tagCategories?: TagCategory[];
   /** Song structure template (loaded from YAML config at runtime) */
   songStructure?: SongStructureSection[];
   /** Compile user inputs into full blueprint shape */
