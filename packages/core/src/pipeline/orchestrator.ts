@@ -117,7 +117,7 @@ async function handlePlanning(
   const response = await deps.llm.complete({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.7,
-    maxTokens: 2048,
+    maxTokens: 8192,
     signal: deps.signal,
   });
 
@@ -173,7 +173,7 @@ async function handleWriting(
       deps.llm.complete({
         messages: [{ role: "user", content: stylePrompt }],
         temperature: 0.8,
-        maxTokens: 4096,
+        maxTokens: 8192,
         signal: deps.signal,
       }),
     ]);
@@ -193,13 +193,13 @@ async function handleWriting(
     deps.llm.complete({
       messages: [{ role: "user", content: stylePrompt }],
       temperature: 0.8,
-      maxTokens: 4096,
+      maxTokens: 8192,
       signal: deps.signal,
     }),
     deps.llm.complete({
       messages: [{ role: "user", content: lyricsPrompt }],
       temperature: 0.8,
-      maxTokens: 2048,
+      maxTokens: 8192,
       signal: deps.signal,
     }),
   ]);
@@ -844,7 +844,12 @@ function parseBlueprint(
   ) {
     try {
       const opts: Record<string, unknown> = {};
-      if (inputs.arrangement) opts.arrangementOverride = inputs.arrangement;
+      if (
+        Array.isArray(inputs.arrangement) &&
+        inputs.arrangement.length > 0
+      ) {
+        opts.arrangementOverride = inputs.arrangement;
+      }
       return module.compileBlueprint(inputs, opts) as Record<string, unknown>;
     } catch {
       /* fall through to raw inputs */
