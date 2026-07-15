@@ -33,8 +33,6 @@ npm run clean               # rm -rf apps/*/dist packages/*/dist
 | `packages/genre-dnb`     | `@track-forge/genre-dnb`     | Drum & Bass genre module (2 presets)                                  |
 | `packages/test-support`  | `@track-forge/test-support`  | Shared test helpers                                                   |
 
-Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphaned stub dirs). Build now runs `tsc -p tsconfig.json` only.
-
 ## Frontend architecture
 
 **4-view hash router** (`apps/web/src/lib/router.tsx`): custom hash-based router with `Router`/`Route`/`Link`/`useRouter`. Route component passes `{ params }` extracted via `match()`. Nav to `/forge/:id` or `/studio/:id` requires a job ID — without it the route won't match and viewport stays blank.
@@ -48,9 +46,20 @@ Genre packages' `build` scripts previously referenced `ui/tsconfig.json` (orphan
 **Views**:
 
 - **Library** (`/`): fetches `fetchJobs(100)` + `fetchGenres()`. Cards show genre badge, status badge, waveform, star/favorite, delete. Click → Studio (completed) or Forge (in_progress).
-- **Create** (`/create`): genre selection from real modules, presets from `module.presets`, arrangement from `compileBlueprint()`, Style Console with tag categories from `module.tagCategories`.
+- **Create** (`/create`): genre selection, presets from `GET /api/genres/:id/presets`, arrangement from `compileBlueprint()`, Style Console with tag categories from `GET /api/genres/:id/tag-categories`. Panels are accordion-foldable; Style Console and compiled prompt stay visible. Key select splits `"C maj"` → `["C","maj"]` and must map `"maj"`→`"major"`, `"min"`→`"minor"`.
 - **Forge** (`/forge/:id`): fetches job, connects SSE via `connectJobEvents(id, handlers)`. 8-stage assembly line. Actions depend on job status.
 - **Studio** (`/studio/:id`): fetches job + versions + generations (takes). Style + lyric artifacts parsed from version artifacts JSON. Play/pause simulated via `setInterval`.
+
+## Genre config (static data)
+
+Genre presets, tag categories, defaults, tag policies, and adjustment vocabularies live in `config/genres/*.yaml` — version-controlled, no DB required. The server loads them at startup via `apps/server/src/lib/genre-config.ts` and serves them through:
+
+- `GET /api/genres` — includes `color` and `subgenre_count`
+- `GET /api/genres/:id/presets` — presets with values
+- `GET /api/genres/:id/tag-categories` — category definitions with suggestions
+
+The executable parts (renderers, critics, validators, `compileBlueprint()`, `promptFragments`) remain TypeScript code in `packages/genre-*`.
+
 
 ## Backend architecture
 
