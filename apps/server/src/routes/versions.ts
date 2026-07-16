@@ -3,6 +3,14 @@ import { eq, desc, sql } from "drizzle-orm";
 import type { Db, LockService } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import { findRowOr404 } from "../lib/db-utils.js";
+import {
+  validateBody,
+  validateParams,
+  IdParams,
+  JobIdParams,
+  UpdateArtifactsBody,
+  CreateTakeBody,
+} from "../lib/validate.js";
 
 export interface VersionRouteDeps {
   db: Db;
@@ -18,7 +26,7 @@ export function registerVersionRoutes(
   // ── List versions for a job ──────────────────────────────────────────
 
   server.get("/api/jobs/:jobId/versions", async (req, reply) => {
-    const { jobId } = req.params as { jobId: string };
+    const { jobId } = validateParams(JobIdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -39,7 +47,7 @@ export function registerVersionRoutes(
   // ── Get version by ID ────────────────────────────────────────────────
 
   server.get("/api/versions/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const version = await findRowOr404(
       db,
@@ -53,13 +61,8 @@ export function registerVersionRoutes(
   // ── Update artifact (with lock) ──────────────────────────────────────
 
   server.patch("/api/versions/:id/artifacts", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as
-      { artifactType: string; value: string } | undefined;
-
-    if (!body?.artifactType || body.value === undefined) {
-      return reply.code(400).send({ error: "artifactType and value required" });
-    }
+    const { id } = validateParams(IdParams, req);
+    const body = validateBody(UpdateArtifactsBody, req);
 
     const version = await findRowOr404(
       db,
@@ -123,7 +126,7 @@ export function registerVersionRoutes(
   // ── Promote version to final ─────────────────────────────────────────
 
   server.post("/api/versions/:id/promote", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const version = await findRowOr404(
       db,
@@ -208,7 +211,7 @@ export function registerVersionRoutes(
   // ── Version tree ─────────────────────────────────────────────────────
 
   server.get("/api/jobs/:jobId/versions/tree", async (req, reply) => {
-    const { jobId } = req.params as { jobId: string };
+    const { jobId } = validateParams(JobIdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -247,7 +250,7 @@ export function registerVersionRoutes(
   // ── Takes (generations scoped to a version) ─────────────────────────
 
   server.get("/api/versions/:id/takes", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const version = await findRowOr404(
       db,
@@ -266,7 +269,7 @@ export function registerVersionRoutes(
   });
 
   server.post("/api/versions/:id/takes", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const version = await findRowOr404(
       db,
@@ -297,7 +300,7 @@ export function registerVersionRoutes(
   });
 
   server.patch("/api/takes/:id/favorite", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const now = new Date().toISOString();
     await db

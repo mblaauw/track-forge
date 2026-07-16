@@ -4,6 +4,17 @@ import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import { findRowOr404, parsePagination } from "../lib/db-utils.js";
+import {
+  validateBody,
+  validateQuery,
+  validateParams,
+  IdParams,
+  PaginationQuery,
+  CreateProjectBody,
+  UpdateProjectBody,
+  CreateDraftBody,
+  UpdateDraftBody,
+} from "../lib/validate.js";
 
 export interface ProjectRouteDeps {
   db: Db;
@@ -19,7 +30,7 @@ export function registerProjectRoutes(
   // ── Get project ────────────────────────────────────────────────────────
 
   server.get("/api/projects/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const project = await findRowOr404(
       db,
@@ -33,7 +44,7 @@ export function registerProjectRoutes(
   // ── Project stats (aggregated across jobs) ──────────────────────────────
 
   server.get("/api/projects/:id/stats", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const project = await findRowOr404(
       db,
@@ -78,14 +89,7 @@ export function registerProjectRoutes(
   // ── Create project ─────────────────────────────────────────────────────
 
   server.post("/api/projects", async (req, reply) => {
-    const body = req.body as Record<string, unknown>;
-    const name = body.name as string | undefined;
-    const description = (body.description as string) ?? null;
-    const genreId = (body.genreId as string) ?? null;
-
-    if (!name || typeof name !== "string") {
-      return reply.code(400).send({ error: "name required" });
-    }
+    const { name, description, genreId } = validateBody(CreateProjectBody, req);
 
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
@@ -111,11 +115,8 @@ export function registerProjectRoutes(
   // ── Update project ─────────────────────────────────────────────────────
 
   server.patch("/api/projects/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as Record<string, unknown>;
-    const name = body.name as string | undefined;
-    const description = body.description as string | undefined | null;
-    const genreId = body.genreId as string | undefined | null;
+    const { id } = validateParams(IdParams, req);
+    const { name, description, genreId } = validateBody(UpdateProjectBody, req);
 
     const project = await findRowOr404(
       db,
@@ -148,7 +149,7 @@ export function registerProjectRoutes(
   // ── List drafts for project ────────────────────────────────────────────
 
   server.get("/api/projects/:id/drafts", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const project = await findRowOr404(
       db,
@@ -169,7 +170,7 @@ export function registerProjectRoutes(
   // ── Get draft ──────────────────────────────────────────────────────────
 
   server.get("/api/drafts/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const draft = await findRowOr404(
       db,
@@ -183,15 +184,15 @@ export function registerProjectRoutes(
   // ── Create draft ───────────────────────────────────────────────────────
 
   server.post("/api/projects/:id/drafts", async (req, reply) => {
-    const { id: projectId } = req.params as { id: string };
-    const body = req.body as Record<string, unknown>;
-    const genreId = body.genreId as string | undefined;
-    const presetId = body.presetId as string | undefined;
-    const inputs = (body.inputs as string) ?? null;
-    const reference = (body.reference as string) ?? null;
-    const rawNl = body.nlAdjustments;
+    const { id: projectId } = validateParams(IdParams, req);
+    const { genreId, presetId, inputs, reference, nlAdjustments: rawNl } =
+      validateBody(CreateDraftBody, req);
     const nlAdjustments =
-      typeof rawNl === "string" ? rawNl : rawNl ? JSON.stringify(rawNl) : null;
+      typeof rawNl === "string"
+        ? rawNl
+        : rawNl
+          ? JSON.stringify(rawNl)
+          : null;
 
     await findRowOr404(
       db,
@@ -230,13 +231,9 @@ export function registerProjectRoutes(
   // ── Update draft ───────────────────────────────────────────────────────
 
   server.patch("/api/drafts/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as Record<string, unknown>;
-    const genreId = body.genreId as string | undefined;
-    const presetId = body.presetId as string | undefined;
-    const inputs = body.inputs as string | undefined | null;
-    const reference = body.reference as string | undefined | null;
-    const rawNl = body.nlAdjustments;
+    const { id } = validateParams(IdParams, req);
+    const patched = validateBody(UpdateDraftBody, req);
+    const { genreId, presetId, inputs, reference, nlAdjustments: rawNl } = patched;
     const nlAdjustments =
       rawNl === undefined
         ? undefined
@@ -279,7 +276,7 @@ export function registerProjectRoutes(
   // ── List jobs for project ──────────────────────────────────────────────
 
   server.get("/api/projects/:id/jobs", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const project = await findRowOr404(
       db,
@@ -288,11 +285,11 @@ export function registerProjectRoutes(
       "Project",
     );
 
-    const query = req.query as { limit?: string; offset?: string };
-    const { limit, offset } = parsePagination(query, {
-      limit: 50,
-      maxLimit: 100,
-    });
+    const query = validateQuery(PaginationQuery, req);
+    const { limit, offset } = parsePagination(
+      { limit: String(query.limit ?? 50), offset: String(query.offset ?? 0) },
+      { limit: 50, maxLimit: 100 },
+    );
 
     const rows = await db
       .select()
@@ -308,7 +305,7 @@ export function registerProjectRoutes(
   // ── Delete project (cascading to jobs, drafts, and all child rows) ──
 
   server.delete("/api/projects/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     await findRowOr404(
       db,

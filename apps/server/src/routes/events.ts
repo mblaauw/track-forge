@@ -6,6 +6,7 @@ import {
   formatSseEvent,
   type PipelineEvent,
 } from "@track-forge/core";
+import { validateParams, IdParams } from "../lib/validate.js";
 
 function sseWrite(reply: import("http").ServerResponse, data: string): void {
   try {
@@ -24,7 +25,7 @@ export function registerEventRoutes(
   // ── SSE: Job progress events (with history replay) ──────────────────
 
   server.get("/api/jobs/:id/events", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
     const headers = req.headers;
     const lastEventId = headers["last-event-id"]
       ? parseInt(headers["last-event-id"] as string, 10)
@@ -108,7 +109,7 @@ export function registerEventRoutes(
   // ── History endpoint (paginated event log) ─────────────────────────
 
   server.get("/api/jobs/:id/events/history", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
     const query = req.query as {
       limit?: string;
       offset?: string;

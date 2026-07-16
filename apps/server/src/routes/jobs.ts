@@ -22,6 +22,21 @@ import type { Config, JobId } from "@track-forge/contracts";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
 import { getPresets, getTagCategories } from "../lib/genre-config.js";
 import { findRowOr404, safeParse, parsePagination } from "../lib/db-utils.js";
+import {
+  validateBody,
+  validateQuery,
+  validateParams,
+  IdParams,
+  PaginationQuery,
+  CreateJobBody,
+  UpdateJobNameBody,
+  UpdateJobInputsBody,
+  PatchAdjustmentsBody,
+  PatchFindingsBody,
+  BulkExportBody,
+  StyleTagSuggestionBody,
+  JobIdOptionalStageBody,
+} from "../lib/validate.js";
 
 export interface JobRouteDeps {
   db: Db;
@@ -53,24 +68,10 @@ export function registerJobRoutes(
   // ── Create job ───────────────────────────────────────────────────────
 
   server.post("/api/jobs", async (req, reply) => {
-    const body = req.body as Record<string, unknown>;
-
-    const genreId = typeof body.genreId === "string" ? body.genreId : undefined;
-    const presetId =
-      typeof body.presetId === "string" ? body.presetId : undefined;
-    const inputs =
-      body.inputs &&
-      typeof body.inputs === "object" &&
-      !Array.isArray(body.inputs)
-        ? body.inputs
-        : {};
-    const reference =
-      typeof body.reference === "string" ? body.reference : null;
-    const name = typeof body.name === "string" ? body.name : null;
-
-    if (!genreId || !presetId) {
-      return reply.code(400).send({ error: "genreId and presetId required" });
-    }
+    const { genreId, presetId, inputs, reference, name } = validateBody(
+      CreateJobBody,
+      req,
+    );
 
     let mod;
     try {
@@ -91,8 +92,8 @@ export function registerJobRoutes(
       genreId as never,
       presetId as never,
       JSON.stringify(inputs),
-      reference,
-      name,
+      reference ?? null,
+      name ?? null,
     );
 
     return reply.code(201).send(job);
@@ -101,11 +102,11 @@ export function registerJobRoutes(
   // ── List jobs ────────────────────────────────────────────────────────
 
   server.get("/api/jobs", async (req) => {
-    const query = req.query as { limit?: string; offset?: string };
-    const { limit, offset } = parsePagination(query, {
-      limit: 20,
-      maxLimit: 100,
-    });
+    const query = validateQuery(PaginationQuery, req);
+    const { limit, offset } = parsePagination(
+      { limit: String(query.limit ?? 20), offset: String(query.offset ?? 0) },
+      { limit: 20, maxLimit: 100 },
+    );
 
     const rows = await db
       .select()
@@ -120,7 +121,7 @@ export function registerJobRoutes(
   // ── Get job ──────────────────────────────────────────────────────────
 
   server.get("/api/jobs/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -134,13 +135,8 @@ export function registerJobRoutes(
   // ── Rename job ───────────────────────────────────────────────────────
 
   server.patch("/api/jobs/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as Record<string, unknown>;
-    const name = body.name as string | undefined;
-
-    if (!name || typeof name !== "string") {
-      return reply.code(400).send({ error: "name required" });
-    }
+    const { id } = validateParams(IdParams, req);
+    const { name } = validateBody(UpdateJobNameBody, req);
 
     const job = await findRowOr404(
       db,
@@ -167,7 +163,7 @@ export function registerJobRoutes(
   // ── Favorite toggle ───────────────────────────────────────────────────
 
   server.patch("/api/jobs/:id/favorite", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const now = new Date().toISOString();
     await db
@@ -194,10 +190,8 @@ export function registerJobRoutes(
   // ── Update job inputs (autosave) ────────────────────────────────────
 
   server.patch("/api/jobs/:id/inputs", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as Record<string, unknown>;
-    const inputs = body.inputs as Record<string, unknown> | undefined;
-    const name = body.name as string | undefined;
+    const { id } = validateParams(IdParams, req);
+    const { inputs, name } = validateBody(UpdateJobInputsBody, req);
 
     const job = await findRowOr404(
       db,
@@ -288,10 +282,10 @@ export function registerJobRoutes(
   // ── Set NL adjustments ──────────────────────────────────────────────
 
   server.patch("/api/jobs/:id/nl-adjustments", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as { nlAdjustments?: unknown } | undefined;
+    const { id } = validateParams(IdParams, req);
+    const body = req.body ? validateBody(PatchAdjustmentsBody, req) : {};
     let nlValue: string | null = null;
-    if (body?.nlAdjustments !== undefined) {
+    if (body.nlAdjustments !== undefined) {
       nlValue =
         typeof body.nlAdjustments === "string"
           ? body.nlAdjustments
@@ -323,8 +317,8 @@ export function registerJobRoutes(
   // ── Submit review: filter findings and continue to revision ──────────
 
   server.post("/api/jobs/:id/review", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as { findings?: CriticFinding[] } | undefined;
+    const { id } = validateParams(IdParams, req);
+    const body = validateBody(PatchFindingsBody, req);
 
     const job = await findRowOr404(
       db,
@@ -358,8 +352,8 @@ export function registerJobRoutes(
   // ── Replay: reset to stage and re-run ────────────────────────────────
 
   server.post("/api/jobs/:id/replay", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const body = req.body as { stage?: GenerationStage } | undefined;
+    const { id } = validateParams(IdParams, req);
+    const body = req.body ? validateBody(JobIdOptionalStageBody, req) : {};
 
     const job = await findRowOr404(
       db,
@@ -373,7 +367,7 @@ export function registerJobRoutes(
         .send({ error: "Job must be completed or failed to replay" });
     }
 
-    const stage = body?.stage ?? "ref_interpretation";
+    const stage = (body.stage ?? "ref_interpretation") as never;
     await resetJobStage(db, id as JobId, stage);
 
     dispatchPipeline(id, job.genreId, req.log, "replay");
@@ -384,7 +378,7 @@ export function registerJobRoutes(
   // ── Retry: retry failed stage ───────────────────────────────────────
 
   server.post("/api/jobs/:id/retry", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -406,7 +400,7 @@ export function registerJobRoutes(
   // ── Cancel: stop running job ────────────────────────────────────────
 
   server.post("/api/jobs/:id/cancel", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -430,7 +424,7 @@ export function registerJobRoutes(
   // ── Start pipeline ───────────────────────────────────────────────────
 
   server.post("/api/jobs/:id/start", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -450,7 +444,7 @@ export function registerJobRoutes(
   // ── Payload preview ──────────────────────────────────────────────────
 
   server.get("/api/jobs/:id/payload-preview", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -555,13 +549,8 @@ export function registerJobRoutes(
   // ── Style tag suggestions (LLM-powered) ───────────────────────────────
 
   server.post("/api/jobs/style-tag-suggestions", async (req, reply) => {
-    const body = req.body as Record<string, unknown> | undefined;
-    const genreId = body?.genreId as string | undefined;
-    const presetId = body?.presetId as string | undefined;
-    const reference = body?.reference as string | undefined;
-    const bpm = body?.bpm as number | undefined;
-    const key = body?.key as string | undefined;
-
+    const body = validateBody(StyleTagSuggestionBody, req);
+    const { genreId, presetId, bpm, key } = body;
     if (!genreId) return reply.code(400).send({ error: "genreId required" });
 
     let module: import("@track-forge/genre-core").GenreModule;

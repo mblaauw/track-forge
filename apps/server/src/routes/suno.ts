@@ -11,6 +11,15 @@ import {
   schema,
 } from "@track-forge/core";
 import type { SunoArtifact } from "@track-forge/contracts";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+  IdParams,
+  JobIdParams,
+  SunoCallbackBody,
+  PaginationQuery,
+} from "../lib/validate.js";
 
 export interface SunoRouteDeps {
   db: Db;
@@ -30,7 +39,7 @@ export function registerSunoRoutes(
   // ── Callback webhook ──────────────────────────────────────────────
 
   server.post("/api/suno/callback", async (req, reply) => {
-    const body = req.body as Record<string, unknown>;
+    const body = validateBody(SunoCallbackBody, req);
     const generationId = String(body.id ?? body.generation_id ?? "");
     const status = String(body.status ?? "processing");
 
@@ -64,7 +73,7 @@ export function registerSunoRoutes(
   // ── Status proxy ─────────────────────────────────────────────────
 
   server.get("/api/suno/status/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     try {
       const feedItem = await suno.getGenerationStatus(id);
@@ -80,12 +89,9 @@ export function registerSunoRoutes(
   // ── List generations for job ──────────────────────────────────────
 
   server.get("/api/suno/jobs/:jobId/generations", async (req) => {
-    const { jobId } = req.params as { jobId: string };
-
-    const limit = parseInt(
-      String((req.query as Record<string, string>).limit ?? "10"),
-      10,
-    );
+    const { jobId } = validateParams(JobIdParams, req);
+    const query = validateQuery(PaginationQuery, req);
+    const limit = query.limit ?? 10;
     const records = await listGenerations(db, jobId, Math.min(limit, 50));
     return records;
   });
