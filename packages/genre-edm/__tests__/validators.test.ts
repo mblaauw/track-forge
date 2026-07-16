@@ -35,7 +35,8 @@ describe("EDM validators", () => {
     it("rejects subgenre not belonging to family", () => {
       const errors = EDM_VALIDATORS.input({
         ...validInput,
-        subgenre: "dubstep",
+        subgenre: "deep_house",
+        family: "techno",
       });
       expect(errors.some((e) => e.field === "family")).toBe(true);
     });

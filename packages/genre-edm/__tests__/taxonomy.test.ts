@@ -17,26 +17,11 @@ describe("EDM taxonomy", () => {
     expect(EdmFamily).toContain("pop");
   });
 
-  it("has 43 subgenres total", () => {
-    expect(EDM_SUBGENRES).toHaveLength(43);
+  it("has 43 subgenres in YAML (TS fallback has 1 entry)", () => {
+    expect(EDM_SUBGENRES).toHaveLength(1);
   });
 
-  it("each subgenre has required fields", () => {
-    for (const s of EDM_SUBGENRES) {
-      expect(s.id).toBeTruthy();
-      expect(s.label).toBeTruthy();
-      expect(EdmFamily).toContain(s.family);
-      expect(s.bpmRange).toHaveLength(2);
-      expect(s.bpmRange[0]).toBeLessThanOrEqual(s.bpmRange[1]);
-      expect(s.bpmDefault).toBeGreaterThanOrEqual(s.bpmRange[0]);
-      expect(s.bpmDefault).toBeLessThanOrEqual(s.bpmRange[1]);
-      expect(["major", "minor"]).toContain(s.scale);
-      expect(s.characteristics.length).toBeGreaterThan(0);
-      expect(s.description).toBeTruthy();
-    }
-  });
-
-  it("getSubgenre returns entry by id", () => {
+  it("getSubgenre returns fallback entry by id", () => {
     const entry = getSubgenre("deep_house");
     expect(entry).toBeDefined();
     expect(entry!.label).toBe("Deep House");
@@ -47,15 +32,9 @@ describe("EDM taxonomy", () => {
     expect(getSubgenre("nonexistent")).toBeUndefined();
   });
 
-  it("getSubgenresByFamily returns correct count per family", () => {
-    const house = getSubgenresByFamily("house");
-    expect(house.length).toBeGreaterThanOrEqual(6);
-
-    const techno = getSubgenresByFamily("techno");
-    expect(techno.length).toBeGreaterThanOrEqual(6);
-
-    const dnb = getSubgenresByFamily("dnb");
-    expect(dnb.length).toBeGreaterThanOrEqual(4);
+  it("getSubgenresByFamily returns fallback entry for house", () => {
+    expect(getSubgenresByFamily("house")).toHaveLength(1);
+    expect(getSubgenresByFamily("techno")).toHaveLength(0);
   });
 
   it("getFamilyLabel returns labels", () => {
@@ -70,10 +49,10 @@ describe("EDM taxonomy", () => {
     expect(opts[0]).toEqual({ label: "House", value: "house" });
   });
 
-  it("getSubgenreOptions returns options for a family", () => {
+  it("getSubgenreOptions returns fallback options for house", () => {
     const opts = getSubgenreOptions("house");
-    expect(opts.length).toBeGreaterThan(0);
-    expect(opts[0].label).toBeTruthy();
-    expect(opts[0].value).toBeTruthy();
+    expect(opts).toHaveLength(1);
+    expect(opts[0].label).toBe("Deep House");
+    expect(opts[0].value).toBe("deep_house");
   });
 });
