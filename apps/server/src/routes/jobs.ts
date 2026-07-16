@@ -436,6 +436,12 @@ export function registerJobRoutes(
       return reply.code(400).send({ error: "Job not in pending status" });
     }
 
+    const now = new Date().toISOString();
+    await db
+      .update(schema.jobs)
+      .set({ status: "in_progress", updatedAt: now })
+      .where(eq(schema.jobs.id, id));
+
     dispatchPipeline(id, job.genreId, req.log, "start");
 
     return reply.code(202).send({ status: "started", jobId: id });

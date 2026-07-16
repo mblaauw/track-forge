@@ -702,6 +702,16 @@ export async function runPipeline(
 
   let state = initialState;
 
+  // Signal client that pipeline is actively running
+  if (state.job.status !== "in_progress") {
+    const now = new Date().toISOString();
+    await deps.db
+      .update(schema.jobs)
+      .set({ status: "in_progress", updatedAt: now })
+      .where(eq(schema.jobs.id, state.job.id));
+    state.job.status = "in_progress";
+  }
+
   const stageHandlers: Record<
     string,
     (s: PipelineState, d: PipelineDeps) => Promise<PipelineState>
