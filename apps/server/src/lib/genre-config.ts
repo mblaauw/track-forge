@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as yaml from "js-yaml";
@@ -47,17 +47,30 @@ const ROOT = join(
 );
 const GENRE_DIR = join(ROOT, "genres");
 
-const cache = new Map<string, GenreConfigYaml>();
+interface CacheEntry {
+  mtime: number;
+  data: GenreConfigYaml;
+}
+
+const cache = new Map<string, CacheEntry>();
 
 function loadYaml(id: string): GenreConfigYaml {
-  const cached = cache.get(id);
-  if (cached) return cached;
-
   const filePath = join(GENRE_DIR, `${id}.yaml`);
+
+  const cached = cache.get(id);
+  if (cached) {
+    try {
+      const currentMtime = statSync(filePath).mtimeMs;
+      if (currentMtime <= cached.mtime) return cached.data;
+    } catch {
+      // if stat fails, fall through to re-read
+    }
+  }
+
   try {
     const raw = readFileSync(filePath, "utf-8");
     const parsed = yaml.load(raw) as GenreConfigYaml;
-    cache.set(id, parsed);
+    cache.set(id, { mtime: statSync(filePath).mtimeMs, data: parsed });
     return parsed;
   } catch (err) {
     throw new Error(
@@ -102,7 +115,12 @@ export function getTaxonomy(id: string): unknown {
   return loadYaml(id).taxonomy ?? null;
 }
 
-/** @internal */
+/** Force reload on next access. */
 export function clearCache(): void {
   cache.clear();
+}
+
+/** Number of cached entries (for diagnostics). */
+export function cacheSize(): number {
+  return cache.size;
 }
