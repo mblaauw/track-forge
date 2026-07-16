@@ -73,83 +73,58 @@ export class LlmClient {
   }
 
   private async _complete(req: LlmRequest): Promise<LlmResponse> {
-    switch (this.cfg.provider) {
-      case "openai":
-      case "openai-compatible":
-        return this.openaiComplete(req);
-      case "anthropic":
-        return this.anthropicComplete(req);
-      case "ollama":
-        return this.ollamaComplete(req);
-    }
+    return this.request(req);
   }
 
-  // ── OpenAI ───────────────────────────────────────────────────────
+  /**
+   * Single parameterised fetch+parse loop for all providers.
+   * Each provider variant supplies its own url, headers, body builder and
+   * response parser — the timeout/signal/error plumbing is shared.
+   */
+  private async request(req: LlmRequest): Promise<LlmResponse> {
+    const { baseUrl, apiKey, model } = this.cfg;
 
-  private async openaiComplete(req: LlmRequest): Promise<LlmResponse> {
-    const timeoutController = new AbortController();
-    const timeout = setTimeout(
-      () => timeoutController.abort(new Error("Request timed out")),
-      180_000,
-    );
-    const combined = combineSignals(req.signal, timeoutController.signal);
-
-    try {
-      const res = await fetch(`${this.cfg.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.cfg.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.cfg.model,
-          messages: req.messages,
-          temperature: req.temperature ?? 0.7,
-          max_tokens: req.maxTokens ?? 2048,
-        }),
-        signal: combined.signal,
-      });
-
-      clearTimeout(timeout);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new LlmError(`OpenAI API error ${res.status}`, res.status, body);
-      }
-
-      const json = (await res.json()) as {
-        choices: { message: { content: string; reasoning_content?: string } }[];
-        model: string;
-        usage?: {
-          prompt_tokens: number;
-          completion_tokens: number;
-          total_tokens: number;
-        };
-      };
-
-      return {
-        content: json.choices[0]?.message?.content ?? "",
-        model: json.model,
-        reasoningContent: json.choices[0]?.message?.reasoning_content,
-        usage: json.usage
-          ? {
-              promptTokens: json.usage.prompt_tokens,
-              completionTokens: json.usage.completion_tokens,
-              totalTokens: json.usage.total_tokens,
-            }
-          : undefined,
-      };
-    } finally {
-      clearTimeout(timeout);
-      combined.cleanup();
-    }
-  }
-
-  // ── Anthropic ────────────────────────────────────────────────────
-
-  private async anthropicComplete(req: LlmRequest): Promise<LlmResponse> {
-    const systemMsg = req.messages.find((m) => m.role === "system");
+    // ── Build provider-specific request ───────────────────────────
+    const systemMsg = req.messages.filter((m) => m.role === "system");
     const nonSystem = req.messages.filter((m) => m.role !== "system");
 
+    const provider = this.cfg.provider;
+    const isAnthropic = provider === "anthropic";
+    const isOpenAI = provider === "openai" || provider === "openai-compatible";
+    const isOllama = provider === "ollama";
+
+    const url = isOllama
+      ? `${baseUrl}/api/chat`
+      : isAnthropic
+        ? `${baseUrl}/messages`
+        : `${baseUrl}/chat/completions`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (isOpenAI) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    } else if (isAnthropic) {
+      headers["x-api-key"] = apiKey ?? "";
+      headers["anthropic-version"] = "2023-06-01";
+    }
+
+    const bodyObj: Record<string, unknown> = {
+      model,
+      messages: req.messages,
+      temperature: req.temperature ?? 0.7,
+      max_tokens: req.maxTokens ?? 2048,
+    };
+    if (isAnthropic) {
+      bodyObj.system = systemMsg.map((m) => m.content).join("\n");
+      bodyObj.messages = nonSystem.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+    }
+    if (isOllama) bodyObj.stream = false;
+
+    // ── Fire with timeout + combined abort ─────────────────────────
     const timeoutController = new AbortController();
     const timeout = setTimeout(
       () => timeoutController.abort(new Error("Request timed out")),
@@ -157,109 +132,72 @@ export class LlmClient {
     );
     const combined = combineSignals(req.signal, timeoutController.signal);
 
+    let res: Response;
     try {
-      const res = await fetch(`${this.cfg.baseUrl}/messages`, {
+      res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.cfg.apiKey ?? "",
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: this.cfg.model,
-          system: systemMsg?.content,
-          messages: nonSystem.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          temperature: req.temperature ?? 0.7,
-          max_tokens: req.maxTokens ?? 2048,
-        }),
+        headers,
+        body: JSON.stringify(bodyObj),
         signal: combined.signal,
       });
-
+    } finally {
       clearTimeout(timeout);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new LlmError(
-          `Anthropic API error ${res.status}`,
-          res.status,
-          body,
-        );
-      }
+      combined.cleanup();
+    }
 
-      const json = (await res.json()) as {
-        content: { text: string }[];
-        model: string;
-        usage?: { input_tokens: number; output_tokens: number };
-      };
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const label = isOpenAI ? "OpenAI" : isAnthropic ? "Anthropic" : "Ollama";
+      throw new LlmError(`${label} API error ${res.status}`, res.status, body);
+    }
 
+    const json = (await res.json()) as Record<string, unknown>;
+
+    // ── Parse provider-specific response shape ─────────────────────
+    if (isOpenAI) {
+      const choices = json.choices as Array<{
+        message: { content: string; reasoning_content?: string };
+      }> | undefined;
+      const msg = choices?.[0]?.message;
       return {
-        content: json.content?.map((c) => c.text).join("") ?? "",
-        model: json.model,
+        content: msg?.content ?? "",
+        model: (json.model as string) ?? model,
+        reasoningContent: msg?.reasoning_content,
         usage: json.usage
           ? {
-              promptTokens: json.usage.input_tokens,
-              completionTokens: json.usage.output_tokens,
-              totalTokens: json.usage.input_tokens + json.usage.output_tokens,
+              promptTokens: (json.usage as any).prompt_tokens,
+              completionTokens: (json.usage as any).completion_tokens,
+              totalTokens: (json.usage as any).total_tokens,
             }
           : undefined,
       };
-    } finally {
-      clearTimeout(timeout);
-      combined.cleanup();
     }
-  }
 
-  // ── Ollama ───────────────────────────────────────────────────────
-
-  private async ollamaComplete(req: LlmRequest): Promise<LlmResponse> {
-    const timeoutController = new AbortController();
-    const timeout = setTimeout(
-      () => timeoutController.abort(new Error("Request timed out")),
-      180_000,
-    );
-    const combined = combineSignals(req.signal, timeoutController.signal);
-
-    try {
-      const res = await fetch(`${this.cfg.baseUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: this.cfg.model,
-          messages: req.messages,
-          temperature: req.temperature ?? 0.7,
-          max_tokens: req.maxTokens ?? 2048,
-          stream: false,
-        }),
-        signal: combined.signal,
-      });
-
-      clearTimeout(timeout);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new LlmError(`Ollama API error ${res.status}`, res.status, body);
-      }
-
-      const json = (await res.json()) as {
-        message: { content: string };
-        model: string;
-      };
-
+    if (isAnthropic) {
+      const contentArr = json.content as Array<{ text: string }> | undefined;
       return {
-        content: json.message?.content ?? "",
-        model: json.model,
+        content: contentArr?.map((c) => c.text).join("") ?? "",
+        model: (json.model as string) ?? model,
+        usage: json.usage
+          ? {
+              promptTokens: (json.usage as any).input_tokens,
+              completionTokens: (json.usage as any).output_tokens,
+              totalTokens:
+                (json.usage as any).input_tokens +
+                (json.usage as any).output_tokens,
+            }
+          : undefined,
       };
-    } finally {
-      clearTimeout(timeout);
-      combined.cleanup();
     }
+
+    // Ollama
+    const msg = json.message as { content: string } | undefined;
+    return {
+      content: msg?.content ?? "",
+      model: (json.model as string) ?? model,
+    };
   }
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-/** Combine two AbortSignals into one — fires when either aborts */
 function combineSignals(
   s1: AbortSignal | undefined,
   s2: AbortSignal,

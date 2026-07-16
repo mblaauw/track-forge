@@ -10,7 +10,7 @@ function renderTitle(data: PopBlueprint): string {
 
   const subgenreWords = data.subgenre
     .split(/[-\s]/)
-    .map((w) => capitalize(w))
+    .map((w: string) => capitalize(w))
     .join(" ");
   parts.push(subgenreWords);
 
@@ -31,7 +31,9 @@ function renderStyle(data: PopBlueprint): string {
   if (data.complexity >= 7) clauses.push("Complex arrangement.");
   else if (data.complexity <= 3) clauses.push("Minimal arrangement.");
 
-  const sectionNames = data.arrangement.map((a) => a.section).join(", ");
+  const sectionNames = data.arrangement
+    .map((a: { section: string }) => a.section)
+    .join(", ");
   clauses.push(`Structure: ${sectionNames}.`);
 
   return clauses.join(" ");

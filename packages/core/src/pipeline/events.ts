@@ -137,6 +137,11 @@ export async function getJobEvents(
   return rows.reverse() as unknown as JobEvent[];
 }
 
+/** Format a PipelineEvent as an SSE message string. */
+export function formatSseEvent(event: PipelineEvent): string {
+  return `id: ${event.sequence}\nevent: progress\ndata: ${JSON.stringify(event)}\n\n`;
+}
+
 /** Remove all in-memory subscriptions for a job. */
 export function unsubscribeAll(jobId: string): void {
   subscriptions.delete(jobId);

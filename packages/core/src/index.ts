@@ -1,4 +1,4 @@
-export { createDb, schema } from "./db/index.js";
+export { createDb, schema, getSqlite } from "./db/index.js";
 export type { Db } from "./db/index.js";
 export { loadConfig } from "./config.js";
 
@@ -63,6 +63,7 @@ export {
   publish,
   unsubscribeAll,
   getJobEvents,
+  formatSseEvent,
 } from "./pipeline/index.js";
 export type {
   PipelineDeps,

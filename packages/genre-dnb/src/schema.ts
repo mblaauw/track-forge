@@ -4,22 +4,18 @@ import {
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
+  createBaseInputSchema,
+  createBaseBlueprintSchema,
 } from "@track-forge/genre-core";
 
-export const DnbInputSchema = z.object({
-  subgenre: z.string().min(1, "Select a subgenre"),
-  bpm: z.number().int().min(160).max(180),
-  key: z.string(),
-  scale: z.enum(["major", "minor"]),
-  mood: z.string(),
-  energy: z.number().int().min(1).max(10),
-  complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum([
-    "strict_instrumental",
-    "guided_instrumental",
-    "full_lyrics",
-  ]),
-  reference: z.string().optional(),
+export const DnbInputSchema = createBaseInputSchema({
+  bpmMin: 160,
+  bpmMax: 180,
+  extra: {
+    subgenre: z.string().min(1, "Select a subgenre"),
+    energy: z.number().int().min(1).max(10),
+    reference: z.string().optional(),
+  },
 });
 
 export type DnbInputs = z.infer<typeof DnbInputSchema>;
@@ -36,35 +32,11 @@ export const DNB_DEFAULTS: DnbInputs = {
   reference: undefined,
 };
 
-export const DnbBlueprintSchema = z.object({
-  subgenre: z.string(),
-  bpm: z.number().int(),
-  key: z.string(),
-  scale: z.enum(["major", "minor"]),
-  mood: z.string(),
-  energy: z.number().int().min(1).max(10),
-  complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum([
-    "strict_instrumental",
-    "guided_instrumental",
-    "full_lyrics",
-  ]),
-  arrangement: z.array(
-    z.object({
-      section: z.string(),
-      bars: z.number().int().positive(),
-      tags: z.array(z.string()),
-    }),
-  ),
-  styleClauses: z.array(
-    z.object({
-      key: z.string(),
-      value: z.string(),
-      order: z.number().int(),
-    }),
-  ),
-  tags: z.array(z.string()),
-  negativeTags: z.array(z.string()),
+export const DnbBlueprintSchema = createBaseBlueprintSchema({
+  extra: {
+    subgenre: z.string(),
+    energy: z.number().int().min(1).max(10),
+  },
 });
 
 export type DnbBlueprint = z.infer<typeof DnbBlueprintSchema>;

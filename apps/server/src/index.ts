@@ -18,6 +18,7 @@ import { registerProjectRoutes } from "./routes/projects.js";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerImportExportRoutes } from "./routes/import-export.js";
 import { ApiError } from "./lib/db-utils.js";
+import { getSqlite } from "@track-forge/core";
 
 const config = initConfig();
 const logger = pino({ level: config.logLevel });
@@ -50,6 +51,21 @@ registerVersionRoutes(server, { db, lockService });
 registerSunoRoutes(server, { db, suno, config });
 registerEventRoutes(server, { db });
 registerImportExportRoutes(server, { db });
+
+// ── Startup sweep: reset jobs stuck in_progress after crash ──────────
+const sqlite = getSqlite(db);
+const stuck = sqlite
+  .prepare("SELECT COUNT(*) AS cnt FROM jobs WHERE status = 'in_progress'")
+  .get() as { cnt: number } | undefined;
+if (stuck && stuck.cnt > 0) {
+  const now = new Date().toISOString();
+  sqlite
+    .prepare(
+      "UPDATE jobs SET status = 'failed', error = 'Interrupted by server restart', updated_at = ? WHERE status = 'in_progress'",
+    )
+    .run(now);
+  logger.warn({ count: stuck.cnt }, "Reset stuck in_progress jobs after restart");
+}
 
 const start = async () => {
   try {

@@ -5,37 +5,27 @@ import {
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
+  createBaseInputSchema,
+  createBaseBlueprintSchema,
 } from "@track-forge/genre-core";
 
 // ── Input schema — user-facing form fields ────────────────────────────
 
-export const EdmInputSchema = z.object({
-  /** Genre family */
-  family: z.enum(EdmFamily),
-  /** Subgenre key (validated against taxonomy at runtime) */
-  subgenre: z.string().min(1, "Select a subgenre"),
-  /** Tempo in BPM */
-  bpm: z.number().int().min(60).max(220),
-  /** Musical key */
-  key: z.string(),
-  /** Scale mode */
-  scale: z.enum(["major", "minor"]),
-  /** Mood / vibe description */
-  mood: z.string(),
-  /** Energy level 1-10 */
-  energy: z.number().int().min(1).max(10),
-  /** Complexity level 1-10 */
-  complexity: z.number().int().min(1).max(10),
-  /** Lyrics mode */
+export const EdmInputSchema = createBaseInputSchema({
+  bpmMin: 60,
+  bpmMax: 220,
   lyricsMode: z.enum([
     "guided_instrumental",
     "strict_instrumental",
     "full_lyrics",
   ]),
-  /** Custom tags to include */
-  customTags: z.array(z.string()),
-  /** Reference tracks or materials */
-  reference: z.string().optional(),
+  extra: {
+    family: z.enum(EdmFamily),
+    subgenre: z.string().min(1, "Select a subgenre"),
+    energy: z.number().int().min(1).max(10),
+    customTags: z.array(z.string()),
+    reference: z.string().optional(),
+  },
 });
 
 export type EdmInputs = z.infer<typeof EdmInputSchema>;
@@ -58,47 +48,16 @@ export const EDM_DEFAULTS: EdmInputs = {
 
 // ── Blueprint schema — internal generation model ──────────────────────
 
-export const EdmBlueprintSchema = z.object({
-  /** Subgenre identifier */
-  subgenre: z.string(),
-  /** Resolved BPM */
-  bpm: z.number().int(),
-  /** Musical key */
-  key: z.string(),
-  /** Scale mode */
-  scale: z.enum(["major", "minor"]),
-  /** Descriptive mood */
-  mood: z.string(),
-  /** Energy (1-10) */
-  energy: z.number().int().min(1).max(10),
-  /** Complexity (1-10) */
-  complexity: z.number().int().min(1).max(10),
-  /** Lyrics mode (subsumes vocal treatment) */
+export const EdmBlueprintSchema = createBaseBlueprintSchema({
   lyricsMode: z.enum([
     "guided_instrumental",
     "strict_instrumental",
     "full_lyrics",
   ]),
-  /** Ordered arrangement sections */
-  arrangement: z.array(
-    z.object({
-      section: z.string(),
-      bars: z.number().int().positive(),
-      tags: z.array(z.string()),
-    }),
-  ),
-  /** Style description clauses (compiler input) */
-  styleClauses: z.array(
-    z.object({
-      key: z.string(),
-      value: z.string(),
-      order: z.number().int(),
-    }),
-  ),
-  /** Tags for Suno style field */
-  tags: z.array(z.string()),
-  /** Negative tags */
-  negativeTags: z.array(z.string()),
+  extra: {
+    subgenre: z.string(),
+    energy: z.number().int().min(1).max(10),
+  },
 });
 
 export type EdmBlueprint = z.infer<typeof EdmBlueprintSchema>;

@@ -4,21 +4,17 @@ import {
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
+  createBaseInputSchema,
+  createBaseBlueprintSchema,
 } from "@track-forge/genre-core";
 
-export const AmbientInputSchema = z.object({
-  subgenre: z.string().min(1, "Select a subgenre"),
-  bpm: z.number().int().min(40).max(120),
-  key: z.string(),
-  scale: z.enum(["major", "minor"]),
-  mood: z.string(),
-  complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum([
-    "strict_instrumental",
-    "guided_instrumental",
-    "full_lyrics",
-  ]),
-  soundscape: z.string(),
+export const AmbientInputSchema = createBaseInputSchema({
+  bpmMin: 40,
+  bpmMax: 120,
+  extra: {
+    subgenre: z.string().min(1, "Select a subgenre"),
+    soundscape: z.string(),
+  },
 });
 
 export type AmbientInputs = z.infer<typeof AmbientInputSchema>;
@@ -34,35 +30,11 @@ export const AMBIENT_DEFAULTS: AmbientInputs = {
   soundscape: "ethereal",
 };
 
-export const AmbientBlueprintSchema = z.object({
-  subgenre: z.string(),
-  bpm: z.number().int(),
-  key: z.string(),
-  scale: z.enum(["major", "minor"]),
-  mood: z.string(),
-  complexity: z.number().int().min(1).max(10),
-  lyricsMode: z.enum([
-    "strict_instrumental",
-    "guided_instrumental",
-    "full_lyrics",
-  ]),
-  soundscape: z.string(),
-  arrangement: z.array(
-    z.object({
-      section: z.string(),
-      bars: z.number().int().positive(),
-      tags: z.array(z.string()),
-    }),
-  ),
-  styleClauses: z.array(
-    z.object({
-      key: z.string(),
-      value: z.string(),
-      order: z.number().int(),
-    }),
-  ),
-  tags: z.array(z.string()),
-  negativeTags: z.array(z.string()),
+export const AmbientBlueprintSchema = createBaseBlueprintSchema({
+  extra: {
+    subgenre: z.string(),
+    soundscape: z.string(),
+  },
 });
 
 export type AmbientBlueprint = z.infer<typeof AmbientBlueprintSchema>;

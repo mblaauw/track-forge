@@ -4,48 +4,31 @@ import {
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
+  createBaseInputSchema,
+  createBaseBlueprintSchema,
 } from "@track-forge/genre-core";
 
-export const PopInputSchema = z.object({
-  subgenre: z.string(),
-  bpm: z.number().int().min(60).max(180),
-  key: z.string(),
-  scale: z.enum(["major", "minor"]),
-  mood: z.string(),
-  energy: z.number().int().min(1).max(10),
-  complexity: z.number().int().min(1).max(10),
+export const PopInputSchema = createBaseInputSchema({
+  bpmMin: 60,
+  bpmMax: 180,
   lyricsMode: z.enum(["full_lyrics", "hook", "instrumental"]),
-  theme: z.string(),
-  reference: z.string().optional(),
+  extra: {
+    subgenre: z.string(),
+    energy: z.number().int().min(1).max(10),
+    theme: z.string(),
+    reference: z.string().optional(),
+  },
 });
 
 export type PopInputs = z.infer<typeof PopInputSchema>;
 
-export const PopBlueprintSchema = z.object({
-  subgenre: z.string(),
-  bpm: z.number(),
-  key: z.string(),
-  scale: z.enum(["major", "minor"]),
-  mood: z.string(),
-  energy: z.number().int().min(1).max(10),
-  complexity: z.number().int().min(1).max(10),
+export const PopBlueprintSchema = createBaseBlueprintSchema({
   lyricsMode: z.enum(["full_lyrics", "hook", "instrumental"]),
-  arrangement: z.array(
-    z.object({
-      section: z.string(),
-      bars: z.number().int().positive(),
-      tags: z.array(z.string()),
-    }),
-  ),
-  styleClauses: z.array(
-    z.object({
-      key: z.string(),
-      value: z.string(),
-      order: z.number().int(),
-    }),
-  ),
-  tags: z.array(z.string()),
-  negativeTags: z.array(z.string()),
+  extra: {
+    subgenre: z.string(),
+    energy: z.number().int().min(1).max(10),
+    theme: z.string(),
+  },
 });
 
 export type PopBlueprint = z.infer<typeof PopBlueprintSchema>;

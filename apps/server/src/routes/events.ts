@@ -1,6 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { Db } from "@track-forge/core";
-import { subscribe, getJobEvents, type PipelineEvent } from "@track-forge/core";
+import {
+  subscribe,
+  getJobEvents,
+  formatSseEvent,
+  type PipelineEvent,
+} from "@track-forge/core";
 
 function sseWrite(reply: import("http").ServerResponse, data: string): void {
   try {
@@ -39,41 +44,55 @@ export function registerEventRoutes(
       `event: connected\ndata: ${JSON.stringify({ jobId: id })}\n\n`,
     );
 
-    // ── Register cleanup BEFORE any async work ───────────────────────
+    // ── Subscribe BEFORE history fetch (no race gap) ────────────────
+    let isLive = false;
+    const buffer: PipelineEvent[] = [];
+
+    const pipeOrBuffer = (event: PipelineEvent) => {
+      if (isLive) {
+        sseWrite(reply.raw, formatSseEvent(event));
+      } else {
+        buffer.push(event);
+      }
+    };
+
+    const unsubscribe = subscribe(id, pipeOrBuffer);
+
     let cleanup: (() => void) | null = null;
     const onClose = () => {
       if (cleanup) cleanup();
     };
     req.raw.on("close", onClose);
 
-    // Replay history if Last-Event-ID is 0 (fresh connect) or specific (reconnect)
+    // Replay history
     const historyEvents = await getJobEvents(db, id, {
       limit: 50,
       afterSequence: lastEventId,
     });
 
-    // If client disconnected during await, clean up and bail
     if (req.raw.destroyed) {
+      unsubscribe();
       req.raw.off("close", onClose);
       return;
     }
 
     for (const evt of historyEvents) {
-      const data = JSON.stringify(evt);
-      sseWrite(
-        reply.raw,
-        `id: ${evt.sequence}\nevent: progress\ndata: ${data}\n\n`,
-      );
+      sseWrite(reply.raw, formatSseEvent(evt as unknown as PipelineEvent));
     }
 
-    // Subscribe to live pipeline events
-    const unsubscribe = subscribe(id, (event: PipelineEvent) => {
-      const data = JSON.stringify(event);
-      sseWrite(
-        reply.raw,
-        `id: ${event.sequence}\nevent: progress\ndata: ${data}\n\n`,
-      );
-    });
+    // Drain buffer — skip events already covered by history
+    const maxHistorySeq =
+      historyEvents.length > 0
+        ? historyEvents[historyEvents.length - 1]!.sequence
+        : lastEventId;
+    for (const buffered of buffer) {
+      if (buffered.sequence > maxHistorySeq) {
+        sseWrite(reply.raw, formatSseEvent(buffered));
+      }
+    }
+
+    // Switch to live piping
+    isLive = true;
 
     // Keep alive ping every 15s
     const keepAlive = setInterval(() => {

@@ -47,15 +47,37 @@ import { publish } from "./events.js";
 import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
 import { serializeLyrics } from "../lyrics/canonical.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
-import { safeJsonParse } from "../json-utils.js";
+import { safeJsonParse, readJobInputs, readFindings } from "../json-utils.js";
 
 function patchDescriptions(raw: string): string {
-  try {
-    const patches = JSON.parse(raw) as SurgicalPatch[];
-    return patches.map((p) => p.description).join("; ");
-  } catch {
-    return "";
-  }
+  const patches = safeJsonParse<SurgicalPatch[]>(raw, []);
+  return patches.map((p) => p.description).join("; ");
+}
+
+function songStructureStr(
+  module: GenreModule,
+  bpArr?: Array<{ section: string }> | undefined,
+): string {
+  if (Array.isArray(bpArr) && bpArr.length > 0)
+    return bpArr.map((s) => s.section).join(", ");
+  const struct = module.songStructure;
+  return struct ? struct.map((s) => s.section).join(", ") : "";
+}
+
+/** Build the common PromptContext for a stage handler. */
+function buildStageContext(
+  module: GenreModule,
+  state: PipelineState,
+): PromptContext {
+  return buildPromptContext({
+    genreId: module.id,
+    genreName: module.name,
+    presetId: state.job.presetId,
+    inputs: state.job.inputs,
+    reference: state.job.reference,
+    interpretedRef: state.interpretedRef,
+    nlAdjustments: state.nlAdjustments,
+  });
 }
 
 // ── Reference cache (module-level singleton) ─────────────────────────
@@ -85,15 +107,11 @@ function injectCompiledContext(
   context: Record<string, unknown>,
   compiledJson: string,
 ): void {
-  try {
-    const compiled = JSON.parse(compiledJson) as Record<string, string>;
-    context.title = compiled.title ?? "";
-    context.style = compiled.style ?? "";
-    context.lyrics = compiled.lyrics ?? "";
-    context.excluded_styles = compiled.excludedStyles ?? "";
-  } catch {
-    /* ignore */
-  }
+  const compiled = JSON.parse(compiledJson) as Record<string, string>;
+  context.title = compiled.title ?? "";
+  context.style = compiled.style ?? "";
+  context.lyrics = compiled.lyrics ?? "";
+  context.excluded_styles = compiled.excludedStyles ?? "";
 }
 
 // ── Stage: Ref Interpretation ─────────────────────────────────────────
@@ -125,18 +143,10 @@ async function handlePlanning(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const { job, module, interpretedRef } = state;
+  const { job, module } = state;
 
   const assembler = new PromptAssembler(module);
-  const context = buildPromptContext({
-    genreId: module.id,
-    genreName: module.name,
-    presetId: job.presetId,
-    inputs: job.inputs,
-    reference: job.reference,
-    interpretedRef,
-    nlAdjustments: state.nlAdjustments,
-  });
+  const context = buildStageContext(module, state);
   const prompt =
     assembler.resolvePrompt("planning", context) ??
     `Create a song plan based on:\n${job.inputs ?? "{}"}`;
@@ -162,30 +172,21 @@ async function handleWriting(
     throw new Error("Pipeline state missing songPlan before writing");
 
   // Check lyrics mode — skip LLM call for strict_instrumental
-  let inputs: Record<string, unknown> = {};
+  let inputs: Record<string, unknown>;
   try {
     inputs = JSON.parse(job.inputs ?? "{}");
   } catch {
-    /* ignore */
+    throw new Error("Malformed job.inputs — cannot determine lyrics mode");
   }
   const lyricsMode = String(inputs.lyricsMode ?? inputs.lyricsFormat ?? "");
   const isStrictInstrumental =
     lyricsMode === "strict_instrumental" || lyricsMode === "instrumental";
 
   const assembler = new PromptAssembler(module);
-  const context = buildPromptContext({
-    genreId: module.id,
-    genreName: module.name,
-    presetId: job.presetId,
-    inputs: job.inputs,
-    reference: job.reference,
-    interpretedRef,
-    nlAdjustments: state.nlAdjustments,
-  });
+  const context = buildStageContext(module, state);
   // Inject plan into context for {{plan}} placeholder
   context.plan = songPlan;
-  context.songStructure =
-    module.songStructure?.map((s) => s.section).join(", ") ?? "";
+  context.songStructure = songStructureStr(module);
 
   const stylePrompt =
     assembler.resolvePrompt("style_writing", context) ??
@@ -265,25 +266,13 @@ async function handleCompilation(state: PipelineState): Promise<PipelineState> {
     bp.lyricsFormat ??
     null) as LyricsFormat | null;
 
-  // Use the assembler for compilation context (includes raw outputs for potential fragment use)
-  const assembler = new PromptAssembler(module);
-  const context = buildPromptContext({
-    genreId: module.id,
-    genreName: module.name,
-    presetId: job.presetId,
-    inputs: job.inputs,
-    reference: job.reference,
-    interpretedRef,
-    nlAdjustments: state.nlAdjustments,
-  });
+  const context = buildStageContext(module, state);
   context.styleDescription = styleWriterResult.descriptiveStyle;
   context.lyricsDocument = JSON.stringify(lyricsWriterResult.document);
   context.songPlan = songPlan ?? "";
   context.compilation = JSON.stringify(bp);
   const bpArr = bp.arrangement as Array<{ section: string }> | undefined;
-  context.songStructure = Array.isArray(bpArr)
-    ? bpArr.map((s) => s.section).join(", ")
-    : (module.songStructure?.map((s) => s.section).join(", ") ?? "");
+  context.songStructure = songStructureStr(module, bpArr);
 
   // Blend structured writer results into compiled artifacts
   const styleText =
@@ -333,18 +322,9 @@ async function handleReview(
   if (!compiledJson)
     throw new Error("Pipeline state missing compiledJson before review");
 
-  const context = buildPromptContext({
-    genreId: module.id,
-    genreName: module.name,
-    presetId: job.presetId,
-    inputs: job.inputs,
-    reference: job.reference,
-    interpretedRef,
-    nlAdjustments: state.nlAdjustments,
-  });
+  const context = buildStageContext(module, state);
   context.compiledJson = compiledJson;
-  context.songStructure =
-    module.songStructure?.map((s) => s.section).join(", ") ?? "";
+  context.songStructure = songStructureStr(module);
   context.styleResult = state.styleWriterResult
     ? JSON.stringify(state.styleWriterResult)
     : "";
@@ -355,13 +335,8 @@ async function handleReview(
 
   injectCompiledContext(context, compiledJson);
 
-  let useFullCritics = false;
-  try {
-    const inputs = JSON.parse(job.inputs ?? "{}") as Record<string, unknown>;
-    useFullCritics = inputs.fullReview === true;
-  } catch {
-    /* ignore */
-  }
+  const inputs = readJobInputs(job.inputs);
+  const useFullCritics = inputs.fullReview === true;
 
   const rawFindings = await runCritics(
     module.critics,
@@ -390,11 +365,7 @@ async function handleRevision(state: PipelineState): Promise<PipelineState> {
     ? (findings as unknown as CriticFinding[])
     : null;
   if (!effFindings && job.findings) {
-    try {
-      effFindings = JSON.parse(job.findings) as CriticFinding[];
-    } catch {
-      effFindings = null;
-    }
+    effFindings = readFindings(job.findings) as unknown as CriticFinding[] | null;
   }
 
   if (!effCompiled || !effFindings || effFindings.length === 0) {
@@ -480,21 +451,20 @@ async function handleRevision(state: PipelineState): Promise<PipelineState> {
     }
   }
 
-  // Validate patched output — fallback to original if invalid
+  // Validate patched output — fail job if blueprints broken
   const patchedCompiledJson = JSON.stringify(compiled);
   try {
     const bp = parseBlueprint(job, module) as Record<string, unknown>;
-    // Re-run only if blueprint changed
-    if (patches.some((p) => p.target === "inputs" || p.target === "input")) {
-      const errors = module.validators.blueprint(bp);
-      if (errors.length > 0) {
-        // Fallback: revert to original, don't mark patches as applied
-        return state;
-      }
+    const errors = module.validators.blueprint(bp);
+    if (errors.length > 0) {
+      throw new Error(
+        `Blueprint validation failed after revision: ${errors.map((e) => e.message).join("; ")}`,
+      );
     }
-  } catch {
-    // Validation failed — use fallback, don't mark patches as applied
-    return state;
+  } catch (err) {
+    throw new Error(
+      `Revision validation error: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 
   const appliedPatch = JSON.stringify(patches);
@@ -520,18 +490,9 @@ async function handleVerification(
     }
 
     // Re-run critics on patched content
-    const context = buildPromptContext({
-      genreId: module.id,
-      genreName: module.name,
-      presetId: job.presetId,
-      inputs: job.inputs,
-      reference: job.reference,
-      interpretedRef: state.interpretedRef,
-      nlAdjustments: state.nlAdjustments,
-    });
+    const context = buildStageContext(module, state);
     context.compiledJson = compiledJson;
-    context.songStructure =
-      module.songStructure?.map((s) => s.section).join(", ") ?? "";
+    context.songStructure = songStructureStr(module);
     context.styleResult = state.styleWriterResult
       ? JSON.stringify(state.styleWriterResult)
       : "";
@@ -717,15 +678,7 @@ export async function runPipeline(
     styleWriterResult: null,
     lyricsWriterResult: null,
     compiledJson: job.compiledJson ?? null,
-    findings: job.findings
-      ? (() => {
-          try {
-            return JSON.parse(job.findings) as unknown[];
-          } catch {
-            return null;
-          }
-        })()
-      : null,
+    findings: job.findings ? readFindings(job.findings) : null,
     appliedPatch: null,
     versionId: null,
     nlAdjustments: parseControlDescriptors(job.nlAdjustments),
@@ -901,12 +854,8 @@ function parseBlueprint(
   module: GenreModule,
 ): Record<string, unknown> {
   if (!job.inputs) return {};
-  let inputs: Record<string, unknown>;
-  try {
-    inputs = JSON.parse(job.inputs) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
+  const inputs = readJobInputs(job.inputs);
+  if (!inputs || Object.keys(inputs).length === 0) return {};
   // Compile raw inputs into full blueprint shape if module supports it
   if (
     module.compileBlueprint &&

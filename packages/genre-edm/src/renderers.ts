@@ -56,7 +56,9 @@ function renderStyle(
   else if (data.complexity <= 3) clauses.push("Minimal arrangement.");
 
   // Arrangement cues
-  const sectionNames = data.arrangement.map((a) => a.section).join(", ");
+  const sectionNames = data.arrangement
+    .map((a: { section: string }) => a.section)
+    .join(", ");
   clauses.push(`Structure: ${sectionNames}.`);
 
   return clauses.join(" ");

@@ -35,7 +35,9 @@ function renderStyle(data: DnbBlueprint): string {
     clauses.push("Complex arrangement, intricate breaks.");
   else if (data.complexity <= 3) clauses.push("Minimal arrangement.");
 
-  const sectionNames = data.arrangement.map((a) => a.section).join(", ");
+  const sectionNames = data.arrangement
+    .map((a: { section: string }) => a.section)
+    .join(", ");
   clauses.push(`Structure: ${sectionNames}.`);
 
   clauses.push("Drum & Bass production.");

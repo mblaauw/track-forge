@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 import type { StyleClause } from "@track-forge/contracts";
 
 // ── Song structure (arrangement config) ───────────────────────────────
@@ -30,7 +30,7 @@ export interface ArrangementSection {
  * Static numbers pass through; object specs are evaluated as:
  *   base + round(energy * per_energy + complexity * per_complexity)
  */
-export { capitalize } from "./utils.js";
+export { capitalize, encodeKey, decodeKeyValue } from "./utils.js";
 
 export function computeBars(
   spec: SongStructureBarSpec,
@@ -238,4 +238,88 @@ export function createGenreModule<
 export function instrumentalNegativeTags(lyricsMode: string): string[] {
   if (lyricsMode === "full_lyrics") return [];
   return ["vocals", "singing", "lyrics", "voice"];
+}
+
+// ── Shared Zod schema factories ─────────────────────────────────────────
+
+const DEFAULT_LYRICS_MODE = z.enum([
+  "strict_instrumental",
+  "guided_instrumental",
+  "full_lyrics",
+]);
+
+interface BaseInputOpts {
+  bpmMin?: number;
+  bpmMax?: number;
+  lyricsMode?: z.ZodType<string, any, any>;
+  extra?: Record<string, z.ZodTypeAny>;
+}
+
+interface BaseBlueprintOpts {
+  bpmMin?: number;
+  bpmMax?: number;
+  lyricsMode?: z.ZodType<string, any, any>;
+  extra?: Record<string, z.ZodTypeAny>;
+}
+
+/**
+ * Build a base input schema with shared fields (bpm, key, scale, mood,
+ * complexity, lyricsMode) merged with genre-specific extras.
+ */
+export function createBaseInputSchema(
+  opts?: BaseInputOpts,
+): z.ZodObject<any> {
+  let schema: any = z.object({
+    bpm: z.number().int().min(opts?.bpmMin ?? 40).max(opts?.bpmMax ?? 220),
+    key: z.string(),
+    scale: z.enum(["major", "minor"]),
+    mood: z.string(),
+    complexity: z.number().int().min(1).max(10),
+    lyricsMode: opts?.lyricsMode ?? DEFAULT_LYRICS_MODE,
+  });
+  if (opts?.extra) {
+    for (const [k, v] of Object.entries(opts.extra)) {
+      schema = schema.extend({ [k]: v as any });
+    }
+  }
+  return schema;
+}
+
+/**
+ * Build a base blueprint schema with shared input fields, arrangement,
+ * styleClauses, tags, and negativeTags merged with genre-specific extras.
+ */
+export function createBaseBlueprintSchema(
+  opts?: BaseBlueprintOpts,
+): any {
+  let schema: any = z.object({
+    bpm: z.number().int(),
+    key: z.string(),
+    scale: z.enum(["major", "minor"]),
+    mood: z.string(),
+    complexity: z.number().int().min(1).max(10),
+    lyricsMode: opts?.lyricsMode ?? DEFAULT_LYRICS_MODE,
+    arrangement: z.array(
+      z.object({
+        section: z.string(),
+        bars: z.number().int().positive(),
+        tags: z.array(z.string()),
+      }),
+    ),
+    styleClauses: z.array(
+      z.object({
+        key: z.string(),
+        value: z.string(),
+        order: z.number().int(),
+      }),
+    ),
+    tags: z.array(z.string()),
+    negativeTags: z.array(z.string()),
+  });
+  if (opts?.extra) {
+    for (const [k, v] of Object.entries(opts.extra)) {
+      schema = schema.extend({ [k]: v as any });
+    }
+  }
+  return schema;
 }

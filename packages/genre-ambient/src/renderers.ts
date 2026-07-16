@@ -22,7 +22,9 @@ function renderStyle(data: AmbientBlueprint): string {
   clauses.push(`Soundscape: ${data.soundscape}.`);
   if (data.complexity >= 7) clauses.push("Rich, layered texture.");
   else if (data.complexity <= 3) clauses.push("Sparse, minimal texture.");
-  const sectionNames = data.arrangement.map((a) => a.section).join(", ");
+  const sectionNames = data.arrangement
+    .map((a: { section: string }) => a.section)
+    .join(", ");
   clauses.push(`Movement: ${sectionNames}.`);
   return clauses.join(" ");
 }
@@ -82,6 +84,8 @@ function renderLyrics(data: AmbientBlueprint): string {
       }
       return lines.join("\n").trim();
     }
+    default:
+      return "";
   }
 }
 

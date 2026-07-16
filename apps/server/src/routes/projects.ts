@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, inArray } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
@@ -303,5 +303,88 @@ export function registerProjectRoutes(
       .offset(offset);
 
     return rows;
+  });
+
+  // ── Delete project (cascading to jobs, drafts, and all child rows) ──
+
+  server.delete("/api/projects/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
+
+    // Collect job IDs that belong to this project
+    const jobRows = await db
+      .select({ id: schema.jobs.id })
+      .from(schema.jobs)
+      .where(eq(schema.jobs.projectId, id));
+    const jobIds = jobRows.map((r) => r.id);
+
+    // Collect version and generation IDs for cascade
+    const versionRows = jobIds.length > 0
+      ? await db
+          .select({ id: schema.versions.id })
+          .from(schema.versions)
+          .where(inArray(schema.versions.jobId, jobIds))
+      : [];
+    const versionIds = versionRows.map((r) => r.id);
+
+    const genRows = jobIds.length > 0
+      ? await db
+          .select({ id: schema.generations.id })
+          .from(schema.generations)
+          .where(inArray(schema.generations.jobId, jobIds))
+      : [];
+    const genIds = genRows.map((r) => r.id);
+
+    await db.transaction(async (tx: any) => {
+      // Delete project drafts first
+      await tx
+        .delete(schema.projectDrafts)
+        .where(eq(schema.projectDrafts.projectId, id));
+
+      // Cascade for each job (same order as DELETE /api/jobs/:id)
+      if (genIds.length > 0) {
+        await tx
+          .delete(schema.sunoTracks)
+          .where(inArray(schema.sunoTracks.generationId, genIds));
+      }
+      if (versionIds.length > 0) {
+        await tx
+          .delete(schema.artifactLocks)
+          .where(inArray(schema.artifactLocks.versionId, versionIds));
+      }
+      if (jobIds.length > 0) {
+        await tx
+          .delete(schema.generations)
+          .where(inArray(schema.generations.jobId, jobIds));
+        await tx
+          .delete(schema.versions)
+          .where(inArray(schema.versions.jobId, jobIds));
+        await tx
+          .delete(schema.jobStageOutputs)
+          .where(inArray(schema.jobStageOutputs.jobId, jobIds));
+        await tx
+          .delete(schema.jobEvents)
+          .where(inArray(schema.jobEvents.jobId, jobIds));
+        await tx
+          .delete(schema.criticFindings)
+          .where(inArray(schema.criticFindings.jobId, jobIds));
+        await tx
+          .delete(schema.adjustments)
+          .where(inArray(schema.adjustments.jobId, jobIds));
+        await tx
+          .delete(schema.jobs)
+          .where(inArray(schema.jobs.id, jobIds));
+      }
+      // Finally delete the project row
+      await tx.delete(schema.projects).where(eq(schema.projects.id, id));
+    });
+
+    return reply.code(204).send();
   });
 }
