@@ -19,15 +19,7 @@ import type {
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import { getModuleOrThrow } from "../lib/modules.js";
-
-function safeParse<T>(json: string | null | undefined, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return fallback;
-  }
-}
+import { findRowOr404, safeParse, parsePagination } from "../lib/db-utils.js";
 
 export interface JobRouteDeps {
   db: Db;
@@ -41,6 +33,20 @@ export function registerJobRoutes(
   deps: JobRouteDeps,
 ): void {
   const { db, config, llm, suno } = deps;
+
+  function dispatchPipeline(
+    jobId: string,
+    genreId: string,
+    log: { error: (obj: Record<string, unknown>, msg: string) => void },
+    label: string,
+  ): void {
+    const mod = getModuleOrThrow(genreId);
+    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
+
+    runPipeline(jobId as any, pipelineDeps, mod).catch((err) => {
+      log.error({ jobId, err }, `${label} error`);
+    });
+  }
 
   // ── Create job ───────────────────────────────────────────────────────
 
@@ -86,8 +92,7 @@ export function registerJobRoutes(
 
   server.get("/api/jobs", async (req) => {
     const query = req.query as { limit?: string; offset?: string };
-    const limit = Math.min(parseInt(query.limit ?? "20", 10) || 20, 100);
-    const offset = parseInt(query.offset ?? "0", 10) || 0;
+    const { limit, offset } = parsePagination(query, { limit: 20, maxLimit: 100 });
 
     const rows = await db
       .select()
@@ -104,13 +109,7 @@ export function registerJobRoutes(
   server.get("/api/jobs/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
     return job;
   });
 
@@ -125,13 +124,7 @@ export function registerJobRoutes(
       return reply.code(400).send({ error: "name required" });
     }
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     const now = new Date().toISOString();
     await db
@@ -153,13 +146,7 @@ export function registerJobRoutes(
   server.patch("/api/jobs/:id/favorite", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     const now = new Date().toISOString();
     await db
@@ -184,13 +171,7 @@ export function registerJobRoutes(
     const inputs = body.inputs as Record<string, unknown> | undefined;
     const name = body.name as string | undefined;
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
@@ -217,13 +198,7 @@ export function registerJobRoutes(
   server.delete("/api/jobs/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     // Cascade delete: version IDs → artifactLocks, gen IDs → sunoTracks, then job
     // Get version IDs for this job to cascade
@@ -285,13 +260,7 @@ export function registerJobRoutes(
           : JSON.stringify(body.nlAdjustments);
     }
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     const now = new Date().toISOString();
     await db
@@ -314,13 +283,7 @@ export function registerJobRoutes(
     const { id } = req.params as { id: string };
     const body = req.body as { findings?: CriticFinding[] } | undefined;
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
     if (job.status !== "in_progress" || job.currentStage !== "review") {
       return reply.code(400).send({ error: "Job must be at review stage" });
     }
@@ -339,12 +302,7 @@ export function registerJobRoutes(
       })
       .where(eq(schema.jobs.id, id));
 
-    const mod = getModuleOrThrow(job.genreId);
-    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
-
-    runPipeline(id, pipelineDeps, mod).catch((err) => {
-      req.log.error({ jobId: id, err }, "review-continue error");
-    });
+    dispatchPipeline(id, job.genreId, req.log, "review-continue");
 
     return reply.code(202).send({ status: "review_submitted", jobId: id });
   });
@@ -355,13 +313,7 @@ export function registerJobRoutes(
     const { id } = req.params as { id: string };
     const body = req.body as { stage?: GenerationStage } | undefined;
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
     if (job.status !== "completed" && job.status !== "failed") {
       return reply
         .code(400)
@@ -371,12 +323,7 @@ export function registerJobRoutes(
     const stage = body?.stage ?? "ref_interpretation";
     await resetJobStage(db, id as any, stage);
 
-    const mod = getModuleOrThrow(job.genreId);
-    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
-
-    runPipeline(id, pipelineDeps, mod).catch((err) => {
-      req.log.error({ jobId: id, err }, "replay error");
-    });
+    dispatchPipeline(id, job.genreId, req.log, "replay");
 
     return reply.code(202).send({ status: "replaying", jobId: id, stage });
   });
@@ -386,25 +333,14 @@ export function registerJobRoutes(
   server.post("/api/jobs/:id/retry", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
     if (job.status !== "failed") {
       return reply.code(400).send({ error: "Job must be failed to retry" });
     }
 
     await resetJobStage(db, id as any, job.currentStage as GenerationStage);
 
-    const mod = getModuleOrThrow(job.genreId);
-    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
-
-    runPipeline(id, pipelineDeps, mod).catch((err) => {
-      req.log.error({ jobId: id, err }, "retry error");
-    });
+    dispatchPipeline(id, job.genreId, req.log, "retry");
 
     return reply.code(202).send({ status: "retrying", jobId: id });
   });
@@ -414,13 +350,7 @@ export function registerJobRoutes(
   server.post("/api/jobs/:id/cancel", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     // Abort in-flight pipeline work — must happen before DB update
     abortJob(id);
@@ -439,31 +369,12 @@ export function registerJobRoutes(
   server.post("/api/jobs/:id/start", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
     if (job.status !== "pending") {
       return reply.code(400).send({ error: "Job not in pending status" });
     }
 
-    const mod = getModuleOrThrow(job.genreId);
-    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
-
-    // Background execution — fire and forget
-    runPipeline(id, pipelineDeps, mod)
-      .then((result) => {
-        req.log.info(
-          { jobId: id, success: result.success },
-          "pipeline completed",
-        );
-      })
-      .catch((err) => {
-        req.log.error({ jobId: id, err }, "pipeline error");
-      });
+    dispatchPipeline(id, job.genreId, req.log, "start");
 
     return reply.code(202).send({ status: "started", jobId: id });
   });
@@ -473,13 +384,7 @@ export function registerJobRoutes(
   server.get("/api/jobs/:id/payload-preview", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     // Extract compiled artifacts — prefer latest version, fallback to compiledJson
     const versions = await db

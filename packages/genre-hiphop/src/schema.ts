@@ -1,9 +1,9 @@
 import { z } from "zod";
-import type { StyleClause } from "@track-forge/contracts";
 import {
-  type ArrangementSection,
   type SongStructureSection,
-  computeBars,
+  resolveArrangement,
+  buildStyleClauses,
+  instrumentalNegativeTags,
 } from "@track-forge/genre-core";
 import {
   type NarrativeArc,

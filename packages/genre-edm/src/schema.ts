@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { EdmFamily } from "./taxonomy.js";
 import {
-  type ArrangementSection,
   type SongStructureSection,
-  computeBars,
+  resolveArrangement,
+  buildStyleClauses,
+  instrumentalNegativeTags,
 } from "@track-forge/genre-core";
 
 // ── Input schema — user-facing form fields ────────────────────────────
@@ -124,33 +125,22 @@ export function compileBlueprint(
     songStructure?: SongStructureSection[];
   },
 ): EdmBlueprint {
-  let arrangement: ArrangementSection[];
-  if (options?.arrangementOverride) {
-    arrangement = options.arrangementOverride.map((s) => ({
-      section: s.section,
-      bars: s.bars,
-      tags: s.tags ?? [],
-    }));
-  } else {
-    const template = options?.songStructure ?? EDM_DEFAULT_SONG_STRUCTURE;
-    arrangement = template.map((s) => ({
-      section: s.section,
-      bars: computeBars(s.bars, inputs),
-      tags: s.tags,
-    }));
-  }
+  const arrangement = resolveArrangement({
+    arrangementOverride: options?.arrangementOverride,
+    songStructure: options?.songStructure,
+    inputs,
+    defaultStructure: EDM_DEFAULT_SONG_STRUCTURE,
+  });
   const tags = [...inputs.customTags, "electronic"];
-  const negativeTags: string[] = [];
-  if (inputs.lyricsMode !== "full_lyrics")
-    negativeTags.push("vocals", "singing", "lyrics", "voice");
+  const negativeTags = instrumentalNegativeTags(inputs.lyricsMode);
 
-  const styleClauses = [
-    { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
-    { key: "bpm", value: String(inputs.bpm), order: 1 },
-    { key: "mood", value: inputs.mood, order: 2 },
-    { key: "energy", value: String(inputs.energy), order: 3 },
-    { key: "complexity", value: String(inputs.complexity), order: 4 },
-  ];
+  const styleClauses = buildStyleClauses([
+    { key: "genre", value: inputs.subgenre.replace(/_/g, " ") },
+    { key: "bpm", value: String(inputs.bpm) },
+    { key: "mood", value: inputs.mood },
+    { key: "energy", value: String(inputs.energy) },
+    { key: "complexity", value: String(inputs.complexity) },
+  ]);
 
   return EdmBlueprintSchema.parse({
     subgenre: inputs.subgenre,

@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { eq, inArray, desc, sql, count } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
+import { findRowOr404, parsePagination } from "../lib/db-utils.js";
 
 export interface ProjectRouteDeps {
   db: Db;
@@ -20,13 +21,7 @@ export function registerProjectRoutes(
   server.get("/api/projects/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
     return project;
   });
 
@@ -35,13 +30,7 @@ export function registerProjectRoutes(
   server.get("/api/projects/:id/stats", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
 
     const [totalJobs] = await db
       .select({ value: sql<number>`count(*)` })
@@ -118,13 +107,7 @@ export function registerProjectRoutes(
     const description = body.description as string | undefined | null;
     const genreId = body.genreId as string | undefined | null;
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
@@ -147,93 +130,12 @@ export function registerProjectRoutes(
     return reply.code(200).send(updated);
   });
 
-  // ── Delete project ─────────────────────────────────────────────────────
-
-  server.delete("/api/projects/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
-
-    // Cascade: delete all FK children before parent tables
-    await db
-      .delete(schema.projectDrafts)
-      .where(eq(schema.projectDrafts.projectId, id));
-
-    const projectJobs = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.projectId, id));
-
-    for (const job of projectJobs) {
-      // Gather version and generation IDs for this job
-      const versionIds = (
-        await db
-          .select({ id: schema.versions.id })
-          .from(schema.versions)
-          .where(eq(schema.versions.jobId, job.id))
-      ).map((r) => r.id);
-
-      const genIds = (
-        await db
-          .select({ id: schema.generations.id })
-          .from(schema.generations)
-          .where(eq(schema.generations.jobId, job.id))
-      ).map((r) => r.id);
-
-      // Delete FK children in dependency order
-      if (genIds.length > 0) {
-        await db
-          .delete(schema.sunoTracks)
-          .where(inArray(schema.sunoTracks.generationId, genIds));
-        await db
-          .delete(schema.generations)
-          .where(inArray(schema.generations.id, genIds));
-      }
-      if (versionIds.length > 0) {
-        await db
-          .delete(schema.artifactLocks)
-          .where(inArray(schema.artifactLocks.versionId, versionIds));
-        await db
-          .delete(schema.versions)
-          .where(eq(schema.versions.jobId, job.id));
-      }
-      await db
-        .delete(schema.jobStageOutputs)
-        .where(eq(schema.jobStageOutputs.jobId, job.id));
-      await db
-        .delete(schema.jobEvents)
-        .where(eq(schema.jobEvents.jobId, job.id));
-      await db
-        .delete(schema.criticFindings)
-        .where(eq(schema.criticFindings.jobId, job.id));
-      await db
-        .delete(schema.adjustments)
-        .where(eq(schema.adjustments.jobId, job.id));
-    }
-    await db.delete(schema.jobs).where(eq(schema.jobs.projectId, id));
-    await db.delete(schema.projects).where(eq(schema.projects.id, id));
-
-    return reply.code(204).send();
-  });
-
   // ── List drafts for project ────────────────────────────────────────────
 
   server.get("/api/projects/:id/drafts", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
 
     const rows = await db
       .select()
@@ -249,13 +151,7 @@ export function registerProjectRoutes(
   server.get("/api/drafts/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [draft] = await db
-      .select()
-      .from(schema.projectDrafts)
-      .where(eq(schema.projectDrafts.id, id))
-      .limit(1);
-
-    if (!draft) return reply.code(404).send({ error: "Draft not found" });
+    const draft = await findRowOr404(db, schema.projectDrafts, eq(schema.projectDrafts.id, id), "Draft");
     return draft;
   });
 
@@ -272,13 +168,7 @@ export function registerProjectRoutes(
     const nlAdjustments =
       typeof rawNl === "string" ? rawNl : rawNl ? JSON.stringify(rawNl) : null;
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, projectId))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    await findRowOr404(db, schema.projects, eq(schema.projects.id, projectId), "Project");
     if (!genreId || !presetId) {
       return reply.code(400).send({ error: "genreId and presetId required" });
     }
@@ -326,13 +216,7 @@ export function registerProjectRoutes(
             ? rawNl
             : JSON.stringify(rawNl);
 
-    const [draft] = await db
-      .select()
-      .from(schema.projectDrafts)
-      .where(eq(schema.projectDrafts.id, id))
-      .limit(1);
-
-    if (!draft) return reply.code(404).send({ error: "Draft not found" });
+    const draft = await findRowOr404(db, schema.projectDrafts, eq(schema.projectDrafts.id, id), "Draft");
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
@@ -357,41 +241,15 @@ export function registerProjectRoutes(
     return reply.code(200).send(updated);
   });
 
-  // ── Delete draft ───────────────────────────────────────────────────────
-
-  server.delete("/api/drafts/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-
-    const [draft] = await db
-      .select()
-      .from(schema.projectDrafts)
-      .where(eq(schema.projectDrafts.id, id))
-      .limit(1);
-
-    if (!draft) return reply.code(404).send({ error: "Draft not found" });
-
-    await db
-      .delete(schema.projectDrafts)
-      .where(eq(schema.projectDrafts.id, id));
-    return reply.code(204).send();
-  });
-
   // ── List jobs for project ──────────────────────────────────────────────
 
   server.get("/api/projects/:id/jobs", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
 
     const query = req.query as { limit?: string; offset?: string };
-    const limit = Math.min(parseInt(query.limit ?? "50", 10) || 50, 100);
-    const offset = parseInt(query.offset ?? "0", 10) || 0;
+    const { limit, offset } = parsePagination(query, { limit: 50, maxLimit: 100 });
 
     const rows = await db
       .select()

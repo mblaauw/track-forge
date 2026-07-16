@@ -1,4 +1,4 @@
-import type { GenreRenderers } from "@track-forge/genre-core";
+import { type GenreRenderers, capitalize } from "@track-forge/genre-core";
 import type { EdmBlueprint } from "./schema.js";
 import type { EdmSubgenreEntry } from "./taxonomy.js";
 
@@ -176,8 +176,3 @@ export function createEdmRenderers(
   };
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}

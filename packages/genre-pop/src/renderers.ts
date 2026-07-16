@@ -1,4 +1,4 @@
-import type { GenreRenderers } from "@track-forge/genre-core";
+import { type GenreRenderers, capitalize } from "@track-forge/genre-core";
 import type { PopBlueprint } from "./schema.js";
 
 function renderTitle(data: PopBlueprint): string {
@@ -124,6 +124,3 @@ export function createPopRenderers(): GenreRenderers<PopBlueprint> {
   };
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}

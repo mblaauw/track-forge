@@ -78,14 +78,6 @@ async function loadJobOrThrow(db: Db, jobId: JobId): Promise<Job> {
   return job;
 }
 
-async function countVersions(db: Db, jobId: JobId): Promise<number> {
-  const [row] = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(schema.versions)
-    .where(eq(schema.versions.jobId, jobId));
-  return Number(row?.count ?? 0);
-}
-
 // ── Stage transitions ─────────────────────────────────────────────────
 
 export async function advanceStage(
@@ -187,7 +179,6 @@ export async function createVersion(
   artifacts: SunoArtifact[],
   status: VersionStatus = "draft",
 ): Promise<Version> {
-  const versionNumber = (await countVersions(db, jobId)) + 1;
   const id = crypto.randomUUID() as VersionId;
   const now = new Date().toISOString();
 
@@ -195,7 +186,7 @@ export async function createVersion(
     id,
     jobId,
     status,
-    number: versionNumber,
+    number: sql`(SELECT COALESCE(MAX(number), 0) + 1 FROM ${schema.versions} WHERE ${eq(schema.versions.jobId, jobId)})`,
     artifacts: JSON.stringify(artifacts),
     finalizedAt: status === "final" ? now : null,
     createdAt: now,

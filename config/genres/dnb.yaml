@@ -3,49 +3,6 @@ name: "Drum & Bass"
 color: red
 subgenre_count: "10+"
 
-defaults:
-  subgenre: liquid
-  bpm: 174
-  key: A
-  scale: minor
-  mood: "soulful"
-  energy: 7
-  complexity: 6
-  lyricsMode: full_lyrics
-  reference: ""
-
-tag_policy:
-  mandatoryTags: [dnb, electronic]
-  forbiddenTags: []
-  canonicalMap:
-    "drum and bass": dnb
-    "drum n bass": dnb
-
-adjustment_vocabulary:
-  styleTerms:
-    - rolling
-    - dark
-    - soulful
-    - techy
-    - liquid
-    - neuro
-    - deep
-    - minimal
-    - jump-up
-    - dancefloor
-  structureTerms:
-    - "extended intro"
-    - "double drop"
-    - "minimal break"
-    - "reese build"
-    - "amen break"
-  deliveryTerms:
-    - "tight drums"
-    - "rolling bassline"
-    - "syncopated breaks"
-    - "chopped vocals"
-    - "reese bass"
-
 tag_categories:
   - id: genre
     name: Genre

@@ -1,4 +1,4 @@
-import type { GenreRenderers } from "@track-forge/genre-core";
+import { type GenreRenderers, capitalize } from "@track-forge/genre-core";
 import type { AmbientBlueprint } from "./schema.js";
 
 function renderTitle(data: AmbientBlueprint): string {
@@ -94,6 +94,3 @@ export function createAmbientRenderers(): GenreRenderers<AmbientBlueprint> {
   };
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}

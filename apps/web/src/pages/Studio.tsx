@@ -77,9 +77,8 @@ function parseLyricsValue(value: string): {
 }
 
 export function Studio({ id }: { id: string }) {
-  const { params } = useRouter();
   const { navigate } = useRouter();
-  const actualId = id || params.id || "";
+  const actualId = id || "";
 
   const [job, setJob] = useState<JobInfo | null>(null);
   const [versions, setVersions] = useState<VersionInfo[]>([]);
@@ -170,6 +169,17 @@ export function Studio({ id }: { id: string }) {
     (g) => g.audioUrl || g.status === "completed",
   ).length;
 
+  useEffect(() => {
+    if (playhead >= 100 && playingIdx !== null) {
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      setPlayingIdx(null);
+      setPlayhead(0);
+    }
+  }, [playhead]);
+
   const handlePlay = (idx: number) => {
     if (playingIdx === idx) {
       if (intervalRef.current !== null) {
@@ -185,17 +195,7 @@ export function Studio({ id }: { id: string }) {
       setPlayingIdx(idx);
       setPlayhead(0);
       intervalRef.current = window.setInterval(() => {
-        setPlayhead((prev) => {
-          if (prev >= 100) {
-            if (intervalRef.current !== null) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = null;
-            }
-            setPlayingIdx(null);
-            return 0;
-          }
-          return prev + 0.7;
-        });
+        setPlayhead((prev) => prev + 0.7);
       }, 90);
     }
   };
@@ -253,8 +253,8 @@ export function Studio({ id }: { id: string }) {
       forgeLabel: "RE-FORGE",
       forgeDisabled: false,
     });
-    return () => resetSession();
   }, [job?.status, jobName, actualId]);
+  useEffect(() => () => resetSession(), []);
 
   const handleRename = (e: Event) => {
     const val = (e.target as HTMLInputElement).value;

@@ -26,7 +26,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
     const body = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${body}`);
   }
-  if (res.status === 204 || res.headers.get("content-length") === "0") {
+  if (res.status === 204 || Number(res.headers.get("content-length")) === 0) {
     return undefined as unknown as Promise<T>;
   }
   return res.json() as Promise<T>;
@@ -226,23 +226,6 @@ export function fetchVersionTree(jobId: string): Promise<VersionTreeNode[]> {
 
 // ── Payload preview ──────────────────────────────────────────────────
 
-export interface PayloadPreviewResult {
-  request: {
-    title: string;
-    style: string;
-    prompt?: string;
-    instrumental: boolean;
-    negativeTags?: string;
-    model: string;
-    callBackUrl?: string;
-  };
-  warnings: Array<{ field: string; message: string }>;
-}
-
-export function fetchPayloadPreview(id: string): Promise<PayloadPreviewResult> {
-  return api(`/api/jobs/${encodeURIComponent(id)}/payload-preview`);
-}
-
 // ── Review ────────────────────────────────────────────────────────────
 
 export function submitReview(
@@ -304,46 +287,6 @@ export interface GenerationInfo {
   error?: string;
   isFavorite?: boolean;
   seed?: number;
-}
-
-export interface SunoFeedItemInfo {
-  id: string;
-  status: string;
-  audioUrl?: string;
-  imageUrl?: string;
-  videoUrl?: string;
-  duration?: number;
-  error?: string;
-  style?: string;
-  lyrics?: string;
-  title?: string;
-  modelVersion?: string;
-  createdAt?: string;
-}
-
-export function fetchGenerationStatus(
-  generationId: string,
-): Promise<SunoFeedItemInfo> {
-  return api(`/api/suno/status/${encodeURIComponent(generationId)}`);
-}
-
-export function fetchGenerations(
-  jobId: string,
-  limit = 10,
-): Promise<GenerationInfo[]> {
-  return api(
-    `/api/suno/jobs/${encodeURIComponent(jobId)}/generations?limit=${limit}`,
-  );
-}
-
-export function retryGeneration(
-  jobId: string,
-  generationId: string,
-): Promise<{ status: string; jobId: string; generationIds: string[] }> {
-  return api(
-    `/api/suno/jobs/${encodeURIComponent(jobId)}/generations/${encodeURIComponent(generationId)}/retry`,
-    { method: "POST" },
-  );
 }
 
 export function fetchTakes(versionId: string): Promise<GenerationInfo[]> {

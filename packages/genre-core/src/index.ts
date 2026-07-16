@@ -30,6 +30,8 @@ export interface ArrangementSection {
  * Static numbers pass through; object specs are evaluated as:
  *   base + round(energy * per_energy + complexity * per_complexity)
  */
+export { capitalize } from "./utils.js";
+
 export function computeBars(
   spec: SongStructureBarSpec,
   inputs: { energy?: number; complexity?: number },
@@ -188,6 +190,52 @@ export interface TagCategory {
   name: string;
   color: string;
   suggestions: string[];
+}
+
+// ── Shared builders ─────────────────────────────────────────────────
+
+export interface ResolveArrangementOptions {
+  arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+  songStructure?: SongStructureSection[];
+  inputs: { energy?: number; complexity?: number };
+  defaultStructure: SongStructureSection[];
+}
+
+export function resolveArrangement(
+  opts: ResolveArrangementOptions,
+): ArrangementSection[] {
+  if (opts.arrangementOverride) {
+    return opts.arrangementOverride.map((s) => ({
+      section: s.section,
+      bars: s.bars,
+      tags: s.tags ?? [],
+    }));
+  }
+  const template = opts.songStructure ?? opts.defaultStructure;
+  return template.map((s) => ({
+    section: s.section,
+    bars: computeBars(s.bars, opts.inputs),
+    tags: s.tags,
+  }));
+}
+
+export interface StyleClause {
+  key: string;
+  value: string;
+  order: number;
+}
+
+export function buildStyleClauses(
+  clauses: { key: string; value: string; order?: number }[],
+): StyleClause[] {
+  return clauses.map((c, i) => ({ key: c.key, value: c.value, order: c.order ?? i }));
+}
+
+export function instrumentalNegativeTags(
+  lyricsMode: string,
+): string[] {
+  if (lyricsMode === "full_lyrics") return [];
+  return ["vocals", "singing", "lyrics", "voice"];
 }
 
 // ── UI Module ────────────────────────────────────────────────────────

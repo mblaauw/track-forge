@@ -118,14 +118,6 @@ export interface LyricsWriterResult {
 export type LyricsFormat =
   "strict_instrumental" | "guided_instrumental" | "full_lyrics";
 
-export const SunoInstrumentalMode = {
-  Strict: "strict",
-  Guided: "guided",
-  FullLyrics: "full_lyrics",
-} as const;
-export type SunoInstrumentalMode =
-  (typeof SunoInstrumentalMode)[keyof typeof SunoInstrumentalMode];
-
 // ── Control descriptors (structured NL adjustments) ───────────────────
 
 export type ControlOperator = "set" | "adjust" | "remove" | "add";
@@ -135,40 +127,6 @@ export interface ControlDescriptor {
   operator: ControlOperator;
   value: string | number | boolean | string[];
   confidence: number;
-}
-
-// ── Content Locking ───────────────────────────────────────────────────
-
-export const LockType = {
-  ArtifactLock: "artifact_lock",
-  SectionLock: "section_lock",
-  TextAnchor: "text_anchor",
-} as const;
-export type LockType = (typeof LockType)[keyof typeof LockType];
-
-export interface ContentLock {
-  type: LockType;
-  id: string;
-  description: string;
-}
-
-export interface ArtifactLock extends ContentLock {
-  type: "artifact_lock";
-  artifactType: SunoArtifactType;
-}
-
-export interface SectionLock extends ContentLock {
-  type: "section_lock";
-  artifactType: SunoArtifactType;
-  sectionIndex: number;
-}
-
-export interface TextAnchor extends ContentLock {
-  type: "text_anchor";
-  artifactType: SunoArtifactType;
-  anchorText: string;
-  anchorIndex?: number;
-  lockedValue: string;
 }
 
 // ── Project & Draft ──────────────────────────────────────────────────

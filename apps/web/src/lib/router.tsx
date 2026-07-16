@@ -3,13 +3,11 @@ import { useContext, useState, useEffect } from "preact/hooks";
 
 interface RouterCtx {
   path: string;
-  params: Record<string, string>;
   navigate: (path: string) => void;
 }
 
 const RouterContext = createContext<RouterCtx>({
   path: "/",
-  params: {},
   navigate: () => {},
 });
 
@@ -34,17 +32,11 @@ export function Router({ children }: { children: preact.ComponentChildren }) {
     location.hash = p;
   };
 
-  const params = extractParams(path);
-
   return (
-    <RouterContext.Provider value={{ path, params, navigate }}>
+    <RouterContext.Provider value={{ path, navigate }}>
       {children}
     </RouterContext.Provider>
   );
-}
-
-function extractParams(path: string): Record<string, string> {
-  return {};
 }
 
 interface RouteMatch {

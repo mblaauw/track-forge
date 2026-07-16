@@ -308,8 +308,8 @@ export function Forge({ id }: { id: string }) {
           : "START FORGE",
       forgeDisabled: isRunning,
     });
-    return () => resetSession();
   }, [job?.status, id]);
+  useEffect(() => () => resetSession(), []);
 
   return (
     <div>

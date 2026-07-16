@@ -3,52 +3,6 @@ name: Pop
 color: violet
 subgenre_count: "20+"
 
-defaults:
-  subgenre: synthpop
-  bpm: 116
-  key: C
-  scale: major
-  mood: "bright and catchy"
-  energy: 6
-  complexity: 5
-  lyricsMode: full_lyrics
-  theme: "love"
-  reference: ""
-
-tag_policy:
-  mandatoryTags: [pop]
-  forbiddenTags: []
-  canonicalMap: {}
-
-adjustment_vocabulary:
-  styleTerms:
-    - catchy
-    - melodic
-    - upbeat
-    - emotional
-    - polished
-    - dreamy
-    - bright
-    - sweet
-    - hazy
-    - driving
-    - gentle
-    - anthemic
-  structureTerms:
-    - "extended intro"
-    - "short bridge"
-    - "double chorus"
-    - "instrumental break"
-    - "key change"
-    - "tag ending"
-  deliveryTerms:
-    - "breathy vocals"
-    - "smooth delivery"
-    - "layered harmonies"
-    - "belting chorus"
-    - "falsetto"
-    - "spoken word intro"
-
 tag_categories:
   - id: genre
     name: Genre

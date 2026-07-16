@@ -1,9 +1,10 @@
 import { z } from "zod";
 import {
-  type ArrangementSection,
   type SongStructureSection,
-  computeBars,
   type FormFieldDescriptor,
+  resolveArrangement,
+  buildStyleClauses,
+  instrumentalNegativeTags,
 } from "@track-forge/genre-core";
 
 export const DnbInputSchema = z.object({
@@ -85,43 +86,28 @@ export function compileBlueprint(
     songStructure?: SongStructureSection[];
   },
 ): DnbBlueprint {
-  let arrangement: ArrangementSection[];
-  if (options?.arrangementOverride) {
-    arrangement = options.arrangementOverride.map((s) => ({
-      section: s.section,
-      bars: s.bars,
-      tags: s.tags ?? [],
-    }));
-  } else {
-    const template = options?.songStructure ?? DNB_DEFAULT_SONG_STRUCTURE;
-    arrangement = template.map((s) => ({
-      section: s.section,
-      bars: computeBars(s.bars, inputs),
-      tags: s.tags,
-    }));
-  }
+  const arrangement = resolveArrangement({
+    arrangementOverride: options?.arrangementOverride,
+    songStructure: options?.songStructure,
+    inputs,
+    defaultStructure: DNB_DEFAULT_SONG_STRUCTURE,
+  });
   const tags = [
     inputs.subgenre.replace(/_/g, " "),
     "drum & bass",
     "electronic",
   ];
-  const negativeTags: string[] = [];
-  if (inputs.lyricsMode !== "full_lyrics")
-    negativeTags.push("vocals", "singing", "lyrics", "voice");
+  const negativeTags = instrumentalNegativeTags(inputs.lyricsMode);
 
-  const styleClauses = [
-    {
-      key: "genre",
-      value: `Drum & Bass — ${inputs.subgenre.replace(/_/g, " ")}`,
-      order: 0,
-    },
-    { key: "bpm", value: String(inputs.bpm), order: 1 },
-    { key: "key", value: inputs.key, order: 2 },
-    { key: "scale", value: inputs.scale, order: 3 },
-    { key: "mood", value: inputs.mood, order: 4 },
-    { key: "energy", value: String(inputs.energy), order: 5 },
-    { key: "complexity", value: String(inputs.complexity), order: 6 },
-  ];
+  const styleClauses = buildStyleClauses([
+    { key: "genre", value: `Drum & Bass — ${inputs.subgenre.replace(/_/g, " ")}` },
+    { key: "bpm", value: String(inputs.bpm) },
+    { key: "key", value: inputs.key },
+    { key: "scale", value: inputs.scale },
+    { key: "mood", value: inputs.mood },
+    { key: "energy", value: String(inputs.energy) },
+    { key: "complexity", value: String(inputs.complexity) },
+  ]);
 
   return DnbBlueprintSchema.parse({
     subgenre: inputs.subgenre,

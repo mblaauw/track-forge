@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type {
@@ -9,6 +9,7 @@ import type {
   ImportResult,
 } from "@track-forge/contracts";
 import { getModule } from "../lib/modules.js";
+import { findRowOr404 } from "../lib/db-utils.js";
 
 export interface ImportExportRouteDeps {
   db: Db;
@@ -25,13 +26,7 @@ export function registerImportExportRoutes(
   server.get("/api/projects/:id/export", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [project] = await db
-      .select()
-      .from(schema.projects)
-      .where(eq(schema.projects.id, id))
-      .limit(1);
-
-    if (!project) return reply.code(404).send({ error: "Project not found" });
+    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
 
     const projectJobs = await db
       .select()
@@ -64,13 +59,7 @@ export function registerImportExportRoutes(
   server.get("/api/jobs/:id/export", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
     const versions = await db
       .select()
@@ -217,37 +206,4 @@ export function registerImportExportRoutes(
     return reply.code(result.imported > 0 ? 201 : 200).send(result);
   });
 
-  // ── Legacy bulk export (deprecated, use project export) ───────────
-
-  server.post("/api/jobs/export", async (req, reply) => {
-    const body = req.body as { ids?: string[] } | undefined;
-    const ids = body?.ids;
-
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return reply.code(400).send({ error: "ids array required" });
-    }
-
-    const jobs = await db
-      .select()
-      .from(schema.jobs)
-      .where(inArray(schema.jobs.id, ids));
-
-    if (jobs.length === 0) {
-      return reply.code(404).send({ error: "No jobs found" });
-    }
-
-    const entries: JobExport[] = [];
-
-    for (const job of jobs) {
-      const versions = await db
-        .select()
-        .from(schema.versions)
-        .where(eq(schema.versions.jobId, job.id))
-        .orderBy(schema.versions.number);
-
-      entries.push({ job: job as any, versions: versions as any[] });
-    }
-
-    return { jobs: entries };
-  });
 }

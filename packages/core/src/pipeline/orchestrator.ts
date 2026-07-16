@@ -46,6 +46,15 @@ import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
 import { serializeLyrics } from "../lyrics/canonical.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
 
+function patchDescriptions(raw: string): string {
+  try {
+    const patches = JSON.parse(raw) as SurgicalPatch[];
+    return patches.map((p) => p.description).join("; ");
+  } catch {
+    return "";
+  }
+}
+
 // ── Reference cache (module-level singleton) ─────────────────────────
 
 const _refCache = new ReferenceCache();
@@ -67,6 +76,21 @@ function nextStage(current: GenerationStage): GenerationStage | undefined {
   const idx = STAGE_ORDER.indexOf(current);
   if (idx === -1 || idx >= STAGE_ORDER.length - 1) return undefined;
   return STAGE_ORDER[idx + 1];
+}
+
+function injectCompiledContext(
+  context: Record<string, unknown>,
+  compiledJson: string,
+): void {
+  try {
+    const compiled = JSON.parse(compiledJson) as Record<string, string>;
+    context.title = compiled.title ?? "";
+    context.style = compiled.style ?? "";
+    context.lyrics = compiled.lyrics ?? "";
+    context.excluded_styles = compiled.excludedStyles ?? "";
+  } catch {
+    /* ignore */
+  }
 }
 
 // ── Stage: Ref Interpretation ─────────────────────────────────────────
@@ -328,16 +352,7 @@ async function handleReview(
     : "";
   context.songPlan = state.songPlan ?? "";
 
-  // Inject individual compiled fields for critic {{placeholders}}
-  try {
-    const compiled = JSON.parse(compiledJson) as Record<string, string>;
-    context.title = compiled.title ?? "";
-    context.style = compiled.style ?? "";
-    context.lyrics = compiled.lyrics ?? "";
-    context.excluded_styles = compiled.excludedStyles ?? "";
-  } catch {
-    /* compiledJson parse failed */
-  }
+  injectCompiledContext(context, compiledJson);
 
   let useFullCritics = false;
   try {
@@ -370,11 +385,16 @@ async function handleRevision(state: PipelineState): Promise<PipelineState> {
 
   // When restarting from review pause, load state from job columns
   const effCompiled = compiledJson ?? job.compiledJson;
-  const effFindings: CriticFinding[] | null = findings
+  let effFindings: CriticFinding[] | null = findings
     ? (findings as unknown as CriticFinding[])
-    : job.findings
-      ? (JSON.parse(job.findings) as CriticFinding[])
-      : null;
+    : null;
+  if (!effFindings && job.findings) {
+    try {
+      effFindings = JSON.parse(job.findings) as CriticFinding[];
+    } catch {
+      effFindings = null;
+    }
+  }
 
   if (!effCompiled || !effFindings || effFindings.length === 0) {
     return state;
@@ -411,7 +431,12 @@ async function handleRevision(state: PipelineState): Promise<PipelineState> {
   }
 
   // Apply patches to compiled output with fallback
-  const compiled = JSON.parse(effCompiled) as Record<string, string>;
+  let compiled: Record<string, string>;
+  try {
+    compiled = JSON.parse(effCompiled) as Record<string, string>;
+  } catch {
+    return state;
+  }
   const fallback = { ...compiled };
 
   for (const p of patches) {
@@ -507,16 +532,7 @@ async function handleVerification(
       ?.map((s: any) => s.section)
       .join(", ") ?? "";
 
-    // Inject individual compiled fields for critic {{placeholders}}
-    try {
-      const c = JSON.parse(compiledJson) as Record<string, string>;
-      context.title = c.title ?? "";
-      context.style = c.style ?? "";
-      context.lyrics = c.lyrics ?? "";
-      context.excluded_styles = c.excludedStyles ?? "";
-    } catch {
-      /* ignore */
-    }
+    injectCompiledContext(context, compiledJson);
 
     const recheckFindings = await runCritics(
       module.critics,
@@ -562,7 +578,7 @@ async function handleVersioning(
 
   // Attach patch history if available
   const patchNotes = state.appliedPatch
-    ? `Patches: ${(JSON.parse(state.appliedPatch) as SurgicalPatch[]).map((p) => p.description).join("; ")}`
+    ? `Patches: ${patchDescriptions(state.appliedPatch)}`
     : "";
 
   const artifacts: SunoArtifact[] = [

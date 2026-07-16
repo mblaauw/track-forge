@@ -42,7 +42,12 @@ export interface EdmSubgenreEntry {
   description?: string;
 }
 
-/** Minimal fallback for static init — full data is in YAML */
+/**
+ * Minimal fallback for static init — full data is in YAML taxonomy (43 entries).
+ * Validators and form dropdowns read this static array, NOT the augmented YAML,
+ * so shrinking to 1 entry means users can only select Deep House.
+ * Fix: refactor validators/schema pipeline to consume runtime-augmented taxonomy.
+ */
 export const EDM_SUBGENRES: EdmSubgenreEntry[] = [
   { id: "deep_house", label: "Deep House", family: "house", bpmRange: [110, 125], bpmDefault: 120, scale: "minor", characteristics: ["warm", "soulful"], vocalMode: "vocals_hook", arrangementTags: {}, description: "Warm, soulful house" },
 ];

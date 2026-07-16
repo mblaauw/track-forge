@@ -1,4 +1,4 @@
-import type { GenreRenderers } from "@track-forge/genre-core";
+import { type GenreRenderers, capitalize } from "@track-forge/genre-core";
 import type { DnbBlueprint } from "./schema.js";
 
 function renderTitle(data: DnbBlueprint): string {
@@ -132,6 +132,3 @@ export function createDnbRenderers(): GenreRenderers<DnbBlueprint> {
   };
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}

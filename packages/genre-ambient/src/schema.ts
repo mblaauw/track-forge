@@ -1,9 +1,10 @@
 import { z } from "zod";
 import {
-  type ArrangementSection,
   type SongStructureSection,
-  computeBars,
   type FormFieldDescriptor,
+  resolveArrangement,
+  buildStyleClauses,
+  instrumentalNegativeTags,
 } from "@track-forge/genre-core";
 
 export const AmbientInputSchema = z.object({
@@ -81,40 +82,30 @@ export function compileBlueprint(
     songStructure?: SongStructureSection[];
   },
 ): AmbientBlueprint {
-  let arrangement: ArrangementSection[];
-  if (options?.arrangementOverride) {
-    arrangement = options.arrangementOverride.map((s) => ({
-      section: s.section,
-      bars: s.bars,
-      tags: s.tags ?? [],
-    }));
-  } else {
-    const template = options?.songStructure ?? AMBIENT_DEFAULT_SONG_STRUCTURE;
-    arrangement = template.map((s) => ({
-      section: s.section,
-      bars: computeBars(s.bars, inputs),
-      tags: s.tags,
-    }));
-  }
+  const arrangement = resolveArrangement({
+    arrangementOverride: options?.arrangementOverride,
+    songStructure: options?.songStructure,
+    inputs,
+    defaultStructure: AMBIENT_DEFAULT_SONG_STRUCTURE,
+  });
   const tags = ["ambient", inputs.soundscape];
-  const negativeTags: string[] = [
+  const negativeTags = [
+    ...instrumentalNegativeTags(inputs.lyricsMode),
     "aggressive",
     "rhythmic",
     "percussive",
     "driving",
     "beat-driven",
   ];
-  if (inputs.lyricsMode !== "full_lyrics")
-    negativeTags.push("vocals", "singing", "lyrics", "voice");
 
-  const styleClauses = [
-    { key: "genre", value: "ambient", order: 0 },
-    { key: "subgenre", value: inputs.subgenre.replace(/_/g, " "), order: 1 },
-    { key: "bpm", value: String(inputs.bpm), order: 2 },
-    { key: "mood", value: inputs.mood, order: 3 },
-    { key: "soundscape", value: inputs.soundscape, order: 4 },
-    { key: "complexity", value: String(inputs.complexity), order: 5 },
-  ];
+  const styleClauses = buildStyleClauses([
+    { key: "genre", value: "ambient" },
+    { key: "subgenre", value: inputs.subgenre.replace(/_/g, " ") },
+    { key: "bpm", value: String(inputs.bpm) },
+    { key: "mood", value: inputs.mood },
+    { key: "soundscape", value: inputs.soundscape },
+    { key: "complexity", value: String(inputs.complexity) },
+  ]);
 
   return AmbientBlueprintSchema.parse({
     subgenre: inputs.subgenre,

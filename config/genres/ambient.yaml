@@ -3,46 +3,6 @@ name: Ambient
 color: accent
 subgenre_count: "15+"
 
-defaults:
-  subgenre: drone
-  bpm: 65
-  key: C
-  scale: major
-  mood: "meditative"
-  complexity: 5
-  lyricsMode: strict_instrumental
-  soundscape: "ethereal"
-
-tag_policy:
-  mandatoryTags: [ambient]
-  forbiddenTags: [aggressive, rhythmic, percussive]
-  canonicalMap: {}
-
-adjustment_vocabulary:
-  styleTerms:
-    - ethereal
-    - meditative
-    - vast
-    - serene
-    - dark
-    - peaceful
-    - melancholic
-    - hypnotic
-    - weightless
-    - textural
-  structureTerms:
-    - "slow fade in"
-    - "gradual build"
-    - "long decay"
-    - "extended silence"
-    - "drone shift"
-  deliveryTerms:
-    - "sustained pads"
-    - "slow modulation"
-    - "granular texture"
-    - "field recording"
-    - "tape decay"
-
 tag_categories:
   - id: genre
     name: Genre

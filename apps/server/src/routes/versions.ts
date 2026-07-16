@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, LockService } from "@track-forge/core";
 import { schema } from "@track-forge/core";
+import { findRowOr404 } from "../lib/db-utils.js";
 
 export interface VersionRouteDeps {
   db: Db;
@@ -19,13 +20,7 @@ export function registerVersionRoutes(
   server.get("/api/jobs/:jobId/versions", async (req, reply) => {
     const { jobId } = req.params as { jobId: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, jobId))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, jobId), "Job");
 
     const rows = await db
       .select()
@@ -41,13 +36,7 @@ export function registerVersionRoutes(
   server.get("/api/versions/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [version] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, id))
-      .limit(1);
-
-    if (!version) return reply.code(404).send({ error: "Version not found" });
+    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
     return version;
   });
 
@@ -62,13 +51,7 @@ export function registerVersionRoutes(
       return reply.code(400).send({ error: "artifactType and value required" });
     }
 
-    const [version] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, id))
-      .limit(1);
-
-    if (!version) return reply.code(404).send({ error: "Version not found" });
+    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
     if (version.status === "final") {
       return reply.code(400).send({ error: "Cannot edit a finalized version" });
     }
@@ -126,13 +109,7 @@ export function registerVersionRoutes(
   server.post("/api/versions/:id/promote", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [version] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, id))
-      .limit(1);
-
-    if (!version) return reply.code(404).send({ error: "Version not found" });
+    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
     if (version.status === "final") {
       return reply.code(400).send({ error: "Version is already finalized" });
     }
@@ -162,22 +139,9 @@ export function registerVersionRoutes(
         versionId: string;
       };
 
-      const [job] = await db
-        .select()
-        .from(schema.jobs)
-        .where(eq(schema.jobs.id, jobId))
-        .limit(1);
+      const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, jobId), "Job");
 
-      if (!job) return reply.code(404).send({ error: "Job not found" });
-
-      const [sourceVersion] = await db
-        .select()
-        .from(schema.versions)
-        .where(eq(schema.versions.id, versionId))
-        .limit(1);
-
-      if (!sourceVersion)
-        return reply.code(404).send({ error: "Source version not found" });
+      const sourceVersion = await findRowOr404(db, schema.versions, eq(schema.versions.id, versionId), "Source version");
 
       const [maxVersion] = await db
         .select({ maxNumber: schema.versions.number })
@@ -215,13 +179,7 @@ export function registerVersionRoutes(
   server.get("/api/jobs/:jobId/versions/tree", async (req, reply) => {
     const { jobId } = req.params as { jobId: string };
 
-    const [job] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, jobId))
-      .limit(1);
-
-    if (!job) return reply.code(404).send({ error: "Job not found" });
+    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, jobId), "Job");
 
     const rows = await db
       .select()
@@ -256,13 +214,7 @@ export function registerVersionRoutes(
   server.get("/api/versions/:id/takes", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [version] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, id))
-      .limit(1);
-
-    if (!version) return reply.code(404).send({ error: "Version not found" });
+    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
 
     const rows = await db
       .select()
@@ -276,13 +228,7 @@ export function registerVersionRoutes(
   server.post("/api/versions/:id/takes", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [version] = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.id, id))
-      .limit(1);
-
-    if (!version) return reply.code(404).send({ error: "Version not found" });
+    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
 
     const now = new Date().toISOString();
     const genId = crypto.randomUUID();
@@ -308,13 +254,7 @@ export function registerVersionRoutes(
   server.patch("/api/takes/:id/favorite", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const [gen] = await db
-      .select()
-      .from(schema.generations)
-      .where(eq(schema.generations.id, id))
-      .limit(1);
-
-    if (!gen) return reply.code(404).send({ error: "Take not found" });
+    const gen = await findRowOr404(db, schema.generations, eq(schema.generations.id, id), "Take");
 
     const now = new Date().toISOString();
     await db

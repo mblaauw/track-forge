@@ -1,5 +1,5 @@
-import type { GenreModule, SongStructureSection, ArrangementSection } from "@track-forge/genre-core";
-import { computeBars } from "@track-forge/genre-core";
+import type { GenreModule, SongStructureSection } from "@track-forge/genre-core";
+import { resolveArrangement, buildStyleClauses, instrumentalNegativeTags } from "@track-forge/genre-core";
 import type { HipHopInputs, HipHopBlueprint } from "./schema.js";
 import {
   HipHopInputSchema,
@@ -163,22 +163,18 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
       songStructure?: SongStructureSection[];
     },
   ) => {
-    let arrangement: ArrangementSection[];
-    if (options?.arrangementOverride) {
-      arrangement = options.arrangementOverride.map((s) => ({
-        section: s.section,
-        bars: s.bars,
-        tags: s.tags ?? [],
-      }));
-    } else {
-      const template =
-        options?.songStructure ?? HIP_HOP_DEFAULT_SONG_STRUCTURE;
-      arrangement = template.map((s) => ({
-        section: s.section,
-        bars: computeBars(s.bars, inputs),
-        tags: s.tags,
-      }));
-    }
+    const arrangement = resolveArrangement({
+      arrangementOverride: options?.arrangementOverride,
+      songStructure: options?.songStructure,
+      inputs,
+      defaultStructure: HIP_HOP_DEFAULT_SONG_STRUCTURE,
+    });
+    const customTags = inputs.customTags
+      ? inputs.customTags
+          .split(",")
+          .map((t: string) => t.trim())
+          .filter(Boolean)
+      : [];
     return HipHopBlueprintSchema.parse({
       subgenre: inputs.subgenre,
       bpm: inputs.bpm,
@@ -194,19 +190,13 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
       complexity: inputs.complexity,
       lyricsMode: inputs.lyricsMode,
       vocalStyle: "",
-      tags: inputs.customTags
-        ? inputs.customTags
-            .split(",")
-            .map((t: string) => t.trim())
-            .filter(Boolean)
-        : [],
-      negativeTags:
-        inputs.lyricsMode === "instrumental" ? ["vocals", "singing"] : [],
-      styleClauses: [
-        { key: "genre", value: inputs.subgenre.replace(/_/g, " "), order: 0 },
-        { key: "bpm", value: String(inputs.bpm), order: 1 },
-        { key: "mood", value: inputs.mood, order: 2 },
-      ],
+      tags: customTags,
+      negativeTags: instrumentalNegativeTags(inputs.lyricsMode ?? "full_lyrics"),
+      styleClauses: buildStyleClauses([
+        { key: "genre", value: inputs.subgenre.replace(/_/g, " ") },
+        { key: "bpm", value: String(inputs.bpm) },
+        { key: "mood", value: inputs.mood ?? "" },
+      ]),
       arrangement,
     });
   },

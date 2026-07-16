@@ -21,18 +21,6 @@ interface TagCategoryYaml {
   suggestions: string[];
 }
 
-interface AdjustmentVocabularyYaml {
-  styleTerms: string[];
-  structureTerms: string[];
-  deliveryTerms: string[];
-}
-
-interface TagPolicyYaml {
-  mandatoryTags: string[];
-  forbiddenTags: string[];
-  canonicalMap: Record<string, string>;
-}
-
 interface SongStructureSectionYaml {
   section: string;
   bars: number | { base: number; per_energy?: number; per_complexity?: number };
@@ -43,9 +31,6 @@ export interface GenreConfigYaml {
   name: string;
   color: string;
   subgenre_count: string;
-  defaults: Record<string, unknown>;
-  tag_policy: TagPolicyYaml;
-  adjustment_vocabulary: AdjustmentVocabularyYaml;
   tag_categories: TagCategoryYaml[];
   presets: GenrePresetYaml[];
   song_structure?: SongStructureSectionYaml[];
@@ -92,18 +77,6 @@ export function getTagCategories(id: string): TagCategoryYaml[] {
   return loadYaml(id).tag_categories;
 }
 
-export function getDefaults(id: string): Record<string, unknown> {
-  return loadYaml(id).defaults;
-}
-
-export function getTagPolicy(id: string): TagPolicyYaml {
-  return loadYaml(id).tag_policy;
-}
-
-export function getAdjustmentVocabulary(id: string): AdjustmentVocabularyYaml {
-  return loadYaml(id).adjustment_vocabulary;
-}
-
 export function getSongStructure(id: string): SongStructureSectionYaml[] {
   return loadYaml(id).song_structure ?? [];
 }
@@ -112,6 +85,7 @@ export function getTaxonomy(id: string): unknown {
   return loadYaml(id).taxonomy ?? null;
 }
 
+/** @internal */
 export function clearCache(): void {
   cache.clear();
 }

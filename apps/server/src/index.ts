@@ -17,6 +17,7 @@ import { registerSunoRoutes } from "./routes/suno.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerImportExportRoutes } from "./routes/import-export.js";
+import { ApiError } from "./lib/db-utils.js";
 
 const config = initConfig();
 const logger = pino({ level: config.logLevel });
@@ -27,6 +28,13 @@ const llm = createLlmClient(config, logger.child({ module: "llm" }));
 
 const server = Fastify({ logger: { level: config.logLevel } });
 const lockService = createLockService(db);
+
+server.setErrorHandler((error, _request, reply) => {
+  if (error instanceof ApiError) {
+    return reply.code(error.statusCode).send({ error: error.message });
+  }
+  reply.send(error);
+});
 
 // ── Periodic lock cleanup ──────────────────────────────────────────
 

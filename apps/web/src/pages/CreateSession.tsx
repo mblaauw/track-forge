@@ -110,6 +110,10 @@ export function CreateSession() {
   const [addingCat, setAddingCat] = useState<string | null>(null);
   const [selectedTagIdx, setSelectedTagIdx] = useState<number | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("foundation");
+  const selectedSectionIdxRef = useRef(selectedSectionIdx);
+  selectedSectionIdxRef.current = selectedSectionIdx;
+  const moveRef = useRef<((ev: PointerEvent) => void) | null>(null);
+  const upRef = useRef<((ev: PointerEvent) => void) | null>(null);
   const [presets, setPresets] = useState<GenrePreset[]>([]);
   const [tagCategories, setTagCategories] = useState<TagCategoryInfo[]>([]);
 
@@ -131,6 +135,13 @@ export function CreateSession() {
       setSectionsDirty(false);
     }
   }, [genreId]);
+
+  useEffect(() => {
+    return () => {
+      if (moveRef.current) window.removeEventListener("pointermove", moveRef.current);
+      if (upRef.current) window.removeEventListener("pointerup", upRef.current);
+    };
+  }, []);
 
   const selectedPreset = presets.find((p) => p.id === presetId);
 
@@ -250,14 +261,15 @@ export function CreateSession() {
 
   const decrementBars = () => {
     setSectionsDirty(true);
+    const idx = selectedSectionIdxRef.current;
     setSections((prev) => {
       const next = [...prev];
-      if (selectedSectionIdx < 0 || selectedSectionIdx >= next.length)
+      if (idx < 0 || idx >= next.length)
         return prev;
-      const sec = { ...next[selectedSectionIdx]! };
+      const sec = { ...next[idx]! };
       if (sec.bars > 4) {
         sec.bars -= 1;
-        next[selectedSectionIdx] = sec;
+        next[idx] = sec;
       }
       return next;
     });
@@ -265,14 +277,15 @@ export function CreateSession() {
 
   const incrementBars = () => {
     setSectionsDirty(true);
+    const idx = selectedSectionIdxRef.current;
     setSections((prev) => {
       const next = [...prev];
-      if (selectedSectionIdx < 0 || selectedSectionIdx >= next.length)
+      if (idx < 0 || idx >= next.length)
         return prev;
-      const sec = { ...next[selectedSectionIdx]! };
+      const sec = { ...next[idx]! };
       if (sec.bars < 64) {
         sec.bars += 1;
-        next[selectedSectionIdx] = sec;
+        next[idx] = sec;
       }
       return next;
     });
@@ -350,9 +363,13 @@ export function CreateSession() {
       );
     };
     const up = () => {
+      moveRef.current = null;
+      upRef.current = null;
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
+    moveRef.current = move;
+    upRef.current = up;
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
@@ -392,22 +409,23 @@ export function CreateSession() {
       forgeLabel: submitting ? "CREATING…" : "FORGE",
       forgeDisabled: submitting,
     });
-    return () => resetSession();
   }, [genreId, presetId, inputs.bpm, inputs.key, inputs.scale, submitting]);
+  useEffect(() => () => resetSession(), []);
 
   const addTag = (label: string, category: string) => {
+    const existing = tags.findIndex(
+      (t) => t.label === label && t.category === category,
+    );
     setTags((prev) => {
-      const existing = prev.findIndex(
+      const idx = prev.findIndex(
         (t) => t.label === label && t.category === category,
       );
-      if (existing >= 0) {
-        setSelectedTagIdx(null);
-        return prev.filter((_, i) => i !== existing);
+      if (idx >= 0) {
+        return prev.filter((_, i) => i !== idx);
       }
-      const next = [...prev, { label, category, weight: 2, muted: false }];
-      setSelectedTagIdx(next.length - 1);
-      return next;
+      return [...prev, { label, category, weight: 2, muted: false }];
     });
+    setSelectedTagIdx(existing >= 0 ? null : tags.length);
   };
 
   return (

@@ -50,6 +50,12 @@ export interface HipHopSubgenreEntry {
   tags: string[];
 }
 
+/**
+ * Fallback for static init — full 22-entry set is duplicated from YAML taxonomy.
+ * Validators use this via default parameter; augmented YAML is not passed in.
+ * Shrinking to 1 entry would break validation for any non-boom_bap subgenre.
+ * Fix: refactor validators/schema pipeline to consume runtime-augmented taxonomy.
+ */
 export const HIP_HOP_SUBGENRES: HipHopSubgenreEntry[] = [
   { id: "boom_bap", label: "Boom Bap", bpmRange: [85, 95], bpmDefault: 90, era: "1990s", characteristics: ["hard drums", "sampled loops", "gritty", "raw", "head-nod groove"], defaultNarrative: "braggadocio", defaultFlow: "laid_back", defaultDelivery: "intense", defaultProduction: "vintage", commonRhymeStyles: ["multi_syllabic", "end_rhyme", "internal"], typicalSongStructure: ["intro", "verse", "hook", "verse", "hook", "bridge", "verse", "outro"], vocalStyle: "assertive, commanding delivery with precise phrasing", tags: ["boom bap", "east coast", "90s hip hop", "sampled"] },
   { id: "trap", label: "Trap", bpmRange: [130, 170], bpmDefault: 150, era: "2010s", characteristics: ["808 bass", "rolling hi-hats", "dark", "synth-heavy", "snare rolls"], defaultNarrative: "braggadocio", defaultFlow: "syncopated", defaultDelivery: "hype", defaultProduction: "polished", commonRhymeStyles: ["multi_syllabic", "end_rhyme", "free_form"], typicalSongStructure: ["intro", "verse", "hook", "verse", "hook", "bridge", "hook", "outro"], vocalStyle: "rhythmic, triplet flows with ad-libs and melodic hooks", tags: ["trap", "808", "hi-hats", "southern hip hop"] },

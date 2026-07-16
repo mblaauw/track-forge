@@ -10,7 +10,8 @@ export function initConfig(): Config {
   return _config;
 }
 
-export function getConfig(): Config {
+/** @internal */
+function getConfig(): Config {
   if (!_config)
     throw new Error("Config not initialized. Call initConfig() first.");
   return _config;

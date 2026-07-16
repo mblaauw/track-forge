@@ -6,6 +6,11 @@ import type { SourceHash, InterpretedReference } from "@track-forge/contracts";
  */
 export class ReferenceCache {
   private store = new Map<SourceHash, InterpretedReference>();
+  private maxSize: number;
+
+  constructor(maxSize = 100) {
+    this.maxSize = maxSize;
+  }
 
   /** Check if a hash is cached and still valid */
   has(hash: SourceHash): boolean {
@@ -19,6 +24,10 @@ export class ReferenceCache {
 
   /** Store interpretation result */
   set(hash: SourceHash, value: InterpretedReference): void {
+    if (this.store.size >= this.maxSize && !this.store.has(hash)) {
+      const first = this.store.keys().next();
+      if (!first.done) this.store.delete(first.value);
+    }
     this.store.set(hash, value);
   }
 

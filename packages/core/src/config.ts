@@ -72,14 +72,17 @@ function envInt(key: string): number | undefined {
  */
 function readConfigFileSync(path: string): Record<string, unknown> {
   const code = readFileSync(path, "utf-8");
-  // Strip ESM export for synchronous eval
   const stripped = code
-    .replace(/^export\s+default\s+/, "return ")
-    .replace(/;\s*$/, "");
-  const fn = new Function(stripped);
-  const result = fn();
-  if (typeof result !== "object" || result === null) {
+    .replace(/^\s*export\s+default\s+/, "return ")
+    .replace(/;\s*\n*\s*$/, "");
+  try {
+    const fn = new Function(stripped);
+    const result = fn();
+    if (typeof result !== "object" || result === null) {
+      return {};
+    }
+    return result as Record<string, unknown>;
+  } catch {
     return {};
   }
-  return result as Record<string, unknown>;
 }
