@@ -69,11 +69,12 @@ export function registerVersionRoutes(
     }
 
     try {
-      const artifacts = JSON.parse(version.artifacts) as Array<{
-        type: string;
-        value: string;
-        versionId?: string;
-      }>;
+      let artifacts: Array<{ type: string; value: string; versionId?: string }>;
+      try {
+        artifacts = JSON.parse(version.artifacts);
+      } catch {
+        artifacts = [];
+      }
       const idx = artifacts.findIndex((a) => a.type === body.artifactType);
       if (idx === -1) {
         artifacts.push({ type: body.artifactType, value: body.value });

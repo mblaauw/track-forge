@@ -80,13 +80,3 @@ export const popModule: GenreModule<PopInputs, PopBlueprint> = {
 };
 
 export default popModule;
-
-export {
-  PopInputSchema,
-  PopBlueprintSchema,
-  POP_DEFAULTS,
-  compileBlueprint as popCompileBlueprint,
-} from "./schema.js";
-export type { PopInputs, PopBlueprint } from "./schema.js";
-export { POP_CRITICS } from "./critics.js";
-export { POP_VALIDATORS } from "./validators.js";

@@ -9,18 +9,7 @@ import { registerImportExportRoutes } from "../src/routes/import-export.js";
 import type { Db } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 
-const mockLlm = {
-  complete: async () => ({
-    content: "mock response",
-    usage: { prompt: 0, completion: 0 },
-  }),
-};
-
-const mockSuno = {
-  submit: async () => ({ ids: ["mock-id"], callbackConfigured: false }),
-  getGenerationStatus: async () => null,
-  waitForCompletion: async () => null,
-};
+import { mockLlm, mockSuno } from "@track-forge/test-support";
 
 function createTestDeps(db: Db) {
   return {
@@ -163,7 +152,8 @@ describe("Import / Export routes", () => {
 
     expect(res.statusCode).toBe(200);
     const bundle = JSON.parse(res.payload);
-    expect(bundle.jobs).toHaveLength(2);
+    expect(bundle.projects).toHaveLength(1);
+    expect(bundle.projects[0].jobs).toHaveLength(2);
   });
 
   it("POST /api/jobs/export returns 400 without ids", async () => {

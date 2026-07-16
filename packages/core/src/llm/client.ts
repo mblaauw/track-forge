@@ -150,77 +150,103 @@ export class LlmClient {
     const systemMsg = req.messages.find((m) => m.role === "system");
     const nonSystem = req.messages.filter((m) => m.role !== "system");
 
-    const res = await fetch(`${this.cfg.baseUrl}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": this.cfg.apiKey ?? "",
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: this.cfg.model,
-        system: systemMsg?.content,
-        messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
-        temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 2048,
-      }),
-      signal: req.signal,
-    });
+    const timeoutController = new AbortController();
+    const timeout = setTimeout(
+      () => timeoutController.abort(new Error("Request timed out")),
+      180_000,
+    );
+    const combined = combineSignals(req.signal, timeoutController.signal);
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new LlmError(`Anthropic API error ${res.status}`, res.status, body);
+    try {
+      const res = await fetch(`${this.cfg.baseUrl}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.cfg.apiKey ?? "",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: this.cfg.model,
+          system: systemMsg?.content,
+          messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
+          temperature: req.temperature ?? 0.7,
+          max_tokens: req.maxTokens ?? 2048,
+        }),
+        signal: combined.signal,
+      });
+
+      clearTimeout(timeout);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new LlmError(`Anthropic API error ${res.status}`, res.status, body);
+      }
+
+      const json = (await res.json()) as {
+        content: { text: string }[];
+        model: string;
+        usage?: { input_tokens: number; output_tokens: number };
+      };
+
+      return {
+        content: json.content?.map((c) => c.text).join("") ?? "",
+        model: json.model,
+        usage: json.usage
+          ? {
+              promptTokens: json.usage.input_tokens,
+              completionTokens: json.usage.output_tokens,
+              totalTokens: json.usage.input_tokens + json.usage.output_tokens,
+            }
+          : undefined,
+      };
+    } finally {
+      clearTimeout(timeout);
+      combined.cleanup();
     }
-
-    const json = (await res.json()) as {
-      content: { text: string }[];
-      model: string;
-      usage?: { input_tokens: number; output_tokens: number };
-    };
-
-    return {
-      content: json.content?.map((c) => c.text).join("") ?? "",
-      model: json.model,
-      usage: json.usage
-        ? {
-            promptTokens: json.usage.input_tokens,
-            completionTokens: json.usage.output_tokens,
-            totalTokens: json.usage.input_tokens + json.usage.output_tokens,
-          }
-        : undefined,
-    };
   }
 
   // ── Ollama ───────────────────────────────────────────────────────
 
   private async ollamaComplete(req: LlmRequest): Promise<LlmResponse> {
-    const res = await fetch(`${this.cfg.baseUrl}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: this.cfg.model,
-        messages: req.messages,
-        temperature: req.temperature ?? 0.7,
-        max_tokens: req.maxTokens ?? 2048,
-        stream: false,
-      }),
-      signal: req.signal,
-    });
+    const timeoutController = new AbortController();
+    const timeout = setTimeout(
+      () => timeoutController.abort(new Error("Request timed out")),
+      180_000,
+    );
+    const combined = combineSignals(req.signal, timeoutController.signal);
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new LlmError(`Ollama API error ${res.status}`, res.status, body);
+    try {
+      const res = await fetch(`${this.cfg.baseUrl}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: this.cfg.model,
+          messages: req.messages,
+          temperature: req.temperature ?? 0.7,
+          max_tokens: req.maxTokens ?? 2048,
+          stream: false,
+        }),
+        signal: combined.signal,
+      });
+
+      clearTimeout(timeout);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new LlmError(`Ollama API error ${res.status}`, res.status, body);
+      }
+
+      const json = (await res.json()) as {
+        message: { content: string };
+        model: string;
+      };
+
+      return {
+        content: json.message?.content ?? "",
+        model: json.model,
+      };
+    } finally {
+      clearTimeout(timeout);
+      combined.cleanup();
     }
-
-    const json = (await res.json()) as {
-      message: { content: string };
-      model: string;
-    };
-
-    return {
-      content: json.message?.content ?? "",
-      model: json.model,
-    };
   }
 }
 

@@ -220,34 +220,3 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
 };
 
 export default hipHopModule;
-
-// ── Re-exports ────────────────────────────────────────────────────────
-
-export type { HipHopInputs, HipHopBlueprint } from "./schema.js";
-export {
-  HipHopInputSchema,
-  HipHopBlueprintSchema,
-  HIP_HOP_DEFAULTS,
-  HIP_HOP_FORM_FIELDS,
-} from "./schema.js";
-export { createHipHopRenderers } from "./renderers.js";
-export {
-  HIP_HOP_FAST_CRITIC,
-  HIP_HOP_FULL_CRITICS,
-  HIP_HOP_ORIGINALITY_CRITIC,
-} from "./critics.js";
-export { hipHopValidators } from "./validators.js";
-export {
-  HIP_HOP_SUBGENRES,
-  getSubgenre,
-  getDefaultPreset,
-  getSubgenreOptions,
-} from "./taxonomy.js";
-export type {
-  HipHopSubgenreEntry,
-  NarrativeArc,
-  RhymeStyle,
-  FlowPattern,
-  Delivery,
-  ProductionStyle,
-} from "./taxonomy.js";

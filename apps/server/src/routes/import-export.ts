@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import type {
@@ -26,7 +26,12 @@ export function registerImportExportRoutes(
   server.get("/api/projects/:id/export", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
+    const project = await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
 
     const projectJobs = await db
       .select()
@@ -59,7 +64,12 @@ export function registerImportExportRoutes(
   server.get("/api/jobs/:id/export", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
+    const job = await findRowOr404(
+      db,
+      schema.jobs,
+      eq(schema.jobs.id, id),
+      "Job",
+    );
 
     const versions = await db
       .select()
@@ -81,6 +91,58 @@ export function registerImportExportRoutes(
             updatedAt: job.updatedAt,
           },
           jobs: [{ job: job as any, versions: versions as any[] }],
+        },
+      ],
+    };
+
+    return bundle;
+  });
+
+  // ── Bulk export ────────────────────────────────────────────────────
+
+  server.post("/api/jobs/export", async (req, reply) => {
+    const body = req.body as { ids?: string[] } | undefined;
+    const ids = body?.ids;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return reply.code(400).send({ error: "ids array required" });
+    }
+
+    const jobs = await db
+      .select()
+      .from(schema.jobs)
+      .where(inArray(schema.jobs.id, ids));
+
+    if (jobs.length === 0) {
+      return reply.code(404).send({ error: "No jobs found" });
+    }
+
+    const entries: JobExport[] = [];
+
+    for (const job of jobs) {
+      const versions = await db
+        .select()
+        .from(schema.versions)
+        .where(eq(schema.versions.jobId, job.id))
+        .orderBy(schema.versions.number);
+
+      entries.push({ job: job as any, versions: versions as any[] });
+    }
+
+    const bundle: ExportBundle = {
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      projects: [
+        {
+          project: {
+            id: "__bulk" as any,
+            name: "Bulk Export",
+            description: null,
+            genreId: "__bulk" as any,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          jobs: entries,
         },
       ],
     };
@@ -205,5 +267,4 @@ export function registerImportExportRoutes(
 
     return reply.code(result.imported > 0 ? 201 : 200).send(result);
   });
-
 }

@@ -1,5 +1,5 @@
 import type { Db } from "../db/index.js";
-import { schema } from "../db/index.js";
+import { schema, getSqlite } from "../db/index.js";
 import { eq, desc, sql } from "drizzle-orm";
 import type { JobEvent, GenerationStage } from "@track-forge/contracts";
 import { randomUUID } from "node:crypto";
@@ -55,23 +55,30 @@ export async function publish(
   let nextSeq = 1;
 
   if (db) {
-    const maxSeq = await db
-      .select({ max: sql<number>`COALESCE(MAX(sequence), 0)` })
-      .from(schema.jobEvents)
-      .where(eq(schema.jobEvents.jobId, jobId));
-
-    nextSeq = (maxSeq[0]?.max ?? 0) + 1;
-
-    await db.insert(schema.jobEvents).values({
-      id: randomUUID(),
-      jobId,
-      sequence: nextSeq,
-      stage: event.stage ?? null,
-      status: event.status,
-      data: null,
-      error: event.error ?? null,
-      timestamp,
-    });
+    // Use raw better-sqlite3 for atomic sync transaction
+    const sqlite = getSqlite(db);
+    sqlite.transaction(() => {
+      const row = sqlite
+        .prepare(
+          "SELECT COALESCE(MAX(sequence), 0) AS max_seq FROM job_events WHERE job_id = ?",
+        )
+        .get(jobId) as { max_seq: number } | undefined;
+      nextSeq = (row?.max_seq ?? 0) + 1;
+      sqlite
+        .prepare(
+          "INSERT INTO job_events (id, job_id, sequence, stage, status, data, error, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          randomUUID(),
+          jobId,
+          nextSeq,
+          event.stage ?? null,
+          event.status,
+          null,
+          event.error ?? null,
+          timestamp,
+        );
+    })();
   } else {
     // No DB — use a module-local counter for sequence
     nextSeq = ++seqCounter;

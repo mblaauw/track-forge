@@ -9,77 +9,12 @@ import { createJob } from "../src/pipeline/job-service.js";
 import { runPipeline } from "../src/pipeline/orchestrator.js";
 import type { PipelineDeps } from "../src/pipeline/types.js";
 import type { Db } from "../src/db/index.js";
-import type { GenreModule } from "@track-forge/genre-core";
+import { mockLlm, mockSuno, mockGenreModule } from "@track-forge/test-support";
 import type { GenreId, PresetId } from "@track-forge/contracts";
 import hipHopModule from "@track-forge/genre-hiphop";
 import edmModule from "@track-forge/genre-edm";
 
-function mockLlm(response?: string) {
-  const content = response ?? "Mock result.";
-  return {
-    async complete() {
-      return {
-        content,
-        model: "mock",
-        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-      };
-    },
-  };
-}
-
-function mockSuno() {
-  return {
-    async submit() {
-      return { ids: ["mock-id"], callbackConfigured: false };
-    },
-    async getGenerationStatus() {
-      return {
-        id: "mock-id",
-        status: "completed" as const,
-        audioUrl: "https://example.com/audio.mp3",
-      };
-    },
-    async waitForCompletion() {
-      return {
-        id: "mock-id",
-        status: "completed" as const,
-        audioUrl: "https://example.com/audio.mp3",
-      };
-    },
-  };
-}
-
-const mockModule: GenreModule = {
-  id: "test-genre",
-  name: "Test Genre",
-  inputSchema: null as any,
-  blueprintSchema: null as any,
-  defaults: {},
-  form: [],
-  adjustmentVocabulary: {
-    styleTerms: [],
-    structureTerms: [],
-    deliveryTerms: [],
-  },
-  tagPolicy: { mandatoryTags: [], forbiddenTags: [], canonicalMap: {} },
-  presets: [],
-  promptFragments: {},
-  renderers: {
-    title: () => "Mock Title",
-    style: () => "Mock style description with 120 BPM",
-    excludedStyles: () => "slow, ballad",
-    lyrics: () => "[Intro]\n(instrumental)\n\n[Verse]\nLyrics here",
-  },
-  critics: {
-    fast: { id: "fast-panel", promptTemplate: "Review this song" },
-    full: [],
-  },
-  validators: {
-    input: () => [],
-    blueprint: () => [],
-  },
-  migrations: [],
-};
+const mockModule = mockGenreModule();
 
 const styleResultJson = JSON.stringify({
   titleCandidates: ["Test Title", "Alt Title"],

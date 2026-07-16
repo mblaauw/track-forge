@@ -11,16 +11,6 @@ import { createAmbientRenderers } from "./renderers.js";
 import { AMBIENT_CRITICS } from "./critics.js";
 import { AMBIENT_VALIDATORS } from "./validators.js";
 
-export {
-  AmbientInputSchema,
-  AmbientBlueprintSchema,
-  AMBIENT_DEFAULTS,
-  compileBlueprint as ambientCompileBlueprint,
-} from "./schema.js";
-export type { AmbientInputs, AmbientBlueprint } from "./schema.js";
-export { AMBIENT_CRITICS } from "./critics.js";
-export { AMBIENT_VALIDATORS } from "./validators.js";
-
 export const ambientModule: GenreModule<AmbientInputs, AmbientBlueprint> = {
   id: "ambient",
   name: "Ambient",

@@ -205,48 +205,6 @@ export interface JobEvent {
   timestamp: string;
 }
 
-// ── Structured critic finding ────────────────────────────────────────
-
-export interface CriticFindingRecord {
-  id: string;
-  jobId: JobId;
-  stage: GenerationStage;
-  severity: CriticSeverity;
-  field: string;
-  message: string;
-  patchType: PatchType | null;
-  suggestedValue: string | null;
-  applied: boolean;
-  createdAt: string;
-}
-
-// ── Structured adjustment ────────────────────────────────────────────
-
-export interface AdjustmentRecord {
-  id: string;
-  jobId: JobId;
-  instruction: string;
-  targetStage: GenerationStage | null;
-  applied: boolean;
-  resultHash: string | null;
-  createdAt: string;
-  appliedAt: string | null;
-}
-
-// ── Suno track ───────────────────────────────────────────────────────
-
-export interface SunoTrack {
-  id: string;
-  generationId: string;
-  index: number;
-  audioUrl: string | null;
-  imageUrl: string | null;
-  videoUrl: string | null;
-  duration: number | null;
-  title: string | null;
-  createdAt: string;
-}
-
 // ── Import/Export ────────────────────────────────────────────────────
 
 export interface ProjectExport {
@@ -275,7 +233,7 @@ export interface ImportResult {
 
 export const ConfigSchema = z.object({
   /** Suno API base URL */
-  sunoBaseUrl: z.string().url().default("https://api.sunomusic.com/v1"),
+  sunoBaseUrl: z.string().url().default("https://api.sunomusic.com"),
   /** Suno auth token */
   sunoAuthToken: z.string().optional(),
   /** Public base URL for callback endpoints */

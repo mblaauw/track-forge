@@ -284,13 +284,19 @@ export function Forge({ id }: { id: string }) {
   const { setSession, resetSession } = useSession();
   useEffect(() => {
     if (!job) return;
-    const inp = job.inputs ? JSON.parse(job.inputs) : {};
+    let inp: Record<string, unknown> = {};
+    try {
+      inp = job.inputs ? JSON.parse(job.inputs) : {};
+    } catch {
+      inp = {};
+    }
+    const i = inp as Record<string, unknown>;
     setSession({
       jobId: id,
       name: job.name ?? "Untitled",
       genreId: job.genreId,
       presetId: job.presetId,
-      bpm: inp.bpm ?? null,
+      bpm: (typeof i.bpm === "number" ? i.bpm : null) as number | null,
       key:
         inp.key && inp.key !== "auto"
           ? `${inp.key}${inp.scale === "minor" ? "m" : ""}`

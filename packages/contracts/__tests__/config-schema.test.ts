@@ -13,7 +13,7 @@ import {
 describe("ConfigSchema", () => {
   it("applies defaults for empty input", () => {
     const cfg = ConfigSchema.parse({});
-    expect(cfg.sunoBaseUrl).toBe("https://api.sunomusic.com/v1");
+    expect(cfg.sunoBaseUrl).toBe("https://api.sunomusic.com");
     expect(cfg.dbPath).toBe("./data/track-forge.db");
     expect(cfg.logLevel).toBe("info");
     expect(cfg.port).toBe(3000);

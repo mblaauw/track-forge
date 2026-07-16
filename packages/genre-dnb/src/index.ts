@@ -11,16 +11,6 @@ import { createDnbRenderers } from "./renderers.js";
 import { DNB_CRITICS } from "./critics.js";
 import { DNB_VALIDATORS } from "./validators.js";
 
-export {
-  DnbInputSchema,
-  DnbBlueprintSchema,
-  DNB_DEFAULTS,
-  compileBlueprint as dnbCompileBlueprint,
-} from "./schema.js";
-export type { DnbInputs, DnbBlueprint } from "./schema.js";
-export { DNB_CRITICS } from "./critics.js";
-export { DNB_VALIDATORS } from "./validators.js";
-
 export const dnbModule: GenreModule<DnbInputs, DnbBlueprint> = {
   id: "dnb",
   name: "Drum & Bass",

@@ -9,20 +9,7 @@ import { registerHealthRoutes } from "../src/routes/health.js";
 import type { Db, PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 
-// Minimal mock LLM
-const mockLlm = {
-  complete: async () => ({
-    content: "mock response",
-    usage: { prompt: 0, completion: 0 },
-  }),
-};
-
-// Minimal mock Suno
-const mockSuno = {
-  submit: async () => ({ ids: ["mock-id"], callbackConfigured: false }),
-  getGenerationStatus: async () => null,
-  waitForCompletion: async () => null,
-};
+import { mockLlm, mockSuno } from "@track-forge/test-support";
 
 function createTestDeps(
   db: Db,

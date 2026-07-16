@@ -18,31 +18,6 @@ import { createEdmRenderers } from "./renderers.js";
 import { EDM_CRITICS } from "./critics.js";
 import { EDM_VALIDATORS } from "./validators.js";
 
-// ── Re-exports ────────────────────────────────────────────────────────
-
-export {
-  EdmInputSchema,
-  EdmBlueprintSchema,
-  EDM_DEFAULTS,
-  compileBlueprint as edmCompileBlueprint,
-} from "./schema.js";
-export type { EdmInputs, EdmBlueprint } from "./schema.js";
-export { EDM_CRITICS } from "./critics.js";
-export { EDM_VALIDATORS } from "./validators.js";
-export {
-  EDM_SUBGENRES,
-  EdmFamily,
-  getSubgenre,
-  getSubgenresByFamily,
-  getFamilyLabel,
-  getAllFamilyOptions,
-  getSubgenreOptions,
-} from "./taxonomy.js";
-export type {
-  EdmSubgenreEntry,
-  EdmFamily as EdmFamilyType,
-} from "./taxonomy.js";
-
 /**
  * EDM genre module — full GenreModule<EdmInputs, EdmBlueprint>
  */
