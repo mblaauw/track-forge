@@ -1,6 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { useRouter } from "../lib/router";
-import { fetchGenres, createJob, fetchPresets, fetchTagCategories, type GenreInfo, type GenrePreset, type TagCategoryInfo } from "../api";
+import {
+  fetchGenres,
+  createJob,
+  fetchPresets,
+  fetchTagCategories,
+  type GenreInfo,
+  type GenrePreset,
+  type TagCategoryInfo,
+} from "../api";
 import { useSession } from "../lib/session";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
@@ -120,7 +128,7 @@ export function CreateSession() {
   useEffect(() => {
     fetchGenres()
       .then(setGenres)
-      .catch(() => {});
+      .catch((e) => setError(e.message));
   }, []);
 
   const mod = GENRE_MODULES[genreId];
@@ -129,8 +137,12 @@ export function CreateSession() {
     const m = GENRE_MODULES[genreId];
     if (m) {
       setInputs({ ...(m.defaults as Record<string, unknown>) });
-      fetchPresets(genreId).then(setPresets).catch(() => {});
-      fetchTagCategories(genreId).then(setTagCategories).catch(() => {});
+      fetchPresets(genreId)
+        .then(setPresets)
+        .catch(() => {});
+      fetchTagCategories(genreId)
+        .then(setTagCategories)
+        .catch(() => {});
       setPresetId("");
       setSectionsDirty(false);
     }
@@ -138,7 +150,8 @@ export function CreateSession() {
 
   useEffect(() => {
     return () => {
-      if (moveRef.current) window.removeEventListener("pointermove", moveRef.current);
+      if (moveRef.current)
+        window.removeEventListener("pointermove", moveRef.current);
       if (upRef.current) window.removeEventListener("pointerup", upRef.current);
     };
   }, []);
@@ -183,7 +196,8 @@ export function CreateSession() {
     const k = inputs.key as string;
     const s = inputs.scale as string;
     if (!k || k === "auto") return "";
-    return `${k} ${s}`;
+    const scaleAbbrev = s === "major" ? "maj" : s === "minor" ? "min" : s;
+    return `${k} ${scaleAbbrev}`;
   })();
 
   const activeTags = tags
@@ -220,13 +234,20 @@ export function CreateSession() {
       case "dnb":
         return [
           { value: "full_lyrics", label: "Full Lyrics" },
-          { value: "guided_instrumental", label: "Hook Only" },
-          { value: "strict_instrumental", label: "Instrumental" },
+          { value: "guided_instrumental", label: "Guided Instrumental" },
+          { value: "strict_instrumental", label: "Strict Instrumental" },
         ];
+      case "pop":
+        return [
+          { value: "full_lyrics", label: "Full Lyrics" },
+          { value: "hook", label: "Hook Only" },
+          { value: "instrumental", label: "Instrumental" },
+        ];
+      case "hiphop":
       default:
         return [
-          { value: "instrumental", label: "Instrumental" },
           { value: "full_lyrics", label: "Full Lyrics" },
+          { value: "instrumental", label: "Instrumental" },
         ];
     }
   }, [genreId]);
@@ -264,8 +285,7 @@ export function CreateSession() {
     const idx = selectedSectionIdxRef.current;
     setSections((prev) => {
       const next = [...prev];
-      if (idx < 0 || idx >= next.length)
-        return prev;
+      if (idx < 0 || idx >= next.length) return prev;
       const sec = { ...next[idx]! };
       if (sec.bars > 4) {
         sec.bars -= 1;
@@ -280,8 +300,7 @@ export function CreateSession() {
     const idx = selectedSectionIdxRef.current;
     setSections((prev) => {
       const next = [...prev];
-      if (idx < 0 || idx >= next.length)
-        return prev;
+      if (idx < 0 || idx >= next.length) return prev;
       const sec = { ...next[idx]! };
       if (sec.bars < 64) {
         sec.bars += 1;
@@ -340,7 +359,6 @@ export function CreateSession() {
 
   const startResize = (i: number, e: PointerEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     const startX = e.clientX;
     const startBars = sections[i]?.bars ?? 8;
     const totalBars = sections.reduce((s, sec) => s + sec.bars, 0);
@@ -349,6 +367,10 @@ export function CreateSession() {
     ) as HTMLElement;
     if (!track) return;
     const pxPerBar = track.offsetWidth / Math.max(1, totalBars);
+
+    if (moveRef.current)
+      window.removeEventListener("pointermove", moveRef.current);
+    if (upRef.current) window.removeEventListener("pointerup", upRef.current);
 
     const move = (ev: PointerEvent) => {
       const dBars =
@@ -447,7 +469,10 @@ export function CreateSession() {
           </p>
           <div class="fingerprint-spectrum">
             {(() => {
-              const cats = tagCategories.length > 0 ? tagCategories : (GENRE_MODULES[genreId]?.tagCategories ?? []);
+              const cats =
+                tagCategories.length > 0
+                  ? tagCategories
+                  : (GENRE_MODULES[genreId]?.tagCategories ?? []);
               const totals = cats.map((c) => ({
                 color: c.color,
                 weight: tags
@@ -496,7 +521,10 @@ export function CreateSession() {
           </div>
 
           <div class="category-lanes">
-            {(tagCategories.length > 0 ? tagCategories : GENRE_MODULES[genreId]?.tagCategories ?? []).map((cat) => {
+            {(tagCategories.length > 0
+              ? tagCategories
+              : (GENRE_MODULES[genreId]?.tagCategories ?? [])
+            ).map((cat) => {
               const selectedCount = tags.filter(
                 (t) => t.category === cat.id,
               ).length;
@@ -642,8 +670,11 @@ export function CreateSession() {
               const i = selectedTagIdx;
               const tag = tags[i]!;
               const catColor =
-                (tagCategories.length > 0 ? tagCategories : GENRE_MODULES[genreId]?.tagCategories ?? [])
-                  .find((c: TagCategoryInfo) => c.id === tag.category)?.color ?? "accent";
+                (tagCategories.length > 0
+                  ? tagCategories
+                  : (GENRE_MODULES[genreId]?.tagCategories ?? [])
+                ).find((c: TagCategoryInfo) => c.id === tag.category)?.color ??
+                "accent";
               const setTag = (patch: Partial<typeof tag>) =>
                 setTags((prev) =>
                   prev.map((t, j) => (j === i ? { ...t, ...patch } : t)),
@@ -664,6 +695,7 @@ export function CreateSession() {
                     />
                     <button
                       class="tag-remove"
+                      aria-label="Remove tag"
                       onClick={() => {
                         setTags((prev) => prev.filter((_, j) => j !== i));
                         setSelectedTagIdx(null);
@@ -720,7 +752,7 @@ export function CreateSession() {
             <div class="accordion-body">
               <div class="genre-grid">
                 {filteredGenres.map((g) => {
-                return (
+                  return (
                     <button
                       key={g.id}
                       class={`genre-card${genreId === g.id ? " active" : ""}`}
@@ -754,6 +786,7 @@ export function CreateSession() {
                     <input
                       class="tempo-slider"
                       type="range"
+                      aria-label="Tempo BPM"
                       min="60"
                       max="200"
                       value={(inputs.bpm as number) ?? 120}
@@ -768,6 +801,7 @@ export function CreateSession() {
                   <span class="control-label">Key</span>
                   <select
                     class="key-select"
+                    aria-label="Key"
                     value={currentKey}
                     onChange={handleKeyChange}
                   >
@@ -946,6 +980,7 @@ export function CreateSession() {
             <div class="accordion-body">
               <textarea
                 class="reference-textarea"
+                aria-label="Reference track URL or description"
                 placeholder="Paste a reference track URL or description..."
                 value={reference}
                 onInput={(e) =>

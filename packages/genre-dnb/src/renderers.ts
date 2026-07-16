@@ -131,4 +131,3 @@ export function createDnbRenderers(): GenreRenderers<DnbBlueprint> {
     lyrics: renderLyrics,
   };
 }
-

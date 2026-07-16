@@ -107,14 +107,38 @@ export type EdmBlueprint = z.infer<typeof EdmBlueprintSchema>;
 
 /** EDM song structure fallback used when no YAML config is loaded */
 export const EDM_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
-  { section: "intro", bars: { base: 8, per_complexity: 0.5 }, tags: ["filtered", "atmospheric"] },
-  { section: "build", bars: 8, tags: ["layered", "rising", "percussion build"] },
-  { section: "drop", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "driving"] },
-  { section: "breakdown", bars: { base: 8, per_complexity: 0.8 }, tags: ["stripped", "atmospheric"] },
+  {
+    section: "intro",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["filtered", "atmospheric"],
+  },
+  {
+    section: "build",
+    bars: 8,
+    tags: ["layered", "rising", "percussion build"],
+  },
+  {
+    section: "drop",
+    bars: { base: 16, per_energy: 1.2 },
+    tags: ["full", "driving"],
+  },
+  {
+    section: "breakdown",
+    bars: { base: 8, per_complexity: 0.8 },
+    tags: ["stripped", "atmospheric"],
+  },
   { section: "build_2", bars: 8, tags: ["layered", "rising", "tension"] },
-  { section: "drop_2", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "variation"] },
+  {
+    section: "drop_2",
+    bars: { base: 16, per_energy: 1.2 },
+    tags: ["full", "variation"],
+  },
   { section: "bridge", bars: 8, tags: ["transition"] },
-  { section: "outro", bars: { base: 8, per_complexity: 0.5 }, tags: ["filtered", "fading"] },
+  {
+    section: "outro",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["filtered", "fading"],
+  },
 ];
 
 /** Compile user inputs into full blueprint shape */
@@ -157,63 +181,3 @@ export function compileBlueprint(
     negativeTags,
   });
 }
-
-// ── Form field descriptors ────────────────────────────────────────────
-
-import type { FormFieldDescriptor } from "@track-forge/genre-core";
-
-export const EDM_FORM_FIELDS: FormFieldDescriptor[] = [
-  {
-    key: "family",
-    label: "Family",
-    type: "select",
-    options: [], // populated dynamically from taxonomy
-  },
-  {
-    key: "subgenre",
-    label: "Subgenre",
-    type: "select",
-    options: [], // populated dynamically based on family
-  },
-  {
-    key: "bpm",
-    label: "BPM",
-    type: "number",
-    constraints: { min: 60, max: 220 },
-  },
-  { key: "key", label: "Key", type: "text" },
-  {
-    key: "scale",
-    label: "Scale",
-    type: "select",
-    options: [
-      { label: "Minor", value: "minor" },
-      { label: "Major", value: "major" },
-    ],
-  },
-  { key: "mood", label: "Mood", type: "text" },
-  {
-    key: "energy",
-    label: "Energy",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "complexity",
-    label: "Complexity",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "lyricsMode",
-    label: "Lyrics Mode",
-    type: "select",
-    options: [
-      { label: "Guided Instrumental", value: "guided_instrumental" },
-      { label: "Strict Instrumental", value: "strict_instrumental" },
-      { label: "Full Lyrics", value: "full_lyrics" },
-    ],
-  },
-  { key: "customTags", label: "Custom Tags", type: "text" },
-  { key: "reference", label: "Reference Tracks", type: "text" },
-];

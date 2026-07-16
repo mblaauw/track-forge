@@ -148,7 +148,9 @@ export function Forge({ id }: { id: string }) {
             { time: fmt(now), tag: "done", msg: `${label} complete` },
           ]);
           if (e.stage === "versioning") {
-            fetchJob(id).then((j) => setJob(j)).catch(() => {});
+            fetchJob(id)
+              .then((j) => setJob(j))
+              .catch(() => {});
           }
         } else if (e.status === "error") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "pending" }));
@@ -181,9 +183,11 @@ export function Forge({ id }: { id: string }) {
     });
 
     const pollTimer = window.setInterval(() => {
-      fetchJob(id).then((j) => {
-        if (j.status !== "in_progress") setJob(j);
-      }).catch(() => {});
+      fetchJob(id)
+        .then((j) => {
+          if (j.status !== "in_progress") setJob(j);
+        })
+        .catch(() => {});
     }, 5000);
 
     return () => {
@@ -226,8 +230,8 @@ export function Forge({ id }: { id: string }) {
         ...prev,
         { time: fmt(0), tag: "stage", msg: "Forge started..." },
       ]);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -247,8 +251,8 @@ export function Forge({ id }: { id: string }) {
         ...prev,
         { time: fmt(elapsed), tag: "warn", msg: "Cancelled by user" },
       ]);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -262,8 +266,8 @@ export function Forge({ id }: { id: string }) {
         ...prev,
         { time: fmt(elapsed), tag: "stage", msg: "Retrying..." },
       ]);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 

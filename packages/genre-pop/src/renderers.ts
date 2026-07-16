@@ -123,4 +123,3 @@ export function createPopRenderers(): GenreRenderers<PopBlueprint> {
     lyrics: renderLyrics,
   };
 }
-

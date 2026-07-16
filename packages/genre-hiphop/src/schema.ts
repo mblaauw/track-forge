@@ -12,6 +12,7 @@ import {
   type Delivery,
   type ProductionStyle,
   HIP_HOP_SUBGENRES,
+  getSubgenreEntryOrFallback,
 } from "./taxonomy.js";
 
 // ── Input Schema ──────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ export const HipHopInputSchema = z.object({
   reference: z.string().default(""),
 });
 
-export type HipHopInputs = z.input<typeof HipHopInputSchema>;
+export type HipHopInputs = z.infer<typeof HipHopInputSchema>;
 
 // ── Blueprint Schema ──────────────────────────────────────────────────
 
@@ -151,7 +152,7 @@ export const HipHopBlueprintSchema = z.object({
   ),
 });
 
-export type HipHopBlueprint = z.input<typeof HipHopBlueprintSchema>;
+export type HipHopBlueprint = z.infer<typeof HipHopBlueprintSchema>;
 
 // ── Defaults ──────────────────────────────────────────────────────────
 
@@ -182,113 +183,3 @@ export function buildHipHopDefaults(
 }
 
 export const HIP_HOP_DEFAULTS: HipHopInputs = buildHipHopDefaults();
-
-// ── Form Field Descriptors ────────────────────────────────────────────
-
-import type { FormFieldDescriptor } from "@track-forge/genre-core";
-import { getSubgenreEntryOrFallback } from "./taxonomy.js";
-
-export const HIP_HOP_FORM_FIELDS: FormFieldDescriptor[] = [
-  {
-    key: "subgenre",
-    label: "Subgenre",
-    type: "select",
-    options: HIP_HOP_SUBGENRES.map((s) => ({ label: s.label, value: s.id })),
-  },
-  {
-    key: "bpm",
-    label: "BPM",
-    type: "number",
-    constraints: { min: 50, max: 200 },
-  },
-  {
-    key: "narrativeArc",
-    label: "Narrative Arc",
-    type: "select",
-    options: [
-      { label: "Storytelling", value: "storytelling" },
-      { label: "Braggadocio", value: "braggadocio" },
-      { label: "Conscious", value: "conscious" },
-      { label: "Party", value: "party" },
-      { label: "Introspective", value: "introspective" },
-      { label: "Abstract", value: "abstract" },
-    ],
-  },
-  {
-    key: "rhymeStyle",
-    label: "Rhyme Style",
-    type: "select",
-    options: [
-      { label: "Multi-syllabic", value: "multi_syllabic" },
-      { label: "End Rhyme", value: "end_rhyme" },
-      { label: "Internal Rhyme", value: "internal" },
-      { label: "Free Form", value: "free_form" },
-      { label: "Slant Rhyme", value: "slant_rhyme" },
-    ],
-  },
-  {
-    key: "flowPattern",
-    label: "Flow Pattern",
-    type: "select",
-    options: [
-      { label: "Laid-back", value: "laid_back" },
-      { label: "Aggressive", value: "aggressive" },
-      { label: "Syncopated", value: "syncopated" },
-      { label: "Double Time", value: "double_time" },
-      { label: "Melodic", value: "melodic" },
-      { label: "Mumble", value: "mumble" },
-    ],
-  },
-  {
-    key: "delivery",
-    label: "Delivery",
-    type: "select",
-    options: [
-      { label: "Calm", value: "calm" },
-      { label: "Intense", value: "intense" },
-      { label: "Conversational", value: "conversational" },
-      { label: "Hype", value: "hype" },
-      { label: "Whispered", value: "whispered" },
-    ],
-  },
-  {
-    key: "productionStyle",
-    label: "Production Style",
-    type: "select",
-    options: [
-      { label: "Lo-fi", value: "lo_fi" },
-      { label: "Polished", value: "polished" },
-      { label: "Vintage", value: "vintage" },
-      { label: "Experimental", value: "experimental" },
-      { label: "Minimal", value: "minimal" },
-      { label: "Orchestral", value: "orchestral" },
-      { label: "Electronic", value: "electronic" },
-      { label: "Live Instruments", value: "live_instruments" },
-    ],
-  },
-  {
-    key: "energy",
-    label: "Energy",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "complexity",
-    label: "Lyrical Complexity",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "lyricsMode",
-    label: "Lyrics Mode",
-    type: "select",
-    options: [
-      { label: "Instrumental", value: "instrumental" },
-      { label: "Full Lyrics", value: "full_lyrics" },
-    ],
-  },
-  { key: "mood", label: "Mood / Vibe", type: "text" },
-  { key: "key", label: "Key", type: "text" },
-  { key: "reference", label: "Reference Tracks", type: "text" },
-  { key: "customTags", label: "Custom Tags", type: "text" },
-];

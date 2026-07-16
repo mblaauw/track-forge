@@ -3,6 +3,8 @@ import {
   drizzle,
   type BetterSQLite3Database,
 } from "drizzle-orm/better-sqlite3";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import * as schema from "./schema.js";
 
 export type Db = BetterSQLite3Database<typeof schema>;
@@ -16,6 +18,8 @@ export function getSqlite(db: Db): Database.Database {
  * Open SQLite DB, enable WAL mode, auto-create tables, return Drizzle handle.
  */
 export function createDb(dbPath: string): Db {
+  const dir = dirname(dbPath);
+  if (dir) mkdirSync(dir, { recursive: true });
   const sqlite = new Database(dbPath);
 
   sqlite.pragma("journal_mode = WAL");
@@ -77,6 +81,9 @@ export function createDb(dbPath: string): Db {
     finalized_at TEXT,
     created_at TEXT NOT NULL
   )`);
+  sqlite.exec(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_versions_job_number ON versions(job_id, number)`,
+  );
 
   // ── Migrate existing databases ──────────────────────────────────────
 

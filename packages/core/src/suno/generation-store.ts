@@ -90,18 +90,23 @@ export async function getGeneration(
 
   if (!row) return null;
 
+  return mapGenerationRow(row);
+}
+
+/** Shared DB row → GenerationRecord mapper */
+function mapGenerationRow(row: Record<string, unknown>): GenerationRecord {
   return {
-    id: row.id,
-    jobId: row.jobId,
-    versionId: row.versionId ?? undefined,
-    status: row.status,
-    audioUrl: row.audioUrl ?? undefined,
-    imageUrl: row.imageUrl ?? undefined,
-    videoUrl: row.videoUrl ?? undefined,
-    duration: row.duration ?? undefined,
-    generatedTitle: row.generatedTitle ?? undefined,
-    style: row.style ?? undefined,
-    error: row.error ?? undefined,
+    id: row.id as string,
+    jobId: row.jobId as string,
+    versionId: (row.versionId as string) ?? undefined,
+    status: row.status as string,
+    audioUrl: (row.audioUrl as string) ?? undefined,
+    imageUrl: (row.imageUrl as string) ?? undefined,
+    videoUrl: (row.videoUrl as string) ?? undefined,
+    duration: (row.duration as number) ?? undefined,
+    generatedTitle: (row.generatedTitle as string) ?? undefined,
+    style: (row.style as string) ?? undefined,
+    error: (row.error as string) ?? undefined,
   };
 }
 
@@ -120,17 +125,5 @@ export async function listGenerations(
     .orderBy(desc(schema.generations.createdAt))
     .limit(limit);
 
-  return rows.map((row) => ({
-    id: row.id,
-    jobId: row.jobId,
-    versionId: row.versionId ?? undefined,
-    status: row.status,
-    audioUrl: row.audioUrl ?? undefined,
-    imageUrl: row.imageUrl ?? undefined,
-    videoUrl: row.videoUrl ?? undefined,
-    duration: row.duration ?? undefined,
-    generatedTitle: row.generatedTitle ?? undefined,
-    style: row.style ?? undefined,
-    error: row.error ?? undefined,
-  }));
+  return rows.map(mapGenerationRow);
 }

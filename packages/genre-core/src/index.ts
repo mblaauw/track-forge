@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { StyleClause } from "@track-forge/contracts";
 
 // ── Song structure (arrangement config) ───────────────────────────────
 
@@ -8,8 +9,7 @@ import type { z } from "zod";
  * An object means "base + round(energy * per_energy + complexity * per_complexity)".
  */
 export type SongStructureBarSpec =
-  | number
-  | { base: number; per_energy?: number; per_complexity?: number };
+  number | { base: number; per_energy?: number; per_complexity?: number };
 
 /** A single section in the song structure template */
 export interface SongStructureSection {
@@ -61,23 +61,15 @@ export interface GenreModule<
   /** Human-readable label */
   name: string;
 
-  // ── Schema ──────────────────────────────────────────────────────
+  // ── Schema & Defaults ───────────────────────────────────────────
   /** Input validation schema */
-  inputSchema: z.ZodType<TInputs>;
+  inputSchema: z.ZodType<TInputs, z.ZodTypeDef, Record<string, unknown>>;
   /** Internal blueprint schema */
-  blueprintSchema: z.ZodType<TBlueprintData>;
-
-  // ── Defaults & Form ─────────────────────────────────────────────
+  blueprintSchema: z.ZodType<TBlueprintData, z.ZodTypeDef, Record<string, unknown>>;
   /** Default input values */
   defaults: TInputs;
-  /** UI form field descriptors */
-  form: FormFieldDescriptor[];
 
   // ── Generation ──────────────────────────────────────────────────
-  /** Vocabulary for LLM adjustment prompts */
-  adjustmentVocabulary: AdjustmentVocabulary;
-  /** Tag compilation policy */
-  tagPolicy: TagPolicy;
   /** Named presets (loaded from YAML config at runtime) */
   presets?: GenrePreset[];
   /** LLM prompt fragments keyed by stage */
@@ -89,52 +81,26 @@ export interface GenreModule<
   /** Taxonomy data (loaded from YAML config at runtime) */
   taxonomy?: unknown;
   /** Compile user inputs into full blueprint shape */
-  compileBlueprint: (
+  compileBlueprint(
     inputs: TInputs,
     options?: {
-      arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+      arrangementOverride?: {
+        section: string;
+        bars: number;
+        tags?: string[];
+      }[];
       songStructure?: SongStructureSection[];
     },
-  ) => TBlueprintData;
+  ): TBlueprintData;
   /** Renderers produce Suno-ready artifacts from blueprint */
   renderers: GenreRenderers<TBlueprintData>;
   /** Critic function table */
   critics: GenreCritics;
   /** Validators run post-merge */
   validators: GenreValidators<TInputs>;
-  /** Data migrations for version compat */
-  migrations: GenreMigration[];
 }
 
 // ── Sub-types ────────────────────────────────────────────────────────
-
-export interface FormFieldDescriptor {
-  key: string;
-  label: string;
-  type: "text" | "select" | "multiselect" | "number" | "toggle";
-  /** Options for select / multiselect */
-  options?: { label: string; value: string }[];
-  /** Zod refinement hints */
-  constraints?: Record<string, unknown>;
-}
-
-export interface AdjustmentVocabulary {
-  /** Terms that modify style */
-  styleTerms: string[];
-  /** Terms that modify structure */
-  structureTerms: string[];
-  /** Terms that modify delivery / performance */
-  deliveryTerms: string[];
-}
-
-export interface TagPolicy {
-  /** Tags always added to generated style */
-  mandatoryTags: string[];
-  /** Tags never included */
-  forbiddenTags: string[];
-  /** Tag rewrite map (user input → canonical) */
-  canonicalMap: Record<string, string>;
-}
 
 export interface GenrePreset {
   id: string;
@@ -146,13 +112,13 @@ export interface GenrePreset {
 
 export interface GenreRenderers<TBlueprintData> {
   /** Produce Title artifact */
-  title: (data: TBlueprintData) => string;
+  title(data: TBlueprintData): string;
   /** Produce Style description artifact */
-  style: (data: TBlueprintData) => string;
+  style(data: TBlueprintData): string;
   /** Produce Excluded Styles artifact */
-  excludedStyles: (data: TBlueprintData) => string;
+  excludedStyles(data: TBlueprintData): string;
   /** Produce Lyrics/Structure artifact */
-  lyrics: (data: TBlueprintData) => string;
+  lyrics(data: TBlueprintData): string;
 }
 
 export interface GenreCritics {
@@ -169,20 +135,14 @@ export interface CriticDefinition {
 
 export interface GenreValidators<TInputs> {
   /** Validate merged inputs (after preset apply) */
-  input: (inputs: TInputs) => ValidationError[];
+  input(inputs: TInputs): ValidationError[];
   /** Validate blueprint before compilation */
-  blueprint: (data: unknown) => ValidationError[];
+  blueprint(data: unknown): ValidationError[];
 }
 
 export interface ValidationError {
   field: string;
   message: string;
-}
-
-export interface GenreMigration {
-  fromVersion: number;
-  toVersion: number;
-  migrate: (data: Record<string, unknown>) => Record<string, unknown>;
 }
 
 export interface TagCategory {
@@ -219,30 +179,63 @@ export function resolveArrangement(
   }));
 }
 
-export interface StyleClause {
-  key: string;
-  value: string;
-  order: number;
-}
-
 export function buildStyleClauses(
   clauses: { key: string; value: string; order?: number }[],
 ): StyleClause[] {
-  return clauses.map((c, i) => ({ key: c.key, value: c.value, order: c.order ?? i }));
+  return clauses.map((c, i) => ({
+    key: c.key,
+    value: c.value,
+    order: c.order ?? i,
+  }));
 }
 
-export function instrumentalNegativeTags(
-  lyricsMode: string,
-): string[] {
+// ── Module factory ────────────────────────────────────────────────────
+
+/**
+ * Create a GenreModule with minimal boilerplate.
+ * Omitted fields (form, adjustmentVocabulary, tagPolicy, migrations) are dropped
+ * from the interface — they were never consumed at runtime.
+ */
+export function createGenreModule<
+  TInputs extends Record<string, unknown>,
+  TBlueprintData extends Record<string, unknown>,
+>(config: {
+  id: string;
+  name: string;
+  inputSchema: z.ZodType<TInputs, z.ZodTypeDef, Record<string, unknown>>;
+  blueprintSchema: z.ZodType<TBlueprintData, z.ZodTypeDef, Record<string, unknown>>;
+  defaults: TInputs;
+  promptFragments: Record<string, string>;
+  compileBlueprint: (
+    inputs: TInputs,
+    options?: {
+      arrangementOverride?: {
+        section: string;
+        bars: number;
+        tags?: string[];
+      }[];
+      songStructure?: SongStructureSection[];
+    },
+  ) => TBlueprintData;
+  renderers: GenreRenderers<TBlueprintData>;
+  critics: GenreCritics;
+  validators: GenreValidators<TInputs>;
+}): GenreModule<TInputs, TBlueprintData> {
+  return {
+    id: config.id,
+    name: config.name,
+    inputSchema: config.inputSchema,
+    blueprintSchema: config.blueprintSchema,
+    defaults: config.defaults,
+    promptFragments: config.promptFragments,
+    compileBlueprint: config.compileBlueprint,
+    renderers: config.renderers,
+    critics: config.critics,
+    validators: config.validators,
+  };
+}
+
+export function instrumentalNegativeTags(lyricsMode: string): string[] {
   if (lyricsMode === "full_lyrics") return [];
   return ["vocals", "singing", "lyrics", "voice"];
-}
-
-// ── UI Module ────────────────────────────────────────────────────────
-
-export interface GenreUiModule {
-  /** React/Preact component for genre-specific form */
-  InputForm: unknown; // ComponentType
-  /** Blueprint preview component */
-  Preview: unknown;
 }

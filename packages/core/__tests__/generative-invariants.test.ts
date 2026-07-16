@@ -11,8 +11,8 @@ import type { PipelineDeps } from "../src/pipeline/types.js";
 import type { Db } from "../src/db/index.js";
 import { mockLlm, mockSuno, mockGenreModule } from "@track-forge/test-support";
 import type { GenreId, PresetId } from "@track-forge/contracts";
-import hipHopModule from "@track-forge/genre-hiphop";
-import edmModule from "@track-forge/genre-edm";
+import { hipHopModule } from "@track-forge/genre-hiphop";
+import { edmModule } from "@track-forge/genre-edm";
 
 const mockModule = mockGenreModule();
 

@@ -1,11 +1,15 @@
-import type { GenreModule, SongStructureSection } from "@track-forge/genre-core";
-import { resolveArrangement, buildStyleClauses, instrumentalNegativeTags } from "@track-forge/genre-core";
+import {
+  createGenreModule,
+  resolveArrangement,
+  buildStyleClauses,
+  instrumentalNegativeTags,
+} from "@track-forge/genre-core";
+import type { SongStructureSection } from "@track-forge/genre-core";
 import type { HipHopInputs, HipHopBlueprint } from "./schema.js";
 import {
   HipHopInputSchema,
   HipHopBlueprintSchema,
   HIP_HOP_DEFAULTS,
-  HIP_HOP_FORM_FIELDS,
 } from "./schema.js";
 import { createHipHopRenderers } from "./renderers.js";
 import {
@@ -14,65 +18,7 @@ import {
   HIP_HOP_ORIGINALITY_CRITIC,
 } from "./critics.js";
 import { hipHopValidators } from "./validators.js";
-
-// ── Adjustment vocabulary ─────────────────────────────────────────────
-
-const hipHopAdjustmentVocabulary = {
-  styleTerms: [
-    "add distortion on 808",
-    "reduce hi-hat velocity",
-    "more snare rolls",
-    "add vinyl crackle",
-    "pitch down samples",
-    "layer synth pads",
-    "add reverb to vocals",
-    "emphasize kick pattern",
-    "more sub bass",
-    "add orchestral elements",
-    "filter sweep intro",
-    "double-time hi-hats",
-    "add call-and-response hook",
-  ],
-  structureTerms: [
-    "extend verse by 4 bars",
-    "shorten intro",
-    "add bridge section",
-    "increase hook repetition",
-    "add breakdown",
-    "reorder sections",
-    "add ad-lib section",
-    "include spoken word outro",
-  ],
-  deliveryTerms: [
-    "more aggressive delivery",
-    "smoother vocal tone",
-    "add ad-libs",
-    "increase vocal presence",
-    "add backing vocals",
-    "double tracked verses",
-    "auto-tune effect",
-    "breathy delivery",
-    "staccato phrasing",
-    "melodic hook style",
-  ],
-};
-
-// ── Tag Policy ────────────────────────────────────────────────────────
-
-const hipHopTagPolicy = {
-  mandatoryTags: ["hip hop", "rap"],
-  forbiddenTags: [],
-  canonicalMap: {
-    hiphop: "hip hop",
-    "hip-hop": "hip hop",
-    "rap music": "rap",
-    gangsta: "gangsta rap",
-    "trap music": "trap",
-    "old school": "old school hip hop",
-    eastcoast: "east coast",
-    westcoast: "west coast",
-  },
-};
+import { getSubgenreEntryOrFallback } from "./taxonomy.js";
 
 // ── Prompt Fragments ──────────────────────────────────────────────────
 
@@ -140,26 +86,21 @@ export const HIP_HOP_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
   { section: "outro", bars: 8, tags: [] },
 ];
 
-export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
+export const hipHopModule = createGenreModule<HipHopInputs, HipHopBlueprint>({
   id: "hiphop",
   name: "Hip-Hop",
-
-  // Schema
   inputSchema: HipHopInputSchema,
   blueprintSchema: HipHopBlueprintSchema,
-
-  // Defaults & Form
   defaults: HIP_HOP_DEFAULTS,
-  form: HIP_HOP_FORM_FIELDS,
-
-  // Generation
-  adjustmentVocabulary: hipHopAdjustmentVocabulary,
-  tagPolicy: hipHopTagPolicy,
   promptFragments: hipHopPromptFragments,
   compileBlueprint: (
     inputs: HipHopInputs,
     options?: {
-      arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+      arrangementOverride?: {
+        section: string;
+        bars: number;
+        tags?: string[];
+      }[];
       songStructure?: SongStructureSection[];
     },
   ) => {
@@ -189,9 +130,11 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
       energy: inputs.energy,
       complexity: inputs.complexity,
       lyricsMode: inputs.lyricsMode,
-      vocalStyle: "",
+      vocalStyle: getSubgenreEntryOrFallback(inputs.subgenre).vocalStyle,
       tags: customTags,
-      negativeTags: instrumentalNegativeTags(inputs.lyricsMode ?? "full_lyrics"),
+      negativeTags: instrumentalNegativeTags(
+        inputs.lyricsMode ?? "full_lyrics",
+      ),
       styleClauses: buildStyleClauses([
         { key: "genre", value: inputs.subgenre.replace(/_/g, " ") },
         { key: "bpm", value: String(inputs.bpm) },
@@ -200,13 +143,7 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
       arrangement,
     });
   },
-  renderers: {
-    title: (data: HipHopBlueprint) => defaultRenderers.title(data),
-    style: (data: HipHopBlueprint) => defaultRenderers.style(data),
-    excludedStyles: (data: HipHopBlueprint) =>
-      defaultRenderers.excludedStyles(data),
-    lyrics: (data: HipHopBlueprint) => defaultRenderers.lyrics(data),
-  },
+  renderers: defaultRenderers,
   critics: {
     fast: HIP_HOP_FAST_CRITIC,
     full: [
@@ -216,7 +153,4 @@ export const hipHopModule: GenreModule<HipHopInputs, HipHopBlueprint> = {
     ],
   },
   validators: hipHopValidators,
-  migrations: [],
-};
-
-export default hipHopModule;
+});

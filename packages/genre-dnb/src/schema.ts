@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   type SongStructureSection,
-  type FormFieldDescriptor,
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
@@ -71,12 +70,36 @@ export const DnbBlueprintSchema = z.object({
 export type DnbBlueprint = z.infer<typeof DnbBlueprintSchema>;
 
 export const DNB_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
-  { section: "intro", bars: { base: 8, per_complexity: 0.3 }, tags: ["atmospheric", "filtered", "amen build"] },
-  { section: "break", bars: { base: 8, per_complexity: 0.5 }, tags: ["stripped", "rolling hats", "sub"] },
-  { section: "drop", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "reese bass", "driving breaks"] },
-  { section: "break", bars: { base: 8, per_complexity: 0.5 }, tags: ["stripped", "atmospheric", "pad swell"] },
-  { section: "drop", bars: { base: 16, per_energy: 1.2 }, tags: ["full", "variation", "layered"] },
-  { section: "outro", bars: { base: 8, per_complexity: 0.4 }, tags: ["filtered", "fading", "sub roll"] },
+  {
+    section: "intro",
+    bars: { base: 8, per_complexity: 0.3 },
+    tags: ["atmospheric", "filtered", "amen build"],
+  },
+  {
+    section: "break",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["stripped", "rolling hats", "sub"],
+  },
+  {
+    section: "drop",
+    bars: { base: 16, per_energy: 1.2 },
+    tags: ["full", "reese bass", "driving breaks"],
+  },
+  {
+    section: "break",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["stripped", "atmospheric", "pad swell"],
+  },
+  {
+    section: "drop",
+    bars: { base: 16, per_energy: 1.2 },
+    tags: ["full", "variation", "layered"],
+  },
+  {
+    section: "outro",
+    bars: { base: 8, per_complexity: 0.4 },
+    tags: ["filtered", "fading", "sub roll"],
+  },
 ];
 
 export function compileBlueprint(
@@ -100,7 +123,10 @@ export function compileBlueprint(
   const negativeTags = instrumentalNegativeTags(inputs.lyricsMode);
 
   const styleClauses = buildStyleClauses([
-    { key: "genre", value: `Drum & Bass — ${inputs.subgenre.replace(/_/g, " ")}` },
+    {
+      key: "genre",
+      value: `Drum & Bass — ${inputs.subgenre.replace(/_/g, " ")}`,
+    },
     { key: "bpm", value: String(inputs.bpm) },
     { key: "key", value: inputs.key },
     { key: "scale", value: inputs.scale },
@@ -124,52 +150,3 @@ export function compileBlueprint(
     negativeTags,
   });
 }
-
-export const DNB_FORM_FIELDS: FormFieldDescriptor[] = [
-  {
-    key: "subgenre",
-    label: "Subgenre",
-    type: "select",
-    options: [],
-  },
-  {
-    key: "bpm",
-    label: "BPM",
-    type: "number",
-    constraints: { min: 160, max: 180 },
-  },
-  { key: "key", label: "Key", type: "text" },
-  {
-    key: "scale",
-    label: "Scale",
-    type: "select",
-    options: [
-      { label: "Minor", value: "minor" },
-      { label: "Major", value: "major" },
-    ],
-  },
-  { key: "mood", label: "Mood", type: "text" },
-  {
-    key: "energy",
-    label: "Energy",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "complexity",
-    label: "Complexity",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "lyricsMode",
-    label: "Lyrics Mode",
-    type: "select",
-    options: [
-      { label: "Guided Instrumental", value: "guided_instrumental" },
-      { label: "Strict Instrumental", value: "strict_instrumental" },
-      { label: "Full Lyrics", value: "full_lyrics" },
-    ],
-  },
-  { key: "reference", label: "Reference Tracks", type: "text" },
-];

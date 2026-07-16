@@ -1,6 +1,6 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import type { Db } from "../db/index.js";
-import { schema } from "../db/index.js";
+import { schema, getSqlite } from "../db/index.js";
 import type {
   Job,
   JobId,
@@ -173,26 +173,54 @@ export async function cancelJob(db: Db, jobId: JobId): Promise<Job> {
 
 // ── Version CRUD ──────────────────────────────────────────────────────
 
-export async function createVersion(
+export function createVersion(
   db: Db,
   jobId: JobId,
   artifacts: SunoArtifact[],
   status: VersionStatus = "draft",
-): Promise<Version> {
+): Version {
   const id = crypto.randomUUID() as VersionId;
   const now = new Date().toISOString();
+  const sqlite = getSqlite(db);
 
-  await db.insert(schema.versions).values({
-    id,
-    jobId,
-    status,
-    number: sql`(SELECT COALESCE(MAX(number), 0) + 1 FROM ${schema.versions} WHERE ${eq(schema.versions.jobId, jobId)})`,
-    artifacts: JSON.stringify(artifacts),
-    finalizedAt: status === "final" ? now : null,
-    createdAt: now,
-  });
+  return sqlite.transaction(() => {
+    const row = sqlite
+      .prepare(
+        "SELECT COALESCE(MAX(number), 0) + 1 AS next_num FROM versions WHERE job_id = ?",
+      )
+      .get(jobId) as { next_num: number };
+    const number = row.next_num;
 
-  return loadVersionOrThrow(db, id);
+    sqlite
+      .prepare(
+        "INSERT INTO versions (id, job_id, status, number, artifacts, finalized_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        id,
+        jobId,
+        status,
+        number,
+        JSON.stringify(artifacts),
+        status === "final" ? now : null,
+        now,
+      );
+
+    const created = sqlite
+      .prepare("SELECT * FROM versions WHERE id = ?")
+      .get(id) as Record<string, unknown> | undefined;
+    if (!created) throw new Error(`Version ${id} not found after insert`);
+    return {
+      id: created.id,
+      jobId: created.job_id,
+      status: created.status,
+      number: created.number,
+      artifacts: created.artifacts,
+      stage: created.stage ?? null,
+      parentVersionId: created.parent_version_id ?? null,
+      finalizedAt: created.finalized_at ?? null,
+      createdAt: created.created_at,
+    } as unknown as Version;
+  })() as Version;
 }
 
 async function loadVersionOrThrow(

@@ -12,8 +12,11 @@ export function AppShell() {
       <NavRail />
       <TransportBar />
       <main class="viewport">
-        <Route path="/" component={({ params }) => <Library />} />
-        <Route path="/create" component={({ params }) => <CreateSession />} />
+        <Route path="/" component={({ params: _p }) => <Library />} />
+        <Route
+          path="/create"
+          component={({ params: _p }) => <CreateSession />}
+        />
         <Route
           path="/forge/:id"
           component={({ params }) => <Forge id={params.id ?? ""} />}

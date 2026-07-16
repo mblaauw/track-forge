@@ -1,4 +1,4 @@
-import type { GenreModule } from "@track-forge/genre-core";
+import { createGenreModule } from "@track-forge/genre-core";
 import type { DnbInputs, DnbBlueprint } from "./schema.js";
 import {
   DnbInputSchema,
@@ -6,72 +6,16 @@ import {
   DNB_DEFAULTS,
   compileBlueprint,
 } from "./schema.js";
-import { DNB_FORM_FIELDS } from "./schema.js";
 import { createDnbRenderers } from "./renderers.js";
 import { DNB_CRITICS } from "./critics.js";
 import { DNB_VALIDATORS } from "./validators.js";
 
-export const dnbModule: GenreModule<DnbInputs, DnbBlueprint> = {
+export const dnbModule = createGenreModule<DnbInputs, DnbBlueprint>({
   id: "dnb",
   name: "Drum & Bass",
   inputSchema: DnbInputSchema,
   blueprintSchema: DnbBlueprintSchema,
   defaults: DNB_DEFAULTS,
-  form: DNB_FORM_FIELDS,
-  adjustmentVocabulary: {
-    styleTerms: [
-      "rolling",
-      "dark",
-      "soulful",
-      "techy",
-      "deep",
-      "aggressive",
-      "smooth",
-      "intense",
-      "hypnotic",
-      "bouncy",
-      "liquid",
-      "jazzy",
-      "minimal",
-      "driving",
-      "atmospheric",
-      "neuro",
-      "wobble",
-      "chopped",
-    ],
-    structureTerms: [
-      "long intro",
-      "extended break",
-      "early drop",
-      "minimal break",
-      "extended outro",
-      "double drop",
-      "climactic drop",
-      "half-time section",
-    ],
-    deliveryTerms: [
-      "tight breaks",
-      "rolling bass",
-      "syncopated drums",
-      "amen rhythm",
-      "half-time feel",
-      "shuffling percussion",
-      "sub bass rumble",
-      "reese growl",
-    ],
-  },
-  tagPolicy: {
-    mandatoryTags: ["drum & bass", "electronic"],
-    forbiddenTags: ["acoustic", "live band", "orchestral", "country"],
-    canonicalMap: {
-      dnb: "drum & bass",
-      "drum and bass": "drum & bass",
-      "d&b": "drum & bass",
-      jungle: "jungle",
-      liquid: "liquid",
-      neuro: "neurofunk",
-    },
-  },
   promptFragments: {
     planning:
       "Describe a Drum & Bass track arrangement: {{subgenre}}, {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, break, drop, outro) with energy arc and bass production notes.\n{{nlAdjustments}}",
@@ -90,7 +34,4 @@ export const dnbModule: GenreModule<DnbInputs, DnbBlueprint> = {
   renderers: createDnbRenderers(),
   critics: DNB_CRITICS,
   validators: DNB_VALIDATORS,
-  migrations: [],
-};
-
-export default dnbModule;
+});

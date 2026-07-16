@@ -45,14 +45,6 @@ export function mockGenreModule(overrides?: Partial<GenreModule>): GenreModule {
     inputSchema: null as any,
     blueprintSchema: null as any,
     defaults: {},
-    form: [],
-    adjustmentVocabulary: {
-      styleTerms: [],
-      structureTerms: [],
-      deliveryTerms: [],
-    },
-    tagPolicy: { mandatoryTags: [], forbiddenTags: [], canonicalMap: {} },
-    presets: [],
     promptFragments: {},
     renderers: {
       title: () => "Mock Title",
@@ -69,7 +61,6 @@ export function mockGenreModule(overrides?: Partial<GenreModule>): GenreModule {
       blueprint: () => [],
     },
     compileBlueprint: (inputs) => inputs as Record<string, unknown>,
-    migrations: [],
     ...overrides,
   };
 }

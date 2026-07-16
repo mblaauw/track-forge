@@ -23,7 +23,6 @@
   --violet-dim: rgba(181, 139, 240, 0.1);
   --red: #e5595c;
   --red-dim: rgba(229, 89, 92, 0.1);
-  --green: #3ddc84;
   --font: "Archivo", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --nav-w: 76px;
@@ -54,7 +53,6 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
@@ -840,7 +838,8 @@ ol {
   outline: none;
 }
 
-.tempo-slider::-webkit-slider-thumb {
+.tempo-slider::-webkit-slider-thumb,
+.tempo-slider::-moz-range-thumb {
   appearance: none;
   width: 14px;
   height: 14px;
@@ -1689,10 +1688,7 @@ ol {
   color: var(--cyan);
   background: var(--cyan-dim);
 }
-.log-tag.stage {
-  color: var(--accent);
-  background: var(--accent-dim);
-}
+.log-tag.stage,
 .log-tag.done {
   color: var(--accent);
   background: var(--accent-dim);

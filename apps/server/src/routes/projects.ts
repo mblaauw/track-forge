@@ -21,7 +21,12 @@ export function registerProjectRoutes(
   server.get("/api/projects/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
+    const project = await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
     return project;
   });
 
@@ -30,7 +35,12 @@ export function registerProjectRoutes(
   server.get("/api/projects/:id/stats", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
+    const project = await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
 
     const [totalJobs] = await db
       .select({ value: sql<number>`count(*)` })
@@ -107,7 +117,12 @@ export function registerProjectRoutes(
     const description = body.description as string | undefined | null;
     const genreId = body.genreId as string | undefined | null;
 
-    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
+    const project = await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
@@ -135,7 +150,12 @@ export function registerProjectRoutes(
   server.get("/api/projects/:id/drafts", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
+    const project = await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
 
     const rows = await db
       .select()
@@ -151,7 +171,12 @@ export function registerProjectRoutes(
   server.get("/api/drafts/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const draft = await findRowOr404(db, schema.projectDrafts, eq(schema.projectDrafts.id, id), "Draft");
+    const draft = await findRowOr404(
+      db,
+      schema.projectDrafts,
+      eq(schema.projectDrafts.id, id),
+      "Draft",
+    );
     return draft;
   });
 
@@ -168,7 +193,12 @@ export function registerProjectRoutes(
     const nlAdjustments =
       typeof rawNl === "string" ? rawNl : rawNl ? JSON.stringify(rawNl) : null;
 
-    await findRowOr404(db, schema.projects, eq(schema.projects.id, projectId), "Project");
+    await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, projectId),
+      "Project",
+    );
     if (!genreId || !presetId) {
       return reply.code(400).send({ error: "genreId and presetId required" });
     }
@@ -216,7 +246,12 @@ export function registerProjectRoutes(
             ? rawNl
             : JSON.stringify(rawNl);
 
-    const draft = await findRowOr404(db, schema.projectDrafts, eq(schema.projectDrafts.id, id), "Draft");
+    const draft = await findRowOr404(
+      db,
+      schema.projectDrafts,
+      eq(schema.projectDrafts.id, id),
+      "Draft",
+    );
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
@@ -246,10 +281,18 @@ export function registerProjectRoutes(
   server.get("/api/projects/:id/jobs", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const project = await findRowOr404(db, schema.projects, eq(schema.projects.id, id), "Project");
+    const project = await findRowOr404(
+      db,
+      schema.projects,
+      eq(schema.projects.id, id),
+      "Project",
+    );
 
     const query = req.query as { limit?: string; offset?: string };
-    const { limit, offset } = parsePagination(query, { limit: 50, maxLimit: 100 });
+    const { limit, offset } = parsePagination(query, {
+      limit: 50,
+      maxLimit: 100,
+    });
 
     const rows = await db
       .select()

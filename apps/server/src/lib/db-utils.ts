@@ -13,16 +13,15 @@ export class ApiError extends Error {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function findRowOr404(
+export async function findRowOr404<T = any>(
   db: Db,
   table: any,
   where: any,
   entityName: string,
-): Promise<any> {
+): Promise<T> {
   const [row] = await db.select().from(table).where(where).limit(1);
   if (!row) throw new ApiError(404, `${entityName} not found`);
-  return row;
+  return row as T;
 }
 
 export function safeParse<T>(json: string | null | undefined, fallback: T): T {

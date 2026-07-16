@@ -19,6 +19,7 @@ const FRAGMENT_KEYS: Record<string, string[]> = {
   lyrics_writing: [
     "lyrics_writing",
     "lyrics_full",
+    "lyrics_hook",
     "lyrics_instrumental",
     "lyrics",
   ],

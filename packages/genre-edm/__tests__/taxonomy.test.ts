@@ -17,11 +17,11 @@ describe("EDM taxonomy", () => {
     expect(EdmFamily).toContain("pop");
   });
 
-  it("has 43 subgenres in YAML (TS fallback has 1 entry)", () => {
-    expect(EDM_SUBGENRES).toHaveLength(1);
+  it("has 43 subgenres (from YAML)", () => {
+    expect(EDM_SUBGENRES).toHaveLength(43);
   });
 
-  it("getSubgenre returns fallback entry by id", () => {
+  it("getSubgenre returns entry by id", () => {
     const entry = getSubgenre("deep_house");
     expect(entry).toBeDefined();
     expect(entry!.label).toBe("Deep House");
@@ -32,9 +32,10 @@ describe("EDM taxonomy", () => {
     expect(getSubgenre("nonexistent")).toBeUndefined();
   });
 
-  it("getSubgenresByFamily returns fallback entry for house", () => {
-    expect(getSubgenresByFamily("house")).toHaveLength(1);
-    expect(getSubgenresByFamily("techno")).toHaveLength(0);
+  it("getSubgenresByFamily returns entries filtered by family", () => {
+    expect(getSubgenresByFamily("house")).toHaveLength(6);
+    expect(getSubgenresByFamily("techno")).toHaveLength(6);
+    expect(getSubgenresByFamily("pop")).toHaveLength(4);
   });
 
   it("getFamilyLabel returns labels", () => {
@@ -49,9 +50,9 @@ describe("EDM taxonomy", () => {
     expect(opts[0]).toEqual({ label: "House", value: "house" });
   });
 
-  it("getSubgenreOptions returns fallback options for house", () => {
+  it("getSubgenreOptions returns options for a family", () => {
     const opts = getSubgenreOptions("house");
-    expect(opts).toHaveLength(1);
+    expect(opts).toHaveLength(6);
     expect(opts[0].label).toBe("Deep House");
     expect(opts[0].value).toBe("deep_house");
   });

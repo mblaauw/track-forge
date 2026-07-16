@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   type SongStructureSection,
-  type FormFieldDescriptor,
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
@@ -9,7 +8,7 @@ import {
 
 export const AmbientInputSchema = z.object({
   subgenre: z.string().min(1, "Select a subgenre"),
-  bpm: z.number().min(40).max(120),
+  bpm: z.number().int().min(40).max(120),
   key: z.string(),
   scale: z.enum(["major", "minor"]),
   mood: z.string(),
@@ -69,10 +68,26 @@ export const AmbientBlueprintSchema = z.object({
 export type AmbientBlueprint = z.infer<typeof AmbientBlueprintSchema>;
 
 export const AMBIENT_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
-  { section: "emerge", bars: { base: 12, per_complexity: 1.5 }, tags: ["spacious", "texture build", "slow entry"] },
-  { section: "swell", bars: { base: 16, per_complexity: 2 }, tags: ["layered", "evolving", "deepening"] },
-  { section: "drift", bars: { base: 16, per_complexity: 1.5 }, tags: ["floating", "wide", "textural"] },
-  { section: "fade", bars: { base: 12, per_complexity: 1.5 }, tags: ["dissolving", "sparse", "receding"] },
+  {
+    section: "emerge",
+    bars: { base: 12, per_complexity: 1.5 },
+    tags: ["spacious", "texture build", "slow entry"],
+  },
+  {
+    section: "swell",
+    bars: { base: 16, per_complexity: 2 },
+    tags: ["layered", "evolving", "deepening"],
+  },
+  {
+    section: "drift",
+    bars: { base: 16, per_complexity: 1.5 },
+    tags: ["floating", "wide", "textural"],
+  },
+  {
+    section: "fade",
+    bars: { base: 12, per_complexity: 1.5 },
+    tags: ["dissolving", "sparse", "receding"],
+  },
 ];
 
 export function compileBlueprint(
@@ -122,41 +137,3 @@ export function compileBlueprint(
     negativeTags,
   });
 }
-
-export const AMBIENT_FORM_FIELDS: FormFieldDescriptor[] = [
-  { key: "subgenre", label: "Subgenre", type: "text" },
-  {
-    key: "bpm",
-    label: "BPM",
-    type: "number",
-    constraints: { min: 40, max: 120 },
-  },
-  { key: "key", label: "Key", type: "text" },
-  {
-    key: "scale",
-    label: "Scale",
-    type: "select",
-    options: [
-      { label: "Minor", value: "minor" },
-      { label: "Major", value: "major" },
-    ],
-  },
-  { key: "mood", label: "Mood", type: "text" },
-  {
-    key: "complexity",
-    label: "Complexity",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "lyricsMode",
-    label: "Lyrics Mode",
-    type: "select",
-    options: [
-      { label: "Strict Instrumental", value: "strict_instrumental" },
-      { label: "Guided Instrumental", value: "guided_instrumental" },
-      { label: "Full Lyrics", value: "full_lyrics" },
-    ],
-  },
-  { key: "soundscape", label: "Soundscape", type: "text" },
-];

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import type { Db, SunoClient } from "@track-forge/core";
+import type { Config } from "@track-forge/contracts";
 import {
   updateGeneration,
   getGeneration,
@@ -14,6 +15,7 @@ import type { SunoArtifact } from "@track-forge/contracts";
 export interface SunoRouteDeps {
   db: Db;
   suno: SunoClient;
+  config: Config;
 }
 
 /**
@@ -120,21 +122,35 @@ export function registerSunoRoutes(
       }
 
       const artifacts: SunoArtifact[] = (() => {
-        try { return JSON.parse(latestVersion.artifacts as string); }
-        catch { return []; }
+        try {
+          return JSON.parse(latestVersion.artifacts as string);
+        } catch {
+          return [];
+        }
       })();
       const getValue = (type: string) =>
         artifacts.find((a) => a.type === type)?.value ?? "";
 
       // Build payload and submit
+      const callbackUrl = deps.config.publicBaseUrl
+        ? `${deps.config.publicBaseUrl.replace(/\/+$/, "")}/api/suno/callback`
+        : undefined;
+
       const { request } = generateSunoPayload({
         title: getValue("title"),
         style: getValue("style"),
         excludedStyles: getValue("excluded_styles"),
         lyrics: getValue("lyrics"),
+        callbackUrl,
       });
 
-      const result = await suno.submit(request);
+      let result: { taskId: string };
+      try {
+        result = await suno.submit(request);
+      } catch (err) {
+        req.log.error({ jobId, err }, "retry submission to Suno failed");
+        return reply.code(502).send({ error: "Failed to submit to Suno" });
+      }
 
       // Store task as generation record (individual song IDs come from polling)
       await storeGeneration(db, {

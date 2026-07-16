@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   type SongStructureSection,
-  type FormFieldDescriptor,
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
@@ -9,7 +8,7 @@ import {
 
 export const PopInputSchema = z.object({
   subgenre: z.string(),
-  bpm: z.number().min(60).max(180),
+  bpm: z.number().int().min(60).max(180),
   key: z.string(),
   scale: z.enum(["major", "minor"]),
   mood: z.string(),
@@ -65,12 +64,28 @@ export const POP_DEFAULTS: PopInputs = {
 };
 
 export const POP_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
-  { section: "intro", bars: { base: 8, per_complexity: 0.5 }, tags: ["instrumental", "pads"] },
-  { section: "verse", bars: { base: 8, per_complexity: 0.5 }, tags: ["stripped", "vocals"] },
+  {
+    section: "intro",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["instrumental", "pads"],
+  },
+  {
+    section: "verse",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["stripped", "vocals"],
+  },
   { section: "pre_chorus", bars: 8, tags: ["building", "layered"] },
-  { section: "chorus", bars: { base: 16, per_energy: 0.8 }, tags: ["full", "hook", "energetic"] },
+  {
+    section: "chorus",
+    bars: { base: 16, per_energy: 0.8 },
+    tags: ["full", "hook", "energetic"],
+  },
   { section: "bridge", bars: 8, tags: ["stripped", "introspective"] },
-  { section: "outro", bars: { base: 8, per_complexity: 0.5 }, tags: ["fading", "reverb"] },
+  {
+    section: "outro",
+    bars: { base: 8, per_complexity: 0.5 },
+    tags: ["fading", "reverb"],
+  },
 ];
 
 export function compileBlueprint(
@@ -115,48 +130,3 @@ export function compileBlueprint(
     negativeTags,
   });
 }
-
-export const POP_FORM_FIELDS: FormFieldDescriptor[] = [
-  { key: "subgenre", label: "Subgenre", type: "text" },
-  {
-    key: "bpm",
-    label: "BPM",
-    type: "number",
-    constraints: { min: 60, max: 180 },
-  },
-  { key: "key", label: "Key", type: "text" },
-  {
-    key: "scale",
-    label: "Scale",
-    type: "select",
-    options: [
-      { label: "Major", value: "major" },
-      { label: "Minor", value: "minor" },
-    ],
-  },
-  { key: "mood", label: "Mood", type: "text" },
-  {
-    key: "energy",
-    label: "Energy",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "complexity",
-    label: "Complexity",
-    type: "number",
-    constraints: { min: 1, max: 10 },
-  },
-  {
-    key: "lyricsMode",
-    label: "Lyrics Mode",
-    type: "select",
-    options: [
-      { label: "Full Lyrics", value: "full_lyrics" },
-      { label: "Hook Only", value: "hook" },
-      { label: "Instrumental", value: "instrumental" },
-    ],
-  },
-  { key: "theme", label: "Theme", type: "text" },
-  { key: "reference", label: "Reference Tracks", type: "text" },
-];

@@ -1,6 +1,5 @@
 node_modules/
 dist/
-.env
 # tsc --build artifacts (TypeScript-only repo — no legitimate .js sources)
 *.js
 *.js.map

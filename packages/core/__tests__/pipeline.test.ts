@@ -17,11 +17,7 @@ import { eq } from "drizzle-orm";
 import type { PipelineDeps } from "../src/pipeline/types.js";
 import type { Db } from "../src/db/index.js";
 import type { GenreModule } from "@track-forge/genre-core";
-import {
-  mockLlm,
-  mockSuno,
-  mockGenreModule,
-} from "@track-forge/test-support";
+import { mockLlm, mockSuno, mockGenreModule } from "@track-forge/test-support";
 import type {
   JobId,
   GenreId,

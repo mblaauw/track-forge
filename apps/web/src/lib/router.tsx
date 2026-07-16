@@ -77,23 +77,4 @@ export function Route({
   return component({ params: result.params });
 }
 
-export function Link({
-  to,
-  children,
-}: {
-  to: string;
-  children: preact.ComponentChildren;
-}) {
-  const { navigate } = useRouter();
-  return (
-    <a
-      href={`#${to}`}
-      onClick={(e) => {
-        e.preventDefault();
-        navigate(to);
-      }}
-    >
-      {children}
-    </a>
-  );
-}
+

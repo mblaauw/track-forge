@@ -10,8 +10,3 @@ export function initDb(config: Config): Db {
   }
   return _db;
 }
-
-export function getDb(): Db {
-  if (!_db) throw new Error("DB not initialized. Call initDb() first.");
-  return _db;
-}

@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { createEdmRenderers } from "../src/renderers.js";
-import { EDM_DEFAULT_SONG_STRUCTURE, EdmBlueprintSchema } from "../src/schema.js";
+import {
+  EDM_DEFAULT_SONG_STRUCTURE,
+  EdmBlueprintSchema,
+} from "../src/schema.js";
 import { computeBars } from "@track-forge/genre-core";
 
 function makeBlueprint(overrides: Record<string, unknown> = {}) {

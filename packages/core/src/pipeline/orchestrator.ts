@@ -1,6 +1,8 @@
 import {
   GenerationStage,
+  SunoArtifactType,
   type Job,
+  type JobId,
   type CriticFinding,
   type SurgicalPatch,
   type PatchType,
@@ -45,6 +47,7 @@ import { publish } from "./events.js";
 import { applyLyricsPatch, isLyricsSectionPatch } from "./lyrics-patcher.js";
 import { serializeLyrics } from "../lyrics/canonical.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
+import { safeJsonParse } from "../json-utils.js";
 
 function patchDescriptions(raw: string): string {
   try {
@@ -181,9 +184,8 @@ async function handleWriting(
   });
   // Inject plan into context for {{plan}} placeholder
   context.plan = songPlan;
-  context.songStructure = (module as any).songStructure
-    ?.map((s: any) => s.section)
-    .join(", ") ?? "";
+  context.songStructure =
+    module.songStructure?.map((s) => s.section).join(", ") ?? "";
 
   const stylePrompt =
     assembler.resolvePrompt("style_writing", context) ??
@@ -278,10 +280,10 @@ async function handleCompilation(state: PipelineState): Promise<PipelineState> {
   context.lyricsDocument = JSON.stringify(lyricsWriterResult.document);
   context.songPlan = songPlan ?? "";
   context.compilation = JSON.stringify(bp);
-  const bpArr = (bp as any).arrangement;
+  const bpArr = bp.arrangement as Array<{ section: string }> | undefined;
   context.songStructure = Array.isArray(bpArr)
-    ? bpArr.map((s: any) => s.section).join(", ")
-    : (module as any).songStructure?.map((s: any) => s.section).join(", ") ?? "";
+    ? bpArr.map((s) => s.section).join(", ")
+    : (module.songStructure?.map((s) => s.section).join(", ") ?? "");
 
   // Blend structured writer results into compiled artifacts
   const styleText =
@@ -341,9 +343,8 @@ async function handleReview(
     nlAdjustments: state.nlAdjustments,
   });
   context.compiledJson = compiledJson;
-  context.songStructure = (module as any).songStructure
-    ?.map((s: any) => s.section)
-    .join(", ") ?? "";
+  context.songStructure =
+    module.songStructure?.map((s) => s.section).join(", ") ?? "";
   context.styleResult = state.styleWriterResult
     ? JSON.stringify(state.styleWriterResult)
     : "";
@@ -526,11 +527,18 @@ async function handleVerification(
       inputs: job.inputs,
       reference: job.reference,
       interpretedRef: state.interpretedRef,
+      nlAdjustments: state.nlAdjustments,
     });
     context.compiledJson = compiledJson;
-    context.songStructure = (module as any).songStructure
-      ?.map((s: any) => s.section)
-      .join(", ") ?? "";
+    context.songStructure =
+      module.songStructure?.map((s) => s.section).join(", ") ?? "";
+    context.styleResult = state.styleWriterResult
+      ? JSON.stringify(state.styleWriterResult)
+      : "";
+    context.lyricsResult = state.lyricsWriterResult
+      ? JSON.stringify(state.lyricsWriterResult.document)
+      : "";
+    context.songPlan = state.songPlan ?? "";
 
     injectCompiledContext(context, compiledJson);
 
@@ -570,10 +578,10 @@ async function handleVersioning(
   if (!compiledJson)
     throw new Error("Pipeline state missing compiledJson before versioning");
 
-  const compiled = JSON.parse(compiledJson) as Record<string, string>;
+  const compiled = safeJsonParse<Record<string, string>>(compiledJson, {});
 
   // Create version (empty artifacts initially, updated below)
-  const version = await createVersion(deps.db, job.id, [], "final");
+  const version = createVersion(deps.db, job.id, [], "final");
   const vid = version.id;
 
   // Attach patch history if available
@@ -582,14 +590,26 @@ async function handleVersioning(
     : "";
 
   const artifacts: SunoArtifact[] = [
-    { type: "title", value: compiled.title ?? "", versionId: vid },
-    { type: "style", value: compiled.style ?? "", versionId: vid },
     {
-      type: "excluded_styles",
+      type: SunoArtifactType.Title,
+      value: compiled.title ?? "",
+      versionId: vid,
+    },
+    {
+      type: SunoArtifactType.Style,
+      value: compiled.style ?? "",
+      versionId: vid,
+    },
+    {
+      type: SunoArtifactType.ExcludedStyles,
       value: compiled.excludedStyles ?? "",
       versionId: vid,
     },
-    { type: "lyrics", value: compiled.lyrics ?? "", versionId: vid },
+    {
+      type: SunoArtifactType.Lyrics,
+      value: compiled.lyrics ?? "",
+      versionId: vid,
+    },
   ];
 
   // Store structured writer fields as artifacts
@@ -597,35 +617,35 @@ async function handleVersioning(
   if (styleWriterResult) {
     if (styleWriterResult.bpm !== null) {
       artifacts.push({
-        type: "bpm",
+        type: SunoArtifactType.Bpm,
         value: String(styleWriterResult.bpm),
         versionId: vid,
       });
     }
     if (styleWriterResult.key) {
       artifacts.push({
-        type: "key",
+        type: SunoArtifactType.Key,
         value: styleWriterResult.key,
         versionId: vid,
       });
     }
     if (styleWriterResult.vocalDescription) {
       artifacts.push({
-        type: "vocal_description",
+        type: SunoArtifactType.VocalDescription,
         value: styleWriterResult.vocalDescription,
         versionId: vid,
       });
     }
     if (styleWriterResult.negativeTags.length > 0) {
       artifacts.push({
-        type: "negative_tags",
+        type: SunoArtifactType.NegativeTags,
         value: styleWriterResult.negativeTags.join(", "),
         versionId: vid,
       });
     }
     if (styleWriterResult.titleCandidates.length > 1) {
       artifacts.push({
-        type: "title",
+        type: SunoArtifactType.Title,
         value: styleWriterResult.titleCandidates.slice(1).join(" | "),
         versionId: vid,
       });
@@ -635,7 +655,7 @@ async function handleVersioning(
   // Store patch history as extra artifact if patches applied
   if (patchNotes) {
     artifacts.push({
-      type: "patch_notes",
+      type: SunoArtifactType.PatchNotes,
       value: patchNotes,
       versionId: vid,
     });
@@ -659,12 +679,33 @@ export async function runPipeline(
   module: GenreModule,
 ): Promise<PipelineResult> {
   const controller = createAbortController(jobId);
+  // Forward caller's abort signal so both HTTP timeout and abortJob() can cancel
+  if (deps.signal) {
+    if (deps.signal.aborted) {
+      controller.abort(deps.signal.reason);
+    } else {
+      deps.signal.addEventListener(
+        "abort",
+        () => controller.abort(deps.signal!.reason),
+        { once: true },
+      );
+    }
+  }
   deps.signal = controller.signal;
 
-  const job = await loadJob(deps.db, jobId as any);
+  const job = await loadJob(deps.db, jobId as JobId);
   if (!job) {
     cleanupJob(jobId);
     return { success: false, jobId, versionId: null, error: "Job not found" };
+  }
+  if (job.status === "cancelled" || job.status === "completed") {
+    cleanupJob(jobId);
+    return {
+      success: false,
+      jobId,
+      versionId: null,
+      error: `Job is ${job.status}`,
+    };
   }
 
   // Seed from job columns so resumed/cancelled runs pick up persisted artifacts
@@ -692,14 +733,16 @@ export async function runPipeline(
   };
 
   // Override with persisted stage-level state if available
-  const saved = await loadPipelineState(deps.db, job.id as any);
+  const saved = await loadPipelineState(deps.db, job.id);
   if (saved) {
     initialState.compiledJson = saved.compiledJson ?? initialState.compiledJson;
     initialState.interpretedRef = saved.interpretedRef ?? null;
     initialState.songPlan = saved.songPlan ?? null;
     initialState.styleWriterResult = saved.styleWriterResult ?? null;
     initialState.lyricsWriterResult = saved.lyricsWriterResult ?? null;
-    initialState.findings = saved.findings ?? initialState.findings ?? null;
+    initialState.findings = job.findings
+      ? initialState.findings
+      : (saved.findings as unknown[] | null);
     initialState.appliedPatch = saved.appliedPatch ?? null;
     initialState.lyricsFormat = saved.lyricsFormat ?? null;
   }
@@ -765,7 +808,7 @@ export async function runPipeline(
         appliedPatch: state.appliedPatch,
         lyricsFormat: state.lyricsFormat,
       };
-      await savePipelineState(deps.db, state.job.id as any, stageData);
+      await savePipelineState(deps.db, state.job.id, stageData);
 
       // ── Pause after revision if human-review findings remain ────────
       if (currentStage === "revision" && state.findings) {
@@ -829,7 +872,8 @@ export async function runPipeline(
         err.name === "AbortError" &&
         !isTimeout) ||
       (err instanceof DOMException &&
-        (err as any).cause?.message === "Cancelled by user");
+        (err.cause instanceof Error ? err.cause.message : undefined) ===
+          "Cancelled by user");
     const errorMsg = isCancel
       ? "Cancelled by user"
       : isTimeout
@@ -870,10 +914,7 @@ function parseBlueprint(
   ) {
     try {
       const opts: Record<string, unknown> = {};
-      if (
-        Array.isArray(inputs.arrangement) &&
-        inputs.arrangement.length > 0
-      ) {
+      if (Array.isArray(inputs.arrangement) && inputs.arrangement.length > 0) {
         opts.arrangementOverride = inputs.arrangement;
       }
       return module.compileBlueprint(inputs, opts) as Record<string, unknown>;

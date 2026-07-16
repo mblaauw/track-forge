@@ -20,7 +20,7 @@ export function createLlmClient(
   config: Pick<Config, "llmProvider" | "llmApiKey" | "llmBaseUrl" | "llmModel">,
   logger?: LlmLogger,
 ): LlmClient {
-  const model = config.llmModel ?? "gpt-4o";
+  const model = config.llmModel;
   const baseUrl =
     config.llmBaseUrl ??
     PROVIDER_DEFAULTS[config.llmProvider]?.baseUrl ??
@@ -168,7 +168,10 @@ export class LlmClient {
         body: JSON.stringify({
           model: this.cfg.model,
           system: systemMsg?.content,
-          messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
+          messages: nonSystem.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
           temperature: req.temperature ?? 0.7,
           max_tokens: req.maxTokens ?? 2048,
         }),
@@ -178,7 +181,11 @@ export class LlmClient {
       clearTimeout(timeout);
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        throw new LlmError(`Anthropic API error ${res.status}`, res.status, body);
+        throw new LlmError(
+          `Anthropic API error ${res.status}`,
+          res.status,
+          body,
+        );
       }
 
       const json = (await res.json()) as {
@@ -259,6 +266,10 @@ function combineSignals(
 ): { signal: AbortSignal; cleanup: () => void } {
   if (!s1) return { signal: s2, cleanup: () => {} };
   const c = new AbortController();
+  if (s1.aborted) {
+    c.abort(s1.reason);
+    return { signal: c.signal, cleanup: () => {} };
+  }
   const onAbort = () => {
     const reason = s1.aborted ? s1.reason : s2.reason;
     c.abort(reason);

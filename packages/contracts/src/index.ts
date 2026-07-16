@@ -229,6 +229,59 @@ export interface ImportResult {
   errors: { index: number; message: string }[];
 }
 
+export const ImportBundleSchema = z.object({
+  formatVersion: z.literal(1),
+  exportedAt: z.string().optional(),
+  projects: z.array(
+    z.object({
+      project: z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string().nullable().optional(),
+        genreId: z.string().nullable().optional(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+      }),
+      jobs: z.array(
+        z.object({
+          job: z.object({
+            id: z.string(),
+            genreId: z.string(),
+            presetId: z.string(),
+            status: z.string().optional(),
+            currentStage: z.string().optional(),
+            name: z.string().nullable().optional(),
+            reference: z.string().nullable().optional(),
+            sourceHash: z.string().nullable().optional(),
+            inputs: z.string().nullable().optional(),
+            nlAdjustments: z.string().nullable().optional(),
+            findings: z.string().nullable().optional(),
+            compiledJson: z.string().nullable().optional(),
+            stageData: z.string().nullable().optional(),
+            stageAttempt: z.number().optional(),
+            error: z.string().nullable().optional(),
+            createdAt: z.string().optional(),
+            updatedAt: z.string().optional(),
+          }),
+          versions: z.array(
+            z.object({
+              id: z.string(),
+              jobId: z.string(),
+              status: z.string().optional(),
+              number: z.number(),
+              artifacts: z.union([z.string(), z.array(z.unknown())]).optional(),
+              stage: z.string().nullable().optional(),
+              parentVersionId: z.string().nullable().optional(),
+              finalizedAt: z.string().nullable().optional(),
+              createdAt: z.string().optional(),
+            }),
+          ),
+        }),
+      ),
+    }),
+  ),
+});
+
 // ── Config schema (server-side only, gitignored) ─────────────────────
 
 export const ConfigSchema = z.object({

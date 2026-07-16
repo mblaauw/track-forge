@@ -93,4 +93,3 @@ export function createAmbientRenderers(): GenreRenderers<AmbientBlueprint> {
     lyrics: renderLyrics,
   };
 }
-

@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   HIP_HOP_SUBGENRES,
   getSubgenre,
-  getDefaultPreset,
   getSubgenreOptions,
 } from "../src/taxonomy.js";
 
@@ -35,18 +34,6 @@ describe("Hip-Hop taxonomy", () => {
 
   it("getSubgenre returns undefined for unknown id", () => {
     expect(getSubgenre("nonexistent")).toBeUndefined();
-  });
-
-  it("getDefaultPreset returns subgenre entry for known subgenre", () => {
-    const entry = getDefaultPreset("trap");
-    expect(entry).toBeDefined();
-    expect(entry!.id).toBe("trap");
-  });
-
-  it("getDefaultPreset falls back to first subgenre for unknown", () => {
-    const entry = getDefaultPreset("unknown_genre");
-    expect(entry).toBeDefined();
-    expect(entry!.id).toBe("boom_bap");
   });
 
   it("getSubgenreOptions returns options for all subgenres", () => {

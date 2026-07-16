@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/index.js";
-import { schema } from "../db/index.js";
+import { schema, getSqlite } from "../db/index.js";
 
 const DEFAULT_TTL_MS = 300_000; // 5 min lease
 
@@ -9,48 +9,55 @@ export function createLockService(db: Db) {
     return `${versionId}:${artifactType}`;
   }
 
-  async function acquireLock(
+  function acquireLock(
     versionId: string,
     artifactType: string,
     owner: string,
     ttlMs: number = DEFAULT_TTL_MS,
-  ): Promise<boolean> {
+  ): boolean {
     const key = lockKey(versionId, artifactType);
     const now = Date.now();
+    const sqlite = getSqlite(db);
 
-    const existing = await db
-      .select()
-      .from(schema.artifactLocks)
-      .where(eq(schema.artifactLocks.id, key))
-      .limit(1);
+    return sqlite.transaction(() => {
+      const existing = sqlite
+        .prepare("SELECT * FROM artifact_locks WHERE id = ?")
+        .get(key) as
+        { id: string; expiresAt: string; lockedBy: string } | undefined;
 
-    if (existing.length > 0) {
-      const lock = existing[0]!;
-      const expiresAt = new Date(lock.expiresAt).getTime();
-      if (expiresAt > now && lock.lockedBy !== owner) return false;
+      if (existing) {
+        const expiresAt = new Date(existing.expiresAt).getTime();
+        if (expiresAt > now && existing.lockedBy !== owner) return false;
 
-      await db
-        .update(schema.artifactLocks)
-        .set({
-          lockedBy: owner,
-          acquiredAt: new Date(now).toISOString(),
-          expiresAt: new Date(now + ttlMs).toISOString(),
-        })
-        .where(eq(schema.artifactLocks.id, key));
+        sqlite
+          .prepare(
+            "UPDATE artifact_locks SET locked_by = ?, acquired_at = ?, expires_at = ? WHERE id = ?",
+          )
+          .run(
+            owner,
+            new Date(now).toISOString(),
+            new Date(now + ttlMs).toISOString(),
+            key,
+          );
+
+        return true;
+      }
+
+      sqlite
+        .prepare(
+          "INSERT INTO artifact_locks (id, version_id, artifact_type, locked_by, acquired_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          key,
+          versionId,
+          artifactType,
+          owner,
+          new Date(now).toISOString(),
+          new Date(now + ttlMs).toISOString(),
+        );
 
       return true;
-    }
-
-    await db.insert(schema.artifactLocks).values({
-      id: key,
-      versionId,
-      artifactType,
-      lockedBy: owner,
-      acquiredAt: new Date(now).toISOString(),
-      expiresAt: new Date(now + ttlMs).toISOString(),
-    });
-
-    return true;
+    })() as boolean;
   }
 
   async function releaseLock(

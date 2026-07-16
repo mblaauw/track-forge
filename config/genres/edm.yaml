@@ -303,7 +303,19 @@ song_structure:
     tags: [filtered, fading]
 
 taxonomy:
-  families: [house, techno, trance, breakbeat, dnb, bass, hardcore, electro, downtempo, pop]
+  families:
+    [
+      house,
+      techno,
+      trance,
+      breakbeat,
+      dnb,
+      bass,
+      hardcore,
+      electro,
+      downtempo,
+      pop,
+    ]
   family_labels:
     house: House
     techno: Techno
@@ -323,7 +335,8 @@ taxonomy:
       bpmRange: [110, 125]
       bpmDefault: 120
       scale: minor
-      characteristics: [warm, soulful, groovy, "jazzy chords", "subby bass", "lush pads"]
+      characteristics:
+        [warm, soulful, groovy, "jazzy chords", "subby bass", "lush pads"]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [filtered, atmospheric, pads]
@@ -337,7 +350,8 @@ taxonomy:
       bpmRange: [120, 128]
       bpmDefault: 125
       scale: minor
-      characteristics: [driving, minimal, loopy, "punchy kick", "acid elements", groove]
+      characteristics:
+        [driving, minimal, loopy, "punchy kick", "acid elements", groove]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [percussive, filtered]
@@ -351,7 +365,8 @@ taxonomy:
       bpmRange: [125, 135]
       bpmDefault: 128
       scale: minor
-      characteristics: [building, atmospheric, melodic, "long transitions", euphoric]
+      characteristics:
+        [building, atmospheric, melodic, "long transitions", euphoric]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [building, atmospheric]
@@ -365,7 +380,8 @@ taxonomy:
       bpmRange: [95, 115]
       bpmDefault: 105
       scale: major
-      characteristics: ["laid-back", sunny, "acoustic elements", "steel drums", warm]
+      characteristics:
+        ["laid-back", sunny, "acoustic elements", "steel drums", warm]
       vocalMode: vocals_full
       arrangementTags:
         intro: [acoustic, sunny, guitar]
@@ -379,7 +395,8 @@ taxonomy:
       bpmRange: [122, 128]
       bpmDefault: 126
       scale: minor
-      characteristics: [bouncy, "synth-driven", "pitch-bent chords", funky, digital]
+      characteristics:
+        [bouncy, "synth-driven", "pitch-bent chords", funky, digital]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [filtered, synth]
@@ -393,7 +410,8 @@ taxonomy:
       bpmRange: [125, 135]
       bpmDefault: 130
       scale: minor
-      characteristics: [swinging, "shuffling hats", "subby bass", "chopped vocals", skippy]
+      characteristics:
+        [swinging, "shuffling hats", "subby bass", "chopped vocals", skippy]
       vocalMode: vocals_full
       arrangementTags:
         intro: [shuffling, percussive]
@@ -422,7 +440,8 @@ taxonomy:
       bpmRange: [125, 135]
       bpmDefault: 130
       scale: minor
-      characteristics: [stripped, repetitive, "micro-sounds", "subtle evolution", functional]
+      characteristics:
+        [stripped, repetitive, "micro-sounds", "subtle evolution", functional]
       vocalMode: none
       arrangementTags:
         intro: [stripped, percussive]
@@ -436,7 +455,8 @@ taxonomy:
       bpmRange: [130, 150]
       bpmDefault: 140
       scale: minor
-      characteristics: [aggressive, distorted, harsh, mechanical, dark, relentless]
+      characteristics:
+        [aggressive, distorted, harsh, mechanical, dark, relentless]
       vocalMode: none
       arrangementTags:
         intro: [building, noise]
@@ -450,7 +470,8 @@ taxonomy:
       bpmRange: [120, 130]
       bpmDefault: 125
       scale: minor
-      characteristics: [emotional, atmospheric, "melodic leads", "rich pads", driving]
+      characteristics:
+        [emotional, atmospheric, "melodic leads", "rich pads", driving]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [atmospheric, building]
@@ -464,7 +485,8 @@ taxonomy:
       bpmRange: [145, 160]
       bpmDefault: 150
       scale: minor
-      characteristics: [hard, fast, "distorted kick", industrial, intense, relentless]
+      characteristics:
+        [hard, fast, "distorted kick", industrial, intense, relentless]
       vocalMode: none
       arrangementTags:
         intro: [building, percussive]
@@ -493,7 +515,8 @@ taxonomy:
       bpmRange: [135, 145]
       bpmDefault: 140
       scale: minor
-      characteristics: [euphoric, emotional, "soaring leads", arpeggios, "build-ups", anthemic]
+      characteristics:
+        [euphoric, emotional, "soaring leads", arpeggios, "build-ups", anthemic]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [atmospheric, building]
@@ -508,7 +531,8 @@ taxonomy:
       bpmRange: [130, 138]
       bpmDefault: 134
       scale: minor
-      characteristics: [evolving, groovy, "subtle builds", deep, atmospheric, driving]
+      characteristics:
+        [evolving, groovy, "subtle builds", deep, atmospheric, driving]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [deep, atmospheric]
@@ -523,7 +547,8 @@ taxonomy:
       bpmRange: [140, 150]
       bpmDefault: 145
       scale: minor
-      characteristics: [psychedelic, "rolling bass", trippy, layered, fast, complex]
+      characteristics:
+        [psychedelic, "rolling bass", trippy, layered, fast, complex]
       vocalMode: none
       arrangementTags:
         intro: [psychedelic, building]
@@ -538,7 +563,8 @@ taxonomy:
       bpmRange: [132, 140]
       bpmDefault: 136
       scale: minor
-      characteristics: ["vocal-driven", emotional, melodic, anthemic, "radio-friendly"]
+      characteristics:
+        ["vocal-driven", emotional, melodic, anthemic, "radio-friendly"]
       vocalMode: vocals_full
       arrangementTags:
         intro: [atmospheric, "vocal intro"]
@@ -553,7 +579,8 @@ taxonomy:
       bpmRange: [138, 145]
       bpmDefault: 140
       scale: minor
-      characteristics: [driving, "techno-influenced", "acid lines", hard, energetic]
+      characteristics:
+        [driving, "techno-influenced", "acid lines", hard, energetic]
       vocalMode: none
       arrangementTags:
         intro: [driving, percussive]
@@ -569,7 +596,8 @@ taxonomy:
       bpmRange: [130, 140]
       bpmDefault: 135
       scale: minor
-      characteristics: ["funky breaks", syncopated, "bass-heavy", "chopped beats", energetic]
+      characteristics:
+        ["funky breaks", syncopated, "bass-heavy", "chopped beats", energetic]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [percussive, "beat build"]
@@ -583,7 +611,8 @@ taxonomy:
       bpmRange: [110, 140]
       bpmDefault: 125
       scale: minor
-      characteristics: ["heavy breaks", "fat bass", dirty, "sample-heavy", "rock-influenced"]
+      characteristics:
+        ["heavy breaks", "fat bass", dirty, "sample-heavy", "rock-influenced"]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [building, sample]
@@ -612,7 +641,8 @@ taxonomy:
       bpmRange: [165, 175]
       bpmDefault: 174
       scale: minor
-      characteristics: [melodic, soulful, rolling, "warm bass", "jazz-influenced", smooth]
+      characteristics:
+        [melodic, soulful, rolling, "warm bass", "jazz-influenced", smooth]
       vocalMode: vocals_full
       arrangementTags:
         intro: [melodic, atmospheric]
@@ -626,7 +656,8 @@ taxonomy:
       bpmRange: [170, 178]
       bpmDefault: 174
       scale: minor
-      characteristics: [techy, "complex bass", dark, "sci-fi", chopped, intricate]
+      characteristics:
+        [techy, "complex bass", dark, "sci-fi", chopped, intricate]
       vocalMode: none
       arrangementTags:
         intro: [dark, techy]
@@ -640,7 +671,8 @@ taxonomy:
       bpmRange: [170, 176]
       bpmDefault: 174
       scale: minor
-      characteristics: [bouncy, "aggressive bass", dancefloor, wobble, energetic]
+      characteristics:
+        [bouncy, "aggressive bass", dancefloor, wobble, energetic]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [building, percussive]
@@ -654,7 +686,8 @@ taxonomy:
       bpmRange: [160, 170]
       bpmDefault: 165
       scale: minor
-      characteristics: [ambient, spacious, ethereal, "deep pads", intelligent, moody]
+      characteristics:
+        [ambient, spacious, ethereal, "deep pads", intelligent, moody]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [ambient, spacious]
@@ -669,7 +702,8 @@ taxonomy:
       bpmRange: [135, 145]
       bpmDefault: 140
       scale: minor
-      characteristics: ["half-time", "heavy wobble bass", dark, sparse, "massive drops"]
+      characteristics:
+        ["half-time", "heavy wobble bass", dark, sparse, "massive drops"]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [building, atmospheric]
@@ -684,7 +718,8 @@ taxonomy:
       bpmRange: [140, 150]
       bpmDefault: 145
       scale: major
-      characteristics: [bright, "synth-heavy", "chord stabs", melodic, emotional]
+      characteristics:
+        [bright, "synth-heavy", "chord stabs", melodic, emotional]
       vocalMode: vocals_full
       arrangementTags:
         intro: [bright, synth]
@@ -698,7 +733,8 @@ taxonomy:
       bpmRange: [130, 160]
       bpmDefault: 140
       scale: minor
-      characteristics: ["heavy 808s", "rolling hi-hats", dark, cinematic, "hard snares"]
+      characteristics:
+        ["heavy 808s", "rolling hi-hats", dark, cinematic, "hard snares"]
       vocalMode: vocals_full
       arrangementTags:
         intro: [cinematic, building]
@@ -713,7 +749,8 @@ taxonomy:
       bpmRange: [130, 140]
       bpmDefault: 135
       scale: minor
-      characteristics: ["2-step", shuffling, "sub bass", "chopped vocals", swinging]
+      characteristics:
+        ["2-step", shuffling, "sub bass", "chopped vocals", swinging]
       vocalMode: vocals_full
       arrangementTags:
         intro: [shuffling, percussive]
@@ -727,7 +764,8 @@ taxonomy:
       bpmRange: [140, 150]
       bpmDefault: 145
       scale: minor
-      characteristics: ["minimal wobble", repetitive, heavy, syncopated, "triplet-based"]
+      characteristics:
+        ["minimal wobble", repetitive, heavy, syncopated, "triplet-based"]
       vocalMode: none
       arrangementTags:
         intro: [building, percussive]
@@ -742,7 +780,8 @@ taxonomy:
       bpmRange: [145, 160]
       bpmDefault: 150
       scale: minor
-      characteristics: ["hard kick", "distorted bass", "anthemic leads", euphoric, climactic]
+      characteristics:
+        ["hard kick", "distorted bass", "anthemic leads", euphoric, climactic]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [building, atmospheric]
@@ -757,7 +796,8 @@ taxonomy:
       bpmRange: [150, 200]
       bpmDefault: 170
       scale: minor
-      characteristics: ["extremely fast", "distorted kick", aggressive, raw, intense]
+      characteristics:
+        ["extremely fast", "distorted kick", aggressive, raw, intense]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [building, percussive]
@@ -771,7 +811,8 @@ taxonomy:
       bpmRange: [160, 180]
       bpmDefault: 170
       scale: major
-      characteristics: [upbeat, bouncy, melodic, cheerful, "fast piano", positive]
+      characteristics:
+        [upbeat, bouncy, melodic, cheerful, "fast piano", positive]
       vocalMode: vocals_full
       arrangementTags:
         intro: [cheerful, melodic]
@@ -786,7 +827,8 @@ taxonomy:
       bpmRange: [125, 130]
       bpmDefault: 128
       scale: minor
-      characteristics: ["dirty bass", "aggressive leads", punchy, "electro synths", filtered]
+      characteristics:
+        ["dirty bass", "aggressive leads", punchy, "electro synths", filtered]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [filtered, building]
@@ -800,7 +842,8 @@ taxonomy:
       bpmRange: [120, 140]
       bpmDefault: 130
       scale: minor
-      characteristics: [retro, vocoded, "analog synths", "dance-punk", sleazy, raw]
+      characteristics:
+        [retro, vocoded, "analog synths", "dance-punk", sleazy, raw]
       vocalMode: vocals_full
       arrangementTags:
         intro: [retro, analog]
@@ -814,7 +857,8 @@ taxonomy:
       bpmRange: [110, 140]
       bpmDefault: 125
       scale: minor
-      characteristics: [glitchy, "bit-crushed", stuttering, "IDM-influenced", experimental]
+      characteristics:
+        [glitchy, "bit-crushed", stuttering, "IDM-influenced", experimental]
       vocalMode: none
       arrangementTags:
         intro: [glitchy, experimental]
@@ -843,7 +887,8 @@ taxonomy:
       bpmRange: [70, 100]
       bpmDefault: 85
       scale: minor
-      characteristics: [dark, "downtempo beats", haunting, "soul samples", moody, slow]
+      characteristics:
+        [dark, "downtempo beats", haunting, "soul samples", moody, slow]
       vocalMode: vocals_full
       arrangementTags:
         intro: [dark, atmospheric]
@@ -857,7 +902,8 @@ taxonomy:
       bpmRange: [60, 90]
       bpmDefault: 75
       scale: minor
-      characteristics: [textural, evolving, spacious, drone, meditative, atmospheric]
+      characteristics:
+        [textural, evolving, spacious, drone, meditative, atmospheric]
       vocalMode: none
       arrangementTags:
         intro: [spacious, drone]
@@ -871,7 +917,8 @@ taxonomy:
       bpmRange: [70, 90]
       bpmDefault: 80
       scale: major
-      characteristics: [warm, dusty, crackling, "sample-based", chilled, nostalgic]
+      characteristics:
+        [warm, dusty, crackling, "sample-based", chilled, nostalgic]
       vocalMode: vocals_hook
       arrangementTags:
         intro: [crackling, dusty]
@@ -886,7 +933,8 @@ taxonomy:
       bpmRange: [100, 130]
       bpmDefault: 118
       scale: major
-      characteristics: [catchy, upbeat, "radio-friendly", "four-on-the-floor", accessible]
+      characteristics:
+        [catchy, upbeat, "radio-friendly", "four-on-the-floor", accessible]
       vocalMode: vocals_full
       arrangementTags:
         intro: [catchy, instrumental]
@@ -901,7 +949,8 @@ taxonomy:
       bpmRange: [100, 140]
       bpmDefault: 120
       scale: minor
-      characteristics: ["synth-driven", melodic, retro, "clean vocals", "new wave"]
+      characteristics:
+        ["synth-driven", melodic, retro, "clean vocals", "new wave"]
       vocalMode: vocals_full
       arrangementTags:
         intro: [synth, melodic]
@@ -916,7 +965,8 @@ taxonomy:
       bpmRange: [110, 125]
       bpmDefault: 118
       scale: major
-      characteristics: [funky, "disco-inspired", "groovy bass", strings, "four-on-the-floor"]
+      characteristics:
+        [funky, "disco-inspired", "groovy bass", strings, "four-on-the-floor"]
       vocalMode: vocals_full
       arrangementTags:
         intro: [funky, strings]
@@ -931,7 +981,8 @@ taxonomy:
       bpmRange: [120, 140]
       bpmDefault: 130
       scale: minor
-      characteristics: [electronic, anthemic, "dark pop", "synth-heavy", emotional]
+      characteristics:
+        [electronic, anthemic, "dark pop", "synth-heavy", emotional]
       vocalMode: vocals_full
       arrangementTags:
         intro: [synth, atmospheric]

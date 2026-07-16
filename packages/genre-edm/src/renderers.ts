@@ -175,4 +175,3 @@ export function createEdmRenderers(
     lyrics: renderLyrics,
   };
 }
-

@@ -5,7 +5,7 @@
  * Bass, Hardcore, Electro, Downtempo and Pop families.
  */
 
-import type { GenreModule } from "@track-forge/genre-core";
+import { createGenreModule } from "@track-forge/genre-core";
 import type { EdmInputs, EdmBlueprint } from "./schema.js";
 import {
   EdmInputSchema,
@@ -13,75 +13,16 @@ import {
   EDM_DEFAULTS,
   compileBlueprint,
 } from "./schema.js";
-import { EDM_FORM_FIELDS } from "./schema.js";
 import { createEdmRenderers } from "./renderers.js";
 import { EDM_CRITICS } from "./critics.js";
 import { EDM_VALIDATORS } from "./validators.js";
 
-/**
- * EDM genre module — full GenreModule<EdmInputs, EdmBlueprint>
- */
-export const edmModule: GenreModule<EdmInputs, EdmBlueprint> = {
+export const edmModule = createGenreModule<EdmInputs, EdmBlueprint>({
   id: "edm",
   name: "EDM",
   inputSchema: EdmInputSchema,
   blueprintSchema: EdmBlueprintSchema,
   defaults: EDM_DEFAULTS,
-  form: EDM_FORM_FIELDS,
-  adjustmentVocabulary: {
-    styleTerms: [
-      "driving",
-      "melodic",
-      "dark",
-      "warm",
-      "atmospheric",
-      "aggressive",
-      "euphoric",
-      "minimal",
-      "groovy",
-      "hypnotic",
-      "rolling",
-      "bouncy",
-      "deep",
-      "hard",
-      "soulful",
-      "techy",
-      "psychedelic",
-      "emotional",
-      "layered",
-      "filtered",
-    ],
-    structureTerms: [
-      "long intro",
-      "extended build",
-      "early drop",
-      "minimal breakdown",
-      "extended outro",
-      "double drop",
-      "climactic bridge",
-      "reverse drop",
-    ],
-    deliveryTerms: [
-      "tight percussion",
-      "loose groove",
-      "syncopated",
-      "four-on-the-floor",
-      "half-time feel",
-      "shuffling hats",
-      "rolling bass",
-    ],
-  },
-  tagPolicy: {
-    mandatoryTags: ["electronic"],
-    forbiddenTags: ["acoustic", "live band", "orchestral"],
-    canonicalMap: {
-      edm: "electronic",
-      dance: "electronic",
-      club: "electronic",
-      "four to the floor": "four-on-the-floor",
-      "4x4": "four-on-the-floor",
-    },
-  },
   promptFragments: {
     planning:
       "Describe a {{subgenre}} EDM track arrangement: {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, build, drop, breakdown, outro) with energy arc and production notes.\n{{nlAdjustments}}",
@@ -100,7 +41,4 @@ export const edmModule: GenreModule<EdmInputs, EdmBlueprint> = {
   renderers: createEdmRenderers(),
   critics: EDM_CRITICS,
   validators: EDM_VALIDATORS,
-  migrations: [],
-};
-
-export default edmModule;
+});

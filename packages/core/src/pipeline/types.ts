@@ -46,17 +46,6 @@ export interface PipelineState {
   lyricsFormat: LyricsFormat | null;
 }
 
-/** Stage handler function signature */
-export type StageHandler = (
-  state: PipelineState,
-  deps: PipelineDeps,
-) => Promise<PipelineState>;
-
-export interface StageDefinition {
-  name: string;
-  handler: StageHandler;
-}
-
 export interface PipelineResult {
   success: boolean;
   jobId: string;

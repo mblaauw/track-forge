@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import pino from "pino";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve, extname } from "node:path";
+import { resolve, extname, sep } from "node:path";
 import { initConfig } from "./lib/config.js";
 import { initDb } from "./lib/db.js";
 import {
@@ -47,7 +47,7 @@ registerHealthRoutes(server);
 registerProjectRoutes(server, { db, config });
 registerJobRoutes(server, { db, config, llm, suno });
 registerVersionRoutes(server, { db, lockService });
-registerSunoRoutes(server, { db, suno });
+registerSunoRoutes(server, { db, suno, config });
 registerEventRoutes(server, { db });
 registerImportExportRoutes(server, { db });
 
@@ -94,7 +94,8 @@ if (config.staticDir) {
       const filePath = resolve(staticPath, "." + url);
 
       // Security: ensure resolved path stays within staticDir
-      if (!filePath.startsWith(staticPath)) {
+      const prefix = staticPath + sep;
+      if (!filePath.startsWith(prefix)) {
         return reply.code(403).send("Forbidden");
       }
 
@@ -117,3 +118,22 @@ if (config.staticDir) {
 }
 
 start();
+
+// ── Graceful shutdown ────────────────────────────────────────────────
+
+function shutdown(signal: string) {
+  logger.info({ signal }, "Shutting down");
+  clearInterval(cleanupTimer);
+  server.close().catch(() => {});
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "Unhandled promise rejection — continuing");
+});
+process.on("uncaughtException", (err) => {
+  logger.fatal({ err }, "Uncaught exception — shutting down");
+  shutdown("uncaughtException");
+});

@@ -41,11 +41,7 @@ export type {
 export { createLockService, abortJob } from "./pipeline/index.js";
 export type { LockService } from "./pipeline/index.js";
 // Lyrics canonical grammar
-export {
-  parseLyrics,
-  serializeLyrics,
-  isInstrumental,
-} from "./lyrics/index.js";
+export { parseLyrics, serializeLyrics } from "./lyrics/index.js";
 
 // Pipeline
 export {

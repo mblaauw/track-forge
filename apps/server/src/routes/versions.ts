@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import type { Db, LockService } from "@track-forge/core";
 import { schema } from "@track-forge/core";
 import { findRowOr404 } from "../lib/db-utils.js";
@@ -20,7 +20,12 @@ export function registerVersionRoutes(
   server.get("/api/jobs/:jobId/versions", async (req, reply) => {
     const { jobId } = req.params as { jobId: string };
 
-    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, jobId), "Job");
+    const job = await findRowOr404(
+      db,
+      schema.jobs,
+      eq(schema.jobs.id, jobId),
+      "Job",
+    );
 
     const rows = await db
       .select()
@@ -36,7 +41,12 @@ export function registerVersionRoutes(
   server.get("/api/versions/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
+    const version = await findRowOr404(
+      db,
+      schema.versions,
+      eq(schema.versions.id, id),
+      "Version",
+    );
     return version;
   });
 
@@ -51,7 +61,12 @@ export function registerVersionRoutes(
       return reply.code(400).send({ error: "artifactType and value required" });
     }
 
-    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
+    const version = await findRowOr404(
+      db,
+      schema.versions,
+      eq(schema.versions.id, id),
+      "Version",
+    );
     if (version.status === "final") {
       return reply.code(400).send({ error: "Cannot edit a finalized version" });
     }
@@ -110,7 +125,12 @@ export function registerVersionRoutes(
   server.post("/api/versions/:id/promote", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
+    const version = await findRowOr404(
+      db,
+      schema.versions,
+      eq(schema.versions.id, id),
+      "Version",
+    );
     if (version.status === "final") {
       return reply.code(400).send({ error: "Version is already finalized" });
     }
@@ -140,9 +160,19 @@ export function registerVersionRoutes(
         versionId: string;
       };
 
-      const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, jobId), "Job");
+      const job = await findRowOr404(
+        db,
+        schema.jobs,
+        eq(schema.jobs.id, jobId),
+        "Job",
+      );
 
-      const sourceVersion = await findRowOr404(db, schema.versions, eq(schema.versions.id, versionId), "Source version");
+      const sourceVersion = await findRowOr404(
+        db,
+        schema.versions,
+        eq(schema.versions.id, versionId),
+        "Source version",
+      );
 
       const [maxVersion] = await db
         .select({ maxNumber: schema.versions.number })
@@ -180,7 +210,12 @@ export function registerVersionRoutes(
   server.get("/api/jobs/:jobId/versions/tree", async (req, reply) => {
     const { jobId } = req.params as { jobId: string };
 
-    const job = await findRowOr404(db, schema.jobs, eq(schema.jobs.id, jobId), "Job");
+    const job = await findRowOr404(
+      db,
+      schema.jobs,
+      eq(schema.jobs.id, jobId),
+      "Job",
+    );
 
     const rows = await db
       .select()
@@ -188,23 +223,22 @@ export function registerVersionRoutes(
       .where(eq(schema.versions.jobId, jobId))
       .orderBy(schema.versions.number);
 
-    const versionMap = new Map<string, (typeof rows)[0]>();
-    const roots: typeof rows = [];
+    const childrenMap = new Map<string | null, typeof rows>();
 
     for (const v of rows) {
-      versionMap.set(v.id, v);
-      if (!v.parentVersionId) {
-        roots.push(v);
+      const parentKey = v.parentVersionId ?? null;
+      if (!childrenMap.has(parentKey)) {
+        childrenMap.set(parentKey, []);
       }
+      childrenMap.get(parentKey)!.push(v);
     }
 
     function buildTree(parentId: string | null): unknown[] {
-      return rows
-        .filter((v) => v.parentVersionId === parentId)
-        .map((v) => ({
-          ...v,
-          children: buildTree(v.id),
-        }));
+      const children = childrenMap.get(parentId) ?? [];
+      return children.map((v) => ({
+        ...v,
+        children: buildTree(v.id),
+      }));
     }
 
     return buildTree(null);
@@ -215,7 +249,12 @@ export function registerVersionRoutes(
   server.get("/api/versions/:id/takes", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
+    const version = await findRowOr404(
+      db,
+      schema.versions,
+      eq(schema.versions.id, id),
+      "Version",
+    );
 
     const rows = await db
       .select()
@@ -229,7 +268,12 @@ export function registerVersionRoutes(
   server.post("/api/versions/:id/takes", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const version = await findRowOr404(db, schema.versions, eq(schema.versions.id, id), "Version");
+    const version = await findRowOr404(
+      db,
+      schema.versions,
+      eq(schema.versions.id, id),
+      "Version",
+    );
 
     const now = new Date().toISOString();
     const genId = crypto.randomUUID();
@@ -255,12 +299,13 @@ export function registerVersionRoutes(
   server.patch("/api/takes/:id/favorite", async (req, reply) => {
     const { id } = req.params as { id: string };
 
-    const gen = await findRowOr404(db, schema.generations, eq(schema.generations.id, id), "Take");
-
     const now = new Date().toISOString();
     await db
       .update(schema.generations)
-      .set({ isFavorite: !gen.isFavorite, updatedAt: now })
+      .set({
+        isFavorite: sql`NOT ${schema.generations.isFavorite}`,
+        updatedAt: now,
+      })
       .where(eq(schema.generations.id, id));
 
     const [updated] = await db
@@ -268,6 +313,10 @@ export function registerVersionRoutes(
       .from(schema.generations)
       .where(eq(schema.generations.id, id))
       .limit(1);
+
+    if (!updated) {
+      return reply.code(404).send({ error: "Take not found" });
+    }
 
     return reply.code(200).send(updated);
   });

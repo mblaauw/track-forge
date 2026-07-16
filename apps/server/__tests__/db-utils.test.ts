@@ -120,18 +120,12 @@ describe("parsePagination", () => {
   });
 
   it("clamps limit to maxLimit", () => {
-    const result = parsePagination(
-      { limit: "999" },
-      { maxLimit: 50 },
-    );
+    const result = parsePagination({ limit: "999" }, { maxLimit: 50 });
     expect(result.limit).toBe(50);
   });
 
   it("applies custom defaults", () => {
-    const result = parsePagination(
-      {},
-      { limit: 10, offset: 5, maxLimit: 200 },
-    );
+    const result = parsePagination({}, { limit: 10, offset: 5, maxLimit: 200 });
     expect(result).toEqual({ limit: 10, offset: 5 });
   });
 

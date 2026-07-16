@@ -42,6 +42,7 @@ export function TransportBar() {
         <div class="transport-meta">
           <input
             class="project-name-input"
+            aria-label="Session name"
             placeholder="Untitled Session"
             value={s.name}
             onInput={(e) =>

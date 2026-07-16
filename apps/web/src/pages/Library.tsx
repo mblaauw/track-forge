@@ -172,6 +172,7 @@ export function Library() {
         <div class="library-controls">
           <input
             class="library-search"
+            aria-label="Search sessions"
             placeholder="Search sessions..."
             value={search}
             onInput={(e) => setSearch((e.target as HTMLInputElement).value)}
@@ -201,7 +202,16 @@ export function Library() {
 
       <div class="card-grid">
         {filtered.map((job) => (
-          <div class="session-card" onClick={() => cardClick(job)} key={job.id}>
+          <div
+            class="session-card"
+            role="button"
+            tabIndex={0}
+            onClick={() => cardClick(job)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") cardClick(job);
+            }}
+            key={job.id}
+          >
             <div class="session-card-top">
               <span
                 class={`session-genre-badge ${genreColorClass(job.genreId)}`}
@@ -234,14 +244,29 @@ export function Library() {
               </button>
               <span
                 class={`session-star${job.isFavorite ? " active" : ""}`}
+                role="button"
+                tabIndex={0}
+                aria-label={job.isFavorite ? "Unfavorite" : "Favorite"}
                 onClick={(e) => toggleFavorite(job.id, e)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ")
+                    toggleFavorite(job.id, e);
+                }}
               >
                 <i class={job.isFavorite ? "ph-star-fill" : "ph-star"} />
               </span>
             </div>
           </div>
         ))}
-        <div class="session-card card-add" onClick={() => navigate("/create")}>
+        <div
+          class="session-card card-add"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate("/create")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") navigate("/create");
+          }}
+        >
           <div class="card-add-icon">
             <i class="ph-plus" />
           </div>

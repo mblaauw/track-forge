@@ -2,6 +2,14 @@ import type { FastifyInstance } from "fastify";
 import type { Db } from "@track-forge/core";
 import { subscribe, getJobEvents, type PipelineEvent } from "@track-forge/core";
 
+function sseWrite(reply: import("http").ServerResponse, data: string): void {
+  try {
+    reply.write(data);
+  } catch {
+    /* client disconnected — ignore */
+  }
+}
+
 export function registerEventRoutes(
   server: FastifyInstance,
   deps: { db: Db },
@@ -26,9 +34,17 @@ export function registerEventRoutes(
     });
 
     // Send initial connected event
-    reply.raw.write(
+    sseWrite(
+      reply.raw,
       `event: connected\ndata: ${JSON.stringify({ jobId: id })}\n\n`,
     );
+
+    // ── Register cleanup BEFORE any async work ───────────────────────
+    let cleanup: (() => void) | null = null;
+    const onClose = () => {
+      if (cleanup) cleanup();
+    };
+    req.raw.on("close", onClose);
 
     // Replay history if Last-Event-ID is 0 (fresh connect) or specific (reconnect)
     const historyEvents = await getJobEvents(db, id, {
@@ -36,9 +52,16 @@ export function registerEventRoutes(
       afterSequence: lastEventId,
     });
 
+    // If client disconnected during await, clean up and bail
+    if (req.raw.destroyed) {
+      req.raw.off("close", onClose);
+      return;
+    }
+
     for (const evt of historyEvents) {
       const data = JSON.stringify(evt);
-      reply.raw.write(
+      sseWrite(
+        reply.raw,
         `id: ${evt.sequence}\nevent: progress\ndata: ${data}\n\n`,
       );
     }
@@ -46,21 +69,21 @@ export function registerEventRoutes(
     // Subscribe to live pipeline events
     const unsubscribe = subscribe(id, (event: PipelineEvent) => {
       const data = JSON.stringify(event);
-      reply.raw.write(
+      sseWrite(
+        reply.raw,
         `id: ${event.sequence}\nevent: progress\ndata: ${data}\n\n`,
       );
     });
 
     // Keep alive ping every 15s
     const keepAlive = setInterval(() => {
-      reply.raw.write(": keepalive\n\n");
+      sseWrite(reply.raw, ": keepalive\n\n");
     }, 15000);
 
-    // Cleanup on disconnect
-    req.raw.on("close", () => {
+    cleanup = () => {
       unsubscribe();
       clearInterval(keepAlive);
-    });
+    };
   });
 
   // ── History endpoint (paginated event log) ─────────────────────────

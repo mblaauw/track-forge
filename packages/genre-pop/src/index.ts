@@ -1,63 +1,21 @@
-import type { GenreModule } from "@track-forge/genre-core";
+import { createGenreModule } from "@track-forge/genre-core";
 import type { PopInputs, PopBlueprint } from "./schema.js";
 import {
   PopInputSchema,
   PopBlueprintSchema,
   POP_DEFAULTS,
   compileBlueprint,
-  POP_FORM_FIELDS,
 } from "./schema.js";
 import { createPopRenderers } from "./renderers.js";
 import { POP_CRITICS } from "./critics.js";
 import { POP_VALIDATORS } from "./validators.js";
 
-export const popModule: GenreModule<PopInputs, PopBlueprint> = {
+export const popModule = createGenreModule<PopInputs, PopBlueprint>({
   id: "pop",
   name: "Pop",
   inputSchema: PopInputSchema,
   blueprintSchema: PopBlueprintSchema,
   defaults: POP_DEFAULTS,
-  form: POP_FORM_FIELDS,
-  adjustmentVocabulary: {
-    styleTerms: [
-      "catchy",
-      "polished",
-      "bright",
-      "dreamy",
-      "upbeat",
-      "emotional",
-      "sweet",
-      "hazy",
-      "layered",
-      "anthemic",
-    ],
-    structureTerms: [
-      "extended intro",
-      "double chorus",
-      "early hook",
-      "tag ending",
-      "key change",
-      "instrumental bridge",
-      "acoustic break",
-    ],
-    deliveryTerms: [
-      "tight harmonies",
-      "breathy vocals",
-      "belted chorus",
-      "spoken word",
-      "falsetto",
-      "layered harmonies",
-      "ad-libs",
-    ],
-  },
-  tagPolicy: {
-    mandatoryTags: ["pop"],
-    forbiddenTags: ["death metal", "grunge", "noise"],
-    canonicalMap: {
-      "pop music": "pop",
-      "pop song": "pop",
-    },
-  },
   promptFragments: {
     planning:
       "Describe a {{subgenre}} Pop track arrangement: {{bpm}} BPM, {{key}} {{scale}}, {{mood}}, energy {{energy}}/10. Outline sections (intro, verse, pre-chorus, chorus, bridge, outro) with energy arc and production notes.\n{{nlAdjustments}}",
@@ -76,7 +34,4 @@ export const popModule: GenreModule<PopInputs, PopBlueprint> = {
   renderers: createPopRenderers(),
   critics: POP_CRITICS,
   validators: POP_VALIDATORS,
-  migrations: [],
-};
-
-export default popModule;
+});

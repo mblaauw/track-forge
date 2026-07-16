@@ -2,11 +2,12 @@ import type { FastifyInstance } from "fastify";
 import { eq, inArray } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
 import { schema } from "@track-forge/core";
-import type {
-  JobExport,
-  ProjectExport,
-  ExportBundle,
-  ImportResult,
+import {
+  ImportBundleSchema,
+  type JobExport,
+  type ProjectExport,
+  type ExportBundle,
+  type ImportResult,
 } from "@track-forge/contracts";
 import { getModule } from "../lib/modules.js";
 import { findRowOr404 } from "../lib/db-utils.js";
@@ -153,13 +154,13 @@ export function registerImportExportRoutes(
   // ── Import ────────────────────────────────────────────────────────
 
   server.post("/api/projects/import", async (req, reply) => {
-    const body = req.body as ExportBundle | undefined;
-
-    if (!body || body.formatVersion !== 1) {
+    const parsed = ImportBundleSchema.safeParse(req.body);
+    if (!parsed.success) {
       return reply
         .code(400)
-        .send({ error: "Invalid or missing formatVersion. Expected 1." });
+        .send({ error: "Invalid import bundle", details: parsed.error.issues });
     }
+    const body = parsed.data;
 
     const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
 
@@ -230,6 +231,7 @@ export function registerImportExportRoutes(
             nlAdjustments: entry.job.nlAdjustments ?? null,
             findings: entry.job.findings ?? null,
             compiledJson: entry.job.compiledJson ?? null,
+            stageData: entry.job.stageData ?? null,
             stageAttempt: entry.job.stageAttempt ?? 0,
             error: entry.job.error ?? null,
             createdAt: entry.job.createdAt ?? now,

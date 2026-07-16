@@ -37,7 +37,14 @@ export interface GenreConfigYaml {
   taxonomy?: unknown;
 }
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "config");
+const ROOT = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+  "..",
+  "config",
+);
 const GENRE_DIR = join(ROOT, "genres");
 
 const cache = new Map<string, GenreConfigYaml>();
@@ -53,19 +60,29 @@ function loadYaml(id: string): GenreConfigYaml {
     cache.set(id, parsed);
     return parsed;
   } catch (err) {
-    throw new Error(`Failed to load genre config for "${id}": ${(err as Error).message}`);
+    throw new Error(
+      `Failed to load genre config for "${id}": ${(err as Error).message}`,
+    );
   }
 }
 
-export function getGenreConfig(id: string): GenreConfigYaml {
-  return loadYaml(id);
-}
+export const ALL_GENRE_IDS = ["edm", "hiphop", "pop", "ambient", "dnb"] as const;
 
-export function listGenreConfigs(): { id: string; name: string; color: string; subgenre_count: string }[] {
-  const ids = ["edm", "hiphop", "pop", "ambient", "dnb"];
+export function listGenreConfigs(): {
+  id: string;
+  name: string;
+  color: string;
+  subgenre_count: string;
+}[] {
+  const ids = ALL_GENRE_IDS;
   return ids.map((id) => {
     const cfg = loadYaml(id);
-    return { id, name: cfg.name, color: cfg.color, subgenre_count: cfg.subgenre_count };
+    return {
+      id,
+      name: cfg.name,
+      color: cfg.color,
+      subgenre_count: cfg.subgenre_count,
+    };
   });
 }
 

@@ -9,10 +9,3 @@ export function initConfig(): Config {
   }
   return _config;
 }
-
-/** @internal */
-function getConfig(): Config {
-  if (!_config)
-    throw new Error("Config not initialized. Call initConfig() first.");
-  return _config;
-}

@@ -172,6 +172,7 @@ async function run() {
           nlAdjustments: entry.job.nlAdjustments ?? null,
           findings: entry.job.findings ?? null,
           compiledJson: entry.job.compiledJson ?? null,
+          stageData: entry.job.stageData ?? null,
           stageAttempt: entry.job.stageAttempt ?? 0,
           error: entry.job.error ?? null,
           createdAt: entry.job.createdAt ?? now,

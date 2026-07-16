@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npx tsc --build && npm run -w apps/web build",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",

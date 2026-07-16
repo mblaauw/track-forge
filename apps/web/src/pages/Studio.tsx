@@ -103,7 +103,9 @@ export function Studio({ id }: { id: string }) {
         setJobName(j.name || "Untitled");
         setSelectedVersionIdx(0);
         if (sorted.length > 0) {
-          fetchTakes(sorted[0]!.id).then(setGenerations).catch(() => {});
+          fetchTakes(sorted[0]!.id)
+            .then(setGenerations)
+            .catch(() => {});
         }
       })
       .finally(() => setLoading(false));
@@ -112,7 +114,10 @@ export function Studio({ id }: { id: string }) {
   useEffect(() => {
     if (versions.length > 0) {
       const v = versions[selectedVersionIdx];
-      if (v) fetchTakes(v.id).then(setGenerations).catch(() => {});
+      if (v)
+        fetchTakes(v.id)
+          .then(setGenerations)
+          .catch(() => {});
     }
   }, [selectedVersionIdx]);
 
@@ -140,7 +145,9 @@ export function Studio({ id }: { id: string }) {
     );
     if (pending.length === 0 || !selectedVersion) return;
     const t = window.setInterval(() => {
-      fetchTakes(selectedVersion.id).then(setGenerations).catch(() => {});
+      fetchTakes(selectedVersion.id)
+        .then(setGenerations)
+        .catch(() => {});
     }, 4000);
     return () => clearInterval(t);
   }, [generations, selectedVersion]);
@@ -380,6 +387,7 @@ export function Studio({ id }: { id: string }) {
         </span>
         <input
           class="project-name-input"
+          aria-label="Project name"
           value={jobName}
           onInput={handleRename}
           style="font-size:22px;font-weight:700;max-width:300px"
@@ -552,6 +560,9 @@ export function Studio({ id }: { id: string }) {
                     </button>
                     <button
                       class={`take-star${isFavored ? " active" : ""}`}
+                      aria-label={
+                        isFavored ? "Unfavorite take" : "Favorite take"
+                      }
                       onClick={() => toggleFavored(gen.id)}
                     >
                       <i class={isFavored ? "ph-star-fill" : "ph-star"} />

@@ -14,7 +14,6 @@ export function abortJob(jobId: string): boolean {
   const controller = controllers.get(jobId);
   if (controller && !controller.signal.aborted) {
     controller.abort();
-    controllers.delete(jobId);
     return true;
   }
   return false;

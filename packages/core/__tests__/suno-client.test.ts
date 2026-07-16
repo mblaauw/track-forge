@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  SunoClient,
-  createSunoClientConfig,
-  normalizeTaskResponse,
-} from "../src/suno/index.js";
+import { SunoClient, createSunoClientConfig } from "../src/suno/index.js";
+import { normalizeTaskResponse } from "../src/suno/client.js";
 import type { SunoClientConfig } from "../src/suno/index.js";
 import type { Config } from "@track-forge/contracts";
 
