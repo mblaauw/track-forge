@@ -142,7 +142,8 @@ async function handleWriting(
     /* ignore */
   }
   const lyricsMode = String(inputs.lyricsMode ?? inputs.lyricsFormat ?? "");
-  const isStrictInstrumental = lyricsMode === "strict_instrumental";
+  const isStrictInstrumental =
+    lyricsMode === "strict_instrumental" || lyricsMode === "instrumental";
 
   const assembler = new PromptAssembler(module);
   const context = buildPromptContext({
@@ -424,7 +425,16 @@ async function handleRevision(state: PipelineState): Promise<PipelineState> {
         : null;
       const patched = lyricsDoc ? applyLyricsPatch(lyricsDoc, p) : undefined;
       if (patched) {
-        compiled[key] = patched;
+        try {
+          const doc = JSON.parse(patched);
+          if (doc && typeof doc === "object" && "sections" in doc) {
+            compiled[key] = serializeLyrics(doc);
+          } else {
+            compiled[key] = patched;
+          }
+        } catch {
+          compiled[key] = patched;
+        }
       }
       continue;
     }

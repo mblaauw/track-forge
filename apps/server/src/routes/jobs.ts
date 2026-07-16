@@ -20,6 +20,15 @@ import type { PipelineDeps } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import { getModuleOrThrow } from "../lib/modules.js";
 
+function safeParse<T>(json: string | null | undefined, fallback: T): T {
+  if (!json) return fallback;
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export interface JobRouteDeps {
   db: Db;
   config: Config;
@@ -231,32 +240,34 @@ export function registerJobRoutes(
       .where(eq(schema.generations.jobId, id));
     const genIds = genRows.map((r) => r.id);
 
-    if (genIds.length > 0) {
-      for (const gid of genIds) {
-        await db
-          .delete(schema.sunoTracks)
-          .where(eq(schema.sunoTracks.generationId, gid));
+    await db.transaction(async (tx) => {
+      if (genIds.length > 0) {
+        for (const gid of genIds) {
+          await tx
+            .delete(schema.sunoTracks)
+            .where(eq(schema.sunoTracks.generationId, gid));
+        }
       }
-    }
-    if (versionIds.length > 0) {
-      for (const vid of versionIds) {
-        await db
-          .delete(schema.artifactLocks)
-          .where(eq(schema.artifactLocks.versionId, vid));
+      if (versionIds.length > 0) {
+        for (const vid of versionIds) {
+          await tx
+            .delete(schema.artifactLocks)
+            .where(eq(schema.artifactLocks.versionId, vid));
+        }
       }
-    }
 
-    await db.delete(schema.generations).where(eq(schema.generations.jobId, id));
-    await db.delete(schema.versions).where(eq(schema.versions.jobId, id));
-    await db
-      .delete(schema.jobStageOutputs)
-      .where(eq(schema.jobStageOutputs.jobId, id));
-    await db.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, id));
-    await db
-      .delete(schema.criticFindings)
-      .where(eq(schema.criticFindings.jobId, id));
-    await db.delete(schema.adjustments).where(eq(schema.adjustments.jobId, id));
-    await db.delete(schema.jobs).where(eq(schema.jobs.id, id));
+      await tx.delete(schema.generations).where(eq(schema.generations.jobId, id));
+      await tx.delete(schema.versions).where(eq(schema.versions.jobId, id));
+      await tx
+        .delete(schema.jobStageOutputs)
+        .where(eq(schema.jobStageOutputs.jobId, id));
+      await tx.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, id));
+      await tx
+        .delete(schema.criticFindings)
+        .where(eq(schema.criticFindings.jobId, id));
+      await tx.delete(schema.adjustments).where(eq(schema.adjustments.jobId, id));
+      await tx.delete(schema.jobs).where(eq(schema.jobs.id, id));
+    });
 
     return reply.code(204).send();
   });
@@ -315,7 +326,7 @@ export function registerJobRoutes(
     }
 
     const finalFindings =
-      body?.findings ?? (job.findings ? JSON.parse(job.findings) : []);
+      body?.findings ?? (job.findings ? safeParse(job.findings, []) : []);
     const now = new Date().toISOString();
 
     await db
@@ -416,7 +427,7 @@ export function registerJobRoutes(
 
     // Signal cancellation via events then update DB (atomic)
     await db.transaction(async (tx) => {
-      await publish(tx as any, id, { stage: "cancelled", status: "completed" });
+      await publish(tx as any, id, { stage: "cancelled", status: "cancelled" });
       await cancelJob(tx as any, id as any);
     });
 
@@ -485,9 +496,7 @@ export function registerJobRoutes(
     const latestVersion = versions[0];
 
     if (latestVersion) {
-      const artifacts = JSON.parse(
-        latestVersion.artifacts as string,
-      ) as SunoArtifact[];
+      const artifacts = safeParse(latestVersion.artifacts as string, []) as SunoArtifact[];
       for (const a of artifacts) {
         if (a.type === "title") title = a.value;
         else if (a.type === "style") style = a.value;
@@ -495,7 +504,7 @@ export function registerJobRoutes(
         else if (a.type === "lyrics") lyrics = a.value;
       }
     } else if (job.compiledJson != null) {
-      const compiled = JSON.parse(job.compiledJson) as Record<string, string>;
+      const compiled = safeParse(job.compiledJson, {}) as Record<string, string>;
       title = compiled.title ?? "";
       style = compiled.style ?? "";
       excludedStyles = compiled.excludedStyles ?? "";

@@ -119,9 +119,10 @@ export function registerSunoRoutes(
         return reply.code(400).send({ error: "No version found for this job" });
       }
 
-      const artifacts = JSON.parse(
-        latestVersion.artifacts as string,
-      ) as SunoArtifact[];
+      const artifacts: SunoArtifact[] = (() => {
+        try { return JSON.parse(latestVersion.artifacts as string); }
+        catch { return []; }
+      })();
       const getValue = (type: string) =>
         artifacts.find((a) => a.type === type)?.value ?? "";
 

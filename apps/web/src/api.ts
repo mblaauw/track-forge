@@ -411,8 +411,12 @@ export function connectJobEvents(
   });
 
   es.addEventListener("progress", (e: MessageEvent) => {
-    const data = JSON.parse(e.data) as ProgressEvent;
-    handlers.onProgress?.(data);
+    try {
+      const data = JSON.parse(e.data) as ProgressEvent;
+      handlers.onProgress?.(data);
+    } catch {
+      console.warn("SSE: failed to parse progress event", e.data);
+    }
   });
 
   es.addEventListener("error", (e: Event) => {

@@ -148,7 +148,7 @@ export function Forge({ id }: { id: string }) {
             { time: fmt(now), tag: "done", msg: `${label} complete` },
           ]);
           if (e.stage === "versioning") {
-            fetchJob(id).then((j) => setJob(j));
+            fetchJob(id).then((j) => setJob(j)).catch(() => {});
           }
         } else if (e.status === "error") {
           setStageStatus((prev) => ({ ...prev, [e.stage]: "pending" }));
@@ -183,7 +183,7 @@ export function Forge({ id }: { id: string }) {
     const pollTimer = window.setInterval(() => {
       fetchJob(id).then((j) => {
         if (j.status !== "in_progress") setJob(j);
-      });
+      }).catch(() => {});
     }, 5000);
 
     return () => {

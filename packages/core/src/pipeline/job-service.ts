@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/index.js";
 import { schema } from "../db/index.js";
 import type {
@@ -79,11 +79,11 @@ async function loadJobOrThrow(db: Db, jobId: JobId): Promise<Job> {
 }
 
 async function countVersions(db: Db, jobId: JobId): Promise<number> {
-  const rows = await db
-    .select({ count: schema.versions.id })
+  const [row] = await db
+    .select({ count: sql<number>`COUNT(*)` })
     .from(schema.versions)
     .where(eq(schema.versions.jobId, jobId));
-  return rows.length;
+  return Number(row?.count ?? 0);
 }
 
 // ── Stage transitions ─────────────────────────────────────────────────
@@ -171,7 +171,7 @@ export async function cancelJob(db: Db, jobId: JobId): Promise<Job> {
   await db
     .update(schema.jobs)
     .set({
-      status: "cancelled" as any,
+      status: "cancelled",
       error: "Cancelled by user",
       updatedAt: now,
     })

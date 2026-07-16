@@ -104,7 +104,7 @@ export function Studio({ id }: { id: string }) {
         setJobName(j.name || "Untitled");
         setSelectedVersionIdx(0);
         if (sorted.length > 0) {
-          fetchTakes(sorted[0]!.id).then(setGenerations);
+          fetchTakes(sorted[0]!.id).then(setGenerations).catch(() => {});
         }
       })
       .finally(() => setLoading(false));
@@ -113,7 +113,7 @@ export function Studio({ id }: { id: string }) {
   useEffect(() => {
     if (versions.length > 0) {
       const v = versions[selectedVersionIdx];
-      if (v) fetchTakes(v.id).then(setGenerations);
+      if (v) fetchTakes(v.id).then(setGenerations).catch(() => {});
     }
   }, [selectedVersionIdx]);
 
@@ -141,7 +141,7 @@ export function Studio({ id }: { id: string }) {
     );
     if (pending.length === 0 || !selectedVersion) return;
     const t = window.setInterval(() => {
-      fetchTakes(selectedVersion.id).then(setGenerations);
+      fetchTakes(selectedVersion.id).then(setGenerations).catch(() => {});
     }, 4000);
     return () => clearInterval(t);
   }, [generations, selectedVersion]);
