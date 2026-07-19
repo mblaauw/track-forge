@@ -3074,6 +3074,145 @@ ol {
   line-height: 1.5;
 }
 
+.library-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--success-border);
+  background: var(--success-fill);
+  color: var(--success-text);
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.library-new-btn:hover {
+  background: var(--success-fill2);
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.library-row {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  text-align: left;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.library-row:hover {
+  border-color: var(--border-hover);
+}
+
+.library-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.library-row-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx);
+}
+
+.library-row-time {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--faint);
+}
+
+.library-row-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.library-star-btn,
+.library-delete-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--faint);
+  transition: all 0.15s;
+}
+
+.library-delete-btn:hover {
+  color: var(--danger-text);
+  background: var(--danger-fill);
+}
+
+.library-star-btn:hover {
+  color: var(--hue-amber);
+}
+
+.library-waveform {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+}
+
+.library-wave-bar {
+  flex: 1;
+  border-radius: 1px;
+}
+
+.library-row-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-genre-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.library-genre-name {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.library-status-pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.library-tempo {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  margin-left: auto;
+}
+
 /* ─── Arrangement Editor ─── */
 
 .arr-badge-row {
