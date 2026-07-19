@@ -7,31 +7,8 @@ import {
   Copy,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
+import { sectionColor } from "./arrangement";
 import type { Section } from "./types";
-
-function sectionHue(name: string): string {
-  const map: Record<string, string> = {
-    intro: "var(--hue-slate)",
-    outro: "var(--hue-slate)",
-    build: "var(--hue-amber)",
-    swell: "var(--hue-amber)",
-    "pre-chorus": "var(--hue-amber)",
-    drop: "var(--hue-green)",
-    hook: "var(--hue-green)",
-    chorus: "var(--hue-green)",
-    breakdown: "var(--hue-violet)",
-    bridge: "var(--hue-violet)",
-    verse: "var(--hue-cyan)",
-    groove: "var(--hue-cyan)",
-    "movement i": "var(--hue-cyan)",
-    "movement ii": "var(--hue-green)",
-  };
-  const key = name
-    .toLowerCase()
-    .replace(/[0-9]$/, "")
-    .trim();
-  return map[key] ?? "var(--hue-slate)";
-}
 
 function syl(text: string): number {
   if (!text.trim()) return 0;
@@ -145,7 +122,7 @@ export function LyricsBlock() {
         )}
         {s.sections.map((sec) => {
           const isVocal = sectionIsVocal(sec);
-          const hue = sectionHue(sec.name);
+          const hue = sectionColor(sec.name);
           return (
             <div class="lyrics-section-block" key={sec.id}>
               <div

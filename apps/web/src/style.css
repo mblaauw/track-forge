@@ -152,6 +152,20 @@ ol {
   background: #ccc2b5;
 }
 
+.tf-mono {
+  font-family: var(--font-mono);
+}
+
+.bundle-block-body {
+  padding: 0;
+}
+
+.renders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* ─── Compose Shell ─── */
 
 .compose-shell {

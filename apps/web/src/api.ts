@@ -124,6 +124,7 @@ export interface GenreDescriptorDefaults {
   categories: DescriptorCategoryPoolInfo[];
   defaults: DescriptorDefaultInfo[];
   lyricThemes: string[];
+  lyricAngles: { id: string; label: string }[];
   sectionFunctions: string[];
   deltaPalette: string[];
   sectionPalette: string[];

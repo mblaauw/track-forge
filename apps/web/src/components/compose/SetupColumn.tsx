@@ -50,13 +50,6 @@ const KEY_OPTIONS = [
   "B min",
 ];
 
-const LYRIC_ANGLES: { id: string; label: string }[] = [
-  { id: "first_person", label: "First person" },
-  { id: "story", label: "Storytelling" },
-  { id: "abstract", label: "Abstract" },
-  { id: "anthemic", label: "Anthemic" },
-];
-
 function defaultDescriptors(
   genreId: string,
   apiDefaults?: { label: string; cat: string; weight: number }[] | null,
@@ -506,7 +499,7 @@ function LyricsCardContent({
             ANGLE
           </div>
           <div class="setup-chip-row">
-            {LYRIC_ANGLES.map((a) => {
+            {(descDefaults?.lyricAngles ?? []).map((a) => {
               const active = s.lyricAngle === a.id;
               return (
                 <button

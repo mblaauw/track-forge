@@ -293,5 +293,10 @@ export function defaultSections(genreId: string): Section[] {
       },
     ],
   };
+  if (!defaults[genreId]) {
+    console.warn(
+      `Unknown genre "${genreId}" in defaultSections — falling back to EDM`,
+    );
+  }
   return defaults[genreId] ?? defaults.edm!;
 }

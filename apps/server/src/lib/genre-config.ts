@@ -164,6 +164,7 @@ export interface GenreDescriptorDefaults {
   categories: DescriptorCategoryPoolApi[];
   defaults: DescriptorDefaultApi[];
   lyricThemes: string[];
+  lyricAngles: { id: string; label: string }[];
   sectionFunctions: string[];
   deltaPalette: string[];
   sectionPalette: string[];
@@ -180,6 +181,12 @@ export function getDescriptorDefaults(id: string): GenreDescriptorDefaults {
     categories: cfg.descriptor_categories ?? [],
     defaults: cfg.descriptor_defaults ?? [],
     lyricThemes: cfg.lyric_themes ?? [],
+    lyricAngles: [
+      { id: "first_person", label: "First person" },
+      { id: "story", label: "Storytelling" },
+      { id: "abstract", label: "Abstract" },
+      { id: "anthemic", label: "Anthemic" },
+    ],
     sectionFunctions: cfg.section_functions ?? [],
     deltaPalette: cfg.delta_palette ?? [],
     sectionPalette: cfg.section_palette ?? [],
