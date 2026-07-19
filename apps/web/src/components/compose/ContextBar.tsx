@@ -12,10 +12,10 @@ export function ContextBar() {
   const statusDot = forging ? "#E0A63E" : "#3DDC84";
   const statusText = forging ? "FORGING" : "READY";
 
-  const presetLabel = s.presetIds.length
-    ? s.presetIds.map((p) => p.replace(/_/g, " ")).join(", ")
-    : s.presetId
-      ? s.presetId.replace(/_/g, " ")
+  const presetLabel = s.presetLabels.length
+    ? s.presetLabels.join(", ")
+    : s.presetIds.length
+      ? s.presetIds.map((p) => p.replace(/_/g, " ")).join(", ")
       : "—";
   const bpmLabel = s.bpm ? `${s.bpm} BPM` : "— BPM";
 

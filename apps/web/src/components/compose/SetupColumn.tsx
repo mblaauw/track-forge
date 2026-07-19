@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "preact/hooks";
+import { useState, useEffect, useCallback, useRef } from "preact/hooks";
 import {
   CaretDown,
   CaretRight,
@@ -683,6 +683,28 @@ export function SetupColumn() {
     }
   }, [s.genreId]);
 
+  // Seed initial state once when genre/presets/descriptors are ready
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (
+      !seededRef.current &&
+      presets.length > 0 &&
+      descDefaults &&
+      s.tags.length === 0
+    ) {
+      seededRef.current = true;
+      const themes = descDefaults.lyricThemes;
+      s.setSession({
+        presetIds: [presets[0]!.id],
+        presetId: presets[0]!.id,
+        presetLabels: [presets[0]!.name],
+        tags: defaultDescriptors(s.genreId, descDefaults.defaults),
+        sections: defaultSections(s.genreId),
+        lyricThemes: themes.length > 0 ? [themes[0]!] : [],
+      });
+    }
+  }, [presets, descDefaults]);
+
   // Genre color lookup (from API color field or known mapping)
   const genreColor = genres.find((g) => g.id === s.genreId)?.color ?? "cyan";
 
@@ -752,9 +774,11 @@ function cardSummary(
     case "genre":
       return s.genreId ? s.genreId.toUpperCase() : "—";
     case "preset":
-      return s.presetIds.length
-        ? s.presetIds.map((p) => p.replace(/_/g, " ")).join(", ")
-        : "—";
+      return s.presetLabels.length
+        ? s.presetLabels.join(", ")
+        : s.presetIds.length
+          ? s.presetIds.map((p) => p.replace(/_/g, " ")).join(", ")
+          : "—";
     case "lyrics":
       return s.lyricsMode === "full_lyrics" ? "On" : "Off";
     case "tempo":
@@ -841,12 +865,14 @@ function GenreCardContent({
               onClick={() => {
                 if (g.id === s.genreId) return;
                 const firstPreset = presets?.[0]?.id ?? "";
+                const firstPresetName = presets?.[0]?.name ?? "";
                 const themes = descDefaults?.lyricThemes ?? [];
                 const firstTheme = themes[0] ?? "";
                 s.setSession({
                   genreId: g.id,
                   presetId: firstPreset,
                   presetIds: firstPreset ? [firstPreset] : [],
+                  presetLabels: firstPresetName ? [firstPresetName] : [],
                   tags: defaultDescriptors(g.id, descDefaults?.defaults),
                   sections: defaultSections(g.id),
                   lyricThemes: firstTheme ? [firstTheme] : [],
@@ -920,7 +946,15 @@ function PresetCardContent({
                 const next = active
                   ? s.presetIds.filter((id) => id !== p.id)
                   : [...s.presetIds, p.id];
-                s.setSession({ presetIds: next, presetId: next[0] ?? "" });
+                const labels = next.map((id) => {
+                  const match = presets.find((pr) => pr.id === id);
+                  return match?.name ?? id.replace(/_/g, " ");
+                });
+                s.setSession({
+                  presetIds: next,
+                  presetId: next[0] ?? "",
+                  presetLabels: labels,
+                });
               }}
             >
               <span style="flex:1;text-align:left;font-size:12px;font-weight:600;color:var(--tx)">

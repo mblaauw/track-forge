@@ -140,9 +140,10 @@ export function ArrangementEditor() {
   } | null>(null);
 
   useEffect(() => {
-    fetchDescriptorDefaults(s.genreId)
-      .then(setVocab)
-      .catch(() => {});
+    if (s.genreId)
+      fetchDescriptorDefaults(s.genreId)
+        .then(setVocab)
+        .catch(() => {});
   }, [s.genreId]);
 
   const deltas = vocab?.deltaPalette ?? DELTA_PALETTE;

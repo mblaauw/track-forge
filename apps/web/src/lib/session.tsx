@@ -18,6 +18,7 @@ export interface SessionState {
   genreId: string;
   presetId: string;
   presetIds: string[];
+  presetLabels: string[];
   bpm: number | null;
   key: string;
   scale: "major" | "minor";
@@ -50,11 +51,12 @@ const DEFAULT: SessionState = {
   jobId: null,
   name: "",
   title: "",
-  genreId: "",
+  genreId: "edm",
   presetId: "",
   presetIds: [],
-  bpm: null,
-  key: "",
+  presetLabels: [],
+  bpm: 128,
+  key: "C",
   scale: "minor",
   status: "idle",
   reference: "",

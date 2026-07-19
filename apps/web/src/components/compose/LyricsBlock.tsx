@@ -102,20 +102,22 @@ export function LyricsBlock() {
               <Copy size={14} /> Copy
             </button>
           )}
-          {vocalSections.length > 0 && !s.lyricsGenerated && (
-            <button
-              class="arr-action-btn"
-              style="background:var(--forge);color:#fff;border-color:var(--forge)"
-              onClick={() => {
-                s.setSession({
-                  lyricsGenerated: true,
-                  lyricLines: generateMockLyrics(s.sections),
-                });
-              }}
-            >
-              <Sparkle size={14} /> Generate lyrics
-            </button>
-          )}
+          {vocalSections.length > 0 &&
+            !s.lyricsGenerated &&
+            s.lyricsMode !== "strict_instrumental" && (
+              <button
+                class="arr-action-btn"
+                style="background:var(--forge);color:#fff;border-color:var(--forge)"
+                onClick={() => {
+                  s.setSession({
+                    lyricsGenerated: true,
+                    lyricLines: generateMockLyrics(s.sections),
+                  });
+                }}
+              >
+                <Sparkle size={14} /> Generate lyrics
+              </button>
+            )}
           {s.lyricsGenerated && (
             <button
               class="arr-action-btn"
