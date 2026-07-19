@@ -104,39 +104,6 @@ describe("Generative invariants", () => {
     expect(lyrics).toContain("[Drop]");
   });
 
-  it("LLM rawStyle affects compiled Style artifact", async () => {
-    const llm = mockLlm(
-      JSON.stringify({
-        ...JSON.parse(styleResultJson),
-        descriptiveStyle: "LLM-custom style: ambient piano with heavy bass",
-      }),
-    );
-    const job = await createJob(
-      db,
-      "test-genre" as GenreId,
-      "test-preset" as PresetId,
-      "{}",
-      "ref",
-    );
-    const deps: PipelineDeps = {
-      db,
-      llm: llm as any,
-      suno: mockSuno() as any,
-      config: {} as any,
-    };
-
-    const result = await runPipeline(job.id, deps, mockModule);
-    expect(result.success).toBe(true);
-
-    const rows = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.jobId, job.id));
-    const artifacts = rows[0]?.artifacts ? JSON.parse(rows[0].artifacts) : [];
-    const styleArtifact = artifacts.find((a: any) => a.type === "style");
-    expect(styleArtifact?.value).toContain("LLM-custom style");
-  });
-
   it("Raw artist reference is absent from writer prompts and artifacts", async () => {
     const reference =
       "Kendrick Lamar - HUMBLE. This song is about staying humble";

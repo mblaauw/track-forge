@@ -1,18 +1,13 @@
 import type {
   Job,
   Config,
-  InterpretedReference,
   GenerationStage,
-  StyleWriterResult,
   LyricsWriterResult,
-  ControlDescriptor,
-  LyricsFormat,
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { Db } from "../db/index.js";
 import type { LlmClient } from "../llm/index.js";
 import type { SunoClient } from "../suno/index.js";
-import type { ReferenceCache } from "./reference-cache.js";
 
 /** Injectable dependencies for pipeline execution */
 export interface PipelineDeps {
@@ -20,7 +15,6 @@ export interface PipelineDeps {
   llm: LlmClient;
   suno: SunoClient;
   config: Config;
-  refCache?: ReferenceCache;
   signal?: AbortSignal;
 }
 
@@ -29,21 +23,12 @@ export interface PipelineState {
   job: Job;
   module: GenreModule;
 
-  // Stage outputs — null until produced
-  interpretedRef: InterpretedReference | null;
-  songPlan: string | null;
-  styleWriterResult: StyleWriterResult | null;
+  /** Compiled style JSON (produced by compilation stage) */
+  compiledJson: string | null;
+  /** Lyrics writer result (produced by lyrics_writing stage) */
   lyricsWriterResult: LyricsWriterResult | null;
-  compiledJson: string | null; // serialized CompiledStyle
-  findings: unknown[] | null; // serialized CriticFinding[]
-  appliedPatch: string | null; // serialized SurgicalPatch
+  /** Created version ID (produced by versioning stage) */
   versionId: string | null;
-
-  /** Structured adjustment instructions (parsed from job.nlAdjustments) */
-  nlAdjustments: ControlDescriptor[] | null;
-
-  /** Lyrics format determined from inputs / genre module */
-  lyricsFormat: LyricsFormat | null;
 }
 
 export interface PipelineResult {
@@ -53,24 +38,19 @@ export interface PipelineResult {
   error: string | null;
 }
 
+/** Resolved prompts keyed by pipeline stage */
+export type PromptManifest = Partial<Record<GenerationStage, string>>;
+
 /**
  * Structured context for prompt template filling.
  * Fields are flattened to support {{key}} replacement.
  */
 export interface PromptContext {
-  /** Genre module identifiers */
   genreId: string;
   genreName: string;
   presetId: string;
-  /** Sanitized reference text (URLs stripped, truncated; prefers interpretedRef summary) */
   reference: string | null;
-  /** Formatted interpreted reference (null if no ref or not yet interpreted) */
   interpretedRef: string | null;
-  /** Natural-language adjustment instructions */
   nlAdjustments?: string | null;
-  /** Input field values (flattened) */
   [key: string]: unknown;
 }
-
-/** Resolved prompts keyed by pipeline stage */
-export type PromptManifest = Partial<Record<GenerationStage, string>>;

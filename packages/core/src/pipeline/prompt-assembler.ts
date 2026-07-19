@@ -5,7 +5,6 @@ import type {
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { PromptContext, PromptManifest } from "./types.js";
-import { formatInterpretedRef } from "./reference-interpreter.js";
 
 // ── Fragment key resolution maps ──────────────────────────────────────
 
@@ -173,18 +172,13 @@ const MAX_RAW_LENGTH = 500;
 
 /**
  * Sanitize user-provided reference text for safe prompt injection.
- * Strips URLs and truncates; prefers interpreted ref summary when available.
+ * Strips URLs and truncates.
  */
 export function sanitizeReference(
   raw: string | null,
-  interpretedRef: InterpretedReference | null,
+  _interpretedRef: InterpretedReference | null,
 ): string | null {
   if (!raw) return null;
-
-  if (interpretedRef) {
-    // Use structured interpretation — metadata only, no raw lyrics/URLs
-    return formatInterpretedRef(interpretedRef);
-  }
 
   // Only raw text available — strip URLs and truncate
   const cleaned = raw.replace(URL_RE, "").replace(/\s+/g, " ").trim();
@@ -224,7 +218,7 @@ export function buildPromptContext(params: {
     presetId: params.presetId,
     reference: sanitizeReference(params.reference, params.interpretedRef),
     interpretedRef: params.interpretedRef
-      ? formatInterpretedRef(params.interpretedRef)
+      ? String(params.interpretedRef)
       : null,
     nlAdjustments: formatControlDescriptors(params.nlAdjustments ?? null),
   };

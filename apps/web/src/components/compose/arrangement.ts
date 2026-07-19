@@ -85,13 +85,9 @@ export const SECTION_PALETTE = [
 ];
 
 export const STAGE_LABELS = [
-  "Interpreting reference",
-  "Planning structure",
-  "Writing style",
   "Composing arrangement",
-  "Reviewing quality",
-  "Polishing details",
-  "Verifying bundle",
+  "Writing lyrics",
+  "Finalizing bundle",
   "Rendering with Suno",
 ];
 

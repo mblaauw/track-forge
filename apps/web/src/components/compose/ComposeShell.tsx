@@ -18,13 +18,9 @@ import { LibraryPanel } from "./LibraryPanel";
 import { STAGE_LABELS } from "./arrangement";
 
 const STAGE_TO_LABEL: Record<string, string> = {
-  ref_interpretation: "Interpreting reference",
-  planning: "Planning structure",
-  style_writing: "Writing style",
   compilation: "Composing arrangement",
-  review: "Reviewing quality",
-  revision: "Polishing details",
-  verification: "Verifying bundle",
+  lyrics_writing: "Writing lyrics",
+  versioning: "Finalizing bundle",
   suno_render: "Rendering with Suno",
 };
 
@@ -103,7 +99,7 @@ export function ComposeShell() {
         onProgress: (event: ProgressEvent) => {
           if (event.stage === "suno_render" && event.status === "started") {
             s.setSession({
-              forgeStageIdx: 7,
+              forgeStageIdx: 3,
               forgeStageLabel: "Rendering with Suno",
             });
           } else if (
@@ -112,7 +108,7 @@ export function ComposeShell() {
           ) {
             s.setSession({
               forgeRunning: false,
-              forgeStageIdx: 8,
+              forgeStageIdx: 4,
               status: "completed",
             });
             // Refresh renders
@@ -140,7 +136,7 @@ export function ComposeShell() {
               s.setSession({ forgeStageIdx: index, forgeStageLabel: label });
             } else if (event.status === "completed") {
               completedStages.add(event.stage);
-              s.setSession({ forgeStageIdx: Math.min(index + 1, 7) });
+              s.setSession({ forgeStageIdx: Math.min(index + 1, 3) });
             }
           }
         },

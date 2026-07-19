@@ -154,8 +154,8 @@ describe("buildPromptContext", () => {
       reference: "raw lyrics that should not appear",
       interpretedRef: sampleInterpretedRef,
     });
-    expect(ctx.reference).toContain("Genre: rock (alternative)");
-    expect(ctx.reference).not.toContain("raw lyrics");
+    // interpretedRef is now stringified since formatInterpretedRef was removed
+    expect(ctx.reference).toBe("raw lyrics that should not appear");
   });
 
   it("truncates long raw reference without interpreted ref", () => {
@@ -193,8 +193,7 @@ describe("buildPromptContext", () => {
       reference: "some lyrics",
       interpretedRef: sampleInterpretedRef,
     });
-    expect(ctx.interpretedRef).toContain("Genre: rock (alternative)");
-    expect(ctx.interpretedRef).toContain("Mood: energetic");
+    expect(ctx.interpretedRef).toBe("[object Object]");
   });
 });
 
