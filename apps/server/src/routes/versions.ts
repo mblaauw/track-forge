@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc, sql } from "drizzle-orm";
 import type { Db, LockService } from "@track-forge/core";
-import { schema } from "@track-forge/core";
+import { schema, publish } from "@track-forge/core";
 import { findRowOr404 } from "../lib/db-utils.js";
 import {
   validateBody,
@@ -280,6 +280,13 @@ export function registerVersionRoutes(
 
     const now = new Date().toISOString();
     const genId = crypto.randomUUID();
+
+    // Emit suno_render start
+    await publish(db, version.jobId, {
+      stage: "suno_render",
+      status: "started",
+      message: "Queued for Suno generation",
+    }).catch(() => {});
 
     await db.insert(schema.generations).values({
       id: genId,

@@ -1,4 +1,14 @@
+import { useEffect, useCallback, useRef } from "preact/hooks";
 import { useSession } from "../../lib/session";
+import {
+  createJob,
+  startJob,
+  connectJobEvents,
+  fetchJob,
+  fetchVersions,
+  type JobInfo,
+  type ProgressEvent,
+} from "../../api";
 import { ContextBar } from "./ContextBar";
 import { ForgeStrip } from "./ForgeStrip";
 import { SetupColumn } from "./SetupColumn";
@@ -6,8 +16,187 @@ import { BundleCanvas } from "./BundleCanvas";
 import { RendersPanel } from "./RendersPanel";
 import { LibraryPanel } from "./LibraryPanel";
 
+const STAGE_TO_LABEL: Record<string, string> = {
+  ref_interpretation: "Interpreting reference",
+  planning: "Planning structure",
+  style_writing: "Writing style",
+  compilation: "Composing arrangement",
+  review: "Reviewing quality",
+  revision: "Polishing details",
+  verification: "Verifying bundle",
+  suno_render: "Rendering with Suno",
+};
+
+const STAGE_LABELS = [
+  "Interpreting reference",
+  "Planning structure",
+  "Writing style",
+  "Composing arrangement",
+  "Reviewing quality",
+  "Polishing details",
+  "Verifying bundle",
+  "Rendering with Suno",
+];
+
+function stageToDisplay(stage: string): { label: string; index: number } {
+  const label = STAGE_TO_LABEL[stage];
+  if (label) {
+    const idx = STAGE_LABELS.indexOf(label);
+    return { label, index: idx >= 0 ? idx : 0 };
+  }
+  // Fallback: if it's a pipeline stage (ref_interpretation, etc), map approximately
+  for (let i = 0; i < STAGE_LABELS.length; i++) {
+    if (
+      STAGE_LABELS[i]!.toLowerCase().includes(
+        stage.replace(/_/g, " ").toLowerCase(),
+      )
+    ) {
+      return { label: STAGE_LABELS[i]!, index: i };
+    }
+  }
+  return { label: stage, index: 0 };
+}
+
 export function ComposeShell() {
-  const { leftCollapsed, rightCollapsed, libraryCollapsed } = useSession();
+  const s = useSession();
+  const { leftCollapsed, rightCollapsed, libraryCollapsed } = s;
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const handleForge = useCallback(async () => {
+    if (s.forgeRunning || s.forgeDisabled) return;
+    s.setSession({
+      forgeRunning: true,
+      forgeStageIdx: 0,
+      forgeStageLabel: STAGE_LABELS[0]!,
+      status: "in_progress",
+    });
+
+    try {
+      let jobId = s.jobId;
+
+      // Create job if not yet saved
+      if (!jobId) {
+        const inputPack = {
+          bpm: s.bpm ?? 128,
+          key: s.key,
+          scale: s.scale,
+          genreId: s.genreId,
+          presetIds: s.presetIds,
+          lyricsMode: s.lyricsMode,
+          lyricTopic: s.lyricTopic,
+          lyricAngle: s.lyricAngle,
+          lyricThemes: s.lyricThemes,
+          tags: s.tags,
+          sections: s.sections,
+          reference: s.reference,
+          title: s.title,
+          name: s.name,
+        };
+
+        const job = await createJob({
+          genreId: s.genreId,
+          presetId: s.presetIds[0] ?? s.presetId,
+          inputs: inputPack as unknown as Record<string, unknown>,
+          reference: s.reference || undefined,
+          name: s.name || undefined,
+        });
+        jobId = job.id;
+        s.setSession({ jobId: job.id });
+      }
+
+      // Subscribe to SSE
+      if (cleanupRef.current) cleanupRef.current();
+
+      const completedStages = new Set<string>();
+
+      cleanupRef.current = connectJobEvents(jobId!, {
+        onProgress: (event: ProgressEvent) => {
+          if (event.stage === "suno_render" && event.status === "started") {
+            s.setSession({
+              forgeStageIdx: 7,
+              forgeStageLabel: "Rendering with Suno",
+            });
+          } else if (
+            event.stage === "suno_render_complete" ||
+            (event.stage === "suno_render" && event.status === "completed")
+          ) {
+            s.setSession({
+              forgeRunning: false,
+              forgeStageIdx: 8,
+              status: "completed",
+            });
+            // Refresh renders
+            fetchVersions(jobId!)
+              .then((versions) => {
+                if (versions.length > 0) {
+                  const latest = versions[versions.length - 1];
+                  if (latest) fetchTakesForVersion(latest.id);
+                }
+              })
+              .catch(() => {});
+          } else if (event.stage === "suno_render_error") {
+            s.setSession({
+              forgeRunning: false,
+              status: "failed",
+            });
+          } else {
+            // Normal stage progress
+            const { label, index } = stageToDisplay(event.stage);
+            if (event.status === "started") {
+              s.setSession({ forgeStageIdx: index, forgeStageLabel: label });
+            } else if (event.status === "completed") {
+              completedStages.add(event.stage);
+              s.setSession({ forgeStageIdx: Math.min(index + 1, 7) });
+            }
+          }
+        },
+        onError: () => {
+          s.setSession({ forgeRunning: false, status: "failed" });
+        },
+      });
+
+      // Start the pipeline
+      await startJob(jobId!);
+    } catch (err) {
+      console.error("Forge failed:", err);
+      s.setSession({ forgeRunning: false, status: "failed" });
+    }
+  }, [
+    s.jobId,
+    s.genreId,
+    s.presetIds,
+    s.presetId,
+    s.bpm,
+    s.key,
+    s.scale,
+    s.lyricsMode,
+    s.lyricTopic,
+    s.lyricAngle,
+    s.lyricThemes,
+    s.tags,
+    s.sections,
+    s.reference,
+    s.title,
+    s.name,
+    s.forgeRunning,
+    s.forgeDisabled,
+  ]);
+
+  // Set onForge in session
+  useEffect(() => {
+    const disabled = !s.genreId || s.forgeRunning;
+    s.setSession({
+      onForge: disabled ? null : handleForge,
+      forgeDisabled: disabled,
+    });
+  }, [handleForge, s.genreId, s.forgeRunning]);
+
+  // Cleanup SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) cleanupRef.current();
+    };
+  }, []);
 
   const leftW = leftCollapsed ? "42px" : "270px";
   const rightW = rightCollapsed ? "42px" : "320px";
@@ -28,4 +217,8 @@ export function ComposeShell() {
       </div>
     </div>
   );
+}
+
+async function fetchTakesForVersion(versionId: string) {
+  // This would populate the renders store — stub for now
 }
