@@ -1,12 +1,12 @@
 import { Router } from "./lib/router";
 import { SessionProvider } from "./lib/session";
-import { AppShell } from "./components/AppShell";
+import { ComposeShell } from "./components/compose/ComposeShell";
 
 export function App() {
   return (
     <Router>
       <SessionProvider>
-        <AppShell />
+        <ComposeShell />
       </SessionProvider>
     </Router>
   );
