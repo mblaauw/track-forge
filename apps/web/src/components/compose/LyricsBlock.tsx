@@ -7,7 +7,7 @@ import {
   Copy,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import { sectionColor } from "./arrangement";
+import { sectionColor, sectionIsVocal } from "./arrangement";
 import type { Section } from "./types";
 
 function syl(text: string): number {
@@ -44,14 +44,6 @@ function vocalMeta(vocal?: {
   if (vocal.adlibs) parts.push("ad-libs");
   if (vocal.harmonies) parts.push("harmonies");
   return parts.filter(Boolean).join(", ");
-}
-
-function sectionIsVocal(sec: Section): boolean {
-  const lowerDeltas = sec.deltas.map((d) => d.toLowerCase());
-  if (lowerDeltas.includes("instrumental")) return false;
-  if (lowerDeltas.includes("vocal focus") || lowerDeltas.includes("catchy"))
-    return true;
-  return /verse|chorus|hook|pre-chorus|refrain|bridge|drop/i.test(sec.name);
 }
 
 export function LyricsBlock() {

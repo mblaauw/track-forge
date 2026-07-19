@@ -72,11 +72,6 @@ export interface VersionInfo {
   finalizedAt: string | null;
   createdAt: string;
 }
-
-export interface VersionTreeNode extends VersionInfo {
-  children: VersionTreeNode[];
-}
-
 // ── API functions ────────────────────────────────────────────────────
 
 export function fetchGenres(): Promise<GenreInfo[]> {
@@ -90,21 +85,8 @@ export interface GenrePreset {
   values: Record<string, unknown>;
 }
 
-export interface TagCategoryInfo {
-  id: string;
-  name: string;
-  color: string;
-  suggestions: string[];
-}
-
 export function fetchPresets(genreId: string): Promise<GenrePreset[]> {
   return api(`/api/genres/${encodeURIComponent(genreId)}/presets`);
-}
-
-export function fetchTagCategories(
-  genreId: string,
-): Promise<TagCategoryInfo[]> {
-  return api(`/api/genres/${encodeURIComponent(genreId)}/tag-categories`);
 }
 
 export interface DescriptorCategoryPoolInfo {
@@ -178,13 +160,6 @@ export function previewStyle(
   });
 }
 
-export function renameJob(id: string, name: string): Promise<JobInfo> {
-  return api(`/api/jobs/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-}
-
 export function favoriteJob(id: string): Promise<JobInfo> {
   return api(`/api/jobs/${encodeURIComponent(id)}/favorite`, {
     method: "PATCH",
@@ -209,53 +184,20 @@ export function fetchJobs(limit = 20, offset = 0): Promise<JobInfo[]> {
   return api(`/api/jobs?limit=${limit}&offset=${offset}`);
 }
 
-export function fetchJob(id: string): Promise<JobInfo> {
-  return api(`/api/jobs/${encodeURIComponent(id)}`);
-}
-
 export function startJob(
   id: string,
 ): Promise<{ status: string; jobId: string }> {
   return api(`/api/jobs/${encodeURIComponent(id)}/start`, { method: "POST" });
 }
 
-export function cancelJob(
-  id: string,
-): Promise<{ status: string; jobId: string }> {
-  return api(`/api/jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" });
-}
-
-export function replayJob(
-  id: string,
-  stage?: string,
-): Promise<{ status: string; jobId: string }> {
-  return api(`/api/jobs/${encodeURIComponent(id)}/replay`, {
-    method: "POST",
-    body: JSON.stringify(stage ? { stage } : {}),
-  });
-}
-
 /** Parse artifacts from JSON string to array (server returns string) */
 function parseVersion(v: VersionInfo): VersionInfo {
-  if (typeof v.artifacts === "string") {
-    try {
-      const parsed = JSON.parse(v.artifacts);
-      if (Array.isArray(parsed)) {
-        return { ...v, artifacts: parsed };
-      }
-    } catch {
-      return { ...v, artifacts: [] };
-    }
+  try {
+    const parsed = JSON.parse(v.artifacts as unknown as string);
+    return { ...v, artifacts: parsed };
+  } catch {
+    return v;
   }
-  return v;
-}
-
-function parseVersionTree(v: VersionTreeNode): VersionTreeNode {
-  const parsed = parseVersion(v) as VersionTreeNode;
-  return {
-    ...parsed,
-    children: (v.children ?? []).map(parseVersionTree),
-  };
 }
 
 export function fetchVersions(jobId: string): Promise<VersionInfo[]> {
@@ -285,22 +227,6 @@ export interface GenerationInfo {
 export function fetchTakes(versionId: string): Promise<GenerationInfo[]> {
   return api(`/api/versions/${encodeURIComponent(versionId)}/takes`);
 }
-
-export function createTake(versionId: string): Promise<GenerationInfo> {
-  return api(`/api/versions/${encodeURIComponent(versionId)}/takes`, {
-    method: "POST",
-  });
-}
-
-export function favoriteTake(takeId: string): Promise<GenerationInfo> {
-  return api(`/api/takes/${encodeURIComponent(takeId)}/favorite`, {
-    method: "PATCH",
-  });
-}
-
-// ── Import / Export ─────────────────────────────────────────────────
-
-// ── SSE progress events ────────────────────────────────────────────
 
 export interface ProgressEvent {
   jobId: string;
