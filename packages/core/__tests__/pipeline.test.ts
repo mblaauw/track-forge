@@ -288,14 +288,6 @@ describe("Pipeline orchestrator", () => {
     });
 
     it("empty lyrics produce instrumental payload", async () => {
-      const instrumentalModule: GenreModule = {
-        ...mockModule,
-        renderers: {
-          ...mockModule.renderers,
-          lyrics: () => "",
-        },
-      };
-
       const job = await createJob(
         db,
         "test-genre" as GenreId,
@@ -317,7 +309,7 @@ describe("Pipeline orchestrator", () => {
         } as any,
       };
 
-      const result = await runPipeline(job.id, deps, instrumentalModule);
+      const result = await runPipeline(job.id, deps, mockModule);
       expect(result.success).toBe(true);
 
       const [version] = await db
@@ -341,6 +333,104 @@ describe("Pipeline orchestrator", () => {
 
       expect(payload.instrumental).toBe(true);
       expect(payload.prompt).toBeUndefined();
+    });
+  });
+
+  // ── Pipeline stage execution order ─────────────────────────────────
+
+  describe("Pipeline stage execution", () => {
+    let db: Db;
+    let tmpDir: string;
+
+    beforeEach(() => {
+      tmpDir = mkdtempSync(join(tmpdir(), "tf-stage-"));
+      db = createDb(join(tmpDir, "test.db"));
+    });
+
+    afterEach(() => {
+      rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it("runs all three stages in order (compilation → lyrics_writing → versioning)", async () => {
+      const job = await createJob(
+        db,
+        "test-genre" as GenreId,
+        "test-preset" as PresetId,
+        JSON.stringify({ mood: "test" }),
+        null,
+      );
+      const deps: PipelineDeps = {
+        db,
+        llm: mockLlm() as any,
+        suno: mockSuno() as any,
+        config: {
+          sunoBaseUrl: "https://api.sunomusic.com/v1",
+          logLevel: "fatal" as any,
+          port: 0,
+          llmProvider: "openai",
+          llmModel: "gpt-4o",
+          dbPath: ":memory:",
+        } as any,
+      };
+
+      const result = await runPipeline(job.id, deps, mockModule);
+      expect(result.success).toBe(true);
+
+      const [finalJob] = await db
+        .select()
+        .from(schema.jobs)
+        .where(eq(schema.jobs.id, job.id));
+
+      expect(finalJob!.status).toBe("completed");
+      expect(finalJob!.currentStage).toBe("versioning");
+    });
+
+    it("skips LLM call when lyricsMode is strict_instrumental", async () => {
+      let llmCalled = false;
+      const llm = {
+        async complete() {
+          llmCalled = true;
+          return {
+            content: '{"document":{"sections":[{"type":"verse","lines":["test"]}]}}',
+            model: "mock",
+            usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+          };
+        },
+      };
+
+      const job = await createJob(
+        db,
+        "test-genre" as GenreId,
+        "test-preset" as PresetId,
+        JSON.stringify({ mood: "test", lyricsMode: "strict_instrumental" }),
+        null,
+      );
+      const deps: PipelineDeps = {
+        db,
+        llm: llm as any,
+        suno: mockSuno() as any,
+        config: {
+          sunoBaseUrl: "https://api.sunomusic.com/v1",
+          logLevel: "fatal" as any,
+          port: 0,
+          llmProvider: "openai",
+          llmModel: "gpt-4o",
+          dbPath: ":memory:",
+        } as any,
+      };
+
+      const result = await runPipeline(job.id, deps, mockModule);
+      expect(result.success).toBe(true);
+      expect(llmCalled).toBe(false);
+
+      const [version] = await db
+        .select()
+        .from(schema.versions)
+        .where(eq(schema.versions.id, result.versionId!));
+
+      const artifacts = JSON.parse(version!.artifacts) as SunoArtifact[];
+      const lyrics = artifacts.find((a) => a.type === "lyrics")?.value ?? "";
+      expect(lyrics).toBe("");
     });
   });
 });

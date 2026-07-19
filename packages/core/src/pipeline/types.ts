@@ -3,6 +3,7 @@ import type {
   Config,
   GenerationStage,
   LyricsWriterResult,
+  VersionId,
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { Db } from "../db/index.js";
@@ -28,29 +29,14 @@ export interface PipelineState {
   /** Lyrics writer result (produced by lyrics_writing stage) */
   lyricsWriterResult: LyricsWriterResult | null;
   /** Created version ID (produced by versioning stage) */
-  versionId: string | null;
+  versionId: VersionId | null;
 }
 
 export interface PipelineResult {
   success: boolean;
   jobId: string;
-  versionId: string | null;
+  versionId: VersionId | null;
   error: string | null;
 }
 
-/** Resolved prompts keyed by pipeline stage */
-export type PromptManifest = Partial<Record<GenerationStage, string>>;
 
-/**
- * Structured context for prompt template filling.
- * Fields are flattened to support {{key}} replacement.
- */
-export interface PromptContext {
-  genreId: string;
-  genreName: string;
-  presetId: string;
-  reference: string | null;
-  interpretedRef: string | null;
-  nlAdjustments?: string | null;
-  [key: string]: unknown;
-}

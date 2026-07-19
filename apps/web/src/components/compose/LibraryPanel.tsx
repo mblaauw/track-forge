@@ -9,7 +9,7 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import { fetchJobs, favoriteJob, deleteJob, type JobInfo } from "../../api";
+import { fetchJobs, fetchVersions, fetchTakes, favoriteJob, deleteJob, type JobInfo } from "../../api";
 
 function wave(seed: string, n: number): number[] {
   let h = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -74,13 +74,27 @@ export function LibraryPanel() {
       // ignore parse errors
     }
 
+    const presetIds =
+      (inputs.presetIds as string[]) ?? (job.presetId ? [job.presetId] : []);
+
+    // Fetch takes for the latest version
+    let takes: any[] = [];
+    try {
+      const versions = await fetchVersions(job.id);
+      if (versions.length > 0) {
+        const latest = versions[versions.length - 1]!;
+        takes = await fetchTakes(latest.id);
+      }
+    } catch {
+      // takes stay empty on error
+    }
+
     s.setSession({
       jobId: job.id,
       name: job.name ?? "",
       genreId: job.genreId,
-      presetId: job.presetId,
-      presetIds:
-        (inputs.presetIds as string[]) ?? (job.presetId ? [job.presetId] : []),
+      presetId: presetIds[0] ?? job.presetId,
+      presetIds,
       presetLabels: [],
       bpm: (inputs.bpm as number) ?? 128,
       key: (inputs.key as string) ?? "C",
@@ -104,7 +118,7 @@ export function LibraryPanel() {
       arrangeSource:
         (inputs.arrangeSource as "default" | "custom") ?? "default",
       title: (inputs.title as string) ?? "",
-      takes: [],
+      takes,
     });
   };
 

@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useState, useRef, useEffect } from "preact/hooks";
 import {
   CaretLeft,
   CaretRight,
@@ -9,6 +9,7 @@ import {
   Plus,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
+import { createTake, fetchVersions, fetchTakes, favoriteTake } from "../../api";
 
 function wave(seed: string, n: number): number[] {
   let h = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -22,8 +23,64 @@ function wave(seed: string, n: number): number[] {
 
 export function RendersPanel() {
   const s = useSession();
-  const { rightCollapsed, togglePanel, takes } = s;
+  const { rightCollapsed, togglePanel, takes, jobId } = s;
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [rendering, setRendering] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  const handleNewRender = async () => {
+    if (!jobId || rendering) return;
+    setRendering(true);
+    try {
+      const versions = await fetchVersions(jobId);
+      if (versions.length === 0) return;
+      const latest = versions[versions.length - 1]!;
+      await createTake(latest.id);
+      // Refresh takes
+      const refreshed = await fetchTakes(latest.id);
+      s.setSession({ takes: refreshed });
+    } catch (err) {
+      console.error("New render failed:", err);
+    } finally {
+      setRendering(false);
+    }
+  };
+
+  const handlePlay = (take: { id: string; audioUrl?: string }) => {
+    if (playingId === take.id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+      return;
+    }
+    if (!take.audioUrl) return;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    const audio = new Audio(take.audioUrl);
+    audio.onended = () => setPlayingId(null);
+    audio.play().catch(() => {});
+    audioRef.current = audio;
+    setPlayingId(take.id);
+  };
+
+  const handleFavorite = async (takeId: string) => {
+    try {
+      const updated = await favoriteTake(takeId);
+      s.setSession({
+        takes: takes.map((t) => (t.id === takeId ? { ...t, ...updated } : t)) as any[],
+      });
+    } catch (err) {
+      console.error("Favorite failed:", err);
+    }
+  };
 
   if (rightCollapsed) {
     return (
@@ -56,8 +113,8 @@ export function RendersPanel() {
       <div class="col-body tf-scroll">
         <div class="renders-subheader">
           <span class="renders-subheader-label">GENERATED SONGS</span>
-          <button class="renders-new-btn" onClick={() => {}}>
-            <Plus size={14} /> New render
+          <button class="renders-new-btn" onClick={handleNewRender} disabled={rendering}>
+            <Plus size={14} /> {rendering ? "Rendering…" : "New render"}
           </button>
         </div>
         {takes.length === 0 ? (
@@ -86,7 +143,7 @@ export function RendersPanel() {
                           : "var(--success-fill)",
                         color: isPlaying ? "var(--acc)" : "var(--success-text)",
                       }}
-                      onClick={() => setPlayingId(isPlaying ? null : take.id)}
+                      onClick={() => handlePlay(take)}
                     >
                       {isPlaying ? (
                         <Pause size={16} weight="fill" />
@@ -106,7 +163,7 @@ export function RendersPanel() {
                           : "—"}
                       </span>
                     </div>
-                    <button class="rende-star-btn" onClick={() => {}}>
+                    <button class="rende-star-btn" onClick={() => handleFavorite(take.id)}>
                       <Star
                         size={16}
                         weight={take.isFavorite ? "fill" : "regular"}

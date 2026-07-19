@@ -9,11 +9,11 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
-    "build": "npx tsc --build && npm run -w apps/web build",
+    "build": "npx tsc -b packages/contracts packages/genre-core packages/core packages/genre-edm packages/genre-hiphop packages/genre-ambient packages/test-support apps/server --force && npm run -w apps/web build",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf apps/*/dist packages/*/dist && rm -f vitest.config.{js,d.ts,d.ts.map,js.map} tsconfig.base.tsbuildinfo apps/web/vite.config.d.ts && find apps packages -name '*.test.d.ts' -o -name '*.test.d.ts.map' -o -name '*.test.js' -o -name '*.test.js.map' | grep -v node_modules | xargs rm -f"
+    "clean": "rm -rf apps/*/dist packages/*/dist && find . -name '*.tsbuildinfo' -delete && rm -f vitest.config.{js,d.ts,d.ts.map,js.map} apps/web/vite.config.d.ts && find apps packages -name '*.test.d.ts' -o -name '*.test.d.ts.map' -o -name '*.test.js' -o -name '*.test.js.map' | grep -v node_modules | xargs rm -f"
   },
   "engines": {
     "node": ">=22"

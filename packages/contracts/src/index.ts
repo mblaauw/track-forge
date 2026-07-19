@@ -3,14 +3,8 @@ import { z } from "zod";
 // ── Generation pipeline ──────────────────────────────────────────────
 
 export const GenerationStage = {
-  RefInterpretation: "ref_interpretation",
-  Planning: "planning",
-  StyleWriting: "style_writing",
-  LyricsWriting: "lyrics_writing",
   Compilation: "compilation",
-  Review: "review",
-  Revision: "revision",
-  Verification: "verification",
+  LyricsWriting: "lyrics_writing",
   Versioning: "versioning",
 } as const;
 export type GenerationStage =
@@ -35,8 +29,6 @@ export type VersionStatus = (typeof VersionStatus)[keyof typeof VersionStatus];
 
 export type JobId = string & { readonly __brand: "JobId" };
 export type VersionId = string & { readonly __brand: "VersionId" };
-export type ProjectId = string & { readonly __brand: "ProjectId" };
-export type DraftId = string & { readonly __brand: "DraftId" };
 export type GenreId = string & { readonly __brand: "GenreId" };
 export type PresetId = string & { readonly __brand: "PresetId" };
 export type SourceHash = string & { readonly __brand: "SourceHash" };
@@ -48,11 +40,6 @@ export const SunoArtifactType = {
   Style: "style",
   ExcludedStyles: "excluded_styles",
   Lyrics: "lyrics",
-  Bpm: "bpm",
-  Key: "key",
-  VocalDescription: "vocal_description",
-  NegativeTags: "negative_tags",
-  PatchNotes: "patch_notes",
 } as const;
 export type SunoArtifactType =
   (typeof SunoArtifactType)[keyof typeof SunoArtifactType];
@@ -100,16 +87,7 @@ export interface LyricsDocument {
   metadata: Record<string, string>;
 }
 
-// ── Writer stage results ────────────────────────────────────────
-
-export interface StyleWriterResult {
-  titleCandidates: string[];
-  descriptiveStyle: string;
-  negativeTags: string[];
-  bpm: number | null;
-  key: string | null;
-  vocalDescription: string;
-}
+// ── Writer stage results ─────────────────────────────────────────────
 
 export interface LyricsWriterResult {
   document: LyricsDocument;
@@ -118,45 +96,11 @@ export interface LyricsWriterResult {
 export type LyricsFormat =
   "strict_instrumental" | "guided_instrumental" | "full_lyrics";
 
-// ── Control descriptors (structured NL adjustments) ───────────────────
-
-export type ControlOperator = "set" | "adjust" | "remove" | "add";
-
-export interface ControlDescriptor {
-  parameter: string;
-  operator: ControlOperator;
-  value: string | number | boolean | string[];
-  confidence: number;
-}
-
-// ── Project & Draft ──────────────────────────────────────────────────
-
-export interface Project {
-  id: ProjectId;
-  name: string;
-  description: string | null;
-  genreId: GenreId | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Draft {
-  id: DraftId;
-  projectId: ProjectId;
-  genreId: GenreId;
-  presetId: PresetId;
-  inputs: string | null;
-  reference: string | null;
-  nlAdjustments: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // ── Job & Version ────────────────────────────────────────────────────
 
 export interface Job {
   id: JobId;
-  projectId: ProjectId | null;
+  projectId: string | null;
   name: string | null;
   genreId: GenreId;
   presetId: PresetId;
@@ -171,6 +115,7 @@ export interface Job {
   stageData: string | null;
   stageAttempt: number;
   error: string | null;
+  isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -179,15 +124,10 @@ export interface Version {
   id: VersionId;
   jobId: JobId;
   status: VersionStatus;
-  /** Ordinal version number (1-based) */
   number: number;
-  /** Compiled artifacts ready for Suno */
   artifacts: SunoArtifact[];
-  /** Pipeline stage that created this version */
   stage: GenerationStage | null;
-  /** Parent version ID for branch/rollback tracking */
   parentVersionId: VersionId | null;
-  /** Immutable after finalisation */
   finalizedAt: string | null;
   createdAt: string;
 }
@@ -205,7 +145,16 @@ export interface JobEvent {
   timestamp: string;
 }
 
-// ── Import/Export ────────────────────────────────────────────────────
+// ── Project (import/export only) ─────────────────────────────────────
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  genreId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface ProjectExport {
   project: Project;
@@ -213,8 +162,8 @@ export interface ProjectExport {
 }
 
 export interface JobExport {
-  job: Job;
-  versions: Version[];
+  job: Partial<Job> & { id: string; genreId: string; presetId: string };
+  versions: (Partial<Version> & { id: string; number: number })[];
 }
 
 export interface ExportBundle {
@@ -282,28 +231,19 @@ export const ImportBundleSchema = z.object({
   ),
 });
 
-// ── Config schema (server-side only, gitignored) ─────────────────────
+// ── Config schema ────────────────────────────────────────────────────
 
 export const ConfigSchema = z.object({
-  /** Suno API base URL */
   sunoBaseUrl: z.string().url().default("https://api.sunomusic.com"),
-  /** Suno auth token */
   sunoAuthToken: z.string().optional(),
-  /** Public base URL for callback endpoints */
   publicBaseUrl: z.string().url().optional(),
-  /** DB path (absolute or relative to CWD) */
   dbPath: z.string().default("./data/track-forge.db"),
-  /** Log level */
   logLevel: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal"])
     .default("info"),
-  /** Port for HTTP server */
   port: z.number().int().positive().default(3000),
-  /** Host to bind (127.0.0.1 for dev safety, 0.0.0.0 for production) */
   host: z.string().default("127.0.0.1"),
-  /** Path to built web GUI (set in production for static serving) */
   staticDir: z.string().optional(),
-  /** LLM provider config */
   llmProvider: z
     .enum(["openai", "anthropic", "ollama", "openai-compatible"])
     .default("openai"),
@@ -314,104 +254,11 @@ export const ConfigSchema = z.object({
 
 export type Config = z.infer<typeof ConfigSchema>;
 
-// ── Critic types ─────────────────────────────────────────────────────
-
-export const CriticSeverity = {
-  Error: "error",
-  Warning: "warning",
-  Suggestion: "suggestion",
-} as const;
-export type CriticSeverity =
-  (typeof CriticSeverity)[keyof typeof CriticSeverity];
-
-export const AutoFixPolicy = {
-  Required: "required",
-  Preferred: "preferred",
-  Skipped: "skipped",
-} as const;
-export type AutoFixPolicy = (typeof AutoFixPolicy)[keyof typeof AutoFixPolicy];
-
-export interface CriticFinding {
-  severity: CriticSeverity;
-  field: string; // e.g. "style", "lyrics.section.verse"
-  message: string;
-  autoFixPolicy: AutoFixPolicy;
-  /** Patch type for surgical revision */
-  patchType?: PatchType;
-  /** Suggested replacement value */
-  suggestedValue?: string;
-}
-
-export const PatchType = {
-  ReplaceStyleDescription: "replace_style_description",
-  ReplaceNegativeTags: "replace_negative_tags",
-  ReplaceLyricsSection: "replace_lyrics_section",
-  ReplaceSelectedText: "replace_selected_text",
-  InputPatch: "input_patch",
-  MergeField: "merge_field",
-  RemoveField: "remove_field",
-  ReplaceSection: "replace_section",
-  InsertSection: "insert_section",
-  MergeSectionLines: "merge_section_lines",
-  ChangeSectionBars: "change_section_bars",
-  ChangeSectionTags: "change_section_tags",
-} as const;
-export type PatchType = (typeof PatchType)[keyof typeof PatchType];
-
-export interface SurgicalPatch {
-  type: PatchType;
-  target: string; // section name / selector
-  value: string;
-  description: string;
-}
-
-// ── Reference Interpretation ───────────────────────────────────────────
-
-export interface InterpretedReference {
-  sourceHash: SourceHash;
-  /** Primary genre detected */
-  genre: string;
-  /** Subgenre if identifiable */
-  subgenre: string | null;
-  /** Mood/tone description */
-  mood: string;
-  /** Tempo feel or BPM range */
-  tempo: string;
-  /** Key if identifiable */
-  key: string | null;
-  /** Section structure detected (verse, chorus, etc.) */
-  structure: string[];
-  /** Instruments or sound sources heard */
-  instrumentation: string[];
-  /** Production characteristics */
-  production: string[];
-  /** Lyrical themes and subject matter */
-  lyricalThemes: string[];
-  /** Rhyme scheme pattern if discernible */
-  rhymeScheme: string | null;
-  /** Vocal style observations */
-  vocalStyle: string | null;
-  /** Suggested tags for Suno style prompt */
-  suggestedTags: string[];
-  /** Tags to explicitly avoid */
-  negativeTags: string[];
-  /** Full analysis text for prompt context */
-  rawAnalysis: string;
-}
-
 // ── Style compiler types ─────────────────────────────────────────────
-
-export interface StyleClause {
-  key: string;
-  value: string;
-  /** Fixed ordering ordinal */
-  order: number;
-}
 
 export interface CompiledStyle {
   description: string;
   tags: string[];
   negativeTags: string[];
-  /** Ordered clauses used to build description */
-  clauses: StyleClause[];
+  clauses: { key: string; value: string; order: number }[];
 }

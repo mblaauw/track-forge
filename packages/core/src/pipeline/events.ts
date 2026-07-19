@@ -131,6 +131,7 @@ export async function getJobEvents(
             sql`${schema.jobEvents.jobId} = ${jobId} AND ${schema.jobEvents.sequence} > ${afterSequence}`,
           )
           .orderBy(schema.jobEvents.sequence)
+          .limit(limit)
       : await query;
 
   // Reverse to chronological order

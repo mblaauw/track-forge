@@ -1,200 +1,299 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-07-15
+**Analysis Date:** 2026-07-19
 
 ## Naming Patterns
 
 **Files:**
-- `kebab-case.ts` for source files (e.g., `job-service.ts`, `prompt-assembler.ts`, `genre-config.ts`, `critic-runner.ts`)
-- `PascalCase.tsx` for Preact components (e.g., `AppShell.tsx`, `NavRail.tsx`, `TransportBar.tsx`, `AutoSaveIndicator.tsx`)
-- Test files mirror source: `__tests__/<name>.test.ts` co-located at package `__tests__/` directory
+- kebab-case: `job-service.ts`, `style-compiler.ts`, `db-utils.ts`, `json-utils.ts`, `job-abort-controller.ts`
+- Test files match source with `.test.ts` extension: `pipeline.test.ts`, `events.test.ts`
+- React components use PascalCase files: `ComposeShell.tsx`, `BundleCanvas.tsx`, `ArrangementEditor.tsx`, `SetupColumn.tsx`
+- Frontend lib utility files use kebab-case: `session.tsx`, `router.tsx`
+- Exception: `genre-core` uses `index.ts` and `utils.ts`
 
 **Functions:**
-- `camelCase` for all function names
-- Factory functions prefixed with `create`: `createDb()`, `createJob()`, `createLlmClient()`, `createSunoClientConfig()`, `createAbortController()`
-- Helper/accessor functions: `loadJob()`, `parseFindings()`, `getJobEvents()`, `serializeLyrics()`, `loadConfig()`
-- Stage handler functions named `handle<Stage>`: `handleRefInterpretation()`, `handlePlanning()`, `handleWriting()` (in `packages/core/src/pipeline/orchestrator.ts`)
-- React hooks prefixed with `use`: `useRouter()`, `useSession()`, `useAutosave()`
-- Event callbacks: `subscribe()`, `publish()`, `unsubscribeAll()` (in `packages/core/src/pipeline/events.ts`)
-- Renderers named as: `renderTitle()`, `renderStyle()`, `renderExcludedStyles()`, `renderLyrics()` (in genre packages)
-- Test helper functions use short names: `mockLlm()`, `mockSuno()`, `makeBlueprint()`, `makeClient()`
+- camelCase throughout: `createJob`, `loadJob`, `advanceStage`, `failStage`, `compileStylePrompt`
+- Route registration functions prefixed with `register`: `registerHealthRoutes`, `registerJobRoutes`, `registerVersionRoutes`
+- Pipeline stage handlers follow pattern `handle<PascalCaseStage>`: `handleCompilation`, `handleLyricsWriting`, `handleVersioning`
+- Helper/utility functions in kebab-case files: `compileCore`, `compileRhythm`, `compileSound` in `style-compiler.ts`
+- Async functions do NOT use an `Async` suffix — `async` keyword is sufficient
 
 **Variables:**
-- `camelCase` for all variable names
-- Constants in `UPPER_SNAKE_CASE`: `CONFIG_FILENAME`, `STAGE_ORDER`, `EVENT_TTL_MS`, `JSON_ARRAY_RE`, `MIN_CONFIG`
-- Enums/const maps use PascalCase keys with camelCase values: `GenerationStage.RefInterpretation = "ref_interpretation"`
-- Module-level singletons prefixed with underscore: `_refCache` (in `packages/core/src/pipeline/orchestrator.ts`)
-- Boolean flags: `isFavorite`, `isInstrumental`, `isError`, `hasActiveJob`, `hasMore`
+- camelCase: `config`, `logger`, `db`, `sunoCfg`, `stuck`, `pipelineDeps`
+- Constants in UPPER_SNAKE_CASE: `STAGE_ORDER`, `CONFIG_FILENAME`, `EVENT_TTL_MS`
+- Object destructuring at function start: `const { db, config, llm, suno } = deps;`
 
 **Types:**
-- `PascalCase` for all type/interface names
-- Interfaces use plain names without `I` prefix: `Job`, `Config`, `PipelineDeps`, `LlmClient`, `SunoArtifact`
-- Type aliases for branded IDs: `JobId`, `VersionId`, `GenreId`, `PresetId`, `SourceHash`
-- Union types: `GenerationStage`, `JobStatus`, `LyricsFormat`, `CriticSeverity`, `PatchType`
-- Generic type parameters: `TInputs`, `TBlueprintData` (in `GenreModule`)
+- PascalCase interfaces: `PipelineDeps`, `PipelineState`, `PipelineResult`, `Job`, `Version`, `SunoArtifact`
+- PascalCase type aliases: `JobId`, `VersionId`, `GenreId`, `PresetId`, `SectionFunction`
+- Branded string types for IDs: `type JobId = string & { readonly __brand: "JobId" };`
+- Enums-as-const-objects pattern with matching type: 
+  ```typescript
+  export const GenerationStage = { ... } as const;
+  export type GenerationStage = (typeof GenerationStage)[keyof typeof GenerationStage];
+  ```
+- Zod-inferred types: `export type Config = z.infer<typeof ConfigSchema>;`
 
 ## Code Style
 
 **Formatting:**
-- Prettier with zero config (standard defaults). No `.prettierrc` file exists.
-- Run via: `npx prettier --check .`
-- Single quotes for strings in `.ts`/`.tsx` files
-- Semicolons required
-- 2-space indentation
-- Trailing commas in multiline objects/arrays
+- No Prettier config detected — uses defaults (2-space indent, single quotes, no trailing commas)
+- No ESLint config detected — uses `tsc --noEmit` as the sole linter (see `npm run lint` script)
+- Strict TypeScript mode (`strict: true`, `noUncheckedIndexedAccess: true`, `skipLibCheck: true`, `forceConsistentCasingInFileNames: true`)
+- TypeScript `tsc --build` with project references across all packages
 
-**Linting:**
-- No ESLint or Biome configuration found. TypeScript compiler (`tsc --noEmit`) is the only static analysis tool.
-- Run via: `npm run lint` which executes `tsc --noEmit`
+**Semicolons:**
+- Semicolons always used at end of statements
 
-**TypeScript:**
-- `strict: true` in `tsconfig.base.json`
-- `noUncheckedIndexedAccess: true` — use optional chaining or non-null assertions (`!`)
-- `exactOptionalPropertyTypes: false`
-- `isolatedModules: true` — all re-exports must use `export type` for types
-- `module: ESNext` with `moduleResolution: bundler`
-- All source files use `.js` extensions in relative imports (e.g., `import { createDb } from "../db/index.js"`)
-- Barrel exports via `index.ts` files in each subdirectory
+**Quotes:**
+- Double quotes for imports and strings: `import { describe } from "vitest";`
+- Single quotes not used — all double quotes
 
-**Type vs interface imports:**
-- `import type` for type-only imports: `import type { Config } from "@track-forge/contracts";`
-- Regular `import` for value imports: `import { createDb } from "../src/db/index.js";`
-- Mixed import style: `import type { GenreModule } from "@track-forge/genre-core"; import { computeBars } from "@track-forge/genre-core";` (separate lines)
-- Inline `type` keyword for mixed imports when types and values come from same module: `import { schema, type Db } from "../src/db/index.js";` or `import type { PipelineDeps } from "../src/pipeline/types.js"; import { runPipeline } from "../src/pipeline/orchestrator.js";`
+**Spacing:**
+- 2-space indentation throughout
+- Single blank line between sections (separated by `// ── ... ──` comment blocks)
+- No blank line before closing brace `}`
 
 ## Import Organization
 
 **Order:**
-1. Third-party library imports (`vitest`, `fastify`, `drizzle-orm`, `zod`, `preact`)
-2. Workspace package imports (`@track-forge/*`)
-3. Local relative imports (`../src/db/index.js`, `./types.js`)
-4. Node.js built-ins (`node:fs`, `node:path`, `node:os`, `node:crypto`)
+1. Third-party packages first (vitest, fastify, node builtins)
+2. Internal source imports
+3. Workspace package imports (`@track-forge/*`)
 
-**Path Aliases:**
-- No TypeScript path aliases used in the project
-- Workspace packages referenced by npm package name: `@track-forge/contracts`, `@track-forge/core`
-- All local imports use relative paths with `.js` extension
-- Between packages, imports use the package name from `package.json`: `"@track-forge/contracts": "*"`
+**Format:**
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { createDb } from "../src/db/index.js";
+import type { Db } from "../src/db/index.js";
+```
 
-**Barrel Files:**
-- Each package has a `src/index.ts` that re-exports public API
-- Subdirectories also have `index.ts` barrels (e.g., `src/db/index.ts`, `src/pipeline/index.ts`, `src/suno/index.ts`, `src/llm/index.ts`, `src/lyrics/index.ts`)
-- Pattern: `export { ... } from "./db/index.js"; export type { ... } from "./db/index.js";`
+- Inline `type` imports: `import type { FastifyInstance } from "fastify";` (always `import type` for type-only)
+- Always include `.js` extension in local imports (ESM convention)
+- Workspace packages imported by `@track-forge/*` name, no `.js` extension: `import { createDb } from "@track-forge/core";`
+
+## Section Comments
+
+A structured visual separator used throughout:
+
+```typescript
+// ── Stage order ───────────────────────────────────────────────────────
+
+// ── Stage: Compilation ────────────────────────────────────────────────
+
+// ── Job CRUD ──────────────────────────────────────────────────────────
+
+// ── Helpers ───────────────────────────────────────────────────────────
+```
+
+Width is approximately 100 characters from the `──` to the end. Used in:
+- `packages/core/src/pipeline/orchestrator.ts`
+- `packages/core/src/pipeline/job-service.ts`
+- `packages/core/src/pipeline/events.ts`
+- `packages/core/src/suno/payload.ts`
+- `apps/server/src/index.ts`
+- `packages/contracts/src/index.ts`
 
 ## Error Handling
 
 **Patterns:**
-- **Try/catch with throw:** Functions throw `Error` instances with descriptive messages. Example: `throw new Error(`Job ${jobId} not found`)` in `packages/core/src/pipeline/job-service.ts`
-- **Graceful fallback:** Parse functions wrap `JSON.parse` in try/catch and return defaults on failure. Example: `parseFindings()`, `parseInterpretation()`, `parseControlDescriptors()`
-- **Nullable returns:** Functions return `null` for not-found cases: `loadJob()` returns `Job | null`
-- **Result objects:** Pipeline orchestrator returns `{ success, job, version, ... }` result objects with success flag
-- **Error propagation:** Pipeline errors propagate up through the stage handler chain
-- **Env var parsing:** `envInt()` returns `undefined` on parse failure, caller falls back to default
-- **Zod validation:** Config schema and input schemas use `safeParse()` for validation, returning details on failure
-- **Fastify error replies:** Server routes return structured `{ error, details? }` JSON with appropriate HTTP status codes (400, 404, 500)
-- **Type assertions:** `as` casts used sparingly, primarily for branded types (`as JobId`, `as GenreId`) and mock objects (`as any` in tests)
+- Custom `Error` subclasses for domain-specific errors:
+  ```typescript
+  // apps/server/src/lib/db-utils.ts
+  export class ApiError extends Error {
+    readonly statusCode: number;
+    constructor(statusCode: number, message: string) {
+      super(message);
+      this.name = "ApiError";
+      this.statusCode = statusCode;
+    }
+  }
+  
+  // packages/core/src/llm/client.ts
+  export class LlmError extends Error {
+    status: number;
+    body: string;
+  }
+  ```
 
-**Patterns to avoid (anti-patterns observed):**
-- `as any` casts appear in test code for mock objects — this is accepted for test convenience but should not appear in production code
-- `JSON.parse` calls on DB columns are not always wrapped in try/catch — some callers risk runtime parsing errors
+- Global Fastify error handler using `instanceof` checks:
+  ```typescript
+  server.setErrorHandler((error: unknown, _request, reply) => {
+    if (error instanceof ApiError) {
+      return reply.code(error.statusCode).send({ error: error.message });
+    }
+    // ...
+  });
+  ```
+
+- `try/catch` blocks in pipeline stages catch and convert to structured results:
+  ```typescript
+  } catch (err) {
+    const msg = (err as Error).message ?? String(err);
+    await publish(deps.db, state.job.id, { stage: currentStage, status: "error", error: msg });
+    await failJob(deps.db, state.job.id as JobId, msg);
+    cleanupJob(state.job.id);
+    return { success: false, jobId: state.job.id, versionId: null, error: msg };
+  }
+  ```
+
+- Zod validation via `safeParse` (not `parse`), throwing `ApiError`:
+  ```typescript
+  const result = schema.safeParse(req.body);
+  if (!result.success) {
+    throw new ApiError(400, `Invalid request body: ${result.error.message}`);
+  }
+  return result.data;
+  ```
+
+- JSON parse with safe fallback pattern (used extensively):
+  ```typescript
+  // packages/core/src/json-utils.ts
+  export function safeJsonParse<T>(input: string | null | undefined, fallback: T): T {
+    if (input == null) return fallback;
+    try { return JSON.parse(input) as T; }
+    catch { return fallback; }
+  }
+  ```
+
+- Route handlers use `try/catch` or `reject` on `findRowOr404` throwing `ApiError(404)`
+
+- Pipeline errors: each stage is wrapped; failures publish an error event and `failJob` persists the error
 
 ## Logging
 
-**Framework:** `pino` (`^9.6.0`)
+**Framework:** `pino` (Fastify's default logger)
 
 **Patterns:**
-- Structured logging with `{ requestId, ... }` context objects
-- `LlmLogger` interface defines `debug`, `info`, `warn`, `error` methods with structured object + string message
-- LLM client logs request/response pairs with truncated content (500 chars for response, 2000 for reasoning)
-- Server routes use Fastify's built-in request logging
-- Genre config loading uses `console.warn` for warnings
-- Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
+- Logger created at top level: `const logger = pino({ level: config.logLevel });`
+- Child loggers for modules: `logger.child({ module: "suno" })`, `logger.child({ module: "llm" })`
+- Structured logging with object-first pattern: `logger.warn({ count: stuck.cnt }, "Reset stuck in_progress jobs after restart");`
+- Log levels: `fatal`, `error`, `warn`, `info`, `debug`, `trace` (from `ConfigSchema.logLevel`)
+- Unhandled rejection/exception handling at app entry:
+  ```typescript
+  process.on("unhandledRejection", (reason) => { logger.error({ err: reason }, "Unhandled promise rejection"); });
+  process.on("uncaughtException", (err) => { logger.fatal({ err }, "Uncaught exception"); });
+  ```
+
+- LLM client logs request/response at debug level with truncated content (first 500 chars)
 
 ## Comments
 
 **When to Comment:**
-- Section headers use `// ── Section name ─────────────────────` banners (80 chars total, ── padding)
-- JSDoc/TSDoc for public API surfaces: functions, interfaces, complex type parameters
-- Inline comments for non-obvious logic, especially in parsers and regex patterns
+- Section separators with dashed lines for logical grouping
+- Inline comments for non-obvious logic: `// Security: ensure resolved path stays within staticDir`
+- Top-of-file doc comments for important shared modules (see `style-compiler.ts`):
+  ```typescript
+  /**
+   * Pure-function style compiler — single source of truth for the Suno style prompt.
+   *
+   * Used by:
+   *  - POST /api/preview-style (unsaved sessions)
+   *  - POST /api/jobs/:id/preview-style (saved sessions)
+   *  - style_writing pipeline stage (via renderers.style)
+   */
+  ```
+
+- `/** JSDoc */` on public API functions (`loadConfig`, `compileStylePrompt`, `generateSunoPayload`, `publish`, `subscribe`)
+- Short inline comments prefixed with `// ──` for section headers
+- `// @ts-expect-error` used minimally, only where type narrowing is impractical
 
 **JSDoc/TSDoc:**
-- `/** Description */` on exported functions and interfaces
-- `@param` tags for key parameters
-- `@returns` tags where return value semantics could be ambiguous
-
-**Section Banner Pattern:**
-```typescript
-// ── Stage: Ref Interpretation ─────────────────────────
-```
+- Used primarily on exported public API functions and types
+- Not used on internal/private functions (consistent throughout)
+- Not used on test files
 
 ## Function Design
 
 **Size:**
-- Stage handlers in orchestrator.ts are ~60-120 lines each
-- Pure functions (renderers, validators) are typically 10-40 lines
-- Test functions are short and focused: single `it()` block per assertion cluster
+- Functions vary from 1-liner (`registerHealthRoutes`) to ~80 lines (`request` method in LLM client)
+- Pipeline stage handlers are 40-80 lines
+- Route handlers are concise (5-20 lines each), delegates to helpers
 
 **Parameters:**
-- Named interfaces for complex parameter sets: `PipelineDeps`, `CriticRunOptions`
-- Optional parameters with defaults: `options: CriticRunOptions = {}`
-- Destructured parameter objects for configuration
-- `Pick<Type, Keys>` for minimized parameter interfaces: `Pick<Config, "llmProvider" | "llmApiKey" | ...>`
+- Single config/state object pattern for complex parameters:
+  ```typescript
+  export function compileStylePrompt(input: CompileStyleInput): CompileStyleResult
+  export async function runPipeline(jobId: string, deps: PipelineDeps, module: GenreModule): Promise<PipelineResult>
+  ```
+- Max 3 positional parameters per function
 
 **Return Values:**
-- Async functions return `Promise<T>` with explicit return types
-- Pure synchronous functions for renderers, validators, schema operations
-- `Result<T>` pattern not used — instead use null returns or throw
+- Explicit return types on all exported functions and interfaces
+- Union types for pipeline results: `{ success: boolean; jobId: string; versionId: VersionId | null; error: string | null }`
+- `void` return for side-effect-only functions
+- `Promise<T>` for async, `T` for sync
 
 ## Module Design
 
 **Exports:**
-- Named exports for all functions and classes
-- No default exports — consistent use of named exports throughout
-- Barrel exports consolidate all public API in `src/index.ts`
+- Named exports exclusively — **no default exports found anywhere**
+- Barrel exports from `index.ts` files in each package:
+  ```typescript
+  // packages/core/src/index.ts
+  export { createDb, schema, getSqlite } from "./db/index.js";
+  export type { Db } from "./db/index.js";
+  export { loadConfig } from "./config.js";
+  // ...
+  ```
+- `export type` separated from value exports
 
 **Barrel Files:**
-- Present in every subdirectory: `src/db/index.ts`, `src/pipeline/index.ts`, `src/suno/index.ts`, etc.
-- Pattern: group by category with section comments
+- Present in every package: `packages/core/src/index.ts`, `packages/contracts/src/index.ts`, `packages/genre-core/src/index.ts`
+- Core's `src/pipeline/index.ts`, `src/suno/index.ts`, `src/llm/index.ts` all re-export
 
-## Preact/JSX Conventions
+## TypeScript Patterns
 
-**Component Style:**
-- Functional components with typed props interface
-- `export function ComponentName({ ...props }: Props)` pattern (no default export)
-- Hooks: `useContext`, `useState`, `useEffect`, `useCallback` imported from `preact/hooks`
-- `createContext` from `preact` directly
-- Context provider pattern with typed context and default values
+**Branded Types:**
+```typescript
+export type JobId = string & { readonly __brand: "JobId" };
+```
 
-**CSS:**
-- Custom CSS variables with `:root` tokens in `style.css` (~2000 lines)
-- Short aliases defined alongside long names: `--acc` (accent green `#3DDC84`), `--tx` (text `#2D2A24`), `--dim`, `--faint`, `--line2`
-- Light theme: `--bg: #FFF1E5`, `--panel: #FFFFFF`
-- No CSS-in-JS or CSS modules — plain CSS file
+**Const-object enum pattern (never `enum` keyword):**
+```typescript
+export const JobStatus = {
+  Pending: "pending",
+  InProgress: "in_progress",
+  Completed: "completed",
+  Failed: "failed",
+  Cancelled: "cancelled",
+} as const;
+export type JobStatus = (typeof JobStatus)[keyof typeof JobStatus];
+```
 
-## Workspace Package Patterns
+- **No `enum` keyword used anywhere** — always the const-object pattern
+- Drizzle ORM schema uses `sqliteTable` with snake_case DB column names, camelCase JS properties:
+  ```typescript
+  const jobs = sqliteTable("jobs", {
+    id: text("id").primaryKey(),
+    createdAt: text("created_at").notNull(),
+  });
+  ```
 
-**Genre Modules:** Each genre implements `GenreModule<TInputs, TBlueprintData>` interface from `@track-forge/genre-core`:
-- `schema.ts` — Zod input/blueprint schemas
-- `presets.ts` — Named presets with partial values
-- `renderers.ts` — Title, style, excludedStyles, lyrics renderers
-- `validators.ts` — Input and blueprint validators
-- `critics.ts` — Critic definitions (fast + full panels)
-- `tag-categories.ts` — Style Console tag groups with color suggestions
-- `index.ts` — Module export
+**Type assertions:**
+- `as any` used in test mocks
+- `as` type assertions for branded types: `id as JobId`
+- `as unknown as T` for DB row transforms
+- `as const` for literal arrays passed to `z.enum()`
 
-**Server Routes:** Pattern is `register<Name>Routes(server, deps)`:
-- `registerJobRoutes()`, `registerHealthRoutes()`, `registerImportExportRoutes()`, `registerVersionRoutes()`, `registerSunoroutes()`, `registerEventRoutes()`
-- Each returns void, mutates the Fastify instance
-- Dependencies passed as typed interface: `JobRouteDeps`, etc.
+## Async Patterns
 
-**Database:**
-- Drizzle ORM with SQLite via `better-sqlite3`
-- Schema defined in `packages/core/src/db/schema.ts` using `sqliteTable()`
-- All IDs are string type (UUID generated via `crypto.randomUUID()`)
-- Timestamps stored as ISO string in text columns
-- JSON stored as text and parsed at read time
-- Branded types for IDs: `JobId`, `VersionId`, etc.
+- `async/await` throughout — no `.then()` chains except one `.then((vs) => vs.map(parseVersion))` in `apps/web/src/api.ts`
+- Pipeline orchestrated via `for...of` loop over `STAGE_ORDER`
+- No `Promise.all()` or `Promise.allSettled()` detected (sequential pipeline)
+- Signal-based cancellation using `AbortController`/`AbortSignal` pattern
+
+## Database Patterns
+
+- Drizzle ORM with SQLite (`better-sqlite3`)
+- Raw SQL via `getSqlite()` for transactions and atomic operations (`events.ts`, `job-service.ts`)
+- Timestamps as ISO strings (`new Date().toISOString()`)
+- JSON stored as text columns, serialized/deserialized at the application layer
+- Cascade delete handled in application code, not DB constraints
 
 ---
 
-*Convention analysis: 2026-07-15*
+*Convention analysis: 2026-07-19*

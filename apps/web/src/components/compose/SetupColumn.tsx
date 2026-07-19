@@ -137,6 +137,14 @@ export function SetupColumn() {
 
   // Seed initial state once when genre/presets/descriptors are ready
   const seededRef = useRef(false);
+  const prevGenreRef = useRef(s.genreId);
+  useEffect(() => {
+    if (prevGenreRef.current !== s.genreId) {
+      prevGenreRef.current = s.genreId;
+      seededRef.current = false;
+    }
+  }, [s.genreId]);
+
   useEffect(() => {
     if (
       !seededRef.current &&
@@ -318,17 +326,15 @@ function GenreCardContent({
               class={`setup-select-item${active ? " active" : ""}`}
               onClick={() => {
                 if (g.id === s.genreId) return;
-                const firstPreset = presets?.[0]?.id ?? "";
-                const firstPresetName = presets?.[0]?.name ?? "";
                 const themes = descDefaults?.lyricThemes ?? [];
                 const firstTheme = themes[0] ?? "";
                 const genreSections = defaultSections(g.id);
                 s.setSession({
                   genreId: g.id,
-                  presetId: firstPreset,
-                  presetIds: firstPreset ? [firstPreset] : [],
-                  presetLabels: firstPresetName ? [firstPresetName] : [],
-                  tags: defaultDescriptors(g.id, descDefaults?.defaults),
+                  presetId: "",
+                  presetIds: [],
+                  presetLabels: [],
+                  tags: [],
                   sections: genreSections,
                   selSectionId: genreSections[0]?.id ?? null,
                   lyricThemes: firstTheme ? [firstTheme] : [],
@@ -408,7 +414,7 @@ function PresetCardContent({
                 });
                 s.setSession({
                   presetIds: next,
-                  presetId: next[0] ?? "",
+                  presetId: p.id,
                   presetLabels: labels,
                 });
               }}

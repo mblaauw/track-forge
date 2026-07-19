@@ -63,6 +63,7 @@ presets:
       bpm: 90
       key: D
       scale: minor
+      mood: gritty
       narrativeArc: braggadocio
       rhymeStyle: multi_syllabic
       flowPattern: laid_back
@@ -79,6 +80,7 @@ presets:
       bpm: 85
       key: E
       scale: minor
+      mood: smooth
       narrativeArc: conscious
       rhymeStyle: internal
       flowPattern: laid_back
@@ -95,6 +97,7 @@ presets:
       bpm: 94
       key: E
       scale: minor
+      mood: aggressive
       narrativeArc: braggadocio
       rhymeStyle: multi_syllabic
       flowPattern: aggressive
@@ -112,6 +115,7 @@ presets:
       bpm: 140
       key: G
       scale: minor
+      mood: hype
       narrativeArc: braggadocio
       rhymeStyle: end_rhyme
       flowPattern: aggressive
@@ -128,6 +132,7 @@ presets:
       bpm: 145
       key: B
       scale: minor
+      mood: emotional
       narrativeArc: storytelling
       rhymeStyle: internal
       flowPattern: melodic
@@ -144,6 +149,7 @@ presets:
       bpm: 138
       key: D
       scale: minor
+      mood: dark
       narrativeArc: introspective
       rhymeStyle: free_form
       flowPattern: syncopated
@@ -161,6 +167,7 @@ presets:
       bpm: 140
       key: F
       scale: minor
+      mood: gritty
       narrativeArc: party
       rhymeStyle: slang_rhyme
       flowPattern: aggressive
@@ -177,6 +184,7 @@ presets:
       bpm: 150
       key: D
       scale: minor
+      mood: aggressive
       narrativeArc: braggadocio
       rhymeStyle: end_rhyme
       flowPattern: aggressive
@@ -194,6 +202,7 @@ presets:
       bpm: 75
       key: A
       scale: major
+      mood: chill
       narrativeArc: introspective
       rhymeStyle: free_form
       flowPattern: laid_back
@@ -201,7 +210,7 @@ presets:
       productionStyle: lo_fi
       energy: 3
       complexity: 4
-      lyricsMode: instrumental
+      lyricsMode: strict_instrumental
   - id: lo_fi_chillhop
     name: "Lo-fi — Chillhop"
     description: "Laid-back chillhop with jazzy samples and warm textures"
@@ -210,6 +219,7 @@ presets:
       bpm: 80
       key: C
       scale: major
+      mood: relaxed
       narrativeArc: party
       rhymeStyle: internal
       flowPattern: laid_back
@@ -226,6 +236,7 @@ presets:
       bpm: 82
       key: E
       scale: major
+      mood: smooth
       narrativeArc: storytelling
       rhymeStyle: multi_syllabic
       flowPattern: melodic
@@ -243,6 +254,7 @@ presets:
       bpm: 140
       key: D
       scale: minor
+      mood: hype
       narrativeArc: braggadocio
       rhymeStyle: internal
       flowPattern: syncopated
@@ -259,6 +271,7 @@ presets:
       bpm: 140
       key: F
       scale: minor
+      mood: dark
       narrativeArc: abstract
       rhymeStyle: free_form
       flowPattern: double_time
@@ -276,6 +289,7 @@ presets:
       bpm: 70
       key: E
       scale: major
+      mood: dreamy
       narrativeArc: introspective
       rhymeStyle: end_rhyme
       flowPattern: melodic
@@ -292,6 +306,7 @@ presets:
       bpm: 74
       key: G
       scale: minor
+      mood: trippy
       narrativeArc: storytelling
       rhymeStyle: internal
       flowPattern: laid_back
@@ -309,6 +324,7 @@ presets:
       bpm: 155
       key: C
       scale: major
+      mood: hype
       narrativeArc: party
       rhymeStyle: end_rhyme
       flowPattern: aggressive
@@ -325,6 +341,7 @@ presets:
       bpm: 150
       key: D
       scale: minor
+      mood: hype
       narrativeArc: party
       rhymeStyle: internal
       flowPattern: syncopated
@@ -342,6 +359,7 @@ presets:
       bpm: 92
       key: E
       scale: major
+      mood: laid back
       narrativeArc: braggadocio
       rhymeStyle: end_rhyme
       flowPattern: laid_back
@@ -358,6 +376,7 @@ presets:
       bpm: 95
       key: E
       scale: minor
+      mood: smooth
       narrativeArc: storytelling
       rhymeStyle: multi_syllabic
       flowPattern: melodic
@@ -375,6 +394,7 @@ presets:
       bpm: 100
       key: A
       scale: minor
+      mood: experimental
       narrativeArc: abstract
       rhymeStyle: free_form
       flowPattern: experimental
@@ -391,6 +411,7 @@ presets:
       bpm: 88
       key: E
       scale: minor
+      mood: introspective
       narrativeArc: conscious
       rhymeStyle: multi_syllabic
       flowPattern: laid_back
@@ -408,6 +429,7 @@ presets:
       bpm: 85
       key: A
       scale: minor
+      mood: reflective
       narrativeArc: storytelling
       rhymeStyle: internal
       flowPattern: laid_back

@@ -39,20 +39,15 @@ export type {
 } from "./suno/index.js";
 
 export {
-  createLockService,
   abortJob,
   compileStylePrompt,
   buildSunoContext,
 } from "./pipeline/index.js";
 export type {
-  LockService,
   CompileStyleInput,
   CompileStyleResult,
   SunoContextInput,
 } from "./pipeline/index.js";
-// Lyrics canonical grammar
-export { parseLyrics, serializeLyrics } from "./lyrics/index.js";
-
 // Pipeline
 export {
   runPipeline,
@@ -60,11 +55,6 @@ export {
   loadJob,
   resetJobStage,
   cancelJob,
-  PromptAssembler,
-  fillTemplate,
-  buildPromptContext,
-  formatControlDescriptors,
-  parseControlDescriptors,
   subscribe,
   publish,
   unsubscribeAll,
@@ -76,10 +66,4 @@ export type {
   PipelineState,
   PipelineResult,
   PipelineEvent,
-  PromptContext,
-  PromptManifest,
 } from "./pipeline/index.js";
-export type {
-  ControlDescriptor,
-  GenerationStage,
-} from "@track-forge/contracts";

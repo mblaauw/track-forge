@@ -5,7 +5,6 @@ import { schema } from "@track-forge/core";
 import {
   ImportBundleSchema,
   type JobExport,
-  type ProjectExport,
   type ExportBundle,
   type ImportResult,
 } from "@track-forge/contracts";
@@ -164,6 +163,7 @@ export function registerImportExportRoutes(
     const body = parsed.data;
 
     const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
+    let jobIdx = 0;
 
     for (const pe of body.projects ?? []) {
       try {
@@ -190,9 +190,11 @@ export function registerImportExportRoutes(
         });
 
         for (const entry of pe.jobs ?? []) {
+          const currentIdx = jobIdx++;
+
           if (!entry.job.genreId || !entry.job.presetId) {
             result.errors.push({
-              index: result.imported,
+              index: currentIdx,
               message: `Missing required job fields in project ${pe.project.id}`,
             });
             continue;
@@ -201,7 +203,7 @@ export function registerImportExportRoutes(
           const mod = getModule(entry.job.genreId);
           if (!mod) {
             result.errors.push({
-              index: result.imported,
+              index: currentIdx,
               message: `Unknown genre: ${entry.job.genreId}`,
             });
             continue;
@@ -225,7 +227,7 @@ export function registerImportExportRoutes(
             genreId: entry.job.genreId,
             presetId: entry.job.presetId,
             status: entry.job.status ?? "pending",
-            currentStage: entry.job.currentStage ?? "ref_interpretation",
+            currentStage: entry.job.currentStage ?? "compilation",
             reference: entry.job.reference ?? null,
             sourceHash: entry.job.sourceHash ?? null,
             inputs: entry.job.inputs ?? null,
@@ -262,7 +264,7 @@ export function registerImportExportRoutes(
         }
       } catch (err) {
         result.errors.push({
-          index: result.imported,
+          index: jobIdx,
           message: err instanceof Error ? err.message : String(err),
         });
       }

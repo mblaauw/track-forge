@@ -1,371 +1,351 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-07-15
+**Analysis Date:** 2026-07-19
 
-## Hard Bugs
+## Tech Debt
 
-### BUG-1 (Critical) — Lyrics revision patch stores JSON string instead of serialized text
+### Config file uses `new Function()` eval pattern
 
-**Issue:** When `handleRevision` applies a section-level lyrics patch, `applyLyricsPatch()` returns `JSON.stringify(doc)` — a JSON-serialized `LyricsDocument` object. This JSON string is stored directly into `compiled["lyrics"]` instead of being deserialized to text via `serializeLyrics()`.
+- **Issue:** `readConfigFileSync()` in `packages/core/src/config.ts:73-87` strips `export default` from the JS config file and passes the result through `new Function()` for synchronous evaluation. This is effectively `eval()` and bypasses all module resolution.
+- **Files:** `packages/core/src/config.ts:73-87`
+- **Impact:** If the config file (`track-forge.config.js`) is replaced by a malicious actor, arbitrary code execution is possible. Also prevents static analysis and bundler optimization.
+- **Fix approach:** Use dynamic `import()` (async loading) or a JSON-based config file with Zod validation instead of executing arbitrary JS.
 
-**Files:**
-- `packages/core/src/pipeline/orchestrator.ts:426-428`
-- `packages/core/src/pipeline/lyrics-patcher.ts:121`
+### Heavy `as any` type casting throughout core
 
-**Impact:** After a revision patch, the lyrics artifact contains raw JSON (`{"sections":[{"type":"verse","lines":["line1"]}],"metadata":{}}`) instead of serialized text (`[Verse]\nline1`). Downstream consumers (Suno API submission, Studio view, exports) all receive broken data.
+- **Issue:** 44+ `as any` or `as unknown as` casts in `packages/core/` alone, plus many more in test files. This erodes TypeScript type safety and makes refactoring risky — the compiler cannot catch type mismatches.
+- **Files:** `packages/core/src/db/index.ts:14`, `packages/core/src/pipeline/job-service.ts:225,239`, `packages/core/src/llm/client.ts:168-187`, `packages/core/src/pipeline/events.ts:138`, and all test files
+- **Impact:** Type errors that would be caught at compile time slip through. The `PipelineDeps` config field is typed `Config` but tests pass partial objects with `as any` — a full `Config` is never actually required.
+- **Fix approach:** Replace `as any` with proper discriminated unions, branded type constructors, and `satisfies` expressions. Create proper factory functions for test configs.
 
-**Fix approach:** After applying the patch, deserialize and re-serialize to text:
-```typescript
-if (patched) {
-  try {
-    const doc = JSON.parse(patched);
-    compiled[key] = serializeLyrics(doc);
-  } catch {
-    compiled[key] = patched;
-  }
-}
-```
+### Duplicated DDL between Drizzle schema and manual SQL
 
----
+- **Issue:** Table definitions exist in both `packages/core/src/db/schema.ts` (Drizzle ORM) and `packages/core/src/db/index.ts:33-154` (raw `CREATE TABLE IF NOT EXISTS`). The manual SQL duplicates Drizzle's schema with subtle differences — e.g., the raw SQL uses `INTEGER NOT NULL DEFAULT 0` for `is_favorite` but Drizzle's schema uses `boolean` mode.
+- **Files:** `packages/core/src/db/schema.ts`, `packages/core/src/db/index.ts:33-154`
+- **Impact:** Schema drift over time. Adding a column requires updating both the Drizzle schema and the raw CREATE/ALTER statements. The raw SQL is the actual schema; Drizzle schema is a client-side representation that can fall out of sync.
+- **Fix approach:** Use Drizzle Kit migrations (or a proper migration tool) instead of manual `CREATE TABLE` + `ALTER TABLE` statements. Remove the duplicated DDL from `createDb()`.
 
-### BUG-2 (High) — HipHop `lyricsMode` enum `"instrumental"` never matches `"strict_instrumental"` check
+### Manual migration statements with silent try/catch
 
-**Issue:** The HipHop input schema (`packages/genre-hiphop/src/schema.ts:71-73`) defines `lyricsMode` as `z.enum(["instrumental", "full_lyrics"])`, but the pipeline orchestrator (`packages/core/src/pipeline/orchestrator.ts:145`) checks `lyricsMode === "strict_instrumental"`. Since `"instrumental" !== "strict_instrumental"`, the check is always `false` for HipHop, causing unnecessary LLM calls for lyrics generation even when the user selected instrumental mode.
+- **Issue:** `createDb()` in `packages/core/src/db/index.ts:79-120` runs 8+ `ALTER TABLE ADD COLUMN` statements wrapped in bare `try {} catch {}` blocks that swallow all errors silently. This was needed to migrate existing databases, but it means any future column addition is invisible to automated migration tooling.
+- **Files:** `packages/core/src/db/index.ts:79-120,132-140`
+- **Impact:** Migration errors are invisible. If a migration silently fails for a real reason (disk full, constraint violation), nothing reports it. Adding a new column that already exists is expected to throw — but so would a real failure.
+- **Fix approach:** Check column existence before ALTER, or adopt Drizzle Kit migrations with proper up/down scripts.
 
-**Files:**
-- `packages/genre-hiphop/src/schema.ts:71-73` — enum values `["instrumental", "full_lyrics"]`
-- `packages/core/src/pipeline/orchestrator.ts:144-145` — check `lyricsMode === "strict_instrumental"`
+### `createVersion()` bypasses Drizzle ORM with raw SQL
 
-**Impact:** Wastes LLM credits and time generating lyrics that will be discarded. The HipHop renderer correctly returns empty string for `"instrumental"` but the LLM call already happened.
+- **Issue:** `createVersion()` in `packages/core/src/pipeline/job-service.ts:176-227` accesses the raw SQLite client via `getSqlite(db)` and executes manual `SELECT MAX(number)` + `INSERT INTO versions` queries instead of using Drizzle's typed query builder. This was done for atomic transaction support.
+- **Files:** `packages/core/src/pipeline/job-service.ts:176-227`
+- **Impact:** Loses type safety. The raw result is cast with `as unknown as Version` and doesn't go through Drizzle's schema validation. The function signature returns a Promise but the implementation is synchronous.
+- **Fix approach:** Use Drizzle's `db.transaction()` with the typed query builder, or create a typed wrapper for the atomic version number increment.
 
-**Fix approach:** Either change HipHop schema to use `"strict_instrumental"` or expand the orchestrator check to include both values.
+### Overly large frontend components
 
----
+- **Issue:** `SetupColumn.tsx` (757 lines) and `ArrangementEditor.tsx` (620 lines) are very large functional components containing multiple sub-component render functions defined inline. This makes them hard to test and maintain.
+- **Files:** `apps/web/src/components/compose/SetupColumn.tsx:1-757`, `apps/web/src/components/compose/ArrangementEditor.tsx:1-620`
+- **Impact:** Impossible to unit test the sub-components individually. The render tree is deeply nested with inline JSX, making it hard to follow. State logic is mixed with presentation.
+- **Fix approach:** Extract inline render functions to separate component files. Move business logic to pure functions outside components. Add tests for the extracted components.
 
-### BUG-3 (High) — Cancel event signals `status: "completed"` instead of `status: "cancelled"`
+### `.catch(() => {})` silent error swallowing
 
-**Issue:** The cancel job endpoint publishes an SSE event with `status: "completed"` instead of `status: "cancelled"`, making it impossible for SSE consumers to distinguish a cancellation from a successful completion without special-casing the stage name.
+- **Issue:** At least 12 locations use `.catch(() => {})` to silently swallow promise rejections with no logging. This hides API errors, SSE connection failures, and other issues.
+- **Files:** `apps/web/src/components/compose/ComposeShell.tsx:123-127,149-152,235-237`, `apps/web/src/api.ts:131,149,244`, `apps/web/src/components/compose/SetupColumn.tsx:123-125,130-135`, `packages/core/src/pipeline/events.ts:99-103`
+- **Impact:** Debugging production issues becomes guesswork when errors are silently suppressed. API failures, network timeouts, and data corruption issues are invisible.
+- **Fix approach:** Add at minimum a `console.warn()` or structured logging to every `.catch()`. In the pipeline, propagate errors to the job's error field.
 
-**File:** `apps/server/src/routes/jobs.ts:419`
+### Session context recreates provider value on every render
 
-**Impact:** Frontend SSE handlers see a "completed" event for cancellations. The Forge view may show incorrect status.
+- **Issue:** `SessionProvider` in `apps/web/src/lib/session.tsx:147-153` creates a new `value` object (via spread) on every render, causing all consumers to re-render regardless of whether their relevant state changed.
+- **Files:** `apps/web/src/lib/session.tsx:147-153`
+- **Impact:** Unnecessary re-renders across the entire component tree. Every `setSession()` call triggers re-renders in components that only read unrelated state fields.
+- **Fix approach:** Split the session into focused contexts (e.g., `SessionActionsContext`, `SessionStateContext`) or use a library like `use-context-selector` for granular subscriptions.
 
-**Fix:**
-```typescript
-await publish(tx as any, id, { stage: "cancelled", status: "cancelled" });
-```
+### `track-forge.config.js` is eval'd, not imported
 
----
+- **Issue:** The config loading in `packages/core/src/config.ts:73-87` strips the `export default` keyword and evaluates the file body as a function body. This means the config file is not subject to module resolution, cannot use `import` statements, and bypasses Node.js module caching.
+- **Files:** `packages/core/src/config.ts:73-87`
+- **Impact:** Config files that use ES `import` will fail. The eval pattern breaks stack traces and debuggers. The config is re-parsed on every `loadConfig()` call since there's no module cache.
+- **Fix approach:** Use `import()` (dynamic import) with top-level await at startup, or migrate to a JSON or YAML config file format.
 
-### BUG-4 (High) — `JSON.parse` without try/catch in SSE event handler on frontend
+### Genre-specific arrangement sections hardcoded in frontend
 
-**Issue:** The SSE `progress` event listener in `connectJobEvents` calls `JSON.parse(e.data)` without try/catch. If the server sends malformed JSON, the handler throws an unhandled `SyntaxError` inside the EventSource listener, causing the browser to tear down the connection.
-
-**File:** `apps/web/src/api.ts:413-416`
-
-**Impact:** Users silently lose live progress updates on the Forge page.
-
-**Fix approach:** Wrap `JSON.parse` in try/catch inside the SSE handler.
-
----
-
-### BUG-5 (High) — 5× `JSON.parse` on DB columns without error handling in server routes
-
-**Issue:** Multiple server route handlers call `JSON.parse()` on DB-stored JSON strings without try/catch. Corrupted or hand-edited DB data crashes the entire request handler with an unhandled 500 exception.
-
-**Files:**
-- `apps/server/src/routes/jobs.ts:318` — `JSON.parse(job.findings)`
-- `apps/server/src/routes/jobs.ts:488` — `JSON.parse(latestVersion.artifacts as string)`
-- `apps/server/src/routes/jobs.ts:498` — `JSON.parse(job.compiledJson)`
-- `apps/server/src/routes/versions.ts:89` — `JSON.parse(version.artifacts)`
-- `apps/server/src/routes/suno.ts:122` — `JSON.parse(latestVersion.artifacts as string)`
-
-**Impact:** Any data corruption in DB JSON columns causes an unhandled 500 error. The rest of the codebase consistently wraps `JSON.parse` in try/catch — these locations were missed.
-
-**Fix approach:** Wrap each in try/catch with fallback values (empty array/object).
+- **Issue:** Default sections for each genre (edm, hiphop, ambient) are hardcoded in `apps/web/src/components/compose/arrangement.ts:94-297`. When a new genre module is added, the frontend must be updated.
+- **Files:** `apps/web/src/components/compose/arrangement.ts:94-297`
+- **Impact:** Adding a genre requires coordinated backend and frontend changes. The `defaultSections()` function has a hardcoded fallback to EDM for unknown genres.
+- **Fix approach:** Serve default section templates from the genre YAML config via the API, rather than hardcoding them on the client.
 
 ---
 
-### BUG-6 (Medium) — Pipeline event `message`/`tag`/`elapsedMs` silently dropped on DB persist
+## Known Bugs
 
-**Issue:** The `PipelineEvent` interface defines `message`, `tag`, and `elapsedMs` fields (optional), but the DB insert in `publish()` only stores `stage`, `status`, `data`, `error`, `timestamp`. The `data` column is always set to `null`. On SSE reconnect, replayed events lack these rich description fields.
+### Key select stores abbreviated scale names
 
-**Files:**
-- `packages/core/src/pipeline/events.ts:65-74` — DB insert drops `message`, `tag`, `elapsedMs`
-- `packages/core/src/db/schema.ts:106-117` — `jobEvents` table has no columns for these fields
+- **Symptoms:** The tempo/key selector in `SetupColumn.tsx` uses `KEY_OPTIONS` like `"C maj"` and `"C min"`. The onChange handler splits on space (line 602: `val.split(" ")`) and maps `"maj"` -> `"major"`, `"min"` -> `"minor"`. Genre Zod schemas use `z.enum(["major", "minor"])`. If the mapping logic were changed or split failed, `safeParse` would silently reject the job inputs.
+- **Files:** `apps/web/src/components/compose/SetupColumn.tsx:597-612`, genre module schemas
+- **Trigger:** Changing the key selector to a value with an unexpected format (e.g., if an option lacked the space separator).
+- **Workaround:** Currently works because the parsing logic explicitly handles `"maj"` and `"min"` mapping. Fragile to refactors.
 
-**Impact:** After SSE reconnection, the Forge view's progress messages and timing info are missing.
+### Pipeline error handling uses in-memory state that can diverge from DB
 
-**Fix approach:** Store these fields in the `data` JSON column or add dedicated columns.
+- **Symptoms:** The `runPipeline()` in `packages/core/src/pipeline/orchestrator.ts` maintains pipeline state in memory (`PipelineState`) and saves to DB after each stage. If the process crashes between `savePipelineState()` and `advanceStage()`, the DB `currentStage` won't match the saved `stageData`. On restart, stuck `in_progress` jobs are marked failed.
+- **Files:** `packages/core/src/pipeline/orchestrator.ts:381-402`, `packages/core/src/pipeline/job-service.ts:244-257`
+- **Trigger:** Server crash during stage transition.
+- **Workaround:** Startup sweep marks stuck jobs as failed (`apps/server/src/index.ts:59-71`), but the `stageData` may contain data for a stage that was never completed, losing progress.
 
----
+### Session defaults race condition on first load
 
-### BUG-7 (Medium) — Version tree recursion has no cycle protection + dead `versionMap`
-
-**Issue:** The `buildTree` function in the versions route recurses through `parentVersionId` without any cycle detection. A database bug or manual edit creating a circular reference causes a stack overflow crash. Additionally, `versionMap` is populated but never read.
-
-**File:** `apps/server/src/routes/versions.ts:232-249`
-
-**Impact:** Stack overflow crash on corrupt version data.
-
-**Fix approach:** Add a depth limit to `buildTree` and remove dead `versionMap` variable.
-
----
-
-### BUG-8 (Medium) — `countVersions` fetches all rows instead of SQL `COUNT(*)`
-
-**Issue:** `countVersions` selects all version ID column values and counts them in JavaScript instead of using SQL `COUNT(*)`.
-
-**File:** `packages/core/src/pipeline/job-service.ts:81-87`
-
-**Impact:** With many versions per job, transfers all version IDs from DB to JS memory just to count them.
-
-**Fix:**
-```typescript
-const rows = await db
-  .select({ count: sql<number>`COUNT(*)` })
-  .from(schema.versions)
-  .where(eq(schema.versions.jobId, jobId));
-return Number(rows[0]?.count ?? 0);
-```
+- **Symptoms:** The `SetupColumn.tsx:139-160` seed effect runs when `presets.length > 0 && descDefaults !== null && s.tags.length === 0`. If the API calls for presets and descriptor defaults resolve at different times, the effect may fire before both are ready, or may fire multiple times. The `seededRef` prevents double-fire but doesn't handle the case where API calls fail silently.
+- **Files:** `apps/web/src/components/compose/SetupColumn.tsx:139-160`, `apps/web/src/components/compose/SetupColumn.tsx:127-136`
+- **Trigger:** Network latency causes presets and descriptor defaults to resolve out of order.
+- **Workaround:** `fetchPresets()` and `fetchDescriptorDefaults()` are fired in the same effect, but their `.catch(() => {})` handlers swallow failures, leaving the session unseeded.
 
 ---
 
-### BUG-9 (Low) — Redundant `"cancelled" as any` cast
+## Security Considerations
 
-**Issue:** The `"cancelled" as any` cast on status update is unnecessary since the column type is `text("status")` which already accepts strings.
+### No authentication or authorization
 
-**File:** `packages/core/src/pipeline/job-service.ts:174`
+- **Risk:** The API has zero auth. Anyone who can reach the server can create jobs, delete data, trigger Suno generation (which costs money), and read all stored data.
+- **Files:** `apps/server/src/routes/*.ts` (all routes)
+- **Current mitigation:** None. The `AGENTS.md` mentions Fastify dev server on `:3000`.
+- **Recommendations:** Add at minimum a simple API token or session-based auth. For production, implement OAuth2 or a dedicated auth provider. Mark the Suno callback endpoint (`/api/suno/callback`) as public-only.
 
-**Impact:** Masks potential type mismatches that a future schema change would otherwise catch.
+### Config file execution is a code injection vector
 
-**Fix:** Remove the `as any` cast.
+- **Risk:** The `new Function(stripped)` pattern in `packages/core/src/config.ts:79` executes arbitrary JavaScript from the config file. If a CI/CD pipeline or shared dev environment has a compromised `track-forge.config.js`, code execution is immediate.
+- **Files:** `packages/core/src/config.ts:73-87`
+- **Current mitigation:** The config file is gitignored and expected to be a local-only file.
+- **Recommendations:** Switch to a JSON or YAML config format parsed by Zod, eliminating the code execution surface entirely.
 
----
+### No rate limiting or request size limits
 
-## Cascading Delete Without Transactions (High Risk)
+- **Risk:** API endpoints accept arbitrary payload sizes and have no rate limiting. The LLM endpoint (`/api/lyrics/generate`, `/api/jobs/:id/start`) could be abused to exhaust the LLM API budget. The import endpoint (`POST /api/projects/import`) could cause high memory usage.
+- **Files:** `apps/server/src/routes/jobs.ts`, `apps/server/src/routes/import-export.ts`, `apps/server/src/routes/lyrics.ts`
+- **Current mitigation:** None beyond Fastify's defaults.
+- **Recommendations:** Add Fastify rate limiting plugin, set payload size limits, and cap concurrent pipeline executions.
 
-### Issue: Job and project deletion not wrapped in DB transactions
+### API key is logged in plain text
 
-**Issue:** Both the job delete cascade and project delete cascade execute 8+ sequential `await db.delete()` calls without wrapping them in a database transaction. If any middle step fails, orphaned records remain permanently.
+- **Risk:** The LLM client logger in `packages/core/src/llm/client.ts:49-57` logs all request parameters including config, and the response logging includes content. While the API key itself is not logged directly, the `fetch()` call URL and headers could be logged by the HTTP layer.
+- **Files:** `packages/core/src/llm/client.ts:49-57,102-110`
+- **Current mitigation:** None.
+- **Recommendations:** Ensure config logging redacts the `apiKey` field. Use a pino redaction path like `"req.headers.authorization"`.
 
-**Files:**
-- `apps/server/src/routes/jobs.ts:219-261` — 8 individual deletes (sunoTracks → artifactLocks → generations → versions → jobStageOutputs → jobEvents → criticFindings → adjustments → jobs)
-- `apps/server/src/routes/projects.ts:152-223` — 11 individual deletes for project + nested jobs
+### Static file path traversal is manually handled
 
-**Impact:** Permanent data inconsistency on partial failure. For example, if step 5 fails after step 3 deletes generations, the job record still references deleted versions.
-
-**Fix approach:** Wrap each cascade in `await db.transaction(async (tx) => { ... })`.
-
----
-
-## Fire-and-Forget Promises Without Error Handling (High Risk)
-
-### Issue: `.then()` without `.catch()` on async API calls
-
-**Issue:** Multiple frontend components call `.then()` on async functions without attaching `.catch()`, creating unhandled promise rejections on API failure.
-
-**Files:**
-- `apps/web/src/pages/Studio.tsx:107` — `fetchTakes(sorted[0]!.id).then(setGenerations)` on initial load
-- `apps/web/src/pages/Studio.tsx:116` — `fetchTakes(v.id).then(setGenerations)` on version switch
-- `apps/web/src/pages/Studio.tsx:144` — `fetchTakes(selectedVersion.id).then(setGenerations)` in poll timer
-- `apps/web/src/pages/Forge.tsx:151` — `fetchJob(id).then((j) => setJob(j))` on SSE completion
-- `apps/web/src/pages/Forge.tsx:184` — `fetchJob(id).then(...)` in poll timer
-
-**Impact:** API failures produce unhandled promise rejections and silent UI failures (stale data, missing generations).
-
-**Fix approach:** Add `.catch()` handling or convert to `async/await` with try/catch.
+- **Risk:** The static file serving in `apps/server/src/index.ts:109-133` has a manual path traversal check (`filePath.startsWith(prefix)`). Any bugs in path normalization (symlinks, Unicode normalization, etc.) could allow serving files outside the static directory.
+- **Files:** `apps/server/src/index.ts:109-133`
+- **Current mitigation:** The check uses `resolve()` followed by `startsWith()` with the OS path separator.
+- **Recommendations:** Use Fastify's `@fastify/static` plugin instead of manual file serving.
 
 ---
 
-## Silent Error Swallowing (Medium Risk)
+## Performance Bottlenecks
 
-### Issue: `.catch(() => {})` completely swallows errors
+### Suno polling blocks with sequential exponential backoff
 
-**Files:**
-- `apps/server/src/index.ts:35` — `lockService.cleanExpiredLocks().catch(() => {})` — runs every 30s, DB failures invisible
-- `apps/web/src/pages/CreateSession.tsx:118-129` — `fetchGenres()`, `fetchPresets()`, `fetchTagCategories()` all use `.catch(() => {})`
+- **Issue:** `SunoClient.waitForCompletion()` in `packages/core/src/suno/client.ts:148-170` polls synchronously (sequential async, not concurrent) with exponential backoff from 5s to 20s. A single Suno generation can block for up to 5 minutes per task.
+- **Files:** `packages/core/src/suno/client.ts:148-170`
+- **Cause:** The polling loop is tightly coupled to the client — it cannot handle multiple concurrent generations.
+- **Improvement path:** Move to a callback/webhook-only model (already partially supported via `callBackUrl`). For polling, use a background worker that can check many tasks concurrently.
 
-**Impact:** Operators and users have zero visibility into failures. Lock cleanup failures go undetected; genre config endpoint errors show blank UI with no feedback.
+### Pipeline stages are strictly sequential
 
-**Fix approach:** At minimum log the error. For lock cleanup, use `.catch((err) => console.error("Lock cleanup failed:", err))`.
+- **Issue:** The 3 pipeline stages (compilation → lyrics_writing → versioning) run sequentially with no parallelism. Compilation is fully deterministic (synchronous) and could be merged with versioning or run alongside lyrics writing.
+- **Files:** `packages/core/src/pipeline/orchestrator.ts:360-403`
+- **Cause:** The state-machine design keeps state in memory and serializes to DB between stages.
+- **Improvement path:** Overlap compilation with lyrics writing (compilation is deterministic and needs no LLM). Run the post-processing (versioning) asynchronously after the LLM call completes.
 
----
+### Genre YAML re-parsing on hot reload (mtime check overhead)
 
-## Race Condition Risk (Medium Risk)
+- **Issue:** `genre-config.ts` has an mtime-based cache (`loadYaml()` line 77-100) that checks filesystem stat on every request. While this is fine for development, in production every API call that reads genre config triggers a `statSync()` call.
+- **Files:** `packages/core/src/pipeline/job-service.ts`, `packages/core/src/pipeline/suno-context.ts`
+- **Cause:** The cache only avoids re-reading if mtime hasn't changed, but still calls `statSync()` every time.
+- **Improvement path:** Cache genre configs in memory indefinitely in production (no hot-reload needed), or use a file watcher-based invalidation.
 
-### Issue: SSE + polling dual update mechanism can regress state
+### LLM responses are not cached
 
-**Issue:** The Forge view uses both SSE (`connectJobEvents`) and polling (`setInterval`) to refresh job state. Poll responses arriving after SSE responses write **older** data via `setJob(j)`, which unconditionally overwrites the latest state.
+- **Issue:** Every pipeline run that generates lyrics calls the LLM API, even for identical inputs. There is no caching layer for LLM responses, which costs money and time per call.
+- **Files:** `packages/core/src/pipeline/orchestrator.ts:212-216`
+- **Cause:** No caching infrastructure.
+- **Improvement path:** Key LLM responses by a hash of the prompt + model + temperature. Cache in SQLite with TTL. This would dramatically speed up repeated lyric generations for similar arrangements.
 
-**File:** `apps/web/src/pages/Forge.tsx:122-193`
+### Session state causes full re-renders
 
-**Impact:** If SSE indicates "completed" but an in-flight poll was dispatched before completion, the job state regresses.
-
-**Fix approach:** Use a comparison check before `setJob` or disable polling when SSE confirms freshness.
-
----
-
-## Non-Null Assertions That Crash at Runtime (Medium Risk)
-
-### Issue: `!` assertions on array lookups that may be undefined
-
-**Files:**
-- `packages/genre-hiphop/src/taxonomy.ts:89` — `subgenres[0]!` crashes on empty array
-- `packages/genre-hiphop/src/renderers.ts:98` — `themes[3]!` crashes if themes have <4 elements
-- `packages/genre-hiphop/src/renderers.ts:96,102-108` — Multiple `dict[key]!` lookups
-
-**Impact:** Adding new enum values or data that changes array sizes causes runtime crashes.
-
-**Fix approach:** Replace `!` with optional chaining and fallbacks (e.g., `themes[3] ?? ""`).
+- **Issue:** Every call to `setSession()` in `apps/web/src/lib/session.tsx:118-121` triggers re-renders in every consumer of `useSession()`, even if the changed field is irrelevant to that consumer.
+- **Files:** `apps/web/src/lib/session.tsx:118-121`, `apps/web/src/components/compose/*.tsx`
+- **Cause:** Single monolithic context with 30+ state fields. The spread-based update creates a new object reference every time.
+- **Improvement path:** Split the session context into multiple smaller contexts (UI state, session metadata, arrangement state) or use a selector-based pattern.
 
 ---
 
-## Bloat / Large Files (Medium Risk)
+## Fragile Areas
 
-### Issue: Multiple files exceed maintainable size
+### `createVersion()` uses raw SQLite access that bypasses Drizzle
 
-**File: `apps/web/src/pages/CreateSession.tsx` (969 lines)**
-- Single `CreateSession` component function is ~877 lines
-- 5+ levels of nested JSX with IIFE patterns (lines 481-618, 623-683)
-- Duplicated `tagCategories` fallback expression 3 times (lines 432, 481, 627)
-- **Recommendation:** Split into FoundationPanel, StyleConsole, ArrangementPanel, ReferencePanel components
+- **Files:** `packages/core/src/pipeline/job-service.ts:176-227`
+- **Why fragile:** Accesses the underlying `better-sqlite3` instance through a type-unsafe cast (`(db as any).$client`). The raw SQL queries are string-based and not type-checked. The function runs synchronous SQL inside an async function (works because `better-sqlite3` is sync). If the internal property name `$client` changes in Drizzle, this silently breaks.
+- **Test coverage:** Covered by `packages/core/__tests__/job-service.test.ts` and `packages/core/__tests__/pipeline.test.ts`.
+- **Safe modification:** Keep the raw SQL but add a typed wrapper. Add a Drizzle-level test that verifies `$client` property access still works.
 
-**File: `packages/core/src/pipeline/orchestrator.ts` (915 lines)**
-- `buildPromptContext(...)` call pattern duplicated 5× with only 2-5 extra fields different each time
-- `(module as any).songStructure?.map(...)` duplicated 4×
-- `JSON.parse(compiledJson)` + field injection duplicated 2×
-- **Recommendation:** Extract `buildReviewContext()` and `getSongStructure()` helpers
+### LLM JSON response parsing with fallback to raw text
 
-**File: `apps/server/src/routes/jobs.ts` (620 lines)**
-- "fetch job + 404 check" pattern repeated 12× across handlers
-- **Recommendation:** Extract `getJobOr404()` helper to eliminate ~40 duplicated lines
+- **Files:** `packages/core/src/pipeline/orchestrator.ts:219-240`
+- **Why fragile:** The `handleLyricsWriting()` function attempts `JSON.parse()` on the LLM response. If parsing fails, it falls back to splitting the entire response by newlines as raw lyrics text. This means a malformed LLM response can produce garbled lyrics with no warning. The fallback doesn't match section names, so section metadata is lost.
+- **Test coverage:** The pipeline test uses a mock LLM that always returns valid JSON, so the fallback path is untested.
+- **Safe modification:** Add a `try/catch` around parsing with a validation pass (check for expected properties), log warnings on fallback, and structure the prompt to include JSON schema examples.
 
-**File: `packages/genre-edm/src/taxonomy.ts` (1170 lines)**
-- Only ~20 lines of actual code; 1150 lines is a single `EDM_SUBGENRES` data array of 43 objects
-- Project already uses YAML for genre config data elsewhere — this should be migrated
+### In-memory SSE subscriptions not persisted
 
----
+- **Files:** `packages/core/src/pipeline/events.ts:25-44`
+- **Why fragile:** Event subscriptions are stored in an in-memory `Map<string, Set<EventCallback>>`. If the server restarts or the process is recycled, all SSE connections are lost. The event history is persisted in `job_events` table, but the live subscription layer has no reconnection replay.
+- **Test coverage:** `packages/core/__tests__/events.test.ts` (79 lines) covers basic publish/subscribe but not reconnection or replay.
+- **Safe modification:** On SSE connect, replay events from `afterSequence` parameter. The frontend already supports `afterSequence` via `getJobEvents()`.
 
-## Stale Comments (Low Risk)
+### Genre config loading failure is fatal
 
-### Issue A — Wrong subgenre count in JSDoc
+- **Files:** `packages/core/src/pipeline/job-service.ts`
+- **Why fragile:** `loadYaml()` in `packages/core/src/pipeline/job-service.ts:90-99` throws if the YAML file can't be loaded. Since genre configs are loaded eagerly at module level via `ALL_GENRE_IDS` and the `MODULES` map, a single broken YAML file breaks the entire server startup. There's no graceful degradation (e.g., "edm works, hiphop broken").
+- **Test coverage:** The test mocks replace the file system entirely, so YAML loading errors are not tested.
+- **Safe modification:** Lazy-load genre configs with error handling per-genre, so one broken YAML doesn't block all genres.
 
-**File:** `packages/genre-edm/src/index.ts:1-6`
+### `dispatchPipeline()` runs fire-and-forget without backpressure
 
-JSDoc claims "80+ subgenres" but actual taxonomy contains 43 subgenres. Number is from an earlier, larger taxonomy.
+- **Files:** `apps/server/src/routes/jobs.ts:45-57`
+- **Why fragile:** Pipeline execution is fire-and-forget — `dispatchPipeline()` calls `runPipeline().catch(log.error)` but doesn't track running pipelines. There's no limit on concurrent pipeline executions. Starting 100 jobs simultaneously launches 100 LLM calls and Suno submissions.
+- **Test coverage:** Not covered by existing tests.
+- **Safe modification:** Add a concurrency limiter (e.g., queue with max 2 concurrent pipelines) to prevent resource exhaustion.
 
-### Issue B — Planned-but-never-built config feature
+### Test mocks use excessive `as any` casts
 
-**File:** `packages/core/src/suno/callbacks.ts:6-8,14-15`
-
-Comments describe a `sunoCallbackUrl` config field that was planned but never implemented. The priority chain mentions step 1 that doesn't exist as a code path.
-
-### Issue C — "Deprecated" label without actual deprecation
-
-**File:** `apps/server/src/routes/import-export.ts:220`
-
-The `POST /api/jobs/export` route is labeled "deprecated" in a comment but has no runtime deprecation mechanism (no warning header, no log, still fully operational).
+- **Files:** All test files, especially `packages/core/__tests__/pipeline.test.ts` (12+ `as any` casts)
+- **Why fragile:** Mocks pass `mockLlm() as any`, `mockSuno() as any`, and `{} as any` for config. If `PipelineDeps` or `Config` interfaces change, these tests will still compile and fail at runtime with confusing errors. The tests are not type-checked against the actual interfaces.
+- **Test coverage:** The tests exist but may be brittle due to casting.
+- **Safe modification:** Create typed mock factories that produce objects matching the interfaces exactly, instead of casting partial mocks.
 
 ---
 
-## Dead Code / Stale Exports
+## Scaling Limits
 
-### Unused barrel exports from genre packages
+### SQLite concurrency
 
-Every genre package (`genre-edm`, `genre-hiphop`, `genre-pop`, `genre-ambient`, `genre-dnb`) exports all its internal types, schemas, and constants through its barrel `index.ts`, but **only the `*Module` and `default` export** is consumed externally (by `apps/server/src/lib/modules.ts`).
+- **Current capacity:** SQLite with WAL mode + 5s busy timeout. Supports concurrent reads but serializes writes.
+- **Limit:** With multiple concurrent pipeline executions (each doing multiple writes), write contention increases. The `busy_timeout = 5000` means writes will retry for up to 5s before failing.
+- **Scaling path:** For moderate scale, the current setup is sufficient. For heavy load, migrate to PostgreSQL (Drizzle ORM supports it with minimal changes). The existing `Db` type abstraction makes this feasible.
 
-**Total dead exports: ~63 symbols across 5 genre packages**
+### Single-process server
 
-Examples:
-- `packages/genre-hiphop/src/index.ts` — 19 of 21 exports unused outside package (including `HipHopInputSchema`, `HipHopBlueprintSchema`, all critics, validators, subgenre helpers)
-- `packages/genre-edm/src/index.ts` — 14 of 16 exports unused (same pattern)
-- All genre packages export `*Schema`, `*Inputs`, `*Blueprint`, `*_DEFAULTS`, `*_CRITICS`, `*_VALIDATORS` that nothing imports
+- **Current capacity:** Single Node.js process. The Fastify server handles all routes, pipeline execution, and Suno polling in one thread.
+- **Limit:** LLM API calls and Suno long-polling block the event loop (though async I/O helps). With high concurrency, event loop lag becomes noticeable.
+- **Scaling path:** Extract pipeline execution into a separate worker process or queue-based system. Use `piscina` or dedicated job workers.
 
-### Unused barrel exports from contracts
+### In-memory subscription map
 
-**File:** `packages/contracts/src/index.ts` — 17+ types/interfaces/consts never imported externally:
-- `SunoArtifactType`, `SunoInstrumentalMode`, `LockType`, `ContentLock`, `ArtifactLock`, `SectionLock`, `TextAnchor`, `Project`, `Draft`, `ProjectId`, `DraftId`, `CriticFindingRecord`, `AdjustmentRecord`, `SunoTrack`, `ControlOperator`, `CompiledStyle`
-
-### Unused barrel exports from core
-
-**File:** `packages/core/src/index.ts` — 34+ exports never imported externally:
-- All LLM types (`LlmError`, `LlmMessage`, `LlmRequest`, `LlmResponse`, `LlmProvider`)
-- All Suno types (`SunoCapabilities`, `SunoClientConfig`, `SunoGenerateRequest`, etc.)
-- Various pipeline internals (`loadJob`, `ReferenceCache`, `interpretReference`, parsers, assembly helpers)
-
-### Unused exports in web app
-
-**File:** `apps/web/src/api.ts` — 12+ API functions never imported by any page:
-- `updateJobInputs`, `retryJob`, `promoteVersion`, `rollbackToVersion`, `fetchVersionTree`, `fetchPayloadPreview`, `submitReview`, `setNlAdjustments`, `updateArtifact`, `fetchGenerationStatus`, `retryGeneration`
-
-**File:** `apps/web/src/lib/router.tsx:88` — `<Link>` component exported but never used
-**File:** `apps/web/src/lib/useAutosave.ts` — `useAutosave` function exported but unused (only `SaveStatus` type is used)
-**File:** `apps/web/src/components/AutoSaveIndicator.tsx` — component exported but never imported
-
-### Unused server lib exports
-
-**Files:**
-- `apps/server/src/lib/config.ts:13` — `getConfig()` never called
-- `apps/server/src/lib/db.ts:14` — `getDb()` never called (server uses `setupDb()`)
-- `apps/server/src/lib/genre-config.ts` — `getGenreConfig()`, `getDefaults()`, `getTagPolicy()`, `getAdjustmentVocabulary()`, `clearCache()` all never imported
-
-### Empty test-support package
-
-**File:** `packages/test-support/src/index.ts` — 0 lines, never imported anywhere
+- **Current capacity:** The `subscriptions` Map in `events.ts` stores all SSE callbacks in memory. No limit on number of concurrent SSE connections.
+- **Limit:** Each SSE connection holds a reference to the callback closure. With hundreds of concurrent SSE connections, memory grows linearly. No cleanup for stale connections beyond the SSE `close` event.
+- **Scaling path:** Use Redis pub/sub for cross-process event distribution, or add connection limits and heartbeats.
 
 ---
 
-## Build Artifacts in Source Tree
+## Dependencies at Risk
 
-### Issue: `.d.ts` files co-located beside `.ts` source files
+### `better-sqlite3`
 
-The `tsc --build` output emits `.js`, `.d.ts`, `.js.map`, and `.d.ts.map` beside the source `.ts` files. This pollutes the source tree with 30+ `.d.ts` files:
+- **Risk:** Native addon — requires `node-gyp` compilation on install (mitigated by `allowScripts` in npmrc). Major version bump could break the Drizzle integration.
+- **Impact:** DB access breaks entirely.
+- **Migration plan:** Drizzle ORM supports multiple SQLite drivers (`better-sqlite3`, `libsql`, `bun:sqlite`). Switching requires minimal code changes if the `getSqlite()` bypass is removed.
 
-```
-apps/server/src/cli.d.ts
-apps/server/src/index.d.ts
-apps/server/src/lib/config.d.ts
-apps/server/src/lib/db.d.ts
-apps/server/src/lib/modules.d.ts
-apps/server/src/routes/events.d.ts
-apps/server/src/routes/health.d.ts
-apps/server/src/routes/import-export.d.ts
-apps/server/src/routes/jobs.d.ts
-apps/server/src/routes/projects.d.ts
-apps/server/src/routes/suno.d.ts
-apps/server/src/routes/versions.d.ts
-packages/contracts/src/index.d.ts
-packages/core/src/config.d.ts
-packages/core/src/db/index.d.ts
-packages/core/src/db/schema.d.ts
-packages/core/src/index.d.ts
-packages/core/src/llm/client.d.ts
-packages/core/src/llm/index.d.ts
-packages/core/src/llm/types.d.ts
-packages/core/src/lyrics/canonical.d.ts
-packages/core/src/lyrics/index.d.ts
-packages/core/src/pipeline/*.d.ts
-packages/core/src/suno/*.d.ts
-packages/test-support/src/index.d.ts
-```
+### `pino` logger
 
-These are gitignored but still visible on `ls` and in IDE searches. They can cause confusion when stale `.d.ts` files remain after source restructuring.
+- **Risk:** No immediate concern, but the current usage creates a new child logger per pipeline execution, which can leak memory in long-running servers if child loggers accumulate.
+- **Impact:** Logger performance degrades over time.
+- **Migration plan:** Use a single logger instance and pass context via log metadata instead of child loggers.
+
+### Fastify v5
+
+- **Risk:** Fastify's plugin system changes in major versions. The current code doesn't use a plugin architecture (routes are registered via `register*Routes()` functions, not Fastify plugins).
+- **Impact:** Upgrading Fastify requires rewriting route registration.
+- **Migration plan:** Refactor to use Fastify plugins (`server.register(routePlugin)`) for modularity and easier upgrades.
 
 ---
 
-## Configuration & Infrastructure
+## Missing Critical Features
 
-### `data/` directory must exist manually
+### No database migrations system
 
-The default DB path is `./data/track-forge.db`, but no code auto-creates this directory. `createDb()` throws if the directory doesn't exist.
+- **Problem:** Schema changes are applied via silent `ALTER TABLE` attempts in `createDb()`. There is no migration history, rollback capability, or staging/production migration workflow.
+- **Blocks:** Safe schema evolution across environments. Adding a new table or column requires updating the raw SQL in `createDb()` and the Drizzle schema, with no way to verify staging matches production.
 
-**File:** `packages/core/src/db/index.ts` (indirect — directory must pre-exist for SQLite)
+### No authentication or user isolation
 
-### No prettier config file
+- **Problem:** Multiple users share the same database with no user isolation. All jobs, versions, and projects are visible to anyone who can reach the API.
+- **Blocks:** Multi-tenant deployment, production release, and any scenario where the app is accessible beyond localhost.
 
-The project uses prettier defaults. No `.prettierrc` exists. This is fine but worth documenting.
+### No request validation error details exposed selectively
+
+- **Problem:** Zod validation errors from `safeParse()` are returned directly to the client (e.g., `apps/server/src/routes/jobs.ts:78`). While helpful for development, this exposes internal schema details in production.
+- **Blocks:** Production hardening. Error messages should be sanitized for external-facing deployments.
 
 ---
 
-**Concerns audit: 2026-07-15**
+## Test Coverage Gaps
+
+### Untested primary application shell
+
+- **What's not tested:** `ComposeShell.tsx` (281 lines) — the main app shell that orchestrates the forge flow, SSE handling, autosave, and pipeline lifecycle. This is the most critical UI component.
+- **Files:** `apps/web/src/components/compose/ComposeShell.tsx`
+- **Risk:** Any change to the forge flow or SSE handling can silently break the entire user workflow.
+- **Priority:** High
+
+### Untested large UI components
+
+- **What's not tested:** `SetupColumn.tsx` (757 lines), `ArrangementEditor.tsx` (620 lines), `LyricsBlock.tsx` (280 lines), `RendersPanel.tsx` (201 lines), `LibraryPanel.tsx` (299 lines), `BundleCanvas.tsx`
+- **Files:** `apps/web/src/components/compose/*.tsx`
+- **Risk:** UI regression bugs are invisible until manual testing.
+- **Priority:** High
+
+### Untested session context
+
+- **What's not tested:** `SessionProvider` and `useSession()` in `apps/web/src/lib/session.tsx`
+- **Files:** `apps/web/src/lib/session.tsx`
+- **Risk:** Session state bugs affect every component. State corruption or stale closures are hard to debug without tests.
+- **Priority:** High
+
+### Untested pure functions
+
+- **What's not tested:** `compileStylePrompt()` in `packages/core/src/pipeline/style-compiler.ts` (169 lines) is a pure deterministic function ideal for unit testing, but has zero dedicated tests. It is only tested implicitly through the pipeline E2E test.
+- **Files:** `packages/core/src/pipeline/style-compiler.ts`
+- **Risk:** Style compilation rules can change without any test feedback.
+- **Priority:** Medium
+
+### Untested routes
+
+- **What's not tested:** Suno callback handler (`suno.ts`), events SSE endpoint (`events.ts`), preview-style endpoint (`preview-style.ts`), lyrics generation endpoint (`lyrics.ts`).
+- **Files:** `apps/server/src/routes/suno.ts`, `apps/server/src/routes/events.ts`, `apps/server/src/routes/preview-style.ts`, `apps/server/src/routes/lyrics.ts`
+- **Risk:** Route handler crashes only surface during manual API testing.
+- **Priority:** Medium
+
+### Untested genre modules
+
+- **What's not tested:** The three genre modules (`genre-edm`, `genre-hiphop`, `genre-ambient`) have no tests at all.
+- **Files:** `packages/genre-edm/src/`, `packages/genre-hiphop/src/`, `packages/genre-ambient/src/`
+- **Risk:** Schema changes that break genre-specific validation go undetected.
+- **Priority:** Medium
+
+### Missing frontend integration tests
+
+- **What's not tested:** The web app has a single 8-line smoke test (`1 + 1 = 2`). No component rendering, API interaction, or user flow tests.
+- **Files:** `apps/web/__tests__/smoke.test.ts`
+- **Risk:** The entire frontend is a black box for automated testing.
+- **Priority:** High
+
+### No E2E tests
+
+- **What's not tested:** No end-to-end tests that verify the full flow (frontend → API → pipeline → Suno mock → DB).
+- **Files:** N/A
+- **Risk:** Integration issues between frontend and backend are only caught manually.
+- **Priority:** Medium
+
+---
+
+*Concerns audit: 2026-07-19*

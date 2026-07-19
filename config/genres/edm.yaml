@@ -61,11 +61,12 @@ presets:
       family: house
       subgenre: deep_house
       bpm: 118
-      key: auto
+      key: C
       scale: minor
       mood: "warm and soulful"
       energy: 5
       complexity: 4
+      soundscape: warm
       lyricsMode: guided_instrumental
   - id: tech_house_driving
     name: "Tech House — Driving"
@@ -74,11 +75,12 @@ presets:
       family: house
       subgenre: tech_house
       bpm: 126
-      key: auto
+      key: G
       scale: minor
       mood: "driving and hypnotic"
       energy: 8
       complexity: 5
+      soundscape: driving
       lyricsMode: guided_instrumental
   - id: progressive_house_euphoric
     name: "Progressive House — Euphoric"
@@ -87,11 +89,12 @@ presets:
       family: house
       subgenre: progressive_house
       bpm: 128
-      key: auto
+      key: Ab
       scale: minor
       mood: "euphoric and building"
       energy: 8
       complexity: 7
+      soundscape: euphoric
       lyricsMode: guided_instrumental
   - id: detroit_techno_deep
     name: "Detroit Techno — Deep"
@@ -100,11 +103,12 @@ presets:
       family: techno
       subgenre: detroit_techno
       bpm: 128
-      key: auto
+      key: D
       scale: minor
       mood: "deep and hypnotic"
       energy: 7
       complexity: 6
+      soundscape: hypnotic
       lyricsMode: guided_instrumental
   - id: industrial_techno_aggressive
     name: "Industrial Techno — Aggressive"
@@ -113,11 +117,12 @@ presets:
       family: techno
       subgenre: industrial_techno
       bpm: 140
-      key: auto
+      key: F
       scale: minor
       mood: "dark and aggressive"
       energy: 9
       complexity: 6
+      soundscape: aggressive
       lyricsMode: guided_instrumental
   - id: melodic_techno_emotional
     name: "Melodic Techno — Emotional"
@@ -126,11 +131,12 @@ presets:
       family: techno
       subgenre: melodic_techno
       bpm: 124
-      key: auto
+      key: E
       scale: minor
       mood: "emotional and atmospheric"
       energy: 6
       complexity: 7
+      soundscape: atmospheric
       lyricsMode: guided_instrumental
   - id: uplifting_trance_anthem
     name: "Uplifting Trance — Anthem"
@@ -139,11 +145,12 @@ presets:
       family: trance
       subgenre: uplifting_trance
       bpm: 140
-      key: auto
+      key: F#
       scale: minor
       mood: "euphoric and uplifting"
       energy: 9
       complexity: 7
+      soundscape: euphoric
       lyricsMode: guided_instrumental
   - id: psytrance_trippy
     name: "Psytrance — Trippy"
@@ -152,11 +159,12 @@ presets:
       family: trance
       subgenre: psytrance
       bpm: 145
-      key: auto
+      key: G
       scale: minor
       mood: "psychedelic and intense"
       energy: 9
       complexity: 8
+      soundscape: trippy
       lyricsMode: guided_instrumental
   - id: liquid_funk_soulful
     name: "Liquid Funk — Soulful"
@@ -165,11 +173,12 @@ presets:
       family: dnb
       subgenre: liquid_funk
       bpm: 174
-      key: auto
+      key: D
       scale: minor
       mood: "soulful and melodic"
       energy: 7
       complexity: 7
+      soundscape: soulful
       lyricsMode: guided_instrumental
   - id: neurofunk_dark
     name: "Neurofunk — Dark"
@@ -178,11 +187,12 @@ presets:
       family: dnb
       subgenre: neurofunk
       bpm: 174
-      key: auto
+      key: F
       scale: minor
       mood: "dark and techy"
       energy: 8
       complexity: 9
+      soundscape: dark
       lyricsMode: guided_instrumental
   - id: dubstep_heavy
     name: "Dubstep — Heavy"
@@ -191,11 +201,12 @@ presets:
       family: bass
       subgenre: dubstep
       bpm: 140
-      key: auto
+      key: G
       scale: minor
       mood: "dark and massive"
       energy: 9
       complexity: 6
+      soundscape: massive
       lyricsMode: guided_instrumental
   - id: future_bass_bright
     name: "Future Bass — Bright"
@@ -204,11 +215,12 @@ presets:
       family: bass
       subgenre: future_bass
       bpm: 145
-      key: auto
+      key: C
       scale: major
       mood: "bright and emotional"
       energy: 7
       complexity: 6
+      soundscape: bright
       lyricsMode: guided_instrumental
   - id: hardstyle_anthem
     name: "Hardstyle — Anthem"
@@ -217,11 +229,12 @@ presets:
       family: hardcore
       subgenre: hardstyle
       bpm: 150
-      key: auto
+      key: E
       scale: minor
       mood: "hard and euphoric"
       energy: 10
       complexity: 6
+      soundscape: powerful
       lyricsMode: guided_instrumental
   - id: chillout_relaxed
     name: "Chillout — Relaxed"
@@ -230,11 +243,12 @@ presets:
       family: downtempo
       subgenre: chillout
       bpm: 90
-      key: auto
+      key: C
       scale: major
       mood: "relaxed and warm"
       energy: 3
       complexity: 3
+      soundscape: relaxed
       lyricsMode: guided_instrumental
   - id: lo_fi_chilled
     name: "Lo-Fi — Chilled"
@@ -243,11 +257,12 @@ presets:
       family: downtempo
       subgenre: lo_fi_beats
       bpm: 80
-      key: auto
+      key: G
       scale: major
       mood: "chilled and nostalgic"
       energy: 3
       complexity: 3
+      soundscape: warm
       lyricsMode: guided_instrumental
   - id: dance_pop_catchy
     name: "Dance-Pop — Catchy"
@@ -256,11 +271,12 @@ presets:
       family: pop
       subgenre: dance_pop
       bpm: 118
-      key: auto
+      key: C
       scale: major
       mood: "catchy and upbeat"
       energy: 7
       complexity: 4
+      soundscape: bright
       lyricsMode: full_lyrics
   - id: nu_disco_funky
     name: "Nu-Disco — Funky"
@@ -269,11 +285,12 @@ presets:
       family: pop
       subgenre: nu_disco
       bpm: 118
-      key: auto
+      key: D
       scale: major
       mood: "funky and uplifting"
       energy: 7
       complexity: 5
+      soundscape: funky
       lyricsMode: full_lyrics
 
 song_structure:

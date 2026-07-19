@@ -43,24 +43,7 @@ export function mockGenreModule(overrides?: Partial<GenreModule>): GenreModule {
     id: "test-genre",
     name: "Test Genre",
     inputSchema: null as any,
-    blueprintSchema: null as any,
     defaults: {},
-    promptFragments: {},
-    renderers: {
-      title: () => "Mock Title",
-      style: () => "Mock style description with 120 BPM",
-      excludedStyles: () => "slow, ballad",
-      lyrics: () => "[Intro]\n(instrumental)\n\n[Verse]\nLyrics here",
-    },
-    critics: {
-      fast: { id: "fast-panel", promptTemplate: "Review this song" },
-      full: [],
-    },
-    validators: {
-      input: () => [],
-      blueprint: () => [],
-    },
-    compileBlueprint: (inputs) => inputs as Record<string, unknown>,
     ...overrides,
   };
 }

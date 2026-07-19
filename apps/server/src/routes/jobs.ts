@@ -5,18 +5,10 @@ import {
   createJob,
   runPipeline,
   schema,
-  resetJobStage,
   cancelJob,
-  generateSunoPayload,
   abortJob,
   publish,
 } from "@track-forge/core";
-import {
-  SunoArtifactType,
-  type GenerationStage,
-  type CriticFinding,
-  type SunoArtifact,
-} from "@track-forge/contracts";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config, JobId } from "@track-forge/contracts";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
@@ -25,7 +17,7 @@ import {
   getTagCategories,
   getDescriptorDefaults,
 } from "../lib/genre-config.js";
-import { findRowOr404, safeParse, parsePagination } from "../lib/db-utils.js";
+import { findRowOr404, parsePagination } from "../lib/db-utils.js";
 import {
   validateBody,
   validateQuery,
@@ -35,11 +27,6 @@ import {
   CreateJobBody,
   UpdateJobNameBody,
   UpdateJobInputsBody,
-  PatchAdjustmentsBody,
-  PatchFindingsBody,
-  BulkExportBody,
-  StyleTagSuggestionBody,
-  JobIdOptionalStageBody,
 } from "../lib/validate.js";
 
 export interface JobRouteDeps {
@@ -84,7 +71,13 @@ export function registerJobRoutes(
       return reply.code(404).send({ error: `Unknown genre: ${genreId}` });
     }
 
-    const parsed = mod.inputSchema.safeParse(inputs);
+    // Merge preset values into inputs before validation so genre-specific
+    // fields like subgenre, soundscape, flowPattern are populated from the
+    // preset YAML config when the frontend only sends common fields.
+    const presetValues = getPresets(genreId).find((p) => p.id === presetId)?.values ?? {};
+    const merged = { ...presetValues, ...inputs };
+
+    const parsed = mod.inputSchema.safeParse(merged);
     if (!parsed.success) {
       return reply
         .code(400)
@@ -95,7 +88,7 @@ export function registerJobRoutes(
       db,
       genreId as never,
       presetId as never,
-      JSON.stringify(inputs),
+      JSON.stringify(parsed.data),
       reference ?? null,
       name ?? null,
     );
@@ -227,7 +220,7 @@ export function registerJobRoutes(
   // ── Delete job ───────────────────────────────────────────────────────
 
   server.delete("/api/jobs/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(IdParams, req);
 
     const job = await findRowOr404(
       db,
@@ -236,15 +229,13 @@ export function registerJobRoutes(
       "Job",
     );
 
-    // Cascade delete: version IDs → artifactLocks, gen IDs → sunoTracks, then job
-    // Get version IDs for this job to cascade
+    // Cascade delete: generations → sunoTracks, then versions, then job
     const versionRows = await db
       .select({ id: schema.versions.id })
       .from(schema.versions)
       .where(eq(schema.versions.jobId, id));
     const versionIds = versionRows.map((r) => r.id);
 
-    // Delete sunoTracks via generation IDs for this job
     const genRows = await db
       .select({ id: schema.generations.id })
       .from(schema.generations)
@@ -257,148 +248,16 @@ export function registerJobRoutes(
           .delete(schema.sunoTracks)
           .where(inArray(schema.sunoTracks.generationId, genIds));
       }
-      if (versionIds.length > 0) {
-        await tx
-          .delete(schema.artifactLocks)
-          .where(inArray(schema.artifactLocks.versionId, versionIds));
-      }
 
       await tx
         .delete(schema.generations)
         .where(eq(schema.generations.jobId, id));
       await tx.delete(schema.versions).where(eq(schema.versions.jobId, id));
-      await tx
-        .delete(schema.jobStageOutputs)
-        .where(eq(schema.jobStageOutputs.jobId, id));
       await tx.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, id));
-      await tx
-        .delete(schema.criticFindings)
-        .where(eq(schema.criticFindings.jobId, id));
-      await tx
-        .delete(schema.adjustments)
-        .where(eq(schema.adjustments.jobId, id));
       await tx.delete(schema.jobs).where(eq(schema.jobs.id, id));
     });
 
     return reply.code(204).send();
-  });
-
-  // ── Set NL adjustments ──────────────────────────────────────────────
-
-  server.patch("/api/jobs/:id/nl-adjustments", async (req, reply) => {
-    const { id } = validateParams(IdParams, req);
-    const body = req.body ? validateBody(PatchAdjustmentsBody, req) : {};
-    let nlValue: string | null = null;
-    if (body.nlAdjustments !== undefined) {
-      nlValue =
-        typeof body.nlAdjustments === "string"
-          ? body.nlAdjustments
-          : JSON.stringify(body.nlAdjustments);
-    }
-
-    const job = await findRowOr404(
-      db,
-      schema.jobs,
-      eq(schema.jobs.id, id),
-      "Job",
-    );
-
-    const now = new Date().toISOString();
-    await db
-      .update(schema.jobs)
-      .set({ nlAdjustments: nlValue, updatedAt: now })
-      .where(eq(schema.jobs.id, id));
-
-    const [updated] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, id))
-      .limit(1);
-
-    return reply.code(200).send(updated);
-  });
-
-  // ── Submit review: filter findings and continue to revision ──────────
-
-  server.post("/api/jobs/:id/review", async (req, reply) => {
-    const { id } = validateParams(IdParams, req);
-    const body = validateBody(PatchFindingsBody, req);
-
-    const job = await findRowOr404(
-      db,
-      schema.jobs,
-      eq(schema.jobs.id, id),
-      "Job",
-    );
-    if (job.status !== "in_progress" || job.currentStage !== "review") {
-      return reply.code(400).send({ error: "Job must be at review stage" });
-    }
-
-    const finalFindings =
-      body?.findings ?? (job.findings ? safeParse(job.findings, []) : []);
-    const now = new Date().toISOString();
-
-    await db
-      .update(schema.jobs)
-      .set({
-        findings: JSON.stringify(finalFindings),
-        currentStage: "revision",
-        stageAttempt: 0,
-        updatedAt: now,
-      })
-      .where(eq(schema.jobs.id, id));
-
-    dispatchPipeline(id, job.genreId, req.log, "review-continue");
-
-    return reply.code(202).send({ status: "review_submitted", jobId: id });
-  });
-
-  // ── Replay: reset to stage and re-run ────────────────────────────────
-
-  server.post("/api/jobs/:id/replay", async (req, reply) => {
-    const { id } = validateParams(IdParams, req);
-    const body = req.body ? validateBody(JobIdOptionalStageBody, req) : {};
-
-    const job = await findRowOr404(
-      db,
-      schema.jobs,
-      eq(schema.jobs.id, id),
-      "Job",
-    );
-    if (job.status !== "completed" && job.status !== "failed") {
-      return reply
-        .code(400)
-        .send({ error: "Job must be completed or failed to replay" });
-    }
-
-    const stage = (body.stage ?? "ref_interpretation") as never;
-    await resetJobStage(db, id as JobId, stage);
-
-    dispatchPipeline(id, job.genreId, req.log, "replay");
-
-    return reply.code(202).send({ status: "replaying", jobId: id, stage });
-  });
-
-  // ── Retry: retry failed stage ───────────────────────────────────────
-
-  server.post("/api/jobs/:id/retry", async (req, reply) => {
-    const { id } = validateParams(IdParams, req);
-
-    const job = await findRowOr404(
-      db,
-      schema.jobs,
-      eq(schema.jobs.id, id),
-      "Job",
-    );
-    if (job.status !== "failed") {
-      return reply.code(400).send({ error: "Job must be failed to retry" });
-    }
-
-    await resetJobStage(db, id as JobId, job.currentStage as GenerationStage);
-
-    dispatchPipeline(id, job.genreId, req.log, "retry");
-
-    return reply.code(202).send({ status: "retrying", jobId: id });
   });
 
   // ── Cancel: stop running job ────────────────────────────────────────
@@ -451,86 +310,6 @@ export function registerJobRoutes(
     return reply.code(202).send({ status: "started", jobId: id });
   });
 
-  // ── Payload preview ──────────────────────────────────────────────────
-
-  server.get("/api/jobs/:id/payload-preview", async (req, reply) => {
-    const { id } = validateParams(IdParams, req);
-
-    const job = await findRowOr404(
-      db,
-      schema.jobs,
-      eq(schema.jobs.id, id),
-      "Job",
-    );
-
-    // Extract compiled artifacts — prefer latest version, fallback to compiledJson
-    const versions = await db
-      .select()
-      .from(schema.versions)
-      .where(eq(schema.versions.jobId, id))
-      .orderBy(desc(schema.versions.number))
-      .limit(1);
-
-    let title = "";
-    let style = "";
-    let excludedStyles = "";
-    let lyrics = "";
-    const latestVersion = versions[0];
-
-    if (latestVersion) {
-      const artifacts = safeParse(
-        latestVersion.artifacts,
-        [],
-      ) as SunoArtifact[];
-      for (const a of artifacts) {
-        if (a.type === SunoArtifactType.Title) title = a.value;
-        else if (a.type === SunoArtifactType.Style) style = a.value;
-        else if (a.type === SunoArtifactType.ExcludedStyles)
-          excludedStyles = a.value;
-        else if (a.type === SunoArtifactType.Lyrics) lyrics = a.value;
-      }
-    } else {
-      let compiled: Record<string, string> | null = null;
-      if (job.stageData) {
-        try {
-          const sd = JSON.parse(job.stageData);
-          if (sd && typeof sd === "object" && sd.compiledJson) {
-            compiled = safeParse(sd.compiledJson, null) as Record<
-              string,
-              string
-            > | null;
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-      if (!compiled && job.compiledJson != null) {
-        compiled = safeParse(job.compiledJson, {}) as Record<string, string>;
-      }
-
-      if (compiled) {
-        title = compiled.title ?? "";
-        style = compiled.style ?? "";
-        excludedStyles = compiled.excludedStyles ?? "";
-        lyrics = compiled.lyrics ?? "";
-      }
-    }
-
-    // Resolve callback URL from config
-    const callbackUrl = config.publicBaseUrl
-      ? `${config.publicBaseUrl.replace(/\/+$/, "")}/api/suno/callback`
-      : undefined;
-
-    const result = generateSunoPayload({
-      title,
-      style,
-      excludedStyles,
-      lyrics,
-      callbackUrl,
-    });
-    return { ...result, callbackUrl };
-  });
-
   // ── List genres ──────────────────────────────────────────────────────
 
   server.get("/api/genres", async () => {
@@ -563,70 +342,12 @@ export function registerJobRoutes(
 
   server.get("/api/genres/:id/descriptor-defaults", async (req, reply) => {
     const { id } = req.params as { id: string };
-    return getDescriptorDefaults(id);
-  });
-
-  // ── Style tag suggestions (LLM-powered) ───────────────────────────────
-
-  server.post("/api/jobs/style-tag-suggestions", async (req, reply) => {
-    const body = validateBody(StyleTagSuggestionBody, req);
-    const { genreId, presetId, bpm, key } = body;
-    if (!genreId) return reply.code(400).send({ error: "genreId required" });
-
-    let module: import("@track-forge/genre-core").GenreModule;
     try {
-      module = getModuleOrThrow(genreId);
+      return getDescriptorDefaults(id);
     } catch {
-      return reply.code(404).send({ error: `Unknown genre: ${genreId}` });
-    }
-
-    const promptTemplate = module.promptFragments?.style_tag_suggestions;
-    if (!promptTemplate)
-      return reply
-        .code(400)
-        .send({ error: "No tag suggestion prompt for this genre" });
-
-    const context: Record<string, unknown> = {
-      subgenre: presetId?.replace(/_/g, " ") ?? "",
-      bpm: bpm ?? 120,
-      key: key ?? "C",
-      scale: "minor",
-      mood: "",
-      energy: 7,
-      complexity: 5,
-    };
-
-    const prompt = Object.entries(context).reduce(
-      (p, [k, v]) => p.replaceAll(`{{${k}}}`, String(v)),
-      promptTemplate,
-    );
-
-    try {
-      const result = await llm.complete({
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a music production expert. Return ONLY valid JSON.",
-          },
-          { role: "user", content: prompt },
-        ],
-        maxTokens: 1024,
-      });
-      const content = result.content?.trim() ?? "";
-      const jsonStart = content.indexOf("{");
-      const jsonEnd = content.lastIndexOf("}");
-      if (jsonStart === -1 || jsonEnd === -1) {
-        return reply.code(200).send({ suggestions: [] });
-      }
-      const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
-      const suggestions = Object.entries(parsed).map(([category, tags]) => ({
-        category,
-        tags: Array.isArray(tags) ? tags.map(String) : [],
-      }));
-      return { suggestions };
-    } catch {
-      return { suggestions: [] };
+      return reply.code(404).send({ error: `Unknown genre: ${id}` });
     }
   });
+
+  // ── End of job routes ──────────────────────────────────────────────
 }

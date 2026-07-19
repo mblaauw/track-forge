@@ -8,18 +8,18 @@ import {
   SunoClient,
   createSunoClientConfig,
   createLlmClient,
-  createLockService,
 } from "@track-forge/core";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerJobRoutes } from "./routes/jobs.js";
 import { registerVersionRoutes } from "./routes/versions.js";
 import { registerSunoRoutes } from "./routes/suno.js";
-import { registerProjectRoutes } from "./routes/projects.js";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerImportExportRoutes } from "./routes/import-export.js";
 import { registerPreviewStyleRoutes } from "./routes/preview-style.js";
+import { registerLyricsRoutes } from "./routes/lyrics.js";
 import { ApiError } from "./lib/db-utils.js";
 import { getSqlite } from "@track-forge/core";
+import { validateGenreConfigs } from "./lib/modules.js";
 
 const config = initConfig();
 const logger = pino({ level: config.logLevel });
@@ -29,30 +29,31 @@ const suno = new SunoClient(sunoCfg, config, logger.child({ module: "suno" }));
 const llm = createLlmClient(config, logger.child({ module: "llm" }));
 
 const server = Fastify({ logger: { level: config.logLevel } });
-const lockService = createLockService(db);
 
-server.setErrorHandler((error, _request, reply) => {
+server.setErrorHandler((error: unknown, _request, reply) => {
   if (error instanceof ApiError) {
     return reply.code(error.statusCode).send({ error: error.message });
   }
-  reply.send(error);
+  const fastifyErr = error as { validation?: unknown[]; statusCode?: number; message?: string };
+  if (fastifyErr.validation) {
+    return reply.code(400).send({ error: "Validation error", details: fastifyErr.validation });
+  }
+  const status = fastifyErr.statusCode ?? 500;
+  return reply.code(status).send({ error: fastifyErr.message ?? "Internal server error" });
 });
 
-// ── Periodic lock cleanup ──────────────────────────────────────────
-
-const LOCK_CLEANUP_INTERVAL = 30_000;
-const cleanupTimer = setInterval(() => {
-  lockService.cleanExpiredLocks().catch(() => {});
-}, LOCK_CLEANUP_INTERVAL);
+if (config.logLevel !== "fatal") {
+  validateGenreConfigs({ warn: (msg) => logger.warn(msg) });
+}
 
 registerHealthRoutes(server);
-registerProjectRoutes(server, { db, config });
 registerJobRoutes(server, { db, config, llm, suno });
-registerVersionRoutes(server, { db, lockService });
+registerVersionRoutes(server, { db, suno, config });
 registerSunoRoutes(server, { db, suno, config });
 registerEventRoutes(server, { db });
 registerImportExportRoutes(server, { db });
-registerPreviewStyleRoutes(server);
+registerPreviewStyleRoutes(server, { db });
+registerLyricsRoutes(server, { db, llm });
 
 // ── Startup sweep: reset jobs stuck in_progress after crash ──────────
 const sqlite = getSqlite(db);
@@ -141,7 +142,6 @@ start();
 
 function shutdown(signal: string) {
   logger.info({ signal }, "Shutting down");
-  clearInterval(cleanupTimer);
   server.close().catch(() => {});
 }
 

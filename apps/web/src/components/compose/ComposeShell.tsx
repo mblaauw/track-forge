@@ -7,6 +7,7 @@ import {
   updateJobInputs,
   fetchVersions,
   fetchTakes,
+  createTake,
   type ProgressEvent,
 } from "../../api";
 import { ContextBar } from "./ContextBar";
@@ -81,7 +82,7 @@ export function ComposeShell() {
 
         const job = await createJob({
           genreId: s.genreId,
-          presetId: s.presetIds[0] ?? s.presetId,
+          presetId: s.presetId || s.presetIds[0] || "",
           inputs: inputPack as unknown as Record<string, unknown>,
           reference: s.reference || undefined,
           name: s.name || undefined,
@@ -129,6 +130,24 @@ export function ComposeShell() {
               forgeRunning: false,
               status: "failed",
             });
+          } else if (
+            event.stage === "versioning" &&
+            event.status === "completed"
+          ) {
+            // Auto-trigger Suno render via POST /takes
+            completedStages.add(event.stage);
+            s.setSession({ forgeStageIdx: Math.min(3, 3) });
+            fetchVersions(jobId!)
+              .then((versions) => {
+                if (versions.length > 0) {
+                  const latest = versions[versions.length - 1]!;
+                  createTake(latest.id).catch((err) => {
+                    console.error("Failed to auto-trigger take:", err);
+                    s.setSession({ forgeRunning: false, status: "failed" });
+                  });
+                }
+              })
+              .catch(() => {});
           } else {
             // Normal stage progress
             const { label, index } = stageToDisplay(event.stage);

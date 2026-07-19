@@ -1,17 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { eq, desc } from "drizzle-orm";
 import type { Db, SunoClient } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
 import {
   updateGeneration,
   getGeneration,
   listGenerations,
-  storeGeneration,
-  generateSunoPayload,
   publish,
-  schema,
 } from "@track-forge/core";
-import type { SunoArtifact } from "@track-forge/contracts";
 import {
   validateBody,
   validateParams,
@@ -29,13 +24,13 @@ export interface SunoRouteDeps {
 }
 
 /**
- * Suno webhook callback handler + status proxy.
+ * Suno webhook callback handler + generations list.
  */
 export function registerSunoRoutes(
   server: FastifyInstance,
   deps: SunoRouteDeps,
 ): void {
-  const { db, suno } = deps;
+  const { db } = deps;
 
   // ── Callback webhook ──────────────────────────────────────────────
 
@@ -89,22 +84,6 @@ export function registerSunoRoutes(
     return reply.code(200).send({ received: true });
   });
 
-  // ── Status proxy ─────────────────────────────────────────────────
-
-  server.get("/api/suno/status/:id", async (req, reply) => {
-    const { id } = validateParams(IdParams, req);
-
-    try {
-      const feedItem = await suno.getGenerationStatus(id);
-      return feedItem;
-    } catch (err) {
-      req.log.error({ generationId: id, err }, "status fetch failed");
-      return reply.code(502).send({
-        error: "Failed to fetch generation status from Suno",
-      });
-    }
-  });
-
   // ── List generations for job ──────────────────────────────────────
 
   server.get("/api/suno/jobs/:jobId/generations", async (req) => {
@@ -114,87 +93,4 @@ export function registerSunoRoutes(
     const records = await listGenerations(db, jobId, Math.min(limit, 50));
     return records;
   });
-
-  // ── Retry failed generation ───────────────────────────────────────
-
-  server.post(
-    "/api/suno/jobs/:jobId/generations/:id/retry",
-    async (req, reply) => {
-      const { jobId, id } = req.params as { jobId: string; id: string };
-
-      // Find failed generation
-      const failed = await getGeneration(db, id);
-      if (!failed) {
-        return reply.code(404).send({ error: "Generation not found" });
-      }
-      if (failed.status !== "error") {
-        return reply
-          .code(400)
-          .send({ error: "Only failed generations can be retried" });
-      }
-
-      // Find the job to get latest version artifacts
-      const versions = await db
-        .select()
-        .from(schema.versions)
-        .where(eq(schema.versions.jobId, jobId))
-        .orderBy(desc(schema.versions.number))
-        .limit(1);
-
-      const latestVersion = versions[0];
-      if (!latestVersion) {
-        return reply.code(400).send({ error: "No version found for this job" });
-      }
-
-      const artifacts: SunoArtifact[] = (() => {
-        try {
-          return JSON.parse(latestVersion.artifacts);
-        } catch {
-          return [];
-        }
-      })();
-      const getValue = (type: string) =>
-        artifacts.find((a) => a.type === type)?.value ?? "";
-
-      // Build payload and submit
-      const callbackUrl = deps.config.publicBaseUrl
-        ? `${deps.config.publicBaseUrl.replace(/\/+$/, "")}/api/suno/callback`
-        : undefined;
-
-      const { request } = generateSunoPayload({
-        title: getValue("title"),
-        style: getValue("style"),
-        excludedStyles: getValue("excluded_styles"),
-        lyrics: getValue("lyrics"),
-        callbackUrl,
-      });
-
-      let result: { taskId: string };
-      try {
-        result = await suno.submit(request);
-      } catch (err) {
-        req.log.error({ jobId, err }, "retry submission to Suno failed");
-        return reply.code(502).send({ error: "Failed to submit to Suno" });
-      }
-
-      // Store task as generation record (individual song IDs come from polling)
-      await storeGeneration(db, {
-        id: result.taskId,
-        jobId,
-        versionId: latestVersion.id,
-        status: "queued",
-      });
-
-      req.log.info(
-        { jobId, taskId: result.taskId },
-        "generation task submitted",
-      );
-
-      return {
-        status: "retried",
-        jobId,
-        taskId: result.taskId,
-      };
-    },
-  );
 }

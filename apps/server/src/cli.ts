@@ -53,7 +53,7 @@ async function run() {
       projects: [
         {
           project: {
-            id: "" as any,
+            id: `job-${job.id}`,
             name: job.name ?? "Exported Job",
             description: null,
             genreId: null,
@@ -89,7 +89,7 @@ async function run() {
       projects: [
         {
           project: {
-            id: "" as any,
+            id: "__bulk",
             name: "Bulk Export",
             description: null,
             genreId: null,
@@ -165,7 +165,7 @@ async function run() {
           genreId: entry.job.genreId,
           presetId: entry.job.presetId,
           status: entry.job.status ?? "pending",
-          currentStage: entry.job.currentStage ?? "ref_interpretation",
+          currentStage: entry.job.currentStage ?? "compilation",
           reference: entry.job.reference ?? null,
           sourceHash: entry.job.sourceHash ?? null,
           inputs: entry.job.inputs ?? null,

@@ -1,270 +1,251 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-07-15
+**Analysis Date:** 2026-07-19
 
 ## Directory Layout
 
 ```
 track-forge/
 ├── apps/
-│   ├── server/                    # Fastify HTTP API server
-│   │   ├── src/
-│   │   │   ├── index.ts           # Entry point — Fastify setup, DI wiring, route registration
-│   │   │   ├── cli.ts             # CLI tool (export/import jobs)
-│   │   │   ├── lib/
-│   │   │   │   ├── config.ts      # Config initializer (singleton wrapper)
-│   │   │   │   ├── db.ts          # DB initializer (singleton wrapper)
-│   │   │   │   ├── modules.ts     # Genre module registry (static import of all genres)
-│   │   │   │   └── genre-config.ts# YAML genre config loader (presets, tags, structure)
-│   │   │   └── routes/
-│   │   │       ├── health.ts      # GET /api/health
-│   │   │       ├── jobs.ts        # CRUD + start/cancel/replay/review for jobs (620 lines)
-│   │   │       ├── versions.ts    # Version CRUD, artifact locking, tree, promote/rollback
-│   │   │       ├── suno.ts        # Suno callback webhook + generation status/takes
-│   │   │       ├── events.ts      # SSE event streaming + event history
-│   │   │       ├── projects.ts    # Project/draft CRUD
-│   │   │       └── import-export.ts # Job import/export via JSON bundle
-│   │   └── __tests__/
-│   │       └── jobs.test.ts
-│   │
-│   └── web/                       # Preact SPA (Vite)
-│       ├── src/
-│       │   ├── main.tsx           # Entry — renders <App /> on #app
-│       │   ├── app.tsx            # Root: Router > SessionProvider > AppShell
-│       │   ├── api.ts             # REST API client + SSE helper (423 lines, all endpoints)
-│       │   ├── style.css          # Design tokens, layout, component styles (~2000 lines)
-│       │   ├── lib/
-│       │   │   ├── router.tsx     # Custom hash-based router (Router/Route/Link/useRouter)
-│       │   │   ├── session.tsx    # Session context provider + useSession hook
-│       │   │   └── useAutosave.ts # Auto-save hook for form inputs
-│       │   ├── components/
-│       │   │   ├── AppShell.tsx   # Shell: NavRail + TransportBar + route dispatch
-│       │   │   ├── NavRail.tsx    # Navigation sidebar
-│       │   │   ├── TransportBar.tsx # Bottom transport bar (status, forge button)
-│       │   │   └── AutoSaveIndicator.tsx # Auto-save spinner indicator
-│       │   └── pages/
-│       │       ├── Library.tsx     # View: job list, genre cards, delete/favorite
-│       │       ├── CreateSession.tsx # View: genre selection, presets, Style Console (969 lines)
-│       │       ├── Forge.tsx       # View: 8-stage assembly line with SSE progress
-│       │       └── Studio.tsx      # View: version browser, takes player, style/lyric editors
-│       └── __tests__/
-│
+│   ├── server/             # Fastify API server + CLI
+│   └── web/                # Preact SPA (Vite)
 ├── packages/
-│   ├── contracts/                 # Shared types, Zod schemas, branded IDs
-│   │   └── src/index.ts           # ~450 lines — all type definitions in one file
-│   │
-│   ├── core/                      # Pipeline engine, DB, LLM, Suno, event system
-│   │   ├── src/
-│   │   │   ├── index.ts           # Public API surface (82 exports)
-│   │   │   ├── config.ts          # Config loader (env var + config file merge)
-│   │   │   ├── db/
-│   │   │   │   ├── index.ts       # createDb() — SQLite init, schema creation, migrations
-│   │   │   │   └── schema.ts       # Drizzle ORM schema (all 8 tables)
-│   │   │   ├── llm/
-│   │   │   │   ├── client.ts      # LlmClient — multi-provider HTTP client (263 lines)
-│   │   │   │   ├── types.ts       # Provider config, request/response types
-│   │   │   │   └── index.ts       # Re-exports
-│   │   │   ├── suno/
-│   │   │   │   ├── client.ts      # SunoClient — submit/poll/callback (256 lines)
-│   │   │   │   ├── types.ts       # Suno API types
-│   │   │   │   ├── payload.ts     # Suno payload generation from artifacts
-│   │   │   │   ├── capabilities.ts# Capability detection
-│   │   │   │   ├── callbacks.ts   # Callback URL resolution
-│   │   │   │   ├── generation-store.ts # DB operations for generations
-│   │   │   │   └── index.ts
-│   │   │   ├── lyrics/
-│   │   │   │   ├── canonical.ts   # LyricsDocument parse/serialize (188 lines)
-│   │   │   │   └── index.ts
-│   │   │   └── pipeline/          # Core pipeline engine
-│   │   │       ├── types.ts       # PipelineDeps, PipelineState, PromptContext (87 lines)
-│   │   │       ├── orchestrator.ts # runPipeline() + 8 stage handlers (910 lines)
-│   │   │       ├── job-service.ts # Job CRUD, stage advancement, version creation (260 lines)
-│   │   │       ├── events.ts      # Pub/sub event system, DB persistence, SSE support
-│   │   │       ├── prompt-assembler.ts # Template prompt construction with context injection
-│   │   │       ├── critic-runner.ts    # LLM-based critic execution
-│   │   │       ├── reference-cache.ts  # LRU reference cache
-│   │   │       ├── reference-interpreter.ts # Reference audio analysis
-│   │   │       ├── lyrics-patcher.ts   # Surgical lyrics patch application
-│   │   │       ├── lock-service.ts     # DB-backed artifact locks
-│   │   │       ├── job-abort-controller.ts # Job cancellation with signal propagation
-│   │   │       └── index.ts
-│   │   └── __tests__/
-│   │
-│   ├── genre-core/                # GenreModule interface + shared types
-│   │   └── src/index.ts           # GenreModule, SongStructure, TagCategory, etc. (198 lines)
-│   │
-│   ├── genre-edm/                 # EDM genre module
-│   │   └── src/
-│   │       ├── index.ts           # edmModule export (136 lines)
-│   │       ├── schema.ts          # EdmInputs/EdmBlueprint Zod schemas + compileBlueprint
-│   │       ├── presets.ts         # EDM_PRESETS (83 presets)
-│   │       ├── renderers.ts       # Title, style, excludedStyles, lyrics renderers
-│   │       ├── critics.ts         # Genre-specific critic definitions
-│   │       ├── validators.ts      # Input + blueprint validators
-│   │       ├── tag-categories.ts  # Style Console tag categories
-│   │       └── taxonomy.ts        # Subgenre taxonomy (80+ subgenres)
-│   │
-│   ├── genre-hiphop/              # Hip-Hop genre module
-│   ├── genre-pop/                 # Pop genre module (3 presets)
-│   ├── genre-ambient/             # Ambient genre module (2 presets)
-│   ├── genre-dnb/                 # Drum & Bass genre module (2 presets)
-│   │
-│   └── test-support/              # Shared test helpers
-│       └── src/
-│           ├── index.ts
-│           ├── test-db.ts         # In-memory SQLite test DB
-│           └── test-logger.ts     # No-op test logger
-│
+│   ├── contracts/          # Shared Zod schemas, branded IDs, types
+│   ├── core/               # Pipeline engine, DB, LLM, Suno client
+│   ├── genre-core/         # GenreModule interface + shared builders
+│   ├── genre-edm/          # EDM genre module
+│   ├── genre-hiphop/       # HipHop genre module
+│   ├── genre-ambient/      # Ambient genre module
+│   └── test-support/       # Shared test mocks
 ├── config/
-│   └── genres/                    # YAML genre static config
-│       ├── edm.yaml
-│       ├── hiphop.yaml
-│       ├── pop.yaml
-│       ├── ambient.yaml
-│       └── dnb.yaml
-│
-├── data/                          # Default SQLite DB directory (gitignored)
-│
-├── .github/workflows/
-│   └── ci.yml                     # CI: check (tsc + vitest + prettier) then lint (tsc --noEmit)
-│
-├── .planning/                     # Project planning docs
-│
-├── package.json                   # Root workspace config (npm workspaces)
-├── tsconfig.json                  # Composite project references
-├── tsconfig.base.json             # Shared compiler options
-├── track-forge.config.js          # Runtime config (gitignored)
-├── vitest.config.ts               # Vitest root config
-└── AGENTS.md                      # Project documentation for AI agents
+│   └── genres/             # Genre YAML config files (edm.yaml, hiphop.yaml, ambient.yaml)
+├── .github/
+│   └── workflows/
+│       └── ci.yml          # CI pipeline
+├── .planning/              # GSD planning artifacts
+├── data/                   # Default SQLite DB location (gitignored)
+├── node_modules/
+├── package.json            # Root workspace config
+├── tsconfig.base.json      # Shared TS compiler options
+├── tsconfig.json           # Project references
+├── vitest.config.ts        # Vitest root config
+├── track-forge.config.js   # Server config (gitignored)
+├── AGENTS.md               # Project agent instructions
+└── .gitignore
 ```
 
 ## Directory Purposes
 
-**`apps/server/` (API Server):**
-- Purpose: HTTP API server, CLI tools, genre module augmentation with YAML config
-- Contains: Fastify route handlers, lib utilities, CLI entry point
-- Key files: `src/index.ts` (entry), `src/cli.ts` (CLI), `src/routes/jobs.ts` (main route file, 620 lines)
+**`apps/server/`:**
+- Purpose: Fastify HTTP server — API routes, CLI tooling, static file serving
+- Contains: TypeScript source, compiled output (`dist/`), test files, SQLite data
+- Key files:
+  - `src/index.ts` — Server entry point: bootstrap, route registration, static serving, graceful shutdown
+  - `src/cli.ts` — CLI commands: `export`, `export-all`, `import`
+  - `src/routes/jobs.ts` — Job CRUD + pipeline dispatch (largest route file, 347 lines)
+  - `src/routes/versions.ts` — Version listing + takes (Suno generation) CRUD
+  - `src/routes/events.ts` — SSE streaming + event history
+  - `src/routes/preview-style.ts` — Style prompt preview
+  - `src/routes/suno.ts` — Suno callback endpoint
+  - `src/routes/import-export.ts` — Bulk job export/import
+  - `src/routes/lyrics.ts` — LLM-based lyrics generation
+  - `src/routes/health.ts` — Health check
+  - `src/lib/genre-config.ts` — YAML loader with mtime cache (199 lines)
+  - `src/lib/modules.ts` — Genre module registry + YAML augmentation
+  - `src/lib/validate.ts` — Zod schema validation wrappers + request schemas
+  - `src/lib/db-utils.ts` — Utility helpers (ApiError, pagination, safeParse)
+  - `src/lib/config.ts` — Config singleton wrapper
+  - `src/lib/db.ts` — DB singleton wrapper
 
-**`apps/web/` (Web UI):**
-- Purpose: Preact SPA with 4 views — Library, Create, Forge, Studio
-- Contains: Page components, shared UI components, API client, custom hash router
-- Key files: `src/main.tsx` (entry), `src/api.ts` (full API client, 423 lines), `src/pages/CreateSession.tsx` (largest page, 969 lines)
+**`apps/web/`:**
+- Purpose: Preact single-page application — Compose workspace UI
+- Contains: Preact components, API client, router, session state, CSS
+- Key files:
+  - `src/main.tsx` — Preact render bootstrap
+  - `src/app.tsx` — Root component: Router → SessionProvider → ComposeShell
+  - `src/api.ts` — Typed HTTP API client (332 lines) — all backend calls + SSE
+  - `src/lib/session.tsx` — SessionContext + SessionProvider + useSession hook
+  - `src/lib/router.tsx` — Hash-based client-side router
+  - `src/components/compose/ComposeShell.tsx` — Main orchestrator (forge, autosave, layout)
+  - `src/components/compose/SetupColumn.tsx` — 6 collapsible setup cards
+  - `src/components/compose/BundleCanvas.tsx` — Central bundle display
+  - `src/components/compose/ArrangementEditor.tsx` — Section arrangement editor
+  - `src/components/compose/LyricsBlock.tsx` — Lyrics editing
+  - `src/components/compose/RendersPanel.tsx` — Take cards with waveform
+  - `src/components/compose/LibraryPanel.tsx` — Session archive
+  - `src/components/compose/ForgeStrip.tsx` — Progress strip (8-bar animation)
+  - `src/components/compose/ContextBar.tsx` — Top context bar
+  - `src/components/compose/types.ts` — Shared frontend types
+  - `src/components/compose/arrangement.ts` — Default sections, colors, constants
 
-**`packages/contracts/` (Shared Types):**
-- Purpose: Single source of truth for all domain types, Zod schemas, branded IDs
-- Contains: Everything in `src/index.ts` (~450 lines, no subdirectories)
-- Key files: `src/index.ts`
+**`packages/contracts/`:**
+- Purpose: Single source of truth for all shared types
+- Contains: `src/index.ts` — All Zod schemas, branded types, interfaces
+- Key exports: `Job`, `Version`, `Config`, `GenerationStage`, `JobStatus`, `SunoArtifact`, `LyricsWriterResult`, branded IDs
 
-**`packages/core/` (Core Engine):**
-- Purpose: Pipeline orchestration, DB, LLM, Suno integration, event system, lyrics
-- Contains: Pipeline engine, platform clients, DB layer
-- Key files: `src/pipeline/orchestrator.ts` (910 lines, largest), `src/db/index.ts` (schema+creation), `src/suno/client.ts` (256 lines)
+**`packages/core/`:**
+- Purpose: Core engine — pipeline, LLM, Suno, DB, config, utilities
+- Key files:
+  - `src/index.ts` — Public API exports
+  - `src/config.ts` — `loadConfig()` — config from JS file + env overrides
+  - `src/json-utils.ts` — `safeJsonParse()`, `readJobInputs()`, `readStageData()`
+  - `src/db/schema.ts` — Drizzle schema definitions
+  - `src/db/index.ts` — `createDb()` — SQLite init, table creation, migration
+  - `src/pipeline/orchestrator.ts` — `runPipeline()` — 3-stage orchestrator
+  - `src/pipeline/job-service.ts` — Job/version CRUD, stage transitions, state persistence
+  - `src/pipeline/style-compiler.ts` — Deterministic style prompt compilation
+  - `src/pipeline/suno-context.ts` — Full Suno context string builder
+  - `src/pipeline/events.ts` — Event pub/sub, persistence, SSE formatting
+  - `src/pipeline/types.ts` — PipelineDeps, PipelineState, PipelineResult interfaces
+  - `src/pipeline/job-abort-controller.ts` — In-memory AbortController per job
+  - `src/llm/client.ts` — Unified LLM client (OpenAI/Anthropic/Ollama)
+  - `src/llm/types.ts` — LLM types + provider defaults
+  - `src/suno/client.ts` — Suno API client
+  - `src/suno/types.ts` — Suno API types
+  - `src/suno/payload.ts` — Suno payload builder
+  - `src/suno/callbacks.ts` — Callback URL resolver
+  - `src/suno/capabilities.ts` — Suno capability detection
+  - `src/suno/generation-store.ts` — Generation CRUD for SQLite
+  - `__tests__/` — 9 test files covering config, DB, events, pipeline, job-service, suno-client, suno-payload
 
-**`packages/genre-*/` (Genre Modules):**
-- Purpose: Per-genre logic implementing `GenreModule<TInputs, TBlueprintData>`
-- Contains: Schema, presets, renderers, critics, validators, tag categories
-- Each genre module follows identical structure: `schema.ts`, `presets.ts`, `renderers.ts`, `critics.ts`, `validators.ts`, `tag-categories.ts`
+**`packages/genre-core/`:**
+- Purpose: Genre module contract + shared building blocks
+- Key files:
+  - `src/index.ts` — `GenreModule` interface, `createGenreModule()` factory, shared types, `createBaseInputSchema()`
 
-**`config/genres/` (Genre Static Data):**
-- Purpose: Version-controlled genre metadata (presets, tags, structure, defaults)
-- Contains: One YAML file per genre
-- Key files: `apps/server/src/lib/genre-config.ts` (loader)
+**`packages/genre-edm/`, `packages/genre-hiphop/`, `packages/genre-ambient/`:**
+- Purpose: Genre-specific input schemas and defaults
+- Pattern: Each exports a module created by `createGenreModule()` with a Zod schema, imported and augmented by server's `modules.ts`
+
+**`packages/test-support/`:**
+- Purpose: Shared mock implementations for testing
+- Key exports: `mockLlm()`, `mockSuno()`, `mockGenreModule()`
+
+**`config/genres/`:**
+- Purpose: Static genre configuration data (no DB)
+- Contains: `edm.yaml`, `hiphop.yaml`, `ambient.yaml` — presets, tag categories, song structures, descriptors, lyric themes, vocal presets
 
 ## Key File Locations
 
 **Entry Points:**
-- `apps/server/src/index.ts`: Fastify server entry — config init, DI, route registration
-- `apps/server/src/cli.ts`: CLI entry — job import/export commands
-- `apps/web/src/main.tsx`: Preact SPA entry — render `<App />`
-- `packages/core/src/pipeline/orchestrator.ts`: Pipeline execution entry — `runPipeline()`
+- `apps/server/src/index.ts`: Server bootstrap (Fastify + routes)
+- `apps/server/src/cli.ts`: CLI commands
+- `apps/web/src/main.tsx`: Frontend render bootstrap
+- `packages/core/src/pipeline/orchestrator.ts` (`runPipeline`): Pipeline entry point
 
 **Configuration:**
-- `track-forge.config.js`: Runtime config (DB path, LLM provider, port, etc.) — gitignored
-- `tsconfig.base.json`: Shared TypeScript compiler options (ES2022, ESNext modules, composite)
-- `tsconfig.json`: Composite project references linking all workspaces
-- `vitest.config.ts`: Test runner root config
-- `packages/core/src/config.ts`: Config loader — env vars `TRACK_FORGE_*` override config file
+- `track-forge.config.js`: Server config file (gitignored)
+- `packages/core/src/config.ts`: Config parsing + env override logic
+- `tsconfig.base.json`: Shared TypeScript compiler options
+- `tsconfig.json`: Project references for tsc --build
+- `vitest.config.ts`: Test runner configuration
+- `apps/web/vite.config.ts`: Vite dev server + proxy
 
 **Core Logic:**
-- `packages/core/src/pipeline/orchestrator.ts`: 8-stage pipeline orchestration (910 lines)
-- `packages/core/src/pipeline/job-service.ts`: Job and version CRUD
-- `packages/core/src/pipeline/prompt-assembler.ts`: LLM prompt template system
-- `packages/core/src/pipeline/critic-runner.ts`: LLM-based quality checks
-- `packages/core/src/suno/client.ts`: Suno AI API client
-- `packages/core/src/llm/client.ts`: Multi-provider LLM abstraction
+- `packages/core/src/pipeline/`: Pipeline orchestration (orchestrator, job-service, style-compiler, suno-context, events, job-abort-controller, types)
+- `packages/core/src/llm/`: LLM client abstraction
+- `packages/core/src/suno/`: Suno API integration
+- `packages/core/src/db/`: Database schema + connection
 
 **Testing:**
-- `packages/test-support/src/`: Shared test helpers (test DB, test logger)
-- `apps/server/__tests__/`: Server integration tests
-- `packages/core/__tests__/`: Core unit/integration tests
+- `packages/core/__tests__/`: 9 test files (config, db, events, job-abort-controller, job-service, pipeline, suno-client, suno-payload)
+- `apps/server/__tests__/`: 4 test files (db-utils, health, import-export, jobs)
+- `apps/web/__tests__/`: 1 smoke test
+- `packages/test-support/src/index.ts`: Shared mocks
 
 ## Naming Conventions
 
 **Files:**
-- PascalCase for React/Preact components: `AppShell.tsx`, `NavRail.tsx`, `CreateSession.tsx`
-- kebab-case for utility modules: `job-service.ts`, `prompt-assembler.ts`, `critic-runner.ts`, `reference-cache.ts`, `genre-config.ts`, `import-export.ts`
-- camelCase for standard modules: `config.ts`, `main.tsx`, `router.tsx`, `session.tsx`
-- Test files: `*.test.ts` (co-located in `__tests__/` directories)
+- `kebab-case.ts` for source files: `style-compiler.ts`, `suno-context.ts`, `job-service.ts`, `job-abort-controller.ts`, `db-utils.ts`, `json-utils.ts`
+- `PascalCase.tsx` for React/Preact components: `ComposeShell.tsx`, `SetupColumn.tsx`, `BundleCanvas.tsx`, `ArrangementEditor.tsx`, `LyricsBlock.tsx`, `RendersPanel.tsx`, `LibraryPanel.tsx`, `ForgeStrip.tsx`, `ContextBar.tsx`
+- `snake_case.test.ts` for test files: `suno-client.test.ts`, `job-service.test.ts`
+- `kebab-case.yaml` for config: `edm.yaml`, `hiphop.yaml`, `ambient.yaml`
 
 **Directories:**
-- Singular names: `lib/`, `db/`, `llm/`, `suno/`, `lyrics/`, `pipeline/`
-- Route directories use `routes/`
-- Web pages use `pages/`
-- Components use `components/`
+- Flat under routes: `routes/jobs.ts`, `routes/versions.ts`, `routes/events.ts`
+- Grouped by function under packages: `pipeline/`, `llm/`, `suno/`, `db/`
+- UI components grouped under `components/compose/`
+
+**Functions:**
+- `camelCase` for functions and methods: `runPipeline()`, `compileStylePrompt()`, `buildSunoContext()`, `createJob()`, `createDb()`, `loadConfig()`, `handleCompilation()`, `handleLyricsWriting()`
+- `camelCase` for React hooks: `useSession()`, `useEffect`, `useCallback`
+- `PascalCase` for React/Preact components: `ComposeShell`, `SetupColumn`, `SessionProvider`
+- `PascalCase` for classes and interfaces: `LlmClient`, `SunoClient`, `ApiError`, `PipelineDeps`, `PipelineState`
+- UPPER_SNAKE for constants: `DEFAULT_POLL_INTERVAL`, `STAGE_ORDER`, `STAGE_TO_LABEL`, `STAGE_LABELS`, `DELTA_PALETTE`, `SECTION_PALETTE`
+
+**Variables:**
+- `camelCase` for all local variables
+- Hungarian-style `s` for session in ComposeShell: `const s = useSession()`
+
+**Types:**
+- `PascalCase` for interfaces and type aliases: `Job`, `Version`, `Config`, `PipelineState`, `SessionState`, `GenreModule`
+- Enums as `const` objects with `PascalCase` keys: `GenerationStage`, `JobStatus`, `VersionStatus`, `SunoArtifactType`, `SectionType`
 
 ## Where to Add New Code
 
-**New Feature (API endpoint):**
-- Route handler: `apps/server/src/routes/<name>.ts`
-- Register in `apps/server/src/index.ts` with `register<Name>Routes()`
-- DB schema: `packages/core/src/db/schema.ts` (add table) or `packages/core/src/db/index.ts` (add migration)
-- API client: `apps/web/src/api.ts` (add fetch function)
-- Types: `packages/contracts/src/index.ts` (add interfaces)
+**New Feature (backend):**
+- Primary route handler: `apps/server/src/routes/<name>.ts`
+- Register in `apps/server/src/index.ts` with matching deps
+- Business logic: `packages/core/src/<domain>/`
+- Validation schemas: `apps/server/src/lib/validate.ts`
+- Tests: `apps/server/__tests__/` for integration, `packages/core/__tests__/` for unit
+
+**New Feature (frontend):**
+- Component: `apps/web/src/components/compose/<Name>.tsx`
+- API function: `apps/web/src/api.ts`
+- State: extend `SessionState` in `apps/web/src/lib/session.tsx`
+- Types: update `apps/web/src/components/compose/types.ts`
 
 **New Genre Module:**
-- Implementation: `packages/genre-<name>/src/` — follow existing pattern (schema, presets, renderers, critics, validators, tag-categories)
-- Package registration: `apps/server/src/lib/modules.ts` (add import + MODULES entry)
-- Web UI registration: `apps/web/src/pages/CreateSession.tsx` (add import + GENRE_MODULES entry)
-- Static config: `config/genres/<name>.yaml`
-- YAML config loader: `apps/server/src/lib/genre-config.ts` (add to `listGenreConfigs()` if needed)
-- Workspace: Add to root `tsconfig.json` references and root `package.json` workspaces
+- Genre module package: `packages/genre-<name>/src/index.ts` + `packages/genre-<name>/src/schema.ts`
+- YAML config: `config/genres/<name>.yaml`
+- Register in `tsconfig.json` project references
+- Import in `apps/server/src/lib/modules.ts` (`MODULE_IMPORTS`)
+- Default sections in `apps/web/src/components/compose/arrangement.ts`
+
+**New Database Table:**
+- Drizzle schema: `packages/core/src/db/schema.ts`
+- SQL bootstrap: `packages/core/src/db/index.ts` (`createDb()`)
 
 **New Pipeline Stage:**
-- Handler: `packages/core/src/pipeline/orchestrator.ts` — add function matching `StageHandler` signature
-- Stage order: Add to `STAGE_ORDER` array in same file
-- Stage ID: Add to `GenerationStage` const in `packages/contracts/src/index.ts`
-- State: Add field to `PipelineState` in `packages/core/src/pipeline/types.ts`
-- Stage data: Add to `StageData` in `packages/core/src/pipeline/job-service.ts`
+- Handler function in `packages/core/src/pipeline/orchestrator.ts`
+- Add to `STAGE_ORDER` array and `stageHandlers` record
+- Stage type in `packages/contracts/src/index.ts` (`GenerationStage`)
+- Event publish for started/completed/error
 
-**New Shared Utility:**
-- Server utilities: `apps/server/src/lib/<name>.ts`
-- Core utilities: `packages/core/src/<name>/` — create subdirectory with `index.ts` barrel export
-- Test helpers: `packages/test-support/src/<name>.ts`
+**New External API Integration:**
+- Client: `packages/core/src/<service>/client.ts`
+- Types: `packages/core/src/<service>/types.ts`
+- Barrel export: `packages/core/src/<service>/index.ts`
+- Re-export from `packages/core/src/index.ts`
 
 ## Special Directories
 
-**`config/genres/`:**
-- Purpose: YAML static data files for genre configuration
-- Generated: No (hand-authored)
-- Committed: Yes
-- Loaded at runtime by `apps/server/src/lib/genre-config.ts`
-
-**`data/`:**
-- Purpose: Default SQLite database storage
-- Generated: Yes (on first server start or when DB doesn't exist)
-- Committed: No (in `.gitignore`)
-
-**`.planning/`:**
-- Purpose: Project planning artifacts (docs, codebase maps, phase plans)
-- Generated: Partially (some human-authored, some AI-generated)
-- Committed: Yes
-
-**Build artifacts (`dist/` and `.js`/`.d.ts` alongside source):**
-- TypeScript composite build emits `.js`/`.d.ts`/`.js.map`/`.d.ts.map` beside source files
+**`dist/`:**
+- Purpose: Compiled TypeScript output (`.js`, `.d.ts`, `.js.map`, `.d.ts.map`)
 - Generated: Yes (by `tsc --build`)
 - Committed: No (gitignored)
-- Can cause confusion if stale — run `npm run clean && npm run build` on weird errors
+
+**`node_modules/`:**
+- Purpose: Dependencies
+- Generated: Yes (by `npm ci`)
+- Committed: No (gitignored)
+
+**`data/`:**
+- Purpose: Default SQLite database location
+- Generated: Yes (runtime)
+- Committed: No (gitignored)
+
+**`.codegraph/`:**
+- Purpose: Code intelligence index (symbols, edges, call graph)
+- Generated: Yes (by codegraph indexing)
+- Committed: No (gitignored)
+
+**`.planning/`:**
+- Purpose: GSD planning artifacts (phases, milestones, codebase maps)
+- Generated: Yes (by GSD workflow)
+- Committed: Yes
 
 ---
 
-*Structure analysis: 2026-07-15*
+*Structure analysis: 2026-07-19*

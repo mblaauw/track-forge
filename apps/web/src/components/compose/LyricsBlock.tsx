@@ -1,3 +1,4 @@
+import { useState } from "preact/hooks";
 import {
   MusicNotes,
   Sparkle,
@@ -8,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { sectionColor, sectionIsVocal } from "./arrangement";
+import { generateLyrics } from "../../api";
 import type { Section } from "./types";
 
 function syl(text: string): number {
@@ -50,6 +52,59 @@ export function LyricsBlock() {
   const s = useSession();
   const vocalSections = s.sections.filter(sectionIsVocal);
   const totalSyl = totalSyllables(s.lyricLines);
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const result = await generateLyrics({
+        genreId: s.genreId,
+        presetIds: s.presetIds,
+        descriptors: s.tags.filter((t: any) => !t.muted).map((t: any) => ({
+          label: t.label,
+          cat: t.cat,
+          weight: t.weight,
+        })),
+        bpm: s.bpm as number,
+        key: s.key,
+        scale: s.scale,
+        sections: s.sections.map((sec: any) => ({
+          name: sec.name,
+          bars: sec.bars,
+          fn: sec.fn,
+          deltas: sec.deltas,
+          tags: sec.tags,
+          vocal: sec.vocal,
+        })),
+        lyricsMode: s.lyricsMode,
+        vocalType: null,
+        lyricTopic: s.lyricTopic,
+        lyricThemes: s.lyricThemes,
+        lyricAngle: s.lyricAngle,
+      });
+
+      const lines: Record<string, string[]> = {};
+      for (const sec of result.document.sections) {
+        const sectionName = sec.type.toLowerCase();
+        const match = s.sections.find(
+          (s: any) => s.name.toLowerCase() === sectionName,
+        );
+        if (match) {
+          lines[match.id] = sec.lines;
+        }
+      }
+
+      s.setSession({ lyricsGenerated: true, lyricLines: lines });
+    } catch {
+      console.error("Lyrics generation failed, using fallback");
+      s.setSession({
+        lyricsGenerated: true,
+        lyricLines: generateMockLyrics(s.sections),
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div class="bundle-block">
@@ -77,27 +132,19 @@ export function LyricsBlock() {
               <button
                 class="arr-action-btn"
                 style="background:var(--forge);color:#fff;border-color:var(--forge)"
-                onClick={() => {
-                  s.setSession({
-                    lyricsGenerated: true,
-                    lyricLines: generateMockLyrics(s.sections),
-                  });
-                }}
+                disabled={generating}
+                onClick={handleGenerate}
               >
-                <Sparkle size={14} /> Generate lyrics
+                <Sparkle size={14} /> {generating ? "Generating…" : "Generate lyrics"}
               </button>
             )}
           {s.lyricsGenerated && (
             <button
               class="arr-action-btn"
-              onClick={() => {
-                s.setSession({
-                  lyricsGenerated: true,
-                  lyricLines: generateMockLyrics(s.sections),
-                });
-              }}
+              disabled={generating}
+              onClick={handleGenerate}
             >
-              <ArrowClockwise size={14} /> Redraft
+              <ArrowClockwise size={14} /> {generating ? "Generating…" : "Redraft"}
             </button>
           )}
         </div>

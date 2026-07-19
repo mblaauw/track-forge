@@ -44,7 +44,7 @@ describe("JobService", () => {
     );
     expect(job.id).toBeDefined();
     expect(job.status).toBe("pending");
-    expect(job.currentStage).toBe("ref_interpretation");
+    expect(job.currentStage).toBe("compilation");
     expect(job.genreId).toBe("edm");
     expect(job.presetId).toBe("deep_house_chill");
     expect(job.inputs).toBe("{}");

@@ -119,7 +119,7 @@ descriptor_defaults:
   - { label: "granular pad", cat: sound, weight: 2 }
   - { label: "slow pulse", cat: rhythm, weight: 2 }
   - { label: cinematic, cat: atmosphere, weight: 2 }
-  - { label: ethereal, cat: energy, weight: 2 }
+  - { label: ethereal, cat: atmosphere, weight: 2 }
   - { label: "wide stereo", cat: production, weight: 2 }
 
 lyric_themes: [stillness, memory, nature, solitude, dreams, distance]

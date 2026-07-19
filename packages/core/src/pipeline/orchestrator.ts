@@ -13,9 +13,10 @@ import { schema } from "../db/index.js";
 import {
   loadJob,
   advanceStage,
-  failStage,
+  failJob,
   completeJob,
   savePipelineState,
+  createVersion,
 } from "./job-service.js";
 import type { StageData } from "./job-service.js";
 import { compileStylePrompt } from "./style-compiler.js";
@@ -38,22 +39,15 @@ function nextStage(current: GenerationStage): GenerationStage | undefined {
   return STAGE_ORDER[idx + 1];
 }
 
-// ── Stage: Compilation ────────────────────────────────────────────────
+// ── Shared input parsing ──────────────────────────────────────────────
 
-async function handleCompilation(
-  state: PipelineState,
-  deps: PipelineDeps,
-): Promise<PipelineState> {
-  const inputs = readJobInputs(state.job.inputs) ?? {};
-  const genreName = state.module.name;
-
-  const presetLabels: string[] = [];
+function parsePipelineInputs(job: PipelineState["job"], module: PipelineState["module"]) {
+  const inputs = readJobInputs(job.inputs) ?? {};
   const presetIds = (inputs.presetIds as string[]) ?? [];
-  const presets = state.module.presets ?? [];
-  for (const id of presetIds) {
-    const p = presets.find((pr) => pr.id === id);
-    if (p) presetLabels.push(p.name);
-  }
+  const presetLabels = presetIds.map((id) => {
+    const p = (module.presets ?? []).find((pr) => pr.id === id);
+    return p ? p.name : "";
+  }).filter(Boolean);
 
   const rawDescriptors = (inputs.tags as Array<Record<string, unknown>>) ?? [];
   const descriptors = rawDescriptors
@@ -64,13 +58,25 @@ async function handleCompilation(
       weight: Number(d.weight ?? 0),
     }));
 
+  const rawSections = (inputs.sections as Array<Record<string, unknown>>) ?? [];
+  return { inputs, presetIds, presetLabels, descriptors, rawSections };
+}
+
+// ── Stage: Compilation ────────────────────────────────────────────────
+
+async function handleCompilation(
+  state: PipelineState,
+  deps: PipelineDeps,
+): Promise<PipelineState> {
+  const { inputs, presetLabels, descriptors, rawSections } = parsePipelineInputs(state.job, state.module);
+  const genreName = state.module.name;
+
   const bpm = Number(inputs.bpm ?? 128);
   const key = String(inputs.key ?? "C");
   const scale = (inputs.scale ?? "minor") as "major" | "minor";
   const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental") as
     "full_lyrics" | "strict_instrumental" | "guided_instrumental";
 
-  const rawSections = (inputs.sections as Array<Record<string, unknown>>) ?? [];
   const sections = rawSections.map((s) => ({
     name: String(s.name ?? ""),
     fn: String(s.fn ?? "establish"),
@@ -134,7 +140,7 @@ async function handleLyricsWriting(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const inputs = readJobInputs(state.job.inputs) ?? {};
+  const { inputs, presetLabels, descriptors, rawSections } = parsePipelineInputs(state.job, state.module);
   const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental");
   const genreName = state.module.name;
 
@@ -150,24 +156,6 @@ async function handleLyricsWriting(
     };
   }
 
-  const presetLabels: string[] = [];
-  const presetIds = (inputs.presetIds as string[]) ?? [];
-  const presets = state.module.presets ?? [];
-  for (const id of presetIds) {
-    const p = presets.find((pr) => pr.id === id);
-    if (p) presetLabels.push(p.name);
-  }
-
-  const rawDescriptors = (inputs.tags as Array<Record<string, unknown>>) ?? [];
-  const descriptors = rawDescriptors
-    .filter((d) => !d.muted)
-    .map((d) => ({
-      label: String(d.label ?? ""),
-      cat: String(d.cat ?? ""),
-      weight: Number(d.weight ?? 0),
-    }));
-
-  const rawSections = (inputs.sections as Array<Record<string, unknown>>) ?? [];
   const sections = rawSections.map((s) => ({
     section: String(s.name ?? ""),
     bars: Number(s.bars ?? 8),
@@ -268,18 +256,6 @@ async function handleVersioning(
     throw new Error("Pipeline state missing compiledJson before versioning");
 
   const compiled = safeJsonParse<Record<string, string>>(compiledJson, {});
-  const versionId = crypto.randomUUID() as VersionId;
-  const now = new Date().toISOString();
-
-  await deps.db.insert(schema.versions).values({
-    id: versionId,
-    jobId: job.id,
-    status: "final",
-    number: 1,
-    artifacts: JSON.stringify([]),
-    finalizedAt: now,
-    createdAt: now,
-  });
 
   // Build lyrics from writer result
   let lyricsText = "";
@@ -290,40 +266,27 @@ async function handleVersioning(
       .join("\n\n");
   }
 
-  // Resolve style and excludedStyles from inputs as fallback
   const title = compiled.title ?? "Untitled";
   const style = compiled.style ?? "";
   const excludedStyles = compiled.excludedStyles ?? "";
-  const negativeTags = compiled.negativeTags ?? "";
 
   const artifacts: SunoArtifact[] = [
-    { type: SunoArtifactType.Title, value: title, versionId },
-    { type: SunoArtifactType.Style, value: style, versionId },
-    { type: SunoArtifactType.Lyrics, value: lyricsText, versionId },
+    { type: SunoArtifactType.Title, value: title, versionId: "" as VersionId },
+    { type: SunoArtifactType.Style, value: style, versionId: "" as VersionId },
+    { type: SunoArtifactType.Lyrics, value: lyricsText, versionId: "" as VersionId },
   ];
   if (excludedStyles) {
     artifacts.push({
       type: SunoArtifactType.ExcludedStyles,
       value: excludedStyles,
-      versionId,
-    });
-  }
-  if (negativeTags) {
-    artifacts.push({
-      type: SunoArtifactType.NegativeTags,
-      value: negativeTags,
-      versionId,
+      versionId: "" as VersionId,
     });
   }
 
-  await deps.db
-    .update(schema.versions)
-    .set({ artifacts: JSON.stringify(artifacts) })
-    .where(eq(schema.versions.id, versionId));
-
+  const version = createVersion(deps.db, job.id as JobId, artifacts, "final");
   await completeJob(deps.db, job.id as JobId);
 
-  return { ...state, versionId: versionId };
+  return { ...state, versionId: version.id };
 }
 
 // ── Main orchestrator ─────────────────────────────────────────────────
@@ -390,13 +353,16 @@ export async function runPipeline(
     versioning: handleVersioning,
   };
 
+  const lastStage = STAGE_ORDER[STAGE_ORDER.length - 1];
   let currentStage: GenerationStage = "compilation";
 
   try {
-    while (currentStage !== "versioning") {
+    for (const stage of STAGE_ORDER) {
+      currentStage = stage;
+
       if (deps.signal?.aborted) {
         await publish(deps.db, state.job.id, {
-          stage: currentStage,
+          stage,
           status: "error",
           error: "Cancelled",
         });
@@ -409,16 +375,16 @@ export async function runPipeline(
         };
       }
 
-      const handler = stageHandlers[currentStage];
-      if (!handler) throw new Error(`No handler for stage: ${currentStage}`);
+      const handler = stageHandlers[stage];
+      if (!handler) throw new Error(`No handler for stage: ${stage}`);
 
       await publish(deps.db, state.job.id, {
-        stage: currentStage,
+        stage,
         status: "started",
       });
       state = await handler(state, deps);
       await publish(deps.db, state.job.id, {
-        stage: currentStage,
+        stage,
         status: "completed",
       });
 
@@ -428,22 +394,12 @@ export async function runPipeline(
       };
       await savePipelineState(deps.db, state.job.id, stageData);
 
-      const next = nextStage(currentStage);
-      if (!next) break;
-      state.job = await advanceStage(deps.db, state.job.id, next);
-      currentStage = next;
-    }
-
-    if (currentStage === "versioning") {
-      await publish(deps.db, state.job.id, {
-        stage: currentStage,
-        status: "started",
-      });
-      state = await handleVersioning(state, deps);
-      await publish(deps.db, state.job.id, {
-        stage: currentStage,
-        status: "completed",
-      });
+      if (stage !== lastStage) {
+        const next = nextStage(stage);
+        if (next) {
+          state.job = await advanceStage(deps.db, state.job.id, next);
+        }
+      }
     }
 
     cleanupJob(state.job.id);
@@ -460,7 +416,7 @@ export async function runPipeline(
       status: "error",
       error: msg,
     });
-    await failStage(deps.db, state.job.id as JobId, msg);
+    await failJob(deps.db, state.job.id as JobId, msg);
     cleanupJob(state.job.id);
     return { success: false, jobId: state.job.id, versionId: null, error: msg };
   }

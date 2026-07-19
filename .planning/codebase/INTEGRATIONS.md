@@ -1,181 +1,144 @@
 # External Integrations
 
-**Analysis Date:** 2026-07-15
+**Analysis Date:** 2026-07-19
 
 ## APIs & External Services
 
-### LLM Providers
+**LLM Providers (multi-provider support via `LlmClient` in `packages/core/src/llm/client.ts`):**
+- **OpenAI / OpenAI-compatible** — primary provider
+  - Endpoint: `POST /chat/completions` (default `https://api.openai.com/v1`)
+  - Auth: Bearer token via `TRACK_FORGE_LLM_API_KEY`
+  - Supports `reasoning_content` field (used by DeepSeek-style models)
+  - Usage tracking: `prompt_tokens`, `completion_tokens`, `total_tokens`
 
-The codebase supports four LLM providers through a unified client at `packages/core/src/llm/client.ts`. All use raw `fetch()` — no SDK dependencies.
+- **Anthropic** — secondary provider
+  - Endpoint: `POST /messages` (default `https://api.anthropic.com/v1`)
+  - Auth: `x-api-key` header via `TRACK_FORGE_LLM_API_KEY`
+  - Protocol: `anthropic-version: 2023-06-01`
+  - Usage tracking: `input_tokens`, `output_tokens`
 
-| Provider | Config Value | Default Base URL | Auth Mechanism |
-|----------|-------------|------------------|----------------|
-| OpenAI | `openai` | `https://api.openai.com/v1` | Bearer token (`Authorization: Bearer`) |
-| OpenAI-compatible | `openai-compatible` | (configurable) | Bearer token (`Authorization: Bearer`) |
-| Anthropic | `anthropic` | `https://api.anthropic.com/v1` | `x-api-key` header |
-| Ollama | `ollama` | `http://localhost:11434` | None |
+- **Ollama** — local provider
+  - Endpoint: `POST /api/chat` (default `http://localhost:11434`)
+  - No auth
+  - Stream disabled (`stream: false`)
 
-**LLM Client Details (`packages/core/src/llm/client.ts`):**
-- Endpoint: OpenAI-compatible calls `/chat/completions`, Anthropic calls `/messages`, Ollama calls `/api/chat`
-- Timeout: 180s on OpenAI/OpenAI-compatible requests via `AbortController`; no timeout on Anthropic/Ollama
-- Token tracking: Reports `usage` (prompt/completion/total tokens) for OpenAI and Anthropic; not available for Ollama
-- Reasoning extraction: Reads `reasoning_content` from OpenAI responses (used for DeepSeek v4 flash compatibility)
-- Per-stage max_tokens tuning documented for pipeline: planning 2048, style 4096, lyrics 2048
-- Provider defaults defined in `packages/core/src/llm/types.ts`
+- Default model: `gpt-4o` (overridable via `TRACK_FORGE_LLM_MODEL` or `track-forge.config.js`)
+- LLM used for: **lyrics writing only** (the single LLM step in the pipeline — `packages/core/src/pipeline/orchestrator.ts`)
+- Timeout: 180s with combined abort signal support (`packages/core/src/llm/client.ts:128-132`)
 
-### Suno Music API (via sunoapi.org)
+**Suno Music Generation API — `packages/core/src/suno/client.ts`:**
+- Endpoint: `/api/v1/generate` (default `https://api.sunomusic.com`)
+- Auth: Bearer token via `TRACK_FORGE_SUNO_AUTH_TOKEN`
+- Models: V4, V4_5, V4_5PLUS, V4_5ALL (default), V5, V5_5
+- Capabilities registry in `packages/core/src/suno/capabilities.ts`
+- Status polling: `GET /api/v1/generate/record-info?taskId=...`
+- Poll interval: 5s (exponential backoff to 20s max)
+- Poll timeout: 300s (5 minutes)
+- Features: custom mode lyrics, instrumental mode, negative tags, persona, vocal gender, style weight, audio weight, callback webhooks
+- Callback URL: resolves via `resolveCallbackUrl()` in `packages/core/src/suno/callbacks.ts` — derives from `publicBaseUrl` config as `${publicBaseUrl}/api/suno/callback`
 
-Suno client at `packages/core/src/suno/client.ts` communicates with a third-party Suno API proxy (`sunoapi.org` by default).
-
-| Aspect | Details |
-|--------|---------|
-| SDK/Client | Custom `SunoClient` class — raw `fetch()` only |
-| Base URL | Configurable via `TRACK_FORGE_SUNO_BASE_URL` or `sunoBaseUrl` config |
-| Auth | Bearer token via `TRACK_FORGE_SUNO_AUTH_TOKEN` |
-| Default model | `V4_5ALL` |
-
-**Endpoints Used:**
-- `POST /api/v1/generate` — Submit generation task (`packages/core/src/suno/client.ts:48`)
-- `GET /api/v1/generate/record-info?taskId=` — Poll generation status (`packages/core/src/suno/client.ts:119`)
-- Callback: `POST /api/suno/callback` (server-side webhook at `apps/server/src/routes/suno.ts`)
-
-**Capabilities (`packages/core/src/suno/capabilities.ts`):**
-- Model registry: `V4`, `V4_5`, `V4_5PLUS`, `V4_5ALL`, `V5`, `V5_5`
-- Tracks per-model max lengths, negative tag support, callback support, batch size
-- Default polling: 5s interval, exponential backoff to 20s, 5min timeout
-
-**Payload Generation (`packages/core/src/suno/payload.ts`):**
-- Transforms compiled pipeline artifacts into `SunoGenerateRequest`
-- Applies genre transforms (BPM, mood, energy)
-- Auto-detects instrumental mode (empty lyrics)
-- Validates/truncates against model capabilities
-- Returns warnings for out-of-range values
-
-**Callback Flow:**
-- `resolveCallbackUrl()` in `packages/core/src/suno/callbacks.ts` derives URL from `publicBaseUrl`
-- Server webhook at `POST /api/suno/callback` (`apps/server/src/routes/suno.ts`)
-- Checks generation ID for a matching pending generation in DB
+**Google Fonts — frontend CDN (`apps/web/index.html`):**
+- Archivo (weights 400, 500, 600, 700, 800)
+- JetBrains Mono (weights 400, 500, 600)
+- Preconnect hints for `fonts.googleapis.com` and `fonts.gstatic.com`
 
 ## Data Storage
 
 **Databases:**
-- **SQLite** via better-sqlite3 ^12.0.0
-- Connection: `TRACK_FORGE_DB_PATH` or `dbPath` config (default `./data/track-forge.db`)
-- Drizzle ORM ^0.38.0 for type-safe queries
-- WAL mode enabled, `busy_timeout` 5000ms, `foreign_keys = ON`
+- SQLite via `better-sqlite3` (synchronous driver)
+  - ORM: Drizzle ORM `^0.38.0`
+  - Connection: local file path from `TRACK_FORGE_DB_PATH` config (default `./data/track-forge.db`)
+  - WAL mode enabled, busy timeout 5000ms, foreign keys ON
+  - Auto-creates tables and runs migration ALTERs on startup (`packages/core/src/db/index.ts`)
+  - Tables: `projects`, `jobs`, `versions`, `generations`, `job_events`, `suno_tracks`
+  - Cascade delete order: sunoTracks → generations → versions → jobEvents → jobs
 
-**Tables (11 total, auto-created in `packages/core/src/db/index.ts`):**
-| Table | Purpose |
-|-------|---------|
-| `projects` | Music project metadata |
-| `project_drafts` | Project drafts (pre-creation) |
-| `jobs` | Pipeline orchestration jobs |
-| `versions` | Job version snapshots with artifacts JSON |
-| `generations` | Suno generation records |
-| `suno_tracks` | Individual tracks within a generation |
-| `job_events` | Pipeline event log (SSE history) |
-| `job_stage_outputs` | Per-stage pipeline outputs |
-| `critic_findings` | Critic analysis records |
-| `adjustments` | User NL adjustments |
-| `artifact_locks` | Concurrent edit locks with TTL |
-
-**No file storage service** — audio/images referenced by URL from Suno API responses only.
+**File Storage:**
+- Local filesystem only
+- DB file stored at configured path (`data/` directory must exist)
+- JSON export/import via CLI uses local filesystem (`apps/server/src/cli.ts`)
 
 **Caching:**
-- **Reference Cache** (`packages/core/src/pipeline/reference-cache.ts`): In-memory Map keyed by `sourceHash` for reference analysis
-- **Genre Config Cache** (`apps/server/src/lib/genre-config.ts`): In-memory `Map<string, GenreConfigYaml>` for parsed YAML
-- **No Redis or external cache**
+- No external caching service
+- In-memory Map cache for YAML genre configs with mtime-based invalidation (`apps/server/src/lib/genre-config.ts:75`)
 
 ## Authentication & Identity
 
-**No auth provider.** The application has no user authentication, no multi-tenancy, no API key auth on endpoints.
+**Auth Provider:**
+- None — no authentication layer on the API
+- Suno API uses a static bearer token (config-only, no user identity)
+- LLM APIs use static API keys (one per deployment, no user identity)
+- No user accounts, no sessions, no JWT
 
-- Suno API calls are authenticated (Bearer token) — this is the only auth in the system
-- LLM API calls are authenticated (Bearer or x-api-key) — provider-specific
-- All endpoints are public (designed for local/single-user deployment)
+**API Security:**
+- No auth middleware on any route
+- Static file serving path-traversal protection (`apps/server/src/index.ts:115-118`)
 
 ## Monitoring & Observability
 
-**Logging:**
-- **Pino ^9.6.0** — Structured JSON logging throughout server and core
-- Log level configurable via `TRACK_FORGE_LOG_LEVEL` (trace/debug/info/warn/error/fatal)
-- Module-scoped child loggers: `suno`, `llm`, `suno-client`
-- Fastify uses `pino` internally via `{ logger: { level: config.logLevel } }`
+**Error Tracking:**
+- None — no Sentry, no external error tracker
+- Unhandled rejection handler logs and continues (`apps/server/src/index.ts:151-153`)
+- Uncaught exception handler logs and shuts down (`apps/server/src/index.ts:154-156`)
 
-**Error Tracking:** None (no Sentry, no external error reporting)
-
-**Health Endpoint:**
-- `GET /health` at `apps/server/src/routes/health.ts` — returns `{ status: "ok" }`
+**Logs:**
+- pino structured JSON logging
+  - Server module: `fastify` logger at configured level
+  - Suno client: child logger with `module: "suno-client"` tag
+  - LLM client: child logger with `module: "llm"` tag
+  - LLM request/response logged at debug level (truncated to 500 chars content, 2000 chars reasoning)
+  - Log level configurable via `TRACK_FORGE_LOG_LEVEL` or config
 
 ## CI/CD & Deployment
 
-**Hosting:** Not specified. The application is designed for self-hosting on bare metal or VPS.
+**Hosting:**
+- Self-hosted model (no platform detected)
+- Server binds to configurable host:port (default `127.0.0.1:3000`)
+- Optional production static file serving for SPA via `staticDir` config
+- Graceful shutdown on SIGTERM/SIGINT
 
-**CI Pipeline:** GitHub Actions (`.github/workflows/ci.yml`)
-- Trigger: pushes to `main` and pull requests
-- Two jobs:
-  - `check`: `tsc --build` + `vitest run` + `prettier --check`
-  - `lint`: `tsc --noEmit` (separate job for type-checking only)
+**CI Pipeline:**
+- No CI detected (`.github/workflows/` directory does not exist)
 
-**No Docker, no deployment pipeline, no container registry.**
+**Process Management:**
+- Dev: `npx tsx watch src/index.ts` (auto-restart on file changes)
+- Production: `node dist/index.js` (requires `npm run build` first)
 
 ## Environment Configuration
 
-**Required env vars (no defaults — must configure for Suno/LLM integration):**
-- `TRACK_FORGE_SUNO_BASE_URL` — Suno API proxy base URL
-- `TRACK_FORGE_SUNO_AUTH_TOKEN` — Suno API bearer token
+**Required env vars:**
+- None strictly required (all have defaults or can be set in config file)
 
-**Optional env vars (with defaults):**
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `TRACK_FORGE_PUBLIC_BASE_URL` | (none) | Public server URL for Suno callbacks |
-| `TRACK_FORGE_DB_PATH` | `./data/track-forge.db` | SQLite database file path |
-| `TRACK_FORGE_LOG_LEVEL` | `info` | Pino log level |
-| `TRACK_FORGE_PORT` | `3000` | HTTP server port |
-| `TRACK_FORGE_HOST` | `127.0.0.1` | HTTP server bind address |
-| `TRACK_FORGE_STATIC_DIR` | (none) | Path to built web GUI |
-| `TRACK_FORGE_LLM_PROVIDER` | `openai` | LLM provider (`openai`, `openai-compatible`, `anthropic`, `ollama`) |
-| `TRACK_FORGE_LLM_API_KEY` | (none) | LLM API key |
-| `TRACK_FORGE_LLM_BASE_URL` | (provider default) | LLM API base URL |
-| `TRACK_FORGE_LLM_MODEL` | `gpt-4o` | LLM model name |
+**Critical env vars for Suno integration:**
+- `TRACK_FORGE_SUNO_AUTH_TOKEN` — required to call Suno API
+
+**Critical env vars for LLM integration:**
+- `TRACK_FORGE_LLM_API_KEY` — required for OpenAI/Anthropic providers
 
 **Secrets location:**
-- `track-forge.config.js` (gitignored via `*.js` in `.gitignore`)
-- Environment variables at runtime
+- `track-forge.config.js` (gitignored — listed in `.gitignore`)
+- Environment variables (`TRACK_FORGE_*`)
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- `POST /api/suno/callback` — Suno generation completion callback (`apps/server/src/routes/suno.ts`)
-  - Updates generation status in DB
-  - Validates generation ID against pending records
-  - Avoids duplicate processing
+- `POST /api/suno/callback` — Suno API callback when generation completes (`apps/server/src/routes/suno.ts`)
+  - URL derived from `publicBaseUrl` config: `${publicBaseUrl}/api/suno/callback`
+  - Optional — when not configured, Suno client uses polling fallback
 
 **Outgoing:**
-- Suno API callbacks — automatically configured with `callBackUrl` parameter on generation submit
-  - URL derived from `publicBaseUrl` + `/api/suno/callback`
-  - Configurable via `TRACK_FORGE_PUBLIC_BASE_URL`
+- None — the application does not send webhooks to external systems
+- Suno API is called via HTTP fetch (not webhook)
 
-## SSE (Server-Sent Events)
+## Event Stream
 
-**Internal real-time streaming** (not external, but significant):
-- `GET /api/jobs/:id/events` — SSE stream for pipeline progress (`apps/server/src/routes/events.ts`)
-  - `last-event-id` support for reconnection history replay
-  - 15s keepalive pings
-  - Cleanup on client disconnect
-- `GET /api/jobs/:id/events/history` — Paginated event log query
-- Frontend consumes via `connectJobEvents()` at `apps/web/src/api.ts`
-
-## Import/Export
-
-**JSON bundle export/import** (`apps/server/src/routes/import-export.ts`):
-- `GET /api/projects/:id/export` — Export project + jobs + versions as `ExportBundle`
-- `GET /api/jobs/:id/export` — Export single job as bundle
-- `POST /api/projects/import` — Import bundle with genre validation and duplicate detection
-- `POST /api/jobs/export` — Legacy bulk export by job IDs
-
-No external storage — exports are generated on-the-fly as JSON responses.
+**Server-Sent Events (SSE):**
+- `GET /api/jobs/:id/events` — real-time pipeline progress via SSE (`apps/server/src/routes/events.ts`)
+- Events: `connected`, `progress`, `error`
+- Frontend connects via `EventSource` in `apps/web/src/api.ts:304`
+- History replay on reconnect
+- Synthetic `suno_render` events emitted on take creation for forge strip display
 
 ---
 
-*Integration audit: 2026-07-15*
+*Integration audit: 2026-07-19*

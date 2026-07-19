@@ -206,6 +206,45 @@ export function fetchVersions(jobId: string): Promise<VersionInfo[]> {
   ).then((vs) => vs.map(parseVersion));
 }
 
+// ── Lyrics generation ──────────────────────────────────────────────────
+
+export interface LyricsGenerateBody {
+  genreId: string;
+  presetIds: string[];
+  descriptors: { label: string; cat: string; weight: number }[];
+  bpm: number;
+  key: string;
+  scale: string;
+  sections: {
+    name: string;
+    bars?: number;
+    fn?: string;
+    deltas?: string[];
+    tags?: string[];
+    vocal?: {
+      type: string;
+      delivery: string;
+      energy: number;
+      adlibs: boolean;
+      harmonies: boolean;
+    };
+  }[];
+  lyricsMode: string;
+  vocalType?: string | null;
+  lyricTopic?: string;
+  lyricThemes?: string[];
+  lyricAngle?: string;
+}
+
+export function generateLyrics(
+  body: LyricsGenerateBody,
+): Promise<{ document: { sections: { type: string; lines: string[] }[] } }> {
+  return api("/api/lyrics/generate", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 // ── Suno status & generations ───────────────────────────────────────
 
 export interface GenerationInfo {
@@ -226,6 +265,18 @@ export interface GenerationInfo {
 
 export function fetchTakes(versionId: string): Promise<GenerationInfo[]> {
   return api(`/api/versions/${encodeURIComponent(versionId)}/takes`);
+}
+
+export function createTake(versionId: string): Promise<GenerationInfo> {
+  return api(`/api/versions/${encodeURIComponent(versionId)}/takes`, {
+    method: "POST",
+  });
+}
+
+export function favoriteTake(id: string): Promise<GenerationInfo> {
+  return api(`/api/takes/${encodeURIComponent(id)}/favorite`, {
+    method: "PATCH",
+  });
 }
 
 export interface ProgressEvent {
