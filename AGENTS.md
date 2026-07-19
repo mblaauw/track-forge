@@ -26,21 +26,22 @@ npm run clean               # rm -rf apps/*/dist packages/*/dist
 
 ## Workspaces
 
-| Path                    | Package                     | Purpose                                                               |
-| ----------------------- | --------------------------- | --------------------------------------------------------------------- |
-| `apps/server`           | `@track-forge/server`       | Fastify API server. Entry: `src/index.ts`. CLI: `src/cli.ts`          |
-| `apps/web`              | `@track-forge/web`          | Preact SPA (Vite). 4 views: Library, Create, Forge, Studio            |
-| `packages/contracts`    | `@track-forge/contracts`    | Shared Zod schemas, branded IDs, types                                |
-| `packages/core`         | `@track-forge/core`         | Pipeline engine, DB (SQLite+drizzle), LLM/Suno clients, orchestration |
-| `packages/genre-core`   | `@track-forge/genre-core`   | `GenreModule` interface + `TagCategory` type + shared builders        |
-| `packages/genre-*`      | `@track-forge/genre-*`      | Genre modules: edm, hiphop, pop, ambient, dnb                         |
-| `packages/test-support` | `@track-forge/test-support` | Shared test helpers                                                   |
+| Path                    | Package                     | Purpose                                                                                                      |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `apps/server`           | `@track-forge/server`       | Fastify API server. Entry: `src/index.ts`. CLI: `src/cli.ts`                                                 |
+| `apps/web`              | `@track-forge/web`          | Preact SPA (Vite). Single-screen Compose workspace with collapsible panels (Setup, Bundle, Renders, Library) |
+| `packages/contracts`    | `@track-forge/contracts`    | Shared Zod schemas, branded IDs, types                                                                       |
+| `packages/core`         | `@track-forge/core`         | Pipeline engine, DB (SQLite+drizzle), LLM/Suno clients, orchestration                                        |
+| `packages/genre-core`   | `@track-forge/genre-core`   | `GenreModule` interface + `TagCategory` type + shared builders                                               |
+| `packages/genre-*`      | `@track-forge/genre-*`      | Genre modules: edm, hiphop, pop, ambient, dnb                                                                |
+| `packages/test-support` | `@track-forge/test-support` | Shared test helpers                                                                                          |
 
 ## Backend architecture
 
 **Routes** (`apps/server/src/routes/*`): jobs, versions, projects, health, suno, events, import-export, preview-style. Routed via route-type name on `server.get/post/patch/delete`.
 
 **Preview style endpoints**:
+
 - `POST /api/preview-style` — compiles style prompt from a raw bundle body (unsaved sessions). Accepts `{ genreId, presetIds, descriptors, bpm, key, scale, sections, lyricsMode, vocalType }`. Returns `{ style, charCount, activeCount }`.
 - `POST /api/jobs/:id/preview-style` — same but for saved sessions (validates job exists).
 
@@ -48,6 +49,7 @@ Both use the shared `compileStylePrompt()` in `packages/core/src/pipeline/style-
 
 **Synthetic SSE events**:
 Bar 8 of the forge strip ("Rendering with Suno") is driven by synthetic SSE events emitted when `POST /api/versions/:id/takes` is called:
+
 - `progress { stage: "suno_render", status: "started" }`
 - `progress { stage: "suno_render_complete", status: "completed" }`
 - `progress { stage: "suno_render_error", status: "error" }`
@@ -73,6 +75,7 @@ Presets, tag categories, song structures, taxonomy, **descriptor categories + de
 ## Frontend architecture
 
 **Single-screen Compose workspace** — the app has one view with 4-column CSS grid:
+
 - Setup column (left, 270px, collapsible to 42px): 6 collapsible cards (GENRE, PRESET, LYRICS, TEMPO & KEY, DESCRIPTORS, REFERENCE)
 - Bundle canvas (center, scrolls, max-width 720px): 4 blocks (TITLE, STYLE CONSOLE, ARRANGEMENT STRUCTURE, ARRANGEMENT)
 - Renders panel (right, 320px, collapsible to 42px): take cards with waveforms
@@ -85,6 +88,7 @@ Presets, tag categories, song structures, taxonomy, **descriptor categories + de
 **SSE**: `connectJobEvents(id, handlers)` in `api.ts`. Drives the 8-bar forge strip (7 pipeline stages + 1 Suno render via synthetic `suno_render` events). History replay on reconnect.
 
 **Key module locations**:
+
 - Arrangement editor: `apps/web/src/components/compose/ArrangementEditor.tsx`
 - Lyrics block: `apps/web/src/components/compose/LyricsBlock.tsx`
 - Library panel: `apps/web/src/components/compose/LibraryPanel.tsx`

@@ -828,6 +828,7 @@ function GenreCardContent({
   genres,
   genreSearch,
   setGenreSearch,
+  presets,
   descDefaults,
   s,
 }: CardCtx & { s: ReturnType<typeof useSession> }) {
@@ -861,13 +862,16 @@ function GenreCardContent({
               class={`setup-select-item${active ? " active" : ""}`}
               onClick={() => {
                 if (g.id === s.genreId) return;
+                const firstPreset = presets?.[0]?.id ?? "";
+                const firstTheme =
+                  (LYRIC_THEMES[g.id] ?? LYRIC_THEMES.edm!)?.[0] ?? "";
                 s.setSession({
                   genreId: g.id,
-                  presetId: "",
-                  presetIds: [],
+                  presetId: firstPreset,
+                  presetIds: firstPreset ? [firstPreset] : [],
                   tags: defaultDescriptors(g.id, descDefaults?.defaults),
                   sections: defaultSections(g.id),
-                  lyricThemes: [],
+                  lyricThemes: firstTheme ? [firstTheme] : [],
                   lyricsGenerated: false,
                   lyricLines: {},
                 });

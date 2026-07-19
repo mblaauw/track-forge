@@ -8,6 +8,7 @@ import {
   listGenerations,
   storeGeneration,
   generateSunoPayload,
+  publish,
   schema,
 } from "@track-forge/core";
 import type { SunoArtifact } from "@track-forge/contracts";
@@ -64,6 +65,24 @@ export function registerSunoRoutes(
           { generationId, err },
           "failed to update generation record",
         );
+      }
+
+      // Emit synthetic SSE events for the forge strip's bar 8
+      try {
+        const gen = await getGeneration(db, generationId);
+        if (gen?.jobId) {
+          const isError = status === "error" || status === "failed";
+          await publish(db, gen.jobId, {
+            stage: isError ? "suno_render_error" : "suno_render_complete",
+            status: isError ? "error" : "completed",
+            error: isError
+              ? ((data.error as string) ?? "Suno render failed")
+              : undefined,
+            message: isError ? undefined : "Suno render completed",
+          });
+        }
+      } catch {
+        // event emission is best-effort
       }
     }
 

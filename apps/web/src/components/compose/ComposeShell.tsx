@@ -4,9 +4,8 @@ import {
   createJob,
   startJob,
   connectJobEvents,
-  fetchJob,
+  updateJobInputs,
   fetchVersions,
-  type JobInfo,
   type ProgressEvent,
 } from "../../api";
 import { ContextBar } from "./ContextBar";
@@ -197,6 +196,58 @@ export function ComposeShell() {
       if (cleanupRef.current) cleanupRef.current();
     };
   }, []);
+
+  // Debounced autosave to backend (only when job exists)
+  const persistRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (!s.jobId) return;
+    if (persistRef.current) clearTimeout(persistRef.current);
+    persistRef.current = setTimeout(() => {
+      const inputs: Record<string, unknown> = {
+        name: s.name,
+        title: s.title,
+        genreId: s.genreId,
+        presetIds: s.presetIds,
+        presetId: s.presetIds[0] ?? s.presetId,
+        bpm: s.bpm,
+        key: s.key,
+        scale: s.scale,
+        lyricsMode: s.lyricsMode,
+        lyricTopic: s.lyricTopic,
+        lyricAngle: s.lyricAngle,
+        lyricThemes: s.lyricThemes,
+        lyricLines: s.lyricLines,
+        lyricsGenerated: s.lyricsGenerated,
+        tags: s.tags,
+        sections: s.sections,
+        reference: s.reference,
+      };
+      updateJobInputs(s.jobId!, { inputs, name: s.name || undefined }).catch(
+        () => {},
+      );
+    }, 800);
+    return () => {
+      if (persistRef.current) clearTimeout(persistRef.current);
+    };
+  }, [
+    s.jobId,
+    s.name,
+    s.title,
+    s.genreId,
+    s.presetIds.join(","),
+    s.presetId,
+    s.bpm,
+    s.key,
+    s.scale,
+    s.lyricsMode,
+    s.lyricTopic,
+    s.lyricAngle,
+    s.lyricThemes.join(","),
+    s.lyricsGenerated,
+    s.tags.map((t) => `${t.label}:${t.weight}`).join(","),
+    s.sections.map((sec) => `${sec.name}:${sec.fn}:${sec.bars}`).join(","),
+    s.reference,
+  ]);
 
   const leftW = leftCollapsed ? "42px" : "270px";
   const rightW = rightCollapsed ? "42px" : "320px";

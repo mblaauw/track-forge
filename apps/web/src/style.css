@@ -2690,7 +2690,7 @@ ol {
 
 .setup-pill.active {
   background: var(--inset);
-  border-color: var(--hue-amber);
+  border-color: #c98a2b;
   color: var(--body-dark);
 }
 
