@@ -22,9 +22,7 @@ function hashString(s: string): number {
 const GENRE_COLORS: Record<string, string> = {
   edm: "cyan",
   hiphop: "amber",
-  pop: "violet",
   ambient: "accent",
-  dnb: "red",
 };
 
 function genreColorClass(id: string): string {

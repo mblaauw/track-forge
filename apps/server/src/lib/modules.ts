@@ -1,9 +1,7 @@
 import type { GenreModule, TagCategory } from "@track-forge/genre-core";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
-import { popModule } from "@track-forge/genre-pop";
 import { ambientModule } from "@track-forge/genre-ambient";
-import { dnbModule } from "@track-forge/genre-dnb";
 import {
   ALL_GENRE_IDS,
   listGenreConfigs,
@@ -16,9 +14,7 @@ import {
 const MODULE_IMPORTS: Record<string, GenreModule> = {
   edm: edmModule as GenreModule,
   hiphop: hipHopModule as GenreModule,
-  pop: popModule as GenreModule,
   ambient: ambientModule as GenreModule,
-  dnb: dnbModule as GenreModule,
 };
 
 function augment(id: string, mod: GenreModule): GenreModule {

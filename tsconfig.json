@@ -7,8 +7,6 @@
     { "path": "packages/genre-edm" },
     { "path": "packages/genre-hiphop" },
     { "path": "packages/genre-ambient" },
-    { "path": "packages/genre-dnb" },
-    { "path": "packages/genre-pop" },
     { "path": "packages/test-support" },
     { "path": "apps/server" },
     { "path": "apps/web" }

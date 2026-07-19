@@ -10,15 +10,14 @@ import {
 } from "../src/taxonomy.js";
 
 describe("EDM taxonomy", () => {
-  it("has 10 families", () => {
-    expect(EdmFamily).toHaveLength(10);
+  it("has 8 families", () => {
+    expect(EdmFamily).toHaveLength(8);
     expect(EdmFamily).toContain("house");
     expect(EdmFamily).toContain("techno");
-    expect(EdmFamily).toContain("pop");
   });
 
-  it("has 43 subgenres (from YAML)", () => {
-    expect(EDM_SUBGENRES).toHaveLength(43);
+  it("has 35 subgenres (from YAML)", () => {
+    expect(EDM_SUBGENRES).toHaveLength(35);
   });
 
   it("getSubgenre returns entry by id", () => {
@@ -35,18 +34,16 @@ describe("EDM taxonomy", () => {
   it("getSubgenresByFamily returns entries filtered by family", () => {
     expect(getSubgenresByFamily("house")).toHaveLength(6);
     expect(getSubgenresByFamily("techno")).toHaveLength(6);
-    expect(getSubgenresByFamily("pop")).toHaveLength(4);
   });
 
   it("getFamilyLabel returns labels", () => {
     expect(getFamilyLabel("house")).toBe("House");
-    expect(getFamilyLabel("dnb")).toBe("Drum & Bass");
     expect(getFamilyLabel("downtempo")).toBe("Downtempo / Chill");
   });
 
   it("getAllFamilyOptions returns all families", () => {
     const opts = getAllFamilyOptions();
-    expect(opts).toHaveLength(10);
+    expect(opts).toHaveLength(8);
     expect(opts[0]).toEqual({ label: "House", value: "house" });
   });
 

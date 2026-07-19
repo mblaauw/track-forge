@@ -79,7 +79,7 @@ function loadYaml(id: string): GenreConfigYaml {
   }
 }
 
-export const ALL_GENRE_IDS = ["edm", "hiphop", "pop", "ambient", "dnb"] as const;
+export const ALL_GENRE_IDS = ["edm", "hiphop", "ambient"] as const;
 
 export function listGenreConfigs(): {
   id: string;

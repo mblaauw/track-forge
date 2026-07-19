@@ -12,17 +12,13 @@ import {
 import { useSession } from "../lib/session";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
-import { popModule } from "@track-forge/genre-pop";
 import { ambientModule } from "@track-forge/genre-ambient";
-import { dnbModule } from "@track-forge/genre-dnb";
 import type { GenreModule, TagCategory } from "@track-forge/genre-core";
 
 const GENRE_MODULES: Record<string, GenreModule> = {
   edm: edmModule as unknown as GenreModule,
   hiphop: hipHopModule as unknown as GenreModule,
-  pop: popModule as unknown as GenreModule,
   ambient: ambientModule as unknown as GenreModule,
-  dnb: dnbModule as unknown as GenreModule,
 };
 
 const KEY_OPTIONS = [
@@ -231,17 +227,10 @@ export function CreateSession() {
     switch (genreId) {
       case "edm":
       case "ambient":
-      case "dnb":
         return [
           { value: "full_lyrics", label: "Full Lyrics" },
           { value: "guided_instrumental", label: "Guided Instrumental" },
           { value: "strict_instrumental", label: "Strict Instrumental" },
-        ];
-      case "pop":
-        return [
-          { value: "full_lyrics", label: "Full Lyrics" },
-          { value: "hook", label: "Hook Only" },
-          { value: "instrumental", label: "Instrumental" },
         ];
       case "hiphop":
       default:
