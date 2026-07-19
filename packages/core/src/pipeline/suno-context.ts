@@ -5,6 +5,7 @@
  */
 
 import type { ArrangementSection } from "@track-forge/genre-core";
+import { compileStylePrompt } from "./style-compiler.js";
 
 export interface SunoContextInput {
   genreName: string;
@@ -24,16 +25,28 @@ export interface SunoContextInput {
 export function buildSunoContext(input: SunoContextInput): string {
   const lines: string[] = [];
 
-  // Style prompt block
+  // Style prompt block — use the same deterministic compileStylePrompt
+  const compiled = compileStylePrompt({
+    genreName: input.genreName,
+    presetLabels: input.presetLabels,
+    descriptors: input.descriptors,
+    bpm: input.bpm,
+    key: input.key,
+    scale: input.scale,
+    sections: input.sections.map((s) => ({ name: s.section, fn: s.fn })),
+    lyricsMode: input.lyricsMode,
+    vocalType: input.vocalType,
+  });
+
   lines.push("STYLE PROMPT:");
-  lines.push(compileStyleSummary(input));
+  lines.push(compiled.style);
   lines.push("");
 
-  // Structure block
+  // Structure block — per design target: "{name} — {bars} bars [{fn}, {deltas...}]"
   lines.push("STRUCTURE:");
   for (const sec of input.sections) {
-    const deltas = sec.deltas.length > 0 ? ` ${sec.deltas.join(", ")}` : "";
-    lines.push(`"${sec.section}" — ${sec.bars} bars [${sec.fn}${deltas}]`);
+    const deltas = sec.deltas.length > 0 ? `, ${sec.deltas.join(", ")}` : "";
+    lines.push(`${sec.section} — ${sec.bars} bars [${sec.fn}${deltas}]`);
   }
   lines.push("");
 
@@ -51,21 +64,4 @@ export function buildSunoContext(input: SunoContextInput): string {
   }
 
   return lines.join("\n");
-}
-
-/** Minimal style summary for the Suno context (not the same as compileStylePrompt output) */
-function compileStyleSummary(input: SunoContextInput): string {
-  const active = input.descriptors.filter((d) => d.weight > 0);
-  if (active.length === 0) return `${input.genreName}`;
-
-  const parts: string[] = [input.genreName];
-  if (input.presetLabels.length > 0) {
-    parts.push(`— ${input.presetLabels.join(", ")}`);
-  }
-  const descLabels = active.map((d) => d.label).join(", ");
-  parts.push(`(${descLabels})`);
-  parts.push(
-    `${input.bpm} BPM ${input.key}${input.scale === "minor" ? "m" : ""}`,
-  );
-  return parts.join(" ");
 }

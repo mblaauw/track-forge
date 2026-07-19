@@ -251,7 +251,6 @@ describe("PromptAssembler", () => {
     expect(manifest.planning).toBeTruthy();
     expect(manifest.style_writing).toBeTruthy();
     expect(manifest.lyrics_writing).toBeTruthy();
-    expect(manifest.review).toBeTruthy();
   });
 
   it("tries alternative fragment keys", () => {

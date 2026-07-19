@@ -23,10 +23,6 @@ const FRAGMENT_KEYS: Record<string, string[]> = {
     "lyrics_instrumental",
     "lyrics",
   ],
-  compilation: ["compilation"],
-  review: ["review"],
-  revision: ["revision"],
-  verification: ["verification"],
 };
 
 // ── Fallback templates ────────────────────────────────────────────────
@@ -35,17 +31,12 @@ const FALLBACKS: Record<string, string> = {
   planning: `Create a song plan based on the following inputs:\n{{context}}\nGenerate a structured plan including arrangement, instrumentation, and mood progression.`,
   style_writing: `Write a Suno AI music style prompt based on this plan:\n{{plan}}\nInclude genre, mood, tempo, instrumentation, and production characteristics. Be concise.\n\nReturn your answer as valid JSON matching this schema:\n{\n  "titleCandidates": ["suggested title 1", "suggested title 2"],\n  "descriptiveStyle": "the style description text",\n  "negativeTags": ["tag_to_avoid"],\n  "bpm": 140,\n  "key": "C",\n  "vocalDescription": "vocal style notes"\n}`,
   lyrics_writing: `Write lyrics/structure based on this plan:\n{{plan}}\nFollow the song structure specified. Use section markers like [Verse], [Chorus], [Bridge].\n\nReturn your answer as valid JSON matching this schema:\n{\n  "document": {\n    "bpm": 140,\n    "key": "Am",\n    "genre": "genre name",\n    "sections": [\n      { "type": "verse", "lines": ["line 1", "line 2"], "bars": 8, "tags": [], "instrumental": false }\n    ],\n    "metadata": {}\n  }\n}`,
-  review: `Review the following song for quality and coherence. Return findings as JSON array with format:\n[{"severity":"error|warning|suggestion","field":"style|lyrics|structure","message":"description","autoFixPolicy":"required|preferred|skipped","patchType":"replace_style_description|replace_negative_tags|replace_lyrics_section|replace_selected_text|input_patch","suggestedValue":"fix"}]\n\nSong data:\n{{compiledJson}}\n\nCheck: style coherence, lyrics fit, structure completeness, tag correctness, genre alignment.`,
 };
 
 export const PROMPT_STAGES: GenerationStage[] = [
   "planning",
   "style_writing",
   "lyrics_writing",
-  "compilation",
-  "review",
-  "revision",
-  "verification",
 ];
 
 // ── Assembler ─────────────────────────────────────────────────────────
