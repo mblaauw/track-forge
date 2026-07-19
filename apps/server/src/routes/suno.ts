@@ -148,7 +148,7 @@ export function registerSunoRoutes(
 
       const artifacts: SunoArtifact[] = (() => {
         try {
-          return JSON.parse(latestVersion.artifacts as string);
+          return JSON.parse(latestVersion.artifacts);
         } catch {
           return [];
         }

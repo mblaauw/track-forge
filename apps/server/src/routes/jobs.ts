@@ -20,7 +20,11 @@ import {
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config, JobId } from "@track-forge/contracts";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
-import { getPresets, getTagCategories, getDescriptorDefaults } from "../lib/genre-config.js";
+import {
+  getPresets,
+  getTagCategories,
+  getDescriptorDefaults,
+} from "../lib/genre-config.js";
 import { findRowOr404, safeParse, parsePagination } from "../lib/db-utils.js";
 import {
   validateBody,
@@ -475,7 +479,7 @@ export function registerJobRoutes(
 
     if (latestVersion) {
       const artifacts = safeParse(
-        latestVersion.artifacts as string,
+        latestVersion.artifacts,
         [],
       ) as SunoArtifact[];
       for (const a of artifacts) {
@@ -491,7 +495,10 @@ export function registerJobRoutes(
         try {
           const sd = JSON.parse(job.stageData);
           if (sd && typeof sd === "object" && sd.compiledJson) {
-            compiled = safeParse(sd.compiledJson, null) as Record<string, string> | null;
+            compiled = safeParse(sd.compiledJson, null) as Record<
+              string,
+              string
+            > | null;
           }
         } catch {
           /* ignore */

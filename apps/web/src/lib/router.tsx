@@ -11,10 +11,6 @@ const RouterContext = createContext<RouterCtx>({
   navigate: () => {},
 });
 
-export function useRouter(): RouterCtx {
-  return useContext(RouterContext);
-}
-
 function getHashPath(): string {
   return location.hash.replace(/^#/, "") || "/";
 }
@@ -37,42 +33,4 @@ export function Router({ children }: { children: preact.ComponentChildren }) {
       {children}
     </RouterContext.Provider>
   );
-}
-
-interface RouteMatch {
-  matched: boolean;
-  params: Record<string, string>;
-}
-
-function match(pattern: string, current: string): RouteMatch {
-  if (!pattern.includes(":")) {
-    return { matched: current === pattern, params: {} };
-  }
-  const patParts = pattern.split("/");
-  const curParts = current.split("/");
-  if (patParts.length !== curParts.length) {
-    return { matched: false, params: {} };
-  }
-  const params: Record<string, string> = {};
-  const matched = patParts.every((p, i) => {
-    if (p.startsWith(":")) {
-      params[p.slice(1)] = curParts[i]!;
-      return true;
-    }
-    return p === curParts[i];
-  });
-  return { matched, params };
-}
-
-export function Route({
-  path,
-  component,
-}: {
-  path: string;
-  component: (props: { params: Record<string, string> }) => preact.VNode;
-}) {
-  const { path: current } = useRouter();
-  const result = match(path, current);
-  if (!result.matched) return null;
-  return component({ params: result.params });
 }
