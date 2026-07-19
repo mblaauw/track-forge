@@ -2534,6 +2534,7 @@ ol {
   flex-direction: column;
   gap: 4px;
   padding-right: 2px;
+  overflow-y: auto;
 }
 
 .setup-select-item {

@@ -694,12 +694,14 @@ export function SetupColumn() {
     ) {
       seededRef.current = true;
       const themes = descDefaults.lyricThemes;
+      const sections = defaultSections(s.genreId);
       s.setSession({
         presetIds: [presets[0]!.id],
         presetId: presets[0]!.id,
         presetLabels: [presets[0]!.name],
         tags: defaultDescriptors(s.genreId, descDefaults.defaults),
-        sections: defaultSections(s.genreId),
+        sections,
+        selSectionId: sections[0]?.id ?? null,
         lyricThemes: themes.length > 0 ? [themes[0]!] : [],
       });
     }
@@ -868,13 +870,15 @@ function GenreCardContent({
                 const firstPresetName = presets?.[0]?.name ?? "";
                 const themes = descDefaults?.lyricThemes ?? [];
                 const firstTheme = themes[0] ?? "";
+                const genreSections = defaultSections(g.id);
                 s.setSession({
                   genreId: g.id,
                   presetId: firstPreset,
                   presetIds: firstPreset ? [firstPreset] : [],
                   presetLabels: firstPresetName ? [firstPresetName] : [],
                   tags: defaultDescriptors(g.id, descDefaults?.defaults),
-                  sections: defaultSections(g.id),
+                  sections: genreSections,
+                  selSectionId: genreSections[0]?.id ?? null,
                   lyricThemes: firstTheme ? [firstTheme] : [],
                   lyricsGenerated: false,
                   lyricLines: {},

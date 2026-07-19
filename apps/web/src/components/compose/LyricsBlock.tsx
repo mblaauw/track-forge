@@ -134,70 +134,94 @@ export function LyricsBlock() {
         </div>
       </div>
       <div class="bundle-block-body">
-        {s.lyricsMode === "strict_instrumental" ? (
-          <div class="lyrics-info-box">
+        {s.lyricsMode === "strict_instrumental" && (
+          <div class="lyrics-info-box" style="margin-bottom:12px">
             <Waveform size={14} />
             <span>
               Instrumental — the arrangement structure below uses Suno metatags
               to describe movement. Suno reads these metatags directly.
             </span>
           </div>
-        ) : s.lyricsGenerated ? (
-          s.sections.map((sec) => {
-            const isVocal = sectionIsVocal(sec);
-            const hue = sectionHue(sec.name);
-            return (
-              <div class="lyrics-section-block" key={sec.id}>
-                <div
-                  class="lyrics-section-header"
-                  style={{ background: `${hue}22` }}
-                >
-                  <span style={{ color: hue, fontWeight: 700 }}>
-                    [{sec.name}
-                    {sec.deltas.length > 0 ? `: ${sec.deltas.join(", ")}` : ""}]
-                  </span>
-                </div>
-                {isVocal && sec.vocal && (
-                  <div class="lyrics-delivery-pill">
-                    <MicrophoneStage
-                      size={12}
-                      style="color:var(--danger-text)"
-                    />
-                    <span>{vocalMeta(sec.vocal)}</span>
-                  </div>
-                )}
-                {(s.lyricLines[sec.id] ?? []).length > 0 ? (
-                  (s.lyricLines[sec.id] ?? []).map((line, li) => (
-                    <div class="lyrics-line-row" key={li}>
-                      <span class="lyrics-syl">{syl(line)}</span>
-                      <input
-                        class="lyrics-line-input"
-                        value={line}
-                        onInput={(e) => {
-                          const lines = { ...s.lyricLines };
-                          const arr = [...(lines[sec.id] ?? [])];
-                          arr[li] = (e.target as HTMLInputElement).value;
-                          lines[sec.id] = arr;
-                          s.setSession({ lyricLines: lines });
-                        }}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <p class="lyrics-not-generated">
-                    Lyrics not generated yet. Click Generate above.
-                  </p>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <p class="lyrics-not-generated">
-            {vocalSections.length === 0
-              ? "No vocal sections in the arrangement. Add a section with 'vocal focus' or a Verse/Chorus/Hook/Drop name."
-              : "Generate lyrics from your arrangement, style & lyrical brief."}
-          </p>
         )}
+        {s.sections.map((sec) => {
+          const isVocal = sectionIsVocal(sec);
+          const hue = sectionHue(sec.name);
+          return (
+            <div class="lyrics-section-block" key={sec.id}>
+              <div
+                class="lyrics-section-header"
+                style={{ background: `${hue}22` }}
+              >
+                <span style={{ color: hue, fontWeight: 700 }}>
+                  [{sec.name}
+                  {sec.deltas.length > 0 ? `: ${sec.deltas.join(", ")}` : ""}]
+                </span>
+              </div>
+              {isVocal && sec.vocal && (
+                <div class="lyrics-delivery-pill">
+                  <MicrophoneStage size={12} style="color:var(--danger-text)" />
+                  <span>{vocalMeta(sec.vocal)}</span>
+                </div>
+              )}
+              {s.lyricsGenerated && (
+                <div style="margin:4px 0 6px">
+                  <button
+                    class="arr-action-btn"
+                    onClick={() => {
+                      const lines = { ...s.lyricLines };
+                      lines[sec.id] = [
+                        `(Regenerated lyrics for ${sec.name} — line 1)`,
+                        `(Regenerated lyrics for ${sec.name} — line 2)`,
+                      ];
+                      s.setSession({ lyricLines: lines });
+                    }}
+                  >
+                    <ArrowClockwise size={12} /> Regenerate block
+                  </button>
+                </div>
+              )}
+              {s.lyricsGenerated && (s.lyricLines[sec.id] ?? []).length > 0 ? (
+                (s.lyricLines[sec.id] ?? []).map((line, li) => (
+                  <div class="lyrics-line-row" key={li}>
+                    <span class="lyrics-syl">{syl(line)}</span>
+                    <input
+                      class="lyrics-line-input"
+                      value={line}
+                      onInput={(e) => {
+                        const lines = { ...s.lyricLines };
+                        const arr = [...(lines[sec.id] ?? [])];
+                        arr[li] = (e.target as HTMLInputElement).value;
+                        lines[sec.id] = arr;
+                        s.setSession({ lyricLines: lines });
+                      }}
+                    />
+                  </div>
+                ))
+              ) : !s.lyricsGenerated &&
+                isVocal &&
+                s.lyricsMode !== "strict_instrumental" ? (
+                <p class="lyrics-not-generated">
+                  Lyrics not generated yet. Click Generate above.
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+        {!s.lyricsGenerated &&
+          s.lyricsMode !== "strict_instrumental" &&
+          vocalSections.length > 0 && (
+            <p class="lyrics-not-generated">
+              Generate lyrics from your arrangement, style & lyrical brief.
+            </p>
+          )}
+        {!s.lyricsGenerated &&
+          s.lyricsMode !== "strict_instrumental" &&
+          vocalSections.length === 0 && (
+            <p class="lyrics-not-generated">
+              No vocal sections in the arrangement. Add a section with 'vocal
+              focus' or a Verse/Chorus/Hook/Drop name.
+            </p>
+          )}
       </div>
     </div>
   );
