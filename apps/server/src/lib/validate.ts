@@ -2,10 +2,7 @@ import { z } from "zod";
 import type { FastifyRequest } from "fastify";
 import { ApiError } from "./db-utils.js";
 
-export function validateBody<T>(
-  schema: z.ZodType<T>,
-  req: FastifyRequest,
-): T {
+export function validateBody<T>(schema: z.ZodType<T>, req: FastifyRequest): T {
   const result = schema.safeParse(req.body);
   if (!result.success) {
     throw new ApiError(400, `Invalid request body: ${result.error.message}`);
@@ -13,10 +10,7 @@ export function validateBody<T>(
   return result.data;
 }
 
-export function validateQuery<T>(
-  schema: z.ZodType<T>,
-  req: FastifyRequest,
-): T {
+export function validateQuery<T>(schema: z.ZodType<T>, req: FastifyRequest): T {
   const result = schema.safeParse(req.query);
   if (!result.success) {
     throw new ApiError(400, `Invalid query: ${result.error.message}`);
@@ -64,14 +58,20 @@ export const CreateDraftBody = z.object({
   presetId: z.string().min(1),
   inputs: z.string().nullable().optional(),
   reference: z.string().nullable().optional(),
-  nlAdjustments: z.union([z.string(), z.record(z.unknown())]).nullable().optional(),
+  nlAdjustments: z
+    .union([z.string(), z.record(z.unknown())])
+    .nullable()
+    .optional(),
 });
 export const UpdateDraftBody = z.object({
   genreId: z.string().optional(),
   presetId: z.string().optional(),
   inputs: z.string().nullable().optional(),
   reference: z.string().nullable().optional(),
-  nlAdjustments: z.union([z.string(), z.record(z.unknown())]).nullable().optional(),
+  nlAdjustments: z
+    .union([z.string(), z.record(z.unknown())])
+    .nullable()
+    .optional(),
 });
 
 // ── Jobs ───────────────────────────────────────────────────────────────
@@ -98,6 +98,34 @@ export const PatchFindingsBody = z.object({
 });
 export const BulkExportBody = z.object({
   ids: z.array(z.string()).optional(),
+});
+export const PreviewStyleBody = z.object({
+  genreId: z.string().min(1),
+  presetIds: z.array(z.string()).default([]),
+  descriptors: z
+    .array(
+      z.object({
+        label: z.string(),
+        cat: z.string(),
+        weight: z.number().int().min(0).max(3),
+      }),
+    )
+    .default([]),
+  bpm: z.number().int().min(40).max(220),
+  key: z.string().default(""),
+  scale: z.enum(["major", "minor"]).default("minor"),
+  sections: z
+    .array(
+      z.object({
+        name: z.string(),
+        fn: z.string().default("establish"),
+      }),
+    )
+    .default([]),
+  lyricsMode: z
+    .enum(["full_lyrics", "strict_instrumental", "guided_instrumental"])
+    .default("strict_instrumental"),
+  vocalType: z.string().nullable().optional(),
 });
 export const StyleTagSuggestionBody = z.object({
   genreId: z.string().min(1),

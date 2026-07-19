@@ -16,8 +16,10 @@ import type {
 import {
   fetchGenres,
   fetchPresets,
+  fetchDescriptorDefaults,
   type GenreInfo,
   type GenrePreset,
+  type GenreDescriptorDefaults,
 } from "../../api";
 
 const KEY_OPTIONS = [
@@ -648,13 +650,19 @@ function defaultSections(genreId: string): import("./types").Section[] {
   return defaults[genreId] ?? defaults.edm!;
 }
 
-function defaultDescriptors(genreId: string): Descriptor[] {
-  const seed = DESC_DEFAULTS[genreId] ?? DESC_DEFAULTS.edm!;
+function defaultDescriptors(
+  genreId: string,
+  apiDefaults?: { label: string; cat: string; weight: number }[] | null,
+): Descriptor[] {
+  const seed =
+    apiDefaults && apiDefaults.length > 0
+      ? apiDefaults
+      : (DESC_DEFAULTS[genreId] ?? DESC_DEFAULTS.edm!);
   return seed.map((d) => ({
     id: d.label,
     label: d.label,
-    cat: d.cat,
-    weight: d.weight,
+    cat: d.cat as DescriptorCategory,
+    weight: d.weight as DescriptorWeight,
     muted: false,
   }));
 }
@@ -675,6 +683,8 @@ export function SetupColumn() {
   // Transient UI state (not in session store)
   const [genres, setGenres] = useState<GenreInfo[]>([]);
   const [presets, setPresets] = useState<GenrePreset[]>([]);
+  const [descDefaults, setDescDefaults] =
+    useState<GenreDescriptorDefaults | null>(null);
   const [genreSearch, setGenreSearch] = useState("");
   const [presetSearch, setPresetSearch] = useState("");
 
@@ -688,6 +698,9 @@ export function SetupColumn() {
     if (s.genreId) {
       fetchPresets(s.genreId)
         .then(setPresets)
+        .catch(() => {});
+      fetchDescriptorDefaults(s.genreId)
+        .then(setDescDefaults)
         .catch(() => {});
     }
   }, [s.genreId]);
@@ -737,6 +750,7 @@ export function SetupColumn() {
                 {renderCardBody(c.id, s, {
                   genres,
                   presets,
+                  descDefaults,
                   genreSearch,
                   setGenreSearch,
                   presetSearch,
@@ -779,6 +793,7 @@ function cardSummary(
 interface CardCtx {
   genres: GenreInfo[];
   presets: GenrePreset[];
+  descDefaults: GenreDescriptorDefaults | null;
   genreSearch: string;
   setGenreSearch: (v: string) => void;
   presetSearch: string;
@@ -813,6 +828,7 @@ function GenreCardContent({
   genres,
   genreSearch,
   setGenreSearch,
+  descDefaults,
   s,
 }: CardCtx & { s: ReturnType<typeof useSession> }) {
   const filtered = genres.filter(
@@ -849,7 +865,7 @@ function GenreCardContent({
                   genreId: g.id,
                   presetId: "",
                   presetIds: [],
-                  tags: defaultDescriptors(g.id),
+                  tags: defaultDescriptors(g.id, descDefaults?.defaults),
                   sections: defaultSections(g.id),
                   lyricThemes: [],
                   lyricsGenerated: false,
@@ -1132,10 +1148,27 @@ function TempoCardContent({ s }: { s: ReturnType<typeof useSession> }) {
 
 /* ─── DESCRIPTORS ─── */
 
-function DescriptorsCardContent({ s }: { s: ReturnType<typeof useSession> }) {
-  const pool = CAT_POOLS[s.genreId] ?? CAT_POOLS.edm!;
+function DescriptorsCardContent({
+  descDefaults,
+  s,
+}: {
+  descDefaults: GenreDescriptorDefaults | null;
+  s: ReturnType<typeof useSession>;
+}) {
+  const apiPool = descDefaults?.categories;
+  const pool =
+    apiPool && apiPool.length > 0
+      ? (apiPool as {
+          cat: DescriptorCategory;
+          label: string;
+          hue: string;
+          chips: string[];
+        }[])
+      : (CAT_POOLS[s.genreId] ?? CAT_POOLS.edm!);
   const activeTags = s.tags.filter((t) => !t.muted);
-  const seedCount = (DESC_DEFAULTS[s.genreId] ?? DESC_DEFAULTS.edm!).length;
+  const seedData =
+    descDefaults?.defaults ?? DESC_DEFAULTS[s.genreId] ?? DESC_DEFAULTS.edm!;
+  const seedCount = seedData.length;
 
   return (
     <>
@@ -1146,7 +1179,11 @@ function DescriptorsCardContent({ s }: { s: ReturnType<typeof useSession> }) {
         <span style="font-size:10px;color:var(--faint)">override freely</span>
         <button
           class="setup-link-btn"
-          onClick={() => s.setSession({ tags: defaultDescriptors(s.genreId) })}
+          onClick={() =>
+            s.setSession({
+              tags: defaultDescriptors(s.genreId, descDefaults?.defaults),
+            })
+          }
         >
           Reset
         </button>

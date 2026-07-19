@@ -34,3 +34,8 @@ export {
   formatControlDescriptors,
   parseControlDescriptors,
 } from "./prompt-assembler.js";
+export { compileStylePrompt } from "./style-compiler.js";
+export type {
+  CompileStyleInput,
+  CompileStyleResult,
+} from "./style-compiler.js";

@@ -107,6 +107,30 @@ export function fetchTagCategories(
   return api(`/api/genres/${encodeURIComponent(genreId)}/tag-categories`);
 }
 
+export interface DescriptorCategoryPoolInfo {
+  cat: string;
+  label: string;
+  hue: string;
+  chips: string[];
+}
+
+export interface DescriptorDefaultInfo {
+  label: string;
+  cat: string;
+  weight: number;
+}
+
+export interface GenreDescriptorDefaults {
+  categories: DescriptorCategoryPoolInfo[];
+  defaults: DescriptorDefaultInfo[];
+}
+
+export function fetchDescriptorDefaults(
+  genreId: string,
+): Promise<GenreDescriptorDefaults> {
+  return api(`/api/genres/${encodeURIComponent(genreId)}/descriptor-defaults`);
+}
+
 export function createJob(body: {
   genreId: string;
   presetId: string;
@@ -115,6 +139,33 @@ export function createJob(body: {
   name?: string;
 }): Promise<JobInfo> {
   return api("/api/jobs", { method: "POST", body: JSON.stringify(body) });
+}
+
+export interface PreviewStyleBody {
+  genreId: string;
+  presetIds: string[];
+  descriptors: { label: string; cat: string; weight: number }[];
+  bpm: number;
+  key: string;
+  scale: string;
+  sections: { name: string; fn: string }[];
+  lyricsMode: string;
+  vocalType?: string | null;
+}
+
+export interface PreviewStyleResult {
+  style: string;
+  charCount: number;
+  activeCount: number;
+}
+
+export function previewStyle(
+  body: PreviewStyleBody,
+): Promise<PreviewStyleResult> {
+  return api("/api/preview-style", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function renameJob(id: string, name: string): Promise<JobInfo> {

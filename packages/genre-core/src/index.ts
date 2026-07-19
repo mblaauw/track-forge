@@ -65,7 +65,11 @@ export interface GenreModule<
   /** Input validation schema */
   inputSchema: z.ZodType<TInputs, z.ZodTypeDef, Record<string, unknown>>;
   /** Internal blueprint schema */
-  blueprintSchema: z.ZodType<TBlueprintData, z.ZodTypeDef, Record<string, unknown>>;
+  blueprintSchema: z.ZodType<
+    TBlueprintData,
+    z.ZodTypeDef,
+    Record<string, unknown>
+  >;
   /** Default input values */
   defaults: TInputs;
 
@@ -76,6 +80,8 @@ export interface GenreModule<
   promptFragments: Record<string, string>;
   /** Tag categories for the Style Console UI (loaded from YAML config at runtime) */
   tagCategories?: TagCategory[];
+  /** Descriptor config: category pools, defaults, preset seeds (interim TS; Subissue 7 → YAML) */
+  descriptorConfig?: GenreDescriptorConfig;
   /** Song structure template (loaded from YAML config at runtime) */
   songStructure?: SongStructureSection[];
   /** Taxonomy data (loaded from YAML config at runtime) */
@@ -145,6 +151,33 @@ export interface ValidationError {
   message: string;
 }
 
+export type DescriptorCategory =
+  "sound" | "rhythm" | "atmosphere" | "production" | "energy";
+
+export type DescriptorWeight = 1 | 2 | 3;
+
+export interface DescriptorDef {
+  label: string;
+  cat: DescriptorCategory;
+  weight: DescriptorWeight;
+}
+
+export interface DescriptorCategoryPool {
+  cat: DescriptorCategory;
+  label: string;
+  hue: string;
+  chips: string[];
+}
+
+export interface GenreDescriptorConfig {
+  /** 5-category suggestion pools */
+  categories: DescriptorCategoryPool[];
+  /** Genre-level descriptor defaults */
+  defaults: DescriptorDef[];
+  /** Per-preset descriptor seeds (overrides + additions to genre defaults) */
+  presetSeeds: Record<string, DescriptorDef[]>;
+}
+
 export interface TagCategory {
   id: string;
   name: string;
@@ -203,7 +236,11 @@ export function createGenreModule<
   id: string;
   name: string;
   inputSchema: z.ZodType<TInputs, z.ZodTypeDef, Record<string, unknown>>;
-  blueprintSchema: z.ZodType<TBlueprintData, z.ZodTypeDef, Record<string, unknown>>;
+  blueprintSchema: z.ZodType<
+    TBlueprintData,
+    z.ZodTypeDef,
+    Record<string, unknown>
+  >;
   defaults: TInputs;
   promptFragments: Record<string, string>;
   compileBlueprint: (
@@ -266,11 +303,13 @@ interface BaseBlueprintOpts {
  * Build a base input schema with shared fields (bpm, key, scale, mood,
  * complexity, lyricsMode) merged with genre-specific extras.
  */
-export function createBaseInputSchema(
-  opts?: BaseInputOpts,
-): z.ZodObject<any> {
+export function createBaseInputSchema(opts?: BaseInputOpts): z.ZodObject<any> {
   let schema: any = z.object({
-    bpm: z.number().int().min(opts?.bpmMin ?? 40).max(opts?.bpmMax ?? 220),
+    bpm: z
+      .number()
+      .int()
+      .min(opts?.bpmMin ?? 40)
+      .max(opts?.bpmMax ?? 220),
     key: z.string(),
     scale: z.enum(["major", "minor"]),
     mood: z.string(),
@@ -289,9 +328,7 @@ export function createBaseInputSchema(
  * Build a base blueprint schema with shared input fields, arrangement,
  * styleClauses, tags, and negativeTags merged with genre-specific extras.
  */
-export function createBaseBlueprintSchema(
-  opts?: BaseBlueprintOpts,
-): any {
+export function createBaseBlueprintSchema(opts?: BaseBlueprintOpts): any {
   let schema: any = z.object({
     bpm: z.number().int(),
     key: z.string(),

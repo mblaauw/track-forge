@@ -20,7 +20,7 @@ import {
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config, JobId } from "@track-forge/contracts";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
-import { getPresets, getTagCategories } from "../lib/genre-config.js";
+import { getPresets, getTagCategories, getDescriptorDefaults } from "../lib/genre-config.js";
 import { findRowOr404, safeParse, parsePagination } from "../lib/db-utils.js";
 import {
   validateBody,
@@ -550,6 +550,13 @@ export function registerJobRoutes(
     } catch {
       return reply.code(404).send({ error: `Unknown genre: ${id}` });
     }
+  });
+
+  // ── Genre descriptor defaults (interim TS; Subissue 7 → YAML) ────────
+
+  server.get("/api/genres/:id/descriptor-defaults", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    return getDescriptorDefaults(id);
   });
 
   // ── Style tag suggestions (LLM-powered) ───────────────────────────────

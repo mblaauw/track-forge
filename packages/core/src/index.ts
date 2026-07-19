@@ -38,8 +38,16 @@ export type {
   GenerationRecord,
 } from "./suno/index.js";
 
-export { createLockService, abortJob } from "./pipeline/index.js";
-export type { LockService } from "./pipeline/index.js";
+export {
+  createLockService,
+  abortJob,
+  compileStylePrompt,
+} from "./pipeline/index.js";
+export type {
+  LockService,
+  CompileStyleInput,
+  CompileStyleResult,
+} from "./pipeline/index.js";
 // Lyrics canonical grammar
 export { parseLyrics, serializeLyrics } from "./lyrics/index.js";
 

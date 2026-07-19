@@ -17,6 +17,7 @@ import { registerSunoRoutes } from "./routes/suno.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerEventRoutes } from "./routes/events.js";
 import { registerImportExportRoutes } from "./routes/import-export.js";
+import { registerPreviewStyleRoutes } from "./routes/preview-style.js";
 import { ApiError } from "./lib/db-utils.js";
 import { getSqlite } from "@track-forge/core";
 
@@ -51,6 +52,7 @@ registerVersionRoutes(server, { db, lockService });
 registerSunoRoutes(server, { db, suno, config });
 registerEventRoutes(server, { db });
 registerImportExportRoutes(server, { db });
+registerPreviewStyleRoutes(server);
 
 // ── Startup sweep: reset jobs stuck in_progress after crash ──────────
 const sqlite = getSqlite(db);
