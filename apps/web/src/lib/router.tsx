@@ -76,5 +76,3 @@ export function Route({
   if (!result.matched) return null;
   return component({ params: result.params });
 }
-
-

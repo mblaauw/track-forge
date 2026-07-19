@@ -38,7 +38,21 @@ npm run clean               # rm -rf apps/*/dist packages/*/dist
 
 ## Backend architecture
 
-**Routes** (`apps/server/src/routes/*`): jobs, versions, projects, health, suno, events, import-export. Routed via route-type name on `server.get/post/patch/delete`.
+**Routes** (`apps/server/src/routes/*`): jobs, versions, projects, health, suno, events, import-export, preview-style. Routed via route-type name on `server.get/post/patch/delete`.
+
+**Preview style endpoints**:
+- `POST /api/preview-style` — compiles style prompt from a raw bundle body (unsaved sessions). Accepts `{ genreId, presetIds, descriptors, bpm, key, scale, sections, lyricsMode, vocalType }`. Returns `{ style, charCount, activeCount }`.
+- `POST /api/jobs/:id/preview-style` — same but for saved sessions (validates job exists).
+
+Both use the shared `compileStylePrompt()` in `packages/core/src/pipeline/style-compiler.ts`.
+
+**Synthetic SSE events**:
+Bar 8 of the forge strip ("Rendering with Suno") is driven by synthetic SSE events emitted when `POST /api/versions/:id/takes` is called:
+- `progress { stage: "suno_render", status: "started" }`
+- `progress { stage: "suno_render_complete", status: "completed" }`
+- `progress { stage: "suno_render_error", status: "error" }`
+
+These live in a display-only label map, NOT in `STAGE_ORDER`/`GenerationStage`.
 
 **Pipeline stages** (`packages/core/src/pipeline/orchestrator.ts`):
 
@@ -46,47 +60,44 @@ npm run clean               # rm -rf apps/*/dist packages/*/dist
 ref_interpretation → planning → style_writing → compilation → review → revision → verification → versioning
 ```
 
-Stage state persisted as JSON in `job.stageData`. **`compiledJson` on job row is stale** — read `stageData` JSON column instead.
+Stage state persisted as JSON in `job.stageData`. **`compiledJson` on job row is deprecated and no longer written as of 4a** — always read `stageData` JSON column instead. Column retained pending removal.
 
-**SSE**: `GET /api/jobs/:id/events` streams `{ jobId, stage, status, message?, tag?, elapsedMs?, error?, timestamp }`. History replay on reconnect.
+**Section-delta contract**: Each section carries exactly one function verb (`fn`: establish/introduce/escalate/contrast/remove/peak/resolve) and a list of local `deltas`. Global sonic traits belong in the Style Console/descriptors, not in deltas. `buildSunoContext()` in `packages/core/src/pipeline/suno-context.ts` serializes the full Suno context string.
 
-**DB**: SQLite via better-sqlite3 + drizzle-orm. Schema in `packages/core/src/db/schema.ts`. Auto-created by `createDb()` with `CREATE TABLE IF NOT EXISTS` + migration `ALTER TABLE` blocks for new columns.
+**Descriptor model**: Weighted (1–3) descriptors in 5 categories (sound/rhythm/atmosphere/production/energy). Configured per-genre in `config/genres/*.yaml`. Server-compiled via `compileStylePrompt()`.
+
+**Genre config (static data)**:
+
+Presets, tag categories, song structures, taxonomy, **descriptor categories + defaults, lyric themes, section functions, delta palette, section palette, vocal presets** live in `config/genres/*.yaml` — no DB. The TS genre modules carry only executable parts (renderers, critics, validators, `compileBlueprint()`, `promptFragments`).
 
 ## Frontend architecture
 
-**Hash router** (`apps/web/src/lib/router.tsx`): custom `Router`/`Route`/`Link`/`useRouter` over `hashchange`. Routes match exact segment count — `/forge` won't match `/forge/:id`. NavRail uses `session.jobId` to build correct routes.
+**Single-screen Compose workspace** — the app has one view with 4-column CSS grid:
+- Setup column (left, 270px, collapsible to 42px): 6 collapsible cards (GENRE, PRESET, LYRICS, TEMPO & KEY, DESCRIPTORS, REFERENCE)
+- Bundle canvas (center, scrolls, max-width 720px): 4 blocks (TITLE, STYLE CONSOLE, ARRANGEMENT STRUCTURE, ARRANGEMENT)
+- Renders panel (right, 320px, collapsible to 42px): take cards with waveforms
+- Library panel (far right, 300px, collapsible to 42px): session archive
 
-**Session context** (`apps/web/src/lib/session.tsx`): `SessionProvider` exposes `{ jobId, name, genreId, bpm, key, status, onForge, forgeLabel, forgeDisabled }`. Views write via `setSession()`.
+**Hash router**: Only `#/session/:id` deep-link support (`lib/router.tsx`). No nav-rail route switching.
 
-**CSS design tokens** (`apps/web/src/style.css`): light theme (`--bg: #FFF1E5`, `--panel: #FFFFFF`). Short aliases `--acc` (accent green `#3DDC84`), `--tx` (text `#2D2A24`), `--dim`, `--faint`, `--line2`. Both short and long names defined in `:root`.
+**Session context** (`apps/web/src/lib/session.tsx`): `SessionProvider` exposes the full bundle state: `{ jobId, name, title, genreId, presetId, presetIds[], bpm, key, scale, status, reference, lyricsMode, lyricTopic, lyricAngle, lyricThemes[], lyricLines, lyricsGenerated, tags[], sections[], selSectionId, arrangeSource, takes[], cards{}, leftCollapsed, rightCollapsed, libraryCollapsed, forgeRunning, forgeStageIdx, forgeStageLabel, onForge, forgeLabel, forgeDisabled }`. Views write via `setSession()`.
 
-**Views**:
+**SSE**: `connectJobEvents(id, handlers)` in `api.ts`. Drives the 8-bar forge strip (7 pipeline stages + 1 Suno render via synthetic `suno_render` events). History replay on reconnect.
 
-- **Library** (`/`): `fetchJobs(100)` + `fetchGenres()`. Click → Studio (completed) or Forge (in_progress).
-- **Create** (`/create`): genre selection → presets from `GET /api/genres/:id/presets` → arrangement from `compileBlueprint()` → Style Console with tag categories. Key select splits `"C maj"` → must map `"maj"`→`"major"`, `"min"`→`"minor"`.
-- **Forge** (`/forge/:id`): SSE via `connectJobEvents(id, handlers)`. 8-stage assembly line.
-- **Studio** (`/studio/:id`): versions + generations (takes). Artifacts parsed from JSON string.
-
-## Genre config (static data)
-
-Presets, tag categories, song structures, taxonomy live in `config/genres/*.yaml` — no DB. The TS genre modules carry minimal fallback arrays; YAML files are the canonical source. Server injects them at startup via `apps/server/src/lib/modules.ts` → `augment()`.
-
-Served through:
-
-- `GET /api/genres` — `color`, `subgenre_count`
-- `GET /api/genres/:id/presets` — presets with values
-- `GET /api/genres/:id/tag-categories` — category definitions
-
-Executable parts (renderers, critics, validators, `compileBlueprint()`, `promptFragments`) remain TypeScript in `packages/genre-*`.
+**Key module locations**:
+- Arrangement editor: `apps/web/src/components/compose/ArrangementEditor.tsx`
+- Lyrics block: `apps/web/src/components/compose/LyricsBlock.tsx`
+- Library panel: `apps/web/src/components/compose/LibraryPanel.tsx`
 
 ## Genre modules
 
 Implement `GenreModule<TInputs, TBlueprintData>` from `@track-forge/genre-core`:
 
 - `inputSchema`/`blueprintSchema` — Zod schemas
-- `compileBlueprint(inputs, options?)` — arrangement, styleClauses, tags
+- `compileBlueprint(inputs, options?)` — arrangement with `fn`/`deltas`/`vocal`, styleClauses, tags
 - `renderers` — `title`, `style`, `excludedStyles`, `lyrics`
 - `promptFragments` — keyed by stage
+- `descriptorConfig?` — `GenreDescriptorConfig` with categories, defaults, presetSeeds
 - `tagCategories`, `tagPolicy` — `mandatoryTags`, `forbiddenTags`, `canonicalMap`
 - All genres must include `lyricsMode` in inputSchema (`strict_instrumental`, `guided_instrumental`, `full_lyrics`)
 
