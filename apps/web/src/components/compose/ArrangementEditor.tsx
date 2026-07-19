@@ -499,7 +499,7 @@ export function ArrangementEditor() {
             </div>
 
             {/* Vocal delivery (only when section is vocal and not instrumental mode) */}
-            {sectionIsVocal(sel) && s.lyricsMode !== "strict_instrumental" && (
+            {sectionIsVocal(sel) && (
               <div class="arr-vocal-editor">
                 <MicrophoneStage size={14} style="color:var(--danger-text)" />
                 <span
@@ -736,6 +736,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 32,
         fn: "peak",
         deltas: ["full groove", "bass-led", "wide theme"],
+        vocal: {
+          type: "Female lead",
+          delivery: "anthemic",
+          energy: 4,
+          adlibs: false,
+          harmonies: true,
+        },
       },
       {
         id: generateId(),
@@ -757,6 +764,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 32,
         fn: "peak",
         deltas: ["added impact", "add countermelody"],
+        vocal: {
+          type: "Female lead",
+          delivery: "anthemic",
+          energy: 5,
+          adlibs: true,
+          harmonies: true,
+        },
       },
       {
         id: generateId(),
@@ -780,6 +794,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 16,
         fn: "introduce",
         deltas: ["vocal focus"],
+        vocal: {
+          type: "Male lead",
+          delivery: "laid back",
+          energy: 3,
+          adlibs: false,
+          harmonies: false,
+        },
       },
       {
         id: generateId(),
@@ -787,6 +808,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 8,
         fn: "peak",
         deltas: ["full arrangement", "catchy"],
+        vocal: {
+          type: "Male lead",
+          delivery: "laid back",
+          energy: 4,
+          adlibs: false,
+          harmonies: true,
+        },
       },
       {
         id: generateId(),
@@ -794,6 +822,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 16,
         fn: "contrast",
         deltas: ["vocal focus"],
+        vocal: {
+          type: "Male lead",
+          delivery: "laid back",
+          energy: 3,
+          adlibs: false,
+          harmonies: false,
+        },
       },
       {
         id: generateId(),
@@ -801,6 +836,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 8,
         fn: "peak",
         deltas: ["full arrangement"],
+        vocal: {
+          type: "Male lead",
+          delivery: "laid back",
+          energy: 4,
+          adlibs: false,
+          harmonies: true,
+        },
       },
       {
         id: generateId(),
@@ -831,6 +873,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 32,
         fn: "introduce",
         deltas: ["expose harmony", "add countermelody"],
+        vocal: {
+          type: "Wordless·textural",
+          delivery: "ethereal",
+          energy: 1,
+          adlibs: false,
+          harmonies: false,
+        },
       },
       {
         id: generateId(),
@@ -845,6 +894,13 @@ function defaultSections(genreId: string): Section[] {
         bars: 32,
         fn: "peak",
         deltas: ["full arrangement", "wide theme"],
+        vocal: {
+          type: "Wordless·textural",
+          delivery: "ethereal",
+          energy: 2,
+          adlibs: false,
+          harmonies: false,
+        },
       },
       {
         id: generateId(),
