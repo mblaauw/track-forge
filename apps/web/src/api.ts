@@ -123,6 +123,15 @@ export interface DescriptorDefaultInfo {
 export interface GenreDescriptorDefaults {
   categories: DescriptorCategoryPoolInfo[];
   defaults: DescriptorDefaultInfo[];
+  lyricThemes: string[];
+  sectionFunctions: string[];
+  deltaPalette: string[];
+  sectionPalette: string[];
+  vocalPresets: {
+    type: string;
+    deliveryStyle: string;
+    defaultEnergy: number;
+  }[];
 }
 
 export function fetchDescriptorDefaults(

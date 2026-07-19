@@ -1,8 +1,7 @@
-import { useMemo } from "preact/hooks";
+import { useMemo, useState, useEffect } from "preact/hooks";
 import {
   Rows,
   Shuffle,
-  ArrowClockwise,
   MicrophoneStage,
   Plus,
   X,
@@ -10,6 +9,7 @@ import {
   CaretRight,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
+import { fetchDescriptorDefaults } from "../../api";
 import type { Section, SectionFunction } from "./types";
 
 const SEC_COLORS: Record<string, string> = {
@@ -74,7 +74,7 @@ const SECTION_PALETTE = [
   "Outro",
 ];
 
-const VOCAL_TYPES = [
+const vocalTypes = [
   "Female lead",
   "Male lead",
   "Duet",
@@ -82,7 +82,7 @@ const VOCAL_TYPES = [
   "Wordless·textural",
 ];
 
-const DELIVERY_STYLES = [
+const deliveryStyles = [
   "anthemic",
   "belted",
   "airy",
@@ -128,6 +128,50 @@ export function ArrangementEditor() {
   const time = estTime(totalBars, s.bpm ?? 128);
   const sel = s.sections.find((sec) => sec.id === s.selSectionId);
 
+  const [vocab, setVocab] = useState<{
+    sectionFunctions: string[];
+    deltaPalette: string[];
+    sectionPalette: string[];
+    vocalPresets: {
+      type: string;
+      deliveryStyle: string;
+      defaultEnergy: number;
+    }[];
+  } | null>(null);
+
+  useEffect(() => {
+    fetchDescriptorDefaults(s.genreId)
+      .then(setVocab)
+      .catch(() => {});
+  }, [s.genreId]);
+
+  const deltas = vocab?.deltaPalette ?? DELTA_PALETTE;
+  const sections = vocab?.sectionPalette ?? SECTION_PALETTE;
+  const funcs = vocab?.sectionFunctions ?? SECTION_FUNCTIONS.map((f) => f.id);
+  const vocalTypes = vocab?.vocalPresets.map((v) => v.type) ?? [
+    "Female lead",
+    "Male lead",
+    "Duet",
+    "Group·choir",
+    "Wordless·textural",
+  ];
+  const deliveryStyles = [
+    ...new Set(
+      vocab?.vocalPresets.map((v) => v.deliveryStyle) ?? [
+        "anthemic",
+        "belted",
+        "airy",
+        "chopped",
+        "vocoded",
+        "laid back",
+        "smooth",
+        "ethereal",
+        "powerful",
+        "intimate",
+      ],
+    ),
+  ];
+
   const genVariation = () => {
     const varied = s.sections.map((sec) => {
       const bars = [4, 8, 16, 24, 32][Math.floor(Math.random() * 5)]!;
@@ -145,12 +189,10 @@ export function ArrangementEditor() {
         deltas,
         vocal: sectionIsVocal({ ...sec, deltas })
           ? {
-              type: VOCAL_TYPES[
-                Math.floor(Math.random() * VOCAL_TYPES.length)
-              ]!,
+              type: vocalTypes[Math.floor(Math.random() * vocalTypes.length)]!,
               delivery:
-                DELIVERY_STYLES[
-                  Math.floor(Math.random() * DELIVERY_STYLES.length)
+                deliveryStyles[
+                  Math.floor(Math.random() * deliveryStyles.length)
                 ]!,
               energy: (1 + Math.floor(Math.random() * 5)) as 1 | 2 | 3 | 4 | 5,
               adlibs: Math.random() > 0.5,
@@ -366,20 +408,29 @@ export function ArrangementEditor() {
             <div class="arr-editor-section">
               <span class="arr-editor-section-label">FUNCTION</span>
               <div class="arr-pill-row">
-                {SECTION_FUNCTIONS.map((fn) => (
-                  <button
-                    key={fn.id}
-                    class={`arr-pill${sel.fn === fn.id ? " active" : ""}`}
-                    onClick={() => {
-                      const next = s.sections.map((sec) =>
-                        sec.id === sel.id ? { ...sec, fn: fn.id } : sec,
-                      );
-                      s.setSession({ sections: next, arrangeSource: "custom" });
-                    }}
-                  >
-                    {fn.label}
-                  </button>
-                ))}
+                {funcs.map((fnId) => {
+                  const fnObj = SECTION_FUNCTIONS.find((f) => f.id === fnId);
+                  if (!fnObj) return null;
+                  return (
+                    <button
+                      key={fnId}
+                      class={`arr-pill${sel.fn === fnId ? " active" : ""}`}
+                      onClick={() => {
+                        const next = s.sections.map((sec) =>
+                          sec.id === sel.id
+                            ? { ...sec, fn: fnId as SectionFunction }
+                            : sec,
+                        );
+                        s.setSession({
+                          sections: next,
+                          arrangeSource: "custom",
+                        });
+                      }}
+                    >
+                      {fnObj.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -419,8 +470,9 @@ export function ArrangementEditor() {
                   </span>
                 ))}
                 <div class="arr-delta-add-group">
-                  {DELTA_PALETTE.filter((d) => !sel.deltas.includes(d)).map(
-                    (delta) => (
+                  {deltas
+                    .filter((d) => !sel.deltas.includes(d))
+                    .map((delta) => (
                       <button
                         key={delta}
                         class="arr-delta-add"
@@ -440,8 +492,7 @@ export function ArrangementEditor() {
                       >
                         <Plus size={10} /> {delta}
                       </button>
-                    ),
-                  )}
+                    ))}
                 </div>
               </div>
             </div>
@@ -461,7 +512,7 @@ export function ArrangementEditor() {
                   <span class="arr-editor-sub-label">VOICE</span>
                   <select
                     class="arr-select"
-                    value={sel.vocal?.type ?? VOCAL_TYPES[0]!}
+                    value={sel.vocal?.type ?? vocalTypes[0]!}
                     onChange={(e) => {
                       const type = (e.target as HTMLSelectElement).value;
                       const next = s.sections.map((sec) =>
@@ -470,7 +521,7 @@ export function ArrangementEditor() {
                               ...sec,
                               vocal: {
                                 ...(sec.vocal ?? {
-                                  delivery: DELIVERY_STYLES[0]!,
+                                  delivery: deliveryStyles[0]!,
                                   energy: 3,
                                   adlibs: false,
                                   harmonies: false,
@@ -483,7 +534,7 @@ export function ArrangementEditor() {
                       s.setSession({ sections: next });
                     }}
                   >
-                    {VOCAL_TYPES.map((vt) => (
+                    {vocalTypes.map((vt: string) => (
                       <option key={vt} value={vt}>
                         {vt}
                       </option>
@@ -510,8 +561,8 @@ export function ArrangementEditor() {
                                   ...sec,
                                   vocal: {
                                     ...(sec.vocal ?? {
-                                      type: VOCAL_TYPES[0]!,
-                                      delivery: DELIVERY_STYLES[0]!,
+                                      type: vocalTypes[0]!,
+                                      delivery: deliveryStyles[0]!,
                                       adlibs: false,
                                       harmonies: false,
                                     }),
@@ -530,7 +581,7 @@ export function ArrangementEditor() {
                 <div class="arr-editor-section">
                   <span class="arr-editor-sub-label">DELIVERY STYLE</span>
                   <div class="arr-pill-row">
-                    {DELIVERY_STYLES.map((ds) => (
+                    {deliveryStyles.map((ds) => (
                       <button
                         key={ds}
                         class={`arr-pill${(sel.vocal?.delivery ?? "") === ds ? " active" : ""}`}
@@ -541,7 +592,7 @@ export function ArrangementEditor() {
                                   ...sec,
                                   vocal: {
                                     ...(sec.vocal ?? {
-                                      type: VOCAL_TYPES[0]!,
+                                      type: vocalTypes[0]!,
                                       energy: 3,
                                       adlibs: false,
                                       harmonies: false,
@@ -571,8 +622,8 @@ export function ArrangementEditor() {
                                 ...sec,
                                 vocal: {
                                   ...(sec.vocal ?? {
-                                    type: VOCAL_TYPES[0]!,
-                                    delivery: DELIVERY_STYLES[0]!,
+                                    type: vocalTypes[0]!,
+                                    delivery: deliveryStyles[0]!,
                                     energy: 3,
                                     adlibs: false,
                                     harmonies: false,
@@ -596,8 +647,8 @@ export function ArrangementEditor() {
                                 ...sec,
                                 vocal: {
                                   ...(sec.vocal ?? {
-                                    type: VOCAL_TYPES[0]!,
-                                    delivery: DELIVERY_STYLES[0]!,
+                                    type: vocalTypes[0]!,
+                                    delivery: deliveryStyles[0]!,
                                     energy: 3,
                                     adlibs: false,
                                     harmonies: false,
@@ -622,37 +673,37 @@ export function ArrangementEditor() {
               <span class="arr-add-label">
                 INSERT AFTER {sel.name.toUpperCase()}
               </span>
-              {SECTION_PALETTE.filter(
-                (name) => !s.sections.some((sec) => sec.name === name),
-              ).map((name) => (
-                <button
-                  key={name}
-                  class="arr-add-pill"
-                  onClick={() => {
-                    const newSec: Section = {
-                      id: generateId(),
-                      name,
-                      bars: 8,
-                      fn: "establish",
-                      deltas: [],
-                    };
-                    const idx = s.sections.findIndex(
-                      (sec) => sec.id === sel.id,
-                    );
-                    const next = [...s.sections];
-                    next.splice(idx + 1, 0, newSec);
-                    s.setSession({
-                      sections: next,
-                      selSectionId: newSec.id,
-                      arrangeSource: "custom",
-                      lyricsGenerated: false,
-                      lyricLines: {},
-                    });
-                  }}
-                >
-                  <Plus size={10} /> {name}
-                </button>
-              ))}
+              {sections
+                .filter((name) => !s.sections.some((sec) => sec.name === name))
+                .map((name) => (
+                  <button
+                    key={name}
+                    class="arr-add-pill"
+                    onClick={() => {
+                      const newSec: Section = {
+                        id: generateId(),
+                        name,
+                        bars: 8,
+                        fn: "establish",
+                        deltas: [],
+                      };
+                      const idx = s.sections.findIndex(
+                        (sec) => sec.id === sel.id,
+                      );
+                      const next = [...s.sections];
+                      next.splice(idx + 1, 0, newSec);
+                      s.setSession({
+                        sections: next,
+                        selSectionId: newSec.id,
+                        arrangeSource: "custom",
+                        lyricsGenerated: false,
+                        lyricLines: {},
+                      });
+                    }}
+                  >
+                    <Plus size={10} /> {name}
+                  </button>
+                ))}
             </div>
           </div>
         )}

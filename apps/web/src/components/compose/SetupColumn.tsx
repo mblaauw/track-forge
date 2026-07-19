@@ -56,28 +56,6 @@ const LYRIC_ANGLES: { id: string; label: string }[] = [
   { id: "anthemic", label: "Anthemic" },
 ];
 
-const LYRIC_THEMES: Record<string, string[]> = {
-  edm: [
-    "euphoria",
-    "nightlife",
-    "letting go",
-    "transcendence",
-    "togetherness",
-    "the drop",
-  ],
-  hiphop: [
-    "the come-up",
-    "the city",
-    "loyalty",
-    "late nights",
-    "ambition",
-    "reflection",
-  ],
-  ambient: ["stillness", "memory", "nature", "solitude", "dreams", "distance"],
-  pop: ["love", "heartbreak", "celebration", "freedom", "nostalgia", "summer"],
-  dnb: ["urgency", "resistance", "motion", "release", "cities", "intensity"],
-};
-
 // Temporary descriptor seeds — replaced by API in Subissue 3
 const DESC_DEFAULTS: Record<
   string,
@@ -812,7 +790,7 @@ function renderCardBody(
     case "preset":
       return <PresetCardContent {...ctx} s={s} />;
     case "lyrics":
-      return <LyricsCardContent s={s} />;
+      return <LyricsCardContent descDefaults={ctx.descDefaults} s={s} />;
     case "tempo":
       return <TempoCardContent s={s} />;
     case "descriptors":
@@ -863,8 +841,8 @@ function GenreCardContent({
               onClick={() => {
                 if (g.id === s.genreId) return;
                 const firstPreset = presets?.[0]?.id ?? "";
-                const firstTheme =
-                  (LYRIC_THEMES[g.id] ?? LYRIC_THEMES.edm!)?.[0] ?? "";
+                const themes = descDefaults?.lyricThemes ?? [];
+                const firstTheme = themes[0] ?? "";
                 s.setSession({
                   genreId: g.id,
                   presetId: firstPreset,
@@ -965,9 +943,15 @@ function PresetCardContent({
 
 /* ─── LYRICS ─── */
 
-function LyricsCardContent({ s }: { s: ReturnType<typeof useSession> }) {
+function LyricsCardContent({
+  descDefaults,
+  s,
+}: {
+  descDefaults: GenreDescriptorDefaults | null;
+  s: ReturnType<typeof useSession>;
+}) {
   const lyricsOn = s.lyricsMode === "full_lyrics";
-  const themes = LYRIC_THEMES[s.genreId] ?? LYRIC_THEMES.edm!;
+  const themes = descDefaults?.lyricThemes ?? [];
 
   return (
     <>
@@ -1154,9 +1138,11 @@ function TempoCardContent({ s }: { s: ReturnType<typeof useSession> }) {
 
 function DescriptorsCardContent({
   descDefaults,
+  presets,
   s,
 }: {
   descDefaults: GenreDescriptorDefaults | null;
+  presets: GenrePreset[];
   s: ReturnType<typeof useSession>;
 }) {
   const apiPool = descDefaults?.categories;
@@ -1178,7 +1164,14 @@ function DescriptorsCardContent({
     <>
       <div class="setup-desc-badge-row">
         <span class="setup-desc-badge">
-          {s.genreId.toUpperCase()} · {seedCount} descriptors seeded
+          {(s.presetIds.length > 0
+            ? s.presetIds
+                .map((id) => {
+                  const p = presets.find((pr) => pr.id === id);
+                  return p?.name ?? id.replace(/_/g, " ");
+                })
+                .join(", ")
+            : s.genreId.toUpperCase()) + " · preset seed"}
         </span>
         <span style="font-size:10px;color:var(--faint)">override freely</span>
         <button
