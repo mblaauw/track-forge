@@ -63,8 +63,17 @@ These live in a display-only label map, NOT in `STAGE_ORDER`/`GenerationStage`.
 **Pipeline stages** (`packages/core/src/pipeline/orchestrator.ts`):
 
 ```
-ref_interpretation → planning → style_writing → compilation → review → revision → verification → versioning
+compilation (deterministic, no LLM) → lyrics_writing (LLM) → versioning
 ```
+
+- **compilation** — reads session inputs from job, calls `compileStylePrompt()` to produce the deterministic style from weighted descriptors. No LLM call.
+- **lyrics_writing** — the **only** LLM call in the pipeline. Sends `buildSunoContext()` (compiled style + arrangement structure + vocal delivery + lyric brief) to the LLM with a lyric-writing instruction. Skipped if `lyricsMode === "strict_instrumental"`.
+- **versioning** — persists version artifacts (title, style, lyrics, excludedStyles) to DB, completes job.
+
+**Removed stages** (old pipeline): `ref_interpretation`, `planning`, `style_writing`, `review`, `revision`, `verification` — all obsolete because:
+- Style is deterministically compiled from weighted descriptors, not LLM-generated
+- Arrangement is user-defined in the Arrangement Editor, not LLM-planned
+- No review/critic stage needed since style is deterministic
 
 Stage state persisted as JSON in `job.stageData`. **`compiledJson` on job row is deprecated and no longer written as of 4a** — always read `stageData` JSON column instead. Column retained pending removal.
 
