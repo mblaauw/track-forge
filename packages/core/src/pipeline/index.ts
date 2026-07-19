@@ -39,3 +39,5 @@ export type {
   CompileStyleInput,
   CompileStyleResult,
 } from "./style-compiler.js";
+export { buildSunoContext } from "./suno-context.js";
+export type { SunoContextInput } from "./suno-context.js";

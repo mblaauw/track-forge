@@ -2,6 +2,7 @@ import { z } from "zod";
 import { EdmFamily } from "./taxonomy.js";
 import {
   type SongStructureSection,
+  type ArrangementSection,
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
@@ -104,7 +105,7 @@ export const EDM_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
 export function compileBlueprint(
   inputs: EdmInputs,
   options?: {
-    arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+    arrangementOverride?: ArrangementSection[];
     songStructure?: SongStructureSection[];
   },
 ): EdmBlueprint {

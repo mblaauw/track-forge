@@ -42,11 +42,13 @@ export {
   createLockService,
   abortJob,
   compileStylePrompt,
+  buildSunoContext,
 } from "./pipeline/index.js";
 export type {
   LockService,
   CompileStyleInput,
   CompileStyleResult,
+  SunoContextInput,
 } from "./pipeline/index.js";
 // Lyrics canonical grammar
 export { parseLyrics, serializeLyrics } from "./lyrics/index.js";

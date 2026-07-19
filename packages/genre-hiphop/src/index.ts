@@ -1,10 +1,11 @@
 import {
-  createGenreModule,
+  type SongStructureSection,
+  type ArrangementSection,
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
+  createGenreModule,
 } from "@track-forge/genre-core";
-import type { SongStructureSection } from "@track-forge/genre-core";
 import type { HipHopInputs, HipHopBlueprint } from "./schema.js";
 import {
   HipHopInputSchema,
@@ -96,11 +97,7 @@ export const hipHopModule = createGenreModule<HipHopInputs, HipHopBlueprint>({
   compileBlueprint: (
     inputs: HipHopInputs,
     options?: {
-      arrangementOverride?: {
-        section: string;
-        bars: number;
-        tags?: string[];
-      }[];
+      arrangementOverride?: ArrangementSection[];
       songStructure?: SongStructureSection[];
     },
   ) => {

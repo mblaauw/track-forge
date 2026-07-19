@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   type SongStructureSection,
+  type ArrangementSection,
   resolveArrangement,
   buildStyleClauses,
   instrumentalNegativeTags,
@@ -65,7 +66,7 @@ export const AMBIENT_DEFAULT_SONG_STRUCTURE: SongStructureSection[] = [
 export function compileBlueprint(
   inputs: AmbientInputs,
   options?: {
-    arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+    arrangementOverride?: ArrangementSection[];
     songStructure?: SongStructureSection[];
   },
 ): AmbientBlueprint {

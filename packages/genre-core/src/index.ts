@@ -3,6 +3,23 @@ import type { StyleClause } from "@track-forge/contracts";
 
 // ── Song structure (arrangement config) ───────────────────────────────
 
+export type SectionFunction =
+  | "establish"
+  | "introduce"
+  | "escalate"
+  | "contrast"
+  | "remove"
+  | "peak"
+  | "resolve";
+
+export interface Vocal {
+  type: string;
+  delivery: string;
+  energy: number;
+  adlibs: boolean;
+  harmonies: boolean;
+}
+
 /**
  * Bar specification for a song structure section.
  * A plain number means a fixed bar count.
@@ -11,11 +28,15 @@ import type { StyleClause } from "@track-forge/contracts";
 export type SongStructureBarSpec =
   number | { base: number; per_energy?: number; per_complexity?: number };
 
-/** A single section in the song structure template */
+/** A single section in the song structure template (from YAML / genre config) */
 export interface SongStructureSection {
   section: string;
   bars: SongStructureBarSpec;
   tags: string[];
+  /** Function verb (optional in template — assigned by compileBlueprint) */
+  fn?: SectionFunction;
+  /** Local delta terms (optional in template) */
+  deltas?: string[];
 }
 
 /** A computed arrangement section (bars resolved to a concrete number) */
@@ -23,6 +44,12 @@ export interface ArrangementSection {
   section: string;
   bars: number;
   tags: string[];
+  /** Exactly one function verb */
+  fn: SectionFunction;
+  /** Local-only deltas (never global sonic traits) */
+  deltas: string[];
+  /** Per-section vocal delivery (vocal sections only) */
+  vocal?: Vocal;
 }
 
 /**
@@ -188,7 +215,7 @@ export interface TagCategory {
 // ── Shared builders ─────────────────────────────────────────────────
 
 export interface ResolveArrangementOptions {
-  arrangementOverride?: { section: string; bars: number; tags?: string[] }[];
+  arrangementOverride?: ArrangementSection[];
   songStructure?: SongStructureSection[];
   inputs: { energy?: number; complexity?: number };
   defaultStructure: SongStructureSection[];
@@ -202,6 +229,9 @@ export function resolveArrangement(
       section: s.section,
       bars: s.bars,
       tags: s.tags ?? [],
+      fn: s.fn ?? "establish",
+      deltas: s.deltas ?? [],
+      vocal: s.vocal,
     }));
   }
   const template = opts.songStructure ?? opts.defaultStructure;
@@ -209,6 +239,8 @@ export function resolveArrangement(
     section: s.section,
     bars: computeBars(s.bars, opts.inputs),
     tags: s.tags,
+    fn: s.fn ?? "establish",
+    deltas: s.deltas ?? [],
   }));
 }
 
@@ -246,11 +278,7 @@ export function createGenreModule<
   compileBlueprint: (
     inputs: TInputs,
     options?: {
-      arrangementOverride?: {
-        section: string;
-        bars: number;
-        tags?: string[];
-      }[];
+      arrangementOverride?: ArrangementSection[];
       songStructure?: SongStructureSection[];
     },
   ) => TBlueprintData;
@@ -341,6 +369,27 @@ export function createBaseBlueprintSchema(opts?: BaseBlueprintOpts): any {
         section: z.string(),
         bars: z.number().int().positive(),
         tags: z.array(z.string()),
+        fn: z
+          .enum([
+            "establish",
+            "introduce",
+            "escalate",
+            "contrast",
+            "remove",
+            "peak",
+            "resolve",
+          ])
+          .default("establish"),
+        deltas: z.array(z.string()).default([]),
+        vocal: z
+          .object({
+            type: z.string(),
+            delivery: z.string(),
+            energy: z.number().int().min(1).max(5),
+            adlibs: z.boolean(),
+            harmonies: z.boolean(),
+          })
+          .optional(),
       }),
     ),
     styleClauses: z.array(
