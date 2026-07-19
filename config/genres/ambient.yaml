@@ -92,3 +92,44 @@ song_structure:
   - section: fade
     bars: { base: 12, per_complexity: 1.5 }
     tags: [dissolving, sparse, receding]
+
+descriptor_categories:
+  - cat: sound
+    label: TEXTURE
+    hue: var(--hue-cyan)
+    chips: ["granular pad", "field recording", "glass harmonica", "tape loop", drone, glockenspiel, organ]
+  - cat: rhythm
+    label: PULSE
+    hue: var(--hue-amber)
+    chips: ["slow pulse", "no beat", "irregular rhythm", "gentle swell", "lullaby tempo"]
+  - cat: atmosphere
+    label: SPACE
+    hue: var(--hue-violet)
+    chips: [ethereal, cinematic, intimate, vast, underwater, meditative, open]
+  - cat: production
+    label: LUSH
+    hue: var(--hue-green)
+    chips: ["wide stereo", "analog warmth", "reverb wash", "tape saturation", "soft compression"]
+  - cat: energy
+    label: ENERGY
+    hue: var(--hue-red)
+    chips: [still, "slow build", floating, calm, hypnotic, sparse, dense]
+
+descriptor_defaults:
+  - { label: "granular pad", cat: sound, weight: 2 }
+  - { label: "slow pulse", cat: rhythm, weight: 2 }
+  - { label: cinematic, cat: atmosphere, weight: 2 }
+  - { label: ethereal, cat: energy, weight: 2 }
+  - { label: "wide stereo", cat: production, weight: 2 }
+
+lyric_themes: [stillness, memory, nature, solitude, dreams, distance]
+
+section_functions: [establish, introduce, escalate, contrast, remove, peak, resolve]
+delta_palette: ["sparse texture", atmospheric, filtered, "add rhythm", "rising tension", "full groove", "bass-led", "wide theme", "full arrangement", catchy, "strip drums", "expose harmony", "add countermelody", "added impact", climactic, introspective, "half-time feel", "vocal focus", instrumental, "reduce layers"]
+section_palette: [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+vocal_presets:
+  - { type: "Female lead", delivery_style: ethereal, default_energy: 1 }
+  - { type: "Male lead", delivery_style: ethereal, default_energy: 1 }
+  - { type: Duet, delivery_style: ethereal, default_energy: 1 }
+  - { type: "Group·choir", delivery_style: ethereal, default_energy: 2 }
+  - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 1 }

@@ -35,6 +35,26 @@ export interface GenreConfigYaml {
   presets: GenrePresetYaml[];
   song_structure?: SongStructureSectionYaml[];
   taxonomy?: unknown;
+  descriptor_categories?: {
+    cat: string;
+    label: string;
+    hue: string;
+    chips: string[];
+  }[];
+  descriptor_defaults?: { label: string; cat: string; weight: number }[];
+  preset_descriptor_seeds?: Record<
+    string,
+    { label: string; cat: string; weight: number }[]
+  >;
+  lyric_themes?: string[];
+  section_functions?: string[];
+  delta_palette?: string[];
+  section_palette?: string[];
+  vocal_presets?: {
+    type: string;
+    delivery_style: string;
+    default_energy: number;
+  }[];
 }
 
 const ROOT = join(
@@ -545,5 +565,36 @@ const DESCRIPTOR_DATA: Record<string, GenreDescriptorDefaults> = {
 };
 
 export function getDescriptorDefaults(id: string): GenreDescriptorDefaults {
-  return DESCRIPTOR_DATA[id] ?? DESCRIPTOR_DATA.edm!;
+  const cfg = loadYaml(id);
+  return {
+    categories: cfg.descriptor_categories ?? [],
+    defaults: cfg.descriptor_defaults ?? [],
+  };
+}
+
+export function getLyricThemes(id: string): string[] {
+  return loadYaml(id).lyric_themes ?? [];
+}
+
+export function getVocabConfig(id: string): {
+  sectionFunctions: string[];
+  deltaPalette: string[];
+  sectionPalette: string[];
+  vocalPresets: {
+    type: string;
+    deliveryStyle: string;
+    defaultEnergy: number;
+  }[];
+} {
+  const cfg = loadYaml(id);
+  return {
+    sectionFunctions: cfg.section_functions ?? [],
+    deltaPalette: cfg.delta_palette ?? [],
+    sectionPalette: cfg.section_palette ?? [],
+    vocalPresets: (cfg.vocal_presets ?? []).map((v) => ({
+      type: v.type,
+      deliveryStyle: v.delivery_style,
+      defaultEnergy: v.default_energy,
+    })),
+  };
 }

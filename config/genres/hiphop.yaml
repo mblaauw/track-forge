@@ -817,3 +817,44 @@ taxonomy:
         [intro, verse, hook, verse, hook, bridge, hook, outro]
       vocalStyle: "melodic rap-sung delivery with smooth transitions between rap and singing"
       tags: [trap & b, r&b, melodic, romantic]
+
+descriptor_categories:
+  - cat: sound
+    label: SOUND
+    hue: var(--hue-cyan)
+    chips: ["808 bass", keys, "chopped vocal", "brass stab", "synth pad", pluck, organ]
+  - cat: rhythm
+    label: "RHYTHM & FLOW"
+    hue: var(--hue-amber)
+    chips: ["trap hi-hats", "swing groove", "slow roll", "double-time", "snare rolls", "finger snaps"]
+  - cat: atmosphere
+    label: MOOD
+    hue: var(--hue-violet)
+    chips: [dark, soulful, melancholic, hype, "laid back", gritty, smooth]
+  - cat: production
+    label: PRODUCTION
+    hue: var(--hue-green)
+    chips: ["lofi warmth", "crisp mix", "wide stereo", "tape saturation", sidechain, "heavy 808s"]
+  - cat: energy
+    label: ENERGY
+    hue: var(--hue-red)
+    chips: [smooth, bouncy, aggressive, relaxed, "build-up", "hard hitting"]
+
+descriptor_defaults:
+  - { label: "808 bass", cat: sound, weight: 2 }
+  - { label: "trap hi-hats", cat: rhythm, weight: 2 }
+  - { label: "lofi warmth", cat: production, weight: 2 }
+  - { label: dark, cat: atmosphere, weight: 2 }
+  - { label: smooth, cat: energy, weight: 2 }
+
+lyric_themes: ["the come-up", "the city", loyalty, "late nights", ambition, reflection]
+
+section_functions: [establish, introduce, escalate, contrast, remove, peak, resolve]
+delta_palette: ["sparse texture", atmospheric, filtered, "add rhythm", "rising tension", "full groove", "bass-led", "wide theme", "full arrangement", catchy, "strip drums", "expose harmony", "add countermelody", "added impact", climactic, introspective, "half-time feel", "vocal focus", instrumental, "reduce layers"]
+section_palette: [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+vocal_presets:
+  - { type: "Female lead", delivery_style: "laid back", default_energy: 3 }
+  - { type: "Male lead", delivery_style: "laid back", default_energy: 3 }
+  - { type: Duet, delivery_style: "laid back", default_energy: 3 }
+  - { type: "Group·choir", delivery_style: powerful, default_energy: 4 }
+  - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 2 }

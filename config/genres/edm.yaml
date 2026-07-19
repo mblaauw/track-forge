@@ -991,3 +991,47 @@ taxonomy:
         bridge: [stripped, synth]
         outro: [fading, atmospheric]
       description: "Electronic, anthemic pop with dark synths and emotional melodies."
+
+descriptor_categories:
+  - cat: sound
+    label: SOUND DESIGN
+    hue: var(--hue-cyan)
+    chips: [supersaw, "reese bass", "pluck lead", "fm bells", "granular pad", "detuned saw", "sine sub", "vocal chops", "arp sequence", "saw stabs"]
+  - cat: rhythm
+    label: RHYTHM
+    hue: var(--hue-amber)
+    chips: ["four-on-the-floor", "syncopated hats", "offbeat bass", "rolling toms", breakbeat, "driving kick", "shuffled groove"]
+  - cat: atmosphere
+    label: ATMOSPHERE
+    hue: var(--hue-violet)
+    chips: [euphoric, dark, dreamy, hypnotic, cinematic, nostalgic, uplifting, tense]
+  - cat: production
+    label: PRODUCTION
+    hue: var(--hue-green)
+    chips: ["sidechain pump", "wide stereo", "analog warmth", "crisp transients", "tape saturation", "polished master", "heavy compression"]
+  - cat: energy
+    label: ENERGY
+    hue: var(--hue-red)
+    chips: ["high energy", driving, "restrained build", "explosive drop", relentless, "dynamic swells"]
+
+descriptor_defaults:
+  - { label: supersaw, cat: sound, weight: 2 }
+  - { label: "four-on-the-floor", cat: rhythm, weight: 2 }
+  - { label: "sidechain pump", cat: production, weight: 2 }
+  - { label: euphoric, cat: atmosphere, weight: 2 }
+  - { label: "high energy", cat: energy, weight: 2 }
+
+lyric_themes: [euphoria, nightlife, "letting go", transcendence, togetherness, "the drop"]
+
+section_functions: [establish, introduce, escalate, contrast, remove, peak, resolve]
+
+delta_palette: ["sparse texture", atmospheric, filtered, "add rhythm", "rising tension", "full groove", "bass-led", "wide theme", "full arrangement", catchy, "strip drums", "expose harmony", "add countermelody", "added impact", climactic, introspective, "half-time feel", "vocal focus", instrumental, "reduce layers"]
+
+section_palette: [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+
+vocal_presets:
+  - { type: "Female lead", delivery_style: anthemic, default_energy: 4 }
+  - { type: "Male lead", delivery_style: anthemic, default_energy: 4 }
+  - { type: Duet, delivery_style: anthemic, default_energy: 4 }
+  - { type: "Group·choir", delivery_style: anthemic, default_energy: 4 }
+  - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 2 }
