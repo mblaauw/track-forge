@@ -9,13 +9,7 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import {
-  fetchJobs,
-  fetchJob,
-  favoriteJob,
-  deleteJob,
-  type JobInfo,
-} from "../../api";
+import { fetchJobs, favoriteJob, deleteJob, type JobInfo } from "../../api";
 
 function wave(seed: string, n: number): number[] {
   let h = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -26,6 +20,12 @@ function wave(seed: string, n: number): number[] {
   }
   return bars;
 }
+
+const GENRE_HUE_MAP: Record<string, string> = {
+  edm: "var(--hue-cyan)",
+  hiphop: "var(--hue-amber)",
+  ambient: "var(--hue-violet)",
+};
 
 function formatUpdated(iso: string): string {
   const d = new Date(iso);
@@ -81,11 +81,30 @@ export function LibraryPanel() {
       presetId: job.presetId,
       presetIds:
         (inputs.presetIds as string[]) ?? (job.presetId ? [job.presetId] : []),
-      bpm: (inputs.bpm as number) ?? null,
-      key: (inputs.key as string) ?? "",
+      presetLabels: [],
+      bpm: (inputs.bpm as number) ?? 128,
+      key: (inputs.key as string) ?? "C",
       scale: (inputs.scale as "major" | "minor") ?? "minor",
       status: job.status,
       reference: job.reference ?? "",
+      lyricsMode:
+        (inputs.lyricsMode as
+          "full_lyrics" | "strict_instrumental" | "guided_instrumental") ??
+        "strict_instrumental",
+      lyricTopic: (inputs.lyricTopic as string) ?? "",
+      lyricAngle:
+        (inputs.lyricAngle as
+          "first_person" | "story" | "abstract" | "anthemic") ?? "first_person",
+      lyricThemes: (inputs.lyricThemes as string[]) ?? [],
+      lyricLines: {},
+      lyricsGenerated: false,
+      tags: (inputs.tags ?? []) as any[],
+      sections: (inputs.sections ?? []) as any[],
+      selSectionId: null,
+      arrangeSource:
+        (inputs.arrangeSource as "default" | "custom") ?? "default",
+      title: (inputs.title as string) ?? "",
+      takes: [],
     });
   };
 
@@ -168,7 +187,7 @@ export function LibraryPanel() {
         >
           {filtered.map((job) => {
             const bars = wave(job.id, 16);
-            const genreHue = `var(--hue-${job.genreId === "edm" ? "cyan" : job.genreId === "hiphop" ? "amber" : job.genreId === "ambient" ? "violet" : "slate"})`;
+            const genreHue = GENRE_HUE_MAP[job.genreId] ?? "var(--hue-slate)";
             const statusColor =
               job.status === "completed"
                 ? "var(--success-text)"

@@ -58,8 +58,17 @@ export interface SetupCardsOpen {
 
 export interface Take {
   id: string;
-  title: string;
-  meta: string;
-  fav: boolean;
-  playing: boolean;
+  jobId?: string;
+  versionId?: string;
+  status: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  generatedTitle?: string;
+  style?: string;
+  error?: string;
+  isFavorite?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }

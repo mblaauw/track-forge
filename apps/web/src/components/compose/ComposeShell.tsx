@@ -6,6 +6,7 @@ import {
   connectJobEvents,
   updateJobInputs,
   fetchVersions,
+  fetchTakes,
   type ProgressEvent,
 } from "../../api";
 import { ContextBar } from "./ContextBar";
@@ -14,6 +15,7 @@ import { SetupColumn } from "./SetupColumn";
 import { BundleCanvas } from "./BundleCanvas";
 import { RendersPanel } from "./RendersPanel";
 import { LibraryPanel } from "./LibraryPanel";
+import { STAGE_LABELS } from "./arrangement";
 
 const STAGE_TO_LABEL: Record<string, string> = {
   ref_interpretation: "Interpreting reference",
@@ -25,17 +27,6 @@ const STAGE_TO_LABEL: Record<string, string> = {
   verification: "Verifying bundle",
   suno_render: "Rendering with Suno",
 };
-
-const STAGE_LABELS = [
-  "Interpreting reference",
-  "Planning structure",
-  "Writing style",
-  "Composing arrangement",
-  "Reviewing quality",
-  "Polishing details",
-  "Verifying bundle",
-  "Rendering with Suno",
-];
 
 function stageToDisplay(stage: string): { label: string; index: number } {
   const label = STAGE_TO_LABEL[stage];
@@ -128,8 +119,12 @@ export function ComposeShell() {
             fetchVersions(jobId!)
               .then((versions) => {
                 if (versions.length > 0) {
-                  const latest = versions[versions.length - 1];
-                  if (latest) fetchTakesForVersion(latest.id);
+                  const latest = versions[versions.length - 1]!;
+                  fetchTakes(latest.id)
+                    .then((takes) => {
+                      s.setSession({ takes: takes as any[] });
+                    })
+                    .catch(() => {});
                 }
               })
               .catch(() => {});
@@ -268,8 +263,4 @@ export function ComposeShell() {
       </div>
     </div>
   );
-}
-
-async function fetchTakesForVersion(versionId: string) {
-  // This would populate the renders store — stub for now
 }

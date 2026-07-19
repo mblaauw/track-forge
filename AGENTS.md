@@ -14,6 +14,10 @@ npm run -w apps/server cli:dev export <jobId>  # CLI (tsx, no build needed)
 npm run clean               # rm -rf apps/*/dist packages/*/dist
 ```
 
+## Code discovery
+
+CodeGraph first (`.codegraph/` index exists at repo root — use `codegraph_explore`). Fall back to `rg` (ripgrep) for content search and `fd` for file search — do **not** use the built-in `grep`/`find` tools.
+
 **CLI**: Server ships `track-forge export <jobId>` / `export-all` / `import <file>`. Use `cli:dev` for dev, or `npm run -w apps/server cli <command>` after build.
 
 **CI** (`.github/workflows/ci.yml`): two parallel jobs — `check` (tsc --build + vitest + prettier) then `lint` (tsc --noEmit). Local equivalent: `npm run build && npm test && npx prettier --check . && npx tsc --noEmit`.
