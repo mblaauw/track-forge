@@ -3512,6 +3512,89 @@ ol {
   color: var(--dim);
 }
 
+/* ─── Lyrics Block ─── */
+
+.lyrics-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--violet-info-fill);
+  border: 1px solid var(--violet-info-border);
+  color: var(--violet-info-text);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.lyrics-section-block {
+  margin-bottom: 12px;
+}
+
+.lyrics-section-header {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  display: inline-block;
+}
+
+.lyrics-delivery-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--danger-text);
+  background: var(--danger-fill);
+  margin: 6px 0;
+}
+
+.lyrics-line-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+
+.lyrics-line-row:hover {
+  background: var(--inset);
+}
+
+.lyrics-syl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--hairline);
+  width: 20px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.lyrics-line-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--tx);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: var(--font);
+}
+
+.lyrics-line-input:focus {
+  background: var(--inset);
+}
+
+.lyrics-not-generated {
+  font-size: 11.5px;
+  color: var(--faint);
+  padding: 8px 0;
+}
+
 /* ─── Compose Animations ─── */
 
 @keyframes tf-spin {

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import { Textbox, SlidersHorizontal, MusicNotes } from "@phosphor-icons/react";
+import { Textbox, SlidersHorizontal } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { previewStyle } from "../../api";
 import { ArrangementEditor } from "./ArrangementEditor";
+import { LyricsBlock } from "./LyricsBlock";
 
 export function BundleCanvas() {
   const s = useSession();
@@ -127,16 +128,8 @@ export function BundleCanvas() {
         {/* ARRANGEMENT STRUCTURE */}
         <ArrangementEditor />
 
-        {/* LYRICS / ARRANGEMENT placeholder */}
-        <div class="bundle-block">
-          <div class="bundle-block-header">
-            <MusicNotes size={16} style="color:var(--icon-lyrics)" />
-            <span class="bundle-block-title">ARRANGEMENT</span>
-          </div>
-          <div class="bundle-block-body">
-            <span class="bundle-block-placeholder">Wired in Subissue 4c</span>
-          </div>
-        </div>
+        {/* LYRICS / ARRANGEMENT */}
+        <LyricsBlock />
       </div>
     </div>
   );
