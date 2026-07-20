@@ -96,13 +96,25 @@ export function LibraryPanel() {
       // takes stay empty on error
     }
 
+    // Compute preset labels from genre preset names
+    let presetLabels: string[] = [];
+    try {
+      const presets: { id: string; name: string }[] = await (
+        await fetch(`/api/genres/${job.genreId}/presets`)
+      ).json();
+      const map = new Map(presets.map((p: any) => [p.id, p.name]));
+      presetLabels = presetIds.map((id: string) => map.get(id) ?? id);
+    } catch {
+      presetLabels = presetIds;
+    }
+
     s.setSession({
       jobId: job.id,
       name: job.name ?? "",
       genreId: job.genreId,
       presetId: presetIds[0] ?? job.presetId,
       presetIds,
-      presetLabels: [],
+      presetLabels,
       bpm: (inputs.bpm as number) ?? 128,
       key: (inputs.key as string) ?? "C",
       scale: (inputs.scale as "major" | "minor") ?? "minor",
@@ -116,8 +128,8 @@ export function LibraryPanel() {
         (inputs.lyricAngle as
           "first_person" | "story" | "abstract" | "anthemic") ?? "first_person",
       lyricThemes: (inputs.lyricThemes as string[]) ?? [],
-      lyricLines: {},
-      lyricsGenerated: false,
+      lyricLines: (inputs.lyricLines as Record<string, string[]>) ?? {},
+      lyricsGenerated: (inputs.lyricsGenerated as boolean) ?? false,
       tags: (inputs.tags ?? []) as any[],
       sections: (inputs.sections ?? []) as any[],
       selSectionId: null,

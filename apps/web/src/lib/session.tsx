@@ -1,5 +1,5 @@
 import { createContext } from "preact";
-import { useContext, useState, useCallback } from "preact/hooks";
+import { useContext, useState, useCallback, useEffect, useRef } from "preact/hooks";
 import type {
   Descriptor,
   Section,
@@ -10,6 +10,36 @@ import type {
   SetupCardId,
   Take,
 } from "../components/compose/types";
+
+const STORAGE_KEY = "tf-session";
+
+function loadPersistedSession(): SessionState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SessionState;
+  } catch {
+    return null;
+  }
+}
+
+function persistSession(state: SessionState): void {
+  try {
+    // Don't persist forge-in-progress state (too transient)
+    const persistable = { ...state, forgeRunning: false, status: "idle" };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
+function clearPersistedSession(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 export interface SessionState {
   jobId: string | null;
@@ -112,12 +142,29 @@ export function SessionProvider({
 }: {
   children: preact.ComponentChildren;
 }) {
-  const [state, setState] = useState<SessionState>(DEFAULT);
+  // Initialize from localStorage if available
+  const [state, setState] = useState<SessionState>(
+    () => loadPersistedSession() ?? DEFAULT,
+  );
+  const persistRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Auto-persist on every state change (debounced)
+  useEffect(() => {
+    if (persistRef.current) clearTimeout(persistRef.current);
+    persistRef.current = setTimeout(() => persistSession(state), 500);
+    return () => {
+      if (persistRef.current) clearTimeout(persistRef.current);
+    };
+  }, [state]);
+
   const setSession = useCallback(
     (patch: Partial<SessionState>) => setState((s) => ({ ...s, ...patch })),
     [],
   );
-  const resetSession = useCallback(() => setState(DEFAULT), []);
+  const resetSession = useCallback(() => {
+    clearPersistedSession();
+    setState(DEFAULT);
+  }, []);
   const toggleCard = useCallback(
     (id: SetupCardId) =>
       setState((s) => ({ ...s, cards: { ...s.cards, [id]: !s.cards[id] } })),
