@@ -935,6 +935,21 @@ ol {
   color: var(--faint);
 }
 
+.bundle-gen-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--faint);
+  line-height: 0;
+}
+.bundle-gen-btn:hover {
+  color: var(--tx);
+  border-color: var(--tx);
+}
+
 .style-preview-box {
   font-family: var(--font-mono);
   font-size: 12px;

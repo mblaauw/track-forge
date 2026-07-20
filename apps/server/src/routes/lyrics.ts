@@ -56,25 +56,23 @@ export function registerLyricsRoutes(
       })),
       lyricsMode: body.lyricsMode as
         | "full_lyrics"
-        | "strict_instrumental"
-        | "guided_instrumental",
+        | "strict_instrumental",
       vocalType: body.vocalType ?? undefined,
       lyricTopic: body.lyricTopic ?? "",
       lyricThemes: body.lyricThemes ?? [],
       lyricAngle: body.lyricAngle ?? "",
     });
 
-    const prompt = `You are a songwriter. Write lyrics for this song following the structure and style described below. Return ONLY valid JSON matching this schema:
-{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}
-
-Context:
-${sunoContext}`;
+    const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
 
     const PROJECT_ROOT = resolve(process.cwd(), "..");
-    writeFileSync(resolve(PROJECT_ROOT, "LLM_IN.md"), prompt);
+    writeFileSync(resolve(PROJECT_ROOT, "LLM_IN.md"), `System: You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}\n\nUser:\n${sunoContext}`);
 
     const response = await deps.llm.complete({
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "system", content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}` },
+        { role: "user", content: sunoContext },
+      ],
       temperature: 0.8,
       maxTokens: 16384,
     });

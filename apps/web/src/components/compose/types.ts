@@ -38,7 +38,7 @@ export interface Section {
 }
 
 export type LyricsMode =
-  "full_lyrics" | "strict_instrumental" | "guided_instrumental";
+  "full_lyrics" | "strict_instrumental";
 
 export type LyricAngle = "first_person" | "story" | "abstract" | "anthemic";
 

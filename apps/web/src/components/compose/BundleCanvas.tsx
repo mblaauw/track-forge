@@ -1,9 +1,28 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import { Textbox, SlidersHorizontal } from "@phosphor-icons/react";
+import { Textbox, SlidersHorizontal, Shuffle } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { previewStyle } from "../../api";
 import { ArrangementEditor } from "./ArrangementEditor";
 import { LyricsBlock } from "./LyricsBlock";
+
+const TITLE_A = [
+  "Neon", "Shadow", "Crystal", "Velvet", "Midnight", "Broken", "Electric",
+  "Silent", "Burning", "Fading", "Golden", "Hollow", "Iron", "Jade",
+  "Karma", "Lunar", "Mystic", "Phantom", "Rebel", "Silver", "Cosmic",
+  "Distant", "Frozen", "Wandering", "Crimson",
+];
+const TITLE_B = [
+  "Dreams", "Fires", "Wolves", "Kings", "Nights", "Heart", "Light",
+  "Storm", "Tears", "Venom", "Wings", "Dawn", "Echo", "Flame",
+  "Grace", "Haze", "Lanes", "Myth", "Rain", "Skies", "Embers",
+  "Shadows", "Horizon", "Ruins", "Strangers",
+];
+
+export function randomTitle(): string {
+  const a = TITLE_A[Math.floor(Math.random() * TITLE_A.length)]!;
+  const b = TITLE_B[Math.floor(Math.random() * TITLE_B.length)!];
+  return `${a} ${b}`;
+}
 
 export function BundleCanvas() {
   const s = useSession();
@@ -88,7 +107,7 @@ export function BundleCanvas() {
             <Textbox size={16} style="color:var(--icon-title)" />
             <span class="bundle-block-title">TITLE</span>
           </div>
-          <div class="bundle-block-body">
+          <div class="bundle-block-body" style="display:flex;gap:8px;align-items:center">
             <input
               class="bundle-title-input"
               placeholder="Untitled"
@@ -97,6 +116,13 @@ export function BundleCanvas() {
                 s.setSession({ title: (e.target as HTMLInputElement).value })
               }
             />
+            <button
+              class="bundle-gen-btn"
+              onClick={() => s.setSession({ title: randomTitle() })}
+              title="Generate title"
+            >
+              <Shuffle size={16} />
+            </button>
           </div>
         </div>
 

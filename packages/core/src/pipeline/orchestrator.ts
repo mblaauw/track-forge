@@ -84,7 +84,7 @@ async function handleCompilation(
   const key = String(inputs.key ?? "C");
   const scale = (inputs.scale ?? "minor") as "major" | "minor";
   const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental") as
-    "full_lyrics" | "strict_instrumental" | "guided_instrumental";
+    "full_lyrics" | "strict_instrumental";
 
   const sections = rawSections.map((s) => ({
     name: String(s.name ?? ""),
@@ -225,6 +225,10 @@ async function handleLyricsWriting(
     return /verse|chorus|hook|pre-chorus|refrain|bridge|drop/i.test(s.section);
   })?.vocal?.type;
 
+  const compiledStyle = state.compiledJson
+    ? safeJsonParse<Record<string, string>>(state.compiledJson, {}).style ?? ""
+    : "";
+
   const sunoContext = buildSunoContext({
     genreName,
     presetLabels,
@@ -234,23 +238,23 @@ async function handleLyricsWriting(
     scale: (inputs.scale ?? "minor") as "major" | "minor",
     sections,
     lyricsMode: lyricsMode as
-      "full_lyrics" | "strict_instrumental" | "guided_instrumental",
+      "full_lyrics" | "strict_instrumental",
     vocalType,
     lyricTopic: String(inputs.lyricTopic ?? ""),
     lyricThemes: (inputs.lyricThemes as string[]) ?? [],
     lyricAngle: String(inputs.lyricAngle ?? ""),
+    styleOverride: compiledStyle,
   });
 
-  const prompt = `You are a songwriter. Write lyrics for this song following the structure and style described below. Return ONLY valid JSON matching this schema:
-{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}
+  const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
 
-Context:
-${sunoContext}`;
-
-  trace("handleLyricsWriting.prompt", { prompt, descriptorCount: descriptors.length, lyricsMode });
+  trace("handleLyricsWriting.prompt", { prompt: sunoContext, descriptorCount: descriptors.length, lyricsMode });
 
   const response = await deps.llm.complete({
-    messages: [{ role: "user", content: prompt }],
+    messages: [
+      { role: "system", content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}` },
+      { role: "user", content: sunoContext },
+    ],
     temperature: 0.8,
     maxTokens: 16384,
     signal: deps.signal,

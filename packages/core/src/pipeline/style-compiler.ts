@@ -18,7 +18,7 @@ export interface CompileStyleInput {
   key: string;
   scale: "major" | "minor";
   sections: { name: string; fn: string }[];
-  lyricsMode: "full_lyrics" | "strict_instrumental" | "guided_instrumental";
+  lyricsMode: "full_lyrics" | "strict_instrumental";
   vocalType?: string;
 }
 

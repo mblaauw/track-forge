@@ -55,7 +55,7 @@ export const HipHopInputSchema = z.object({
   energy: z.number().int().min(1).max(10).default(6),
   complexity: z.number().int().min(1).max(10).default(5),
   lyricsMode: z
-    .enum(["strict_instrumental", "guided_instrumental", "full_lyrics"] as const)
+    .enum(["strict_instrumental", "full_lyrics"] as const)
     .default("full_lyrics"),
   customTags: z.string().default(""),
   reference: z.string().default(""),

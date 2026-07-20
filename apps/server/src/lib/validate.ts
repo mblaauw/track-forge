@@ -81,7 +81,7 @@ export const PreviewStyleBody = z.object({
     )
     .default([]),
   lyricsMode: z
-    .enum(["full_lyrics", "strict_instrumental", "guided_instrumental"])
+    .enum(["full_lyrics", "strict_instrumental"])
     .default("strict_instrumental"),
   vocalType: z.string().nullable().optional(),
 });
@@ -108,7 +108,7 @@ export const JobPreviewStyleBody = z.object({
     )
     .default([]),
   lyricsMode: z
-    .enum(["full_lyrics", "strict_instrumental", "guided_instrumental"])
+    .enum(["full_lyrics", "strict_instrumental"])
     .default("strict_instrumental"),
   vocalType: z.string().nullable().optional(),
 });
@@ -150,7 +150,7 @@ export const LyricsGenerateBody = z.object({
     )
     .default([]),
   lyricsMode: z
-    .enum(["full_lyrics", "strict_instrumental", "guided_instrumental"])
+    .enum(["full_lyrics", "strict_instrumental"])
     .default("strict_instrumental"),
   vocalType: z.string().nullable().optional(),
   lyricTopic: z.string().default(""),

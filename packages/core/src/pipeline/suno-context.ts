@@ -15,18 +15,20 @@ export interface SunoContextInput {
   key: string;
   scale: "major" | "minor";
   sections: ArrangementSection[];
-  lyricsMode: "full_lyrics" | "strict_instrumental" | "guided_instrumental";
+  lyricsMode: "full_lyrics" | "strict_instrumental";
   vocalType?: string;
   lyricTopic?: string;
   lyricThemes?: string[];
   lyricAngle?: string;
+  /** Pre-compiled style string. When provided, skips internal compileStylePrompt call. */
+  styleOverride?: string;
 }
 
 export function buildSunoContext(input: SunoContextInput): string {
   const lines: string[] = [];
 
-  // Style prompt block — use the same deterministic compileStylePrompt
-  const compiled = compileStylePrompt({
+  // Style prompt block — use pre-compiled style if available, otherwise compile
+  const style = input.styleOverride ?? compileStylePrompt({
     genreName: input.genreName,
     presetLabels: input.presetLabels,
     descriptors: input.descriptors,
@@ -36,10 +38,10 @@ export function buildSunoContext(input: SunoContextInput): string {
     sections: input.sections.map((s) => ({ name: s.section, fn: s.fn })),
     lyricsMode: input.lyricsMode,
     vocalType: input.vocalType,
-  });
+  }).style;
 
   lines.push("STYLE PROMPT:");
-  lines.push(compiled.style);
+  lines.push(style);
   lines.push("");
 
   // Structure block — per design target: "{name} — {bars} bars [{fn}, {deltas...}]"

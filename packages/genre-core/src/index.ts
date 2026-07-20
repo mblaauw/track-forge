@@ -123,7 +123,7 @@ export function createBaseInputSchema(opts?: {
     complexity: z.number().int().min(1).max(10),
     lyricsMode:
       opts?.lyricsMode ??
-      z.enum(["strict_instrumental", "guided_instrumental", "full_lyrics"]),
+      z.enum(["strict_instrumental", "full_lyrics"]),
   });
   if (opts?.extra) {
     for (const [k, v] of Object.entries(opts.extra)) {

@@ -94,7 +94,7 @@ export interface LyricsWriterResult {
 }
 
 export type LyricsFormat =
-  "strict_instrumental" | "guided_instrumental" | "full_lyrics";
+  "strict_instrumental" | "full_lyrics";
 
 // ── Job & Version ────────────────────────────────────────────────────
 

@@ -14,6 +14,7 @@ import type {
   DescriptorWeight,
 } from "./types";
 import { defaultSections } from "./arrangement";
+import { randomTitle } from "./BundleCanvas";
 import {
   fetchGenres,
   fetchPresets,
@@ -163,6 +164,7 @@ export function SetupColumn() {
         sections,
         selSectionId: sections[0]?.id ?? null,
         lyricThemes: themes.length > 0 ? [themes[0]!] : [],
+        title: s.title || randomTitle(),
       });
     }
   }, [presets, descDefaults]);

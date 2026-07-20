@@ -67,7 +67,7 @@ presets:
       energy: 5
       complexity: 4
       soundscape: warm
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: tech_house_driving
     name: "Tech House — Driving"
     description: "Loopy, driving tech house for the dancefloor"
@@ -81,7 +81,7 @@ presets:
       energy: 8
       complexity: 5
       soundscape: driving
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: progressive_house_euphoric
     name: "Progressive House — Euphoric"
     description: "Building, euphoric progressive house with melodic peaks"
@@ -95,7 +95,7 @@ presets:
       energy: 8
       complexity: 7
       soundscape: euphoric
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: detroit_techno_deep
     name: "Detroit Techno — Deep"
     description: "Hypnotic, deep Detroit techno"
@@ -109,7 +109,7 @@ presets:
       energy: 7
       complexity: 6
       soundscape: hypnotic
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: industrial_techno_aggressive
     name: "Industrial Techno — Aggressive"
     description: "Dark, aggressive industrial techno"
@@ -123,7 +123,7 @@ presets:
       energy: 9
       complexity: 6
       soundscape: aggressive
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: melodic_techno_emotional
     name: "Melodic Techno — Emotional"
     description: "Emotional, atmospheric melodic techno"
@@ -137,7 +137,7 @@ presets:
       energy: 6
       complexity: 7
       soundscape: atmospheric
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: uplifting_trance_anthem
     name: "Uplifting Trance — Anthem"
     description: "Euphoric anthem trance with soaring leads"
@@ -151,7 +151,7 @@ presets:
       energy: 9
       complexity: 7
       soundscape: euphoric
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: psytrance_trippy
     name: "Psytrance — Trippy"
     description: "Fast, psychedelic trance with rolling bass"
@@ -165,7 +165,7 @@ presets:
       energy: 9
       complexity: 8
       soundscape: trippy
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: liquid_funk_soulful
     name: "Liquid Funk — Soulful"
     description: "Melodic, soulful drum & bass"
@@ -179,7 +179,7 @@ presets:
       energy: 7
       complexity: 7
       soundscape: soulful
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: neurofunk_dark
     name: "Neurofunk — Dark"
     description: "Dark, techy neurofunk with complex bass"
@@ -193,7 +193,7 @@ presets:
       energy: 8
       complexity: 9
       soundscape: dark
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: dubstep_heavy
     name: "Dubstep — Heavy"
     description: "Massive dubstep with heavy wobble bass"
@@ -207,7 +207,7 @@ presets:
       energy: 9
       complexity: 6
       soundscape: massive
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: future_bass_bright
     name: "Future Bass — Bright"
     description: "Bright, melodic future bass with emotional chords"
@@ -221,7 +221,7 @@ presets:
       energy: 7
       complexity: 6
       soundscape: bright
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: hardstyle_anthem
     name: "Hardstyle — Anthem"
     description: "Hard-hitting euphoric hardstyle"
@@ -235,7 +235,7 @@ presets:
       energy: 10
       complexity: 6
       soundscape: powerful
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: chillout_relaxed
     name: "Chillout — Relaxed"
     description: "Warm, relaxed ambient downtempo"
@@ -249,7 +249,7 @@ presets:
       energy: 3
       complexity: 3
       soundscape: relaxed
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: lo_fi_chilled
     name: "Lo-Fi — Chilled"
     description: "Warm, dusty lo-fi beats"
@@ -263,7 +263,7 @@ presets:
       energy: 3
       complexity: 3
       soundscape: warm
-      lyricsMode: guided_instrumental
+      lyricsMode: strict_instrumental
   - id: dance_pop_catchy
     name: "Dance-Pop — Catchy"
     description: "Upbeat, radio-friendly dance-pop"
