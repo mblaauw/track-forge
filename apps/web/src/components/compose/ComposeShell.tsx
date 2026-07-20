@@ -80,6 +80,8 @@ export function ComposeShell() {
           name: s.name,
         };
 
+        console.log("[forge] inputPack:", JSON.stringify(inputPack, null, 2));
+
         const job = await createJob({
           genreId: s.genreId,
           presetId: s.presetId || s.presetIds[0] || "",

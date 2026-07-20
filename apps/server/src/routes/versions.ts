@@ -1,3 +1,4 @@
+import { writeFileSync, appendFileSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { eq, desc, sql } from "drizzle-orm";
 import type { Db, SunoClient } from "@track-forge/core";
@@ -7,6 +8,7 @@ import {
   publish,
   generateSunoPayload,
   storeGeneration,
+  updateGeneration,
 } from "@track-forge/core";
 import type { SunoArtifact } from "@track-forge/contracts";
 import { findRowOr404 } from "../lib/db-utils.js";
@@ -16,6 +18,12 @@ import {
   IdParams,
   JobIdParams,
 } from "../lib/validate.js";
+
+function trace(section: string, data: unknown): void {
+  try {
+    appendFileSync("LLM_TRACE.md", `\n## ${section} (${new Date().toISOString()})\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`);
+  } catch { /* swallow */ }
+}
 
 export interface VersionRouteDeps {
   db: Db;
@@ -126,6 +134,30 @@ export function registerVersionRoutes(
       callbackUrl,
     });
 
+    trace("sunoPayload", {
+      versionId: id,
+      jobId: version.jobId,
+      rawArtifacts: artifacts,
+      request,
+    });
+    writeFileSync("LLM_SUNO_IN.md", JSON.stringify(request, null, 2));
+
+    const skipSuno = process.env.SUNO_DRY_RUN === "true";
+    if (skipSuno) {
+      req.log.info("SUNO_DRY_RUN=true — skipping Suno submit");
+      await publish(db, version.jobId, {
+        stage: "suno_render_complete",
+        status: "completed",
+        message: "Suno render completed (dry run)",
+      }).catch(() => {});
+      return reply.code(201).send({
+        id: "dry-run-" + id,
+        jobId: version.jobId,
+        versionId: id,
+        status: "completed",
+      });
+    }
+
     let result: { taskId: string; callbackConfigured: boolean };
     try {
       result = await deps.suno.submit(request);
@@ -150,14 +182,51 @@ export function registerVersionRoutes(
       status: "queued",
     });
 
-    // Return the created generation
+    // Return the created generation immediately
     const [created] = await db
       .select()
       .from(schema.generations)
       .where(eq(schema.generations.id, result.taskId))
       .limit(1);
 
-    return reply.code(201).send(created);
+    await reply.code(201).send(created);
+
+    // Background poll: wait for Suno to finish, then update record + emit SSE
+    if (result.taskId) {
+      deps.suno
+        .waitForCompletion(result.taskId)
+        .then(async (item) => {
+          await updateGeneration(db, result.taskId, {
+            status: item.status,
+            audioUrl: item.audioUrl,
+            imageUrl: item.imageUrl,
+            videoUrl: item.videoUrl,
+            duration: item.duration,
+            generatedTitle: item.title,
+            style: item.style,
+          }).catch(() => {});
+          await publish(db, version.jobId, {
+            stage: "suno_render_complete",
+            status: "completed",
+            message: "Suno render completed",
+          }).catch(() => {});
+        })
+        .catch(async (err: Error) => {
+          req.log.error(
+            { taskId: result.taskId, err },
+            "Suno poll failed",
+          );
+          await updateGeneration(db, result.taskId, {
+            status: "error",
+            error: err.message,
+          }).catch(() => {});
+          await publish(db, version.jobId, {
+            stage: "suno_render_error",
+            status: "error",
+            error: err.message,
+          }).catch(() => {});
+        });
+    }
   });
 
   server.patch("/api/takes/:id/favorite", async (req, reply) => {

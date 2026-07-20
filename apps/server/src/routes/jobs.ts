@@ -88,7 +88,7 @@ export function registerJobRoutes(
       db,
       genreId as never,
       presetId as never,
-      JSON.stringify(parsed.data),
+      JSON.stringify(merged),
       reference ?? null,
       name ?? null,
     );

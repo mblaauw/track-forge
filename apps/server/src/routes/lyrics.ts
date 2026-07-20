@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { FastifyInstance } from "fastify";
 import type { Db, LlmClient } from "@track-forge/core";
 import { buildSunoContext } from "@track-forge/core";
@@ -68,11 +70,16 @@ export function registerLyricsRoutes(
 Context:
 ${sunoContext}`;
 
+    const PROJECT_ROOT = resolve(process.cwd(), "..");
+    writeFileSync(resolve(PROJECT_ROOT, "LLM_IN.md"), prompt);
+
     const response = await deps.llm.complete({
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
-      maxTokens: 4096,
+      maxTokens: 16384,
     });
+
+    writeFileSync(resolve(PROJECT_ROOT, "LLM_OUT.md"), response.content);
 
     let lyricsDoc: Record<string, unknown> = { sections: [], metadata: {} };
     try {

@@ -1,3 +1,4 @@
+import { appendFileSync, writeFileSync } from "node:fs";
 import {
   GenerationStage,
   SunoArtifactType,
@@ -24,6 +25,12 @@ import { buildSunoContext } from "./suno-context.js";
 import { publish } from "./events.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
 import { safeJsonParse, readJobInputs } from "../json-utils.js";
+
+function trace(section: string, data: unknown): void {
+  try {
+    appendFileSync("LLM_TRACE.md", `\n## ${section} (${new Date().toISOString()})\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`);
+  } catch { /* swallow */ }
+}
 
 // ── Stage order ───────────────────────────────────────────────────────
 
@@ -59,6 +66,7 @@ function parsePipelineInputs(job: PipelineState["job"], module: PipelineState["m
     }));
 
   const rawSections = (inputs.sections as Array<Record<string, unknown>>) ?? [];
+  trace("parsePipelineInputs", { jobId: job.id, descriptorCount: descriptors.length, presetLabels, hasTags: !!inputs.tags, tagCount: (inputs.tags as any[])?.length });
   return { inputs, presetIds, presetLabels, descriptors, rawSections };
 }
 
@@ -112,6 +120,8 @@ async function handleCompilation(
     lyricsMode,
     vocalType: vocalType || undefined,
   });
+
+  trace("handleCompilation", { genreName, presetLabels, descriptorCount: descriptors.length, descriptors, compiledActiveCount: compiled.activeCount, compiledStyle: compiled.style });
 
   const title = String(inputs.title ?? "Untitled");
   const negativeTags: string[] = [];
@@ -209,12 +219,16 @@ async function handleLyricsWriting(
 Context:
 ${sunoContext}`;
 
+  trace("handleLyricsWriting.prompt", { prompt, descriptorCount: descriptors.length, lyricsMode });
+
   const response = await deps.llm.complete({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.8,
-    maxTokens: 4096,
+    maxTokens: 16384,
     signal: deps.signal,
   });
+
+  trace("handleLyricsWriting.response", { outputLength: response.content.length, outputPreview: response.content.slice(0, 500), reasoningPreview: response.reasoningContent?.slice(0, 500), usage: response.usage });
 
   let lyricsDoc: any = { sections: [], metadata: {} };
   try {
@@ -270,6 +284,8 @@ async function handleVersioning(
   const style = compiled.style ?? "";
   const excludedStyles = compiled.excludedStyles ?? "";
 
+  trace("handleVersioning", { compiledTitle: title, compiledStyle: style, compiledExcludedStyles: excludedStyles, lyricsLength: lyricsText.length, lyricsPreview: lyricsText.slice(0, 500) });
+
   const artifacts: SunoArtifact[] = [
     { type: SunoArtifactType.Title, value: title, versionId: "" as VersionId },
     { type: SunoArtifactType.Style, value: style, versionId: "" as VersionId },
@@ -296,6 +312,7 @@ export async function runPipeline(
   deps: PipelineDeps,
   module: GenreModule,
 ): Promise<PipelineResult> {
+  try { writeFileSync("LLM_TRACE.md", `# Pipeline Trace — ${new Date().toISOString()}\n`); } catch { /* swallow */ }
   const controller = createAbortController(jobId);
   if (deps.signal) {
     if (deps.signal.aborted) {
@@ -334,6 +351,8 @@ export async function runPipeline(
   };
 
   let state = initialState;
+
+  trace("runPipeline.start", { jobId: state.job.id, genreId: state.job.genreId, presetId: state.job.presetId, status: state.job.status, inputs: readJobInputs(state.job.inputs) });
 
   if (state.job.status !== "in_progress") {
     const now = new Date().toISOString();
