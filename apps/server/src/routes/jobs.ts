@@ -237,33 +237,28 @@ export function registerJobRoutes(
       "Job",
     );
 
-    // Cascade delete: generations → sunoTracks, then versions, then job
-    const versionRows = await db
-      .select({ id: schema.versions.id })
-      .from(schema.versions)
-      .where(eq(schema.versions.jobId, id));
-    const versionIds = versionRows.map((r) => r.id);
-
-    const genRows = await db
-      .select({ id: schema.generations.id })
-      .from(schema.generations)
-      .where(eq(schema.generations.jobId, id));
-    const genIds = genRows.map((r) => r.id);
-
-    await db.transaction(async (tx) => {
+    // Cascade delete using raw SQLite (sync transactions)
+    const sqlite = (db as any).$client;
+    sqlite.transaction(() => {
+      const genIds = sqlite
+        .prepare("SELECT id FROM generations WHERE job_id = ?")
+        .all(id)
+        .map((r: any) => r.id);
       if (genIds.length > 0) {
-        await tx
-          .delete(schema.sunoTracks)
-          .where(inArray(schema.sunoTracks.generationId, genIds));
+        const placeholders = genIds.map(() => "?").join(",");
+        sqlite
+          .prepare(
+            `DELETE FROM suno_tracks WHERE generation_id IN (${placeholders})`,
+          )
+          .run(...genIds);
+        sqlite
+          .prepare(`DELETE FROM generations WHERE job_id = ?`)
+          .run(id);
       }
-
-      await tx
-        .delete(schema.generations)
-        .where(eq(schema.generations.jobId, id));
-      await tx.delete(schema.versions).where(eq(schema.versions.jobId, id));
-      await tx.delete(schema.jobEvents).where(eq(schema.jobEvents.jobId, id));
-      await tx.delete(schema.jobs).where(eq(schema.jobs.id, id));
-    });
+      sqlite.prepare("DELETE FROM versions WHERE job_id = ?").run(id);
+      sqlite.prepare("DELETE FROM job_events WHERE job_id = ?").run(id);
+      sqlite.prepare("DELETE FROM jobs WHERE id = ?").run(id);
+    })();
 
     return reply.code(204).send();
   });

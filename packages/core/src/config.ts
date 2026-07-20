@@ -1,12 +1,29 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
 import type { Config } from "@track-forge/contracts";
 import { ConfigSchema } from "@track-forge/contracts";
 
 const CONFIG_FILENAME = "track-forge.config.js";
 
 /**
- * Load config from CWD/track-forge.config.js with env overrides.
+ * Walk up from CWD looking for track-forge.config.js.
+ * This works regardless of whether the server is invoked from
+ * the project root or a workspace subdirectory.
+ */
+function findConfigPath(start: string): string | null {
+  let dir = resolve(start);
+  for (let i = 0; i < 20; i++) {
+    const candidate = resolve(dir, CONFIG_FILENAME);
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) return null; // hit filesystem root
+    dir = parent;
+  }
+  return null;
+}
+
+/**
+ * Load config from project-root/track-forge.config.js with env overrides.
  * Config file is gitignored, server-only.
  * Env vars take precedence:
  *   TRACK_FORGE_SUNO_BASE_URL
@@ -23,14 +40,10 @@ const CONFIG_FILENAME = "track-forge.config.js";
  *   TRACK_FORGE_LLM_MODEL
  */
 export function loadConfig(cwd = process.cwd()): Config {
-  const configPath = resolve(cwd, CONFIG_FILENAME);
+  const configPath = findConfigPath(cwd);
   let fileConfig: Record<string, unknown> = {};
 
-  if (existsSync(configPath)) {
-    // Dynamic import of JS config file (must be ESM-compatible)
-    // Using require in CJS or import() for ESM — we use readFile + eval
-    // since the config is a plain JS object export in an ESM project.
-    // We load it synchronously via a dynamic import workaround:
+  if (configPath) {
     fileConfig = readConfigFileSync(configPath);
   }
 
