@@ -94,7 +94,7 @@ export function registerVersionRoutes(
     for (const gen of generations) {
       const tracks = sqlite
         .prepare(
-          "SELECT * FROM suno_tracks WHERE generation_id = ? ORDER BY \"index\" ASC",
+          'SELECT * FROM suno_tracks WHERE generation_id = ? ORDER BY "index" ASC',
         )
         .all((gen as any).id);
       result.push({ ...gen, tracks });

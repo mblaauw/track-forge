@@ -6,6 +6,80 @@ export function generateId(): string {
   return Math.random().toString(36).slice(2, 9);
 }
 
+const NAME_A = [
+  "Midnight",
+  "Golden",
+  "Silent",
+  "Crimson",
+  "Velvet",
+  "Broken",
+  "Electric",
+  "Fading",
+  "Hollow",
+  "Neon",
+  "Cosmic",
+  "Distant",
+  "Frozen",
+  "Wandering",
+  "Burning",
+  "Crystal",
+  "Shadow",
+  "Lunar",
+  "Mystic",
+  "Silver",
+];
+const NAME_B = [
+  "Session",
+  "Studio",
+  "Project",
+  "Forge",
+  "Experiment",
+  "Vibes",
+  "Horizon",
+  "Circuit",
+  "Signal",
+  "Frequency",
+  "Chronicles",
+  "Outlines",
+  "Blueprint",
+  "Blueprint",
+  "Pulse",
+  "Vision",
+  "Echo",
+  "Groove",
+  "Temple",
+  "Cipher",
+];
+const NAME_C = [
+  "Alpha",
+  "Beta",
+  "Vol.1",
+  "Vol.2",
+  "Side A",
+  "Side B",
+  "Draft",
+  "Final",
+  "Rev.1",
+  "Rev.2",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+];
+
+export function randomSessionName(): string {
+  const a = NAME_A[Math.floor(Math.random() * NAME_A.length)]!;
+  const b = NAME_B[Math.floor(Math.random() * NAME_B.length)]!;
+  const c = NAME_C[Math.floor(Math.random() * NAME_C.length)]!;
+  return c ? `${a} ${b} ${c}` : `${a} ${b}`;
+}
+
 export const SEC_COLORS: Record<string, string> = {
   intro: "var(--hue-slate)",
   outro: "var(--hue-slate)",

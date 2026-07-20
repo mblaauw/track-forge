@@ -4,19 +4,19 @@ TypeScript npm-workspace application: Fastify server, Preact/Vite web client, SQ
 
 ## Source of truth
 
-| Concern                | Location                                                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------- |
-| Pipeline stages        | `packages/core/src/pipeline/orchestrator.ts` — `compilation → lyrics_writing → versioning`      |
-| Genre vocabulary       | `config/genres/<id>.yaml` (presets, descriptors, structure, palette)                            |
-| Shared API types       | `packages/contracts/src/index.ts`                                                               |
-| Genre module types     | `packages/genre-core/src/index.ts` — `SectionFunction`, `Vocal`, `DescriptorCategory`, etc.     |
-| DB schema              | `packages/core/src/db/schema.ts`                                                                |
-| Web session state      | `apps/web/src/lib/session.tsx` — `SessionProvider` + `useSession()` (no `onForge` in state)     |
-| Suno provider contract | `packages/core/src/suno/client.ts` — `submit()`, `getGenerationStatus()`, `waitForCompletion()` |
-| Fake test providers    | `packages/test-support/src/providers/` — fake LLM, fake Suno, 10 scenarios                      |
-| Pipeline deps          | `packages/core/src/pipeline/types.ts` — `PipelineDeps` (no `suno` field)                        |
-| E2E tests              | `e2e/` — Playwright, including idempotency tests in `e2e/idempotency.spec.ts`                   |
-| Playwright config      | `playwright.config.ts` — base URL `http://localhost:5173`                                       |
+| Concern                | Location                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| Pipeline stages        | `packages/core/src/pipeline/orchestrator.ts` — `compilation → lyrics_writing → versioning`       |
+| Genre vocabulary       | `config/genres/<id>.yaml` (presets, descriptors, structure, palette)                             |
+| Shared API types       | `packages/contracts/src/index.ts`                                                                |
+| Genre module types     | `packages/genre-core/src/index.ts` — `SectionFunction`, `Vocal`, `DescriptorCategory`, etc.      |
+| DB schema              | `packages/core/src/db/schema.ts`                                                                 |
+| Web session state      | `apps/web/src/lib/session.tsx` — `SessionProvider` + `useSession()` (no `onForge` in state)      |
+| Suno provider contract | `packages/core/src/suno/client.ts` — `submit()`, `getGenerationStatus()`, `waitForCompletion()`  |
+| Fake test providers    | `packages/test-support/src/providers/` — fake LLM, fake Suno, 10 scenarios                       |
+| Pipeline deps          | `packages/core/src/pipeline/types.ts` — `PipelineDeps` (no `suno` field)                         |
+| E2E tests              | `e2e/` — Playwright, including idempotency tests in `e2e/idempotency.spec.ts`                    |
+| Playwright config      | `playwright.config.ts` — base URL `http://localhost:5173`                                        |
 | Build verification     | `npm run build && npm test && npx prettier --check . && npx tsc --noEmit && npx playwright test` |
 
 ## Quick start

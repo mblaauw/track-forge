@@ -138,7 +138,7 @@ export function storeTracks(
   const sqlite = getSqlite(db);
   const now = new Date().toISOString();
   const insert = sqlite.prepare(
-    "INSERT INTO suno_tracks (id, generation_id, \"index\", audio_url, image_url, video_url, duration, title, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    'INSERT INTO suno_tracks (id, generation_id, "index", audio_url, image_url, video_url, duration, title, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
   );
   sqlite.transaction(() => {
     for (const t of tracks) {

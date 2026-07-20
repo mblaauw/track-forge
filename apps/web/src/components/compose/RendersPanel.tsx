@@ -92,11 +92,7 @@ export function RendersPanel() {
     }
   };
 
-  const renderTrack = (
-    track: TakeTrack,
-    take: Take,
-    isOnly: boolean,
-  ) => {
+  const renderTrack = (track: TakeTrack, take: Take, isOnly: boolean) => {
     const isPlaying =
       playing?.takeId === take.id && playing?.trackIndex === track.index;
     const bars = wave(track.id || take.id + track.index, 40);
@@ -118,14 +114,10 @@ export function RendersPanel() {
               width: 28,
               height: 28,
               minWidth: 28,
-              background: isPlaying
-                ? "var(--forge)"
-                : "var(--success-fill)",
+              background: isPlaying ? "var(--forge)" : "var(--success-fill)",
               color: isPlaying ? "var(--acc)" : "var(--success-text)",
             }}
-            onClick={() =>
-              handlePlay(take.id, track.index, track.audioUrl)
-            }
+            onClick={() => handlePlay(take.id, track.index, track.audioUrl)}
             title={`Play ${label}`}
           >
             {isPlaying ? (
@@ -156,9 +148,7 @@ export function RendersPanel() {
                 style={{
                   height: `${Math.min(h, 18)}px`,
                   background:
-                    isPlaying && i < 14
-                      ? "var(--acc)"
-                      : "var(--border)",
+                    isPlaying && i < 14 ? "var(--acc)" : "var(--border)",
                 }}
               />
             ))}
@@ -256,7 +246,9 @@ export function RendersPanel() {
                     </button>
                   </div>
                   {hasTracks
-                    ? tracks!.map((t) => renderTrack(t, take, tracks!.length === 1))
+                    ? tracks!.map((t) =>
+                        renderTrack(t, take, tracks!.length === 1),
+                      )
                     : renderTrack(
                         {
                           id: take.id,

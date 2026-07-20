@@ -1,5 +1,6 @@
-import { Flame, CircleNotch } from "@phosphor-icons/react";
+import { Flame, CircleNotch, Shuffle } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
+import { randomSessionName } from "./arrangement";
 
 function keyLabel(key: string, scale: "major" | "minor"): string {
   if (!key) return "—";
@@ -28,15 +29,25 @@ export function ContextBar({
   return (
     <header class="ctx-bar">
       <div class="ctx-left">
-        <input
-          class="ctx-name-input"
-          aria-label="Session name"
-          placeholder="Untitled Session"
-          value={s.name}
-          onInput={(e) =>
-            s.setSession({ name: (e.target as HTMLInputElement).value })
-          }
-        />
+        <div style="display:flex;align-items:center;gap:6px">
+          <input
+            class="ctx-name-input"
+            aria-label="Session name"
+            placeholder="Untitled Session"
+            value={s.name}
+            onInput={(e) =>
+              s.setSession({ name: (e.target as HTMLInputElement).value })
+            }
+          />
+          <button
+            class="ctx-name-gen-btn"
+            onClick={() => s.setSession({ name: randomSessionName() })}
+            title="Generate session name"
+            style="background:none;border:none;cursor:pointer;color:var(--faint);padding:4px;display:flex"
+          >
+            <Shuffle size={14} />
+          </button>
+        </div>
         <div class="ctx-meta">
           <span class="ctx-meta-genre">{s.genreId || "—"}</span>
           <span class="ctx-meta-sep">/</span>
