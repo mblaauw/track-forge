@@ -17,6 +17,8 @@ design-system/
 .playwright-mcp/
 .planning/
 data/
+LLM_*.md
+apps/server/LLM_*.md
 playwright-report/
 test-results/
 
