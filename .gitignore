@@ -18,5 +18,5 @@ design-system/
 .planning/
 data/
 playwright-report/
-test-results/.opencode/
-opencode.jsonc
+test-results/
+

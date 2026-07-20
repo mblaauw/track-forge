@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "share": "disabled",
+
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      "**/dist/**",
+      "data/**",
+      ".codegraph/**",
+      ".playwright-mcp/**",
+      "coverage/**",
+    ],
+  },
+
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest", "--isolated"],
+      "enabled": false,
+    },
+  },
+
+  "permission": {
+    "playwright_*": "ask",
+  },
+}
