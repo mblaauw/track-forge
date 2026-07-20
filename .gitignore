@@ -17,3 +17,6 @@ design-system/
 .playwright-mcp/
 .planning/
 data/
+playwright-report/
+test-results/.opencode/
+opencode.jsonc

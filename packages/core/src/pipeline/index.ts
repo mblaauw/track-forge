@@ -1,4 +1,4 @@
-export { runPipeline } from "./orchestrator.js";
+export { runPipeline, trace } from "./orchestrator.js";
 export { createJob, loadJob, resetJobStage, cancelJob } from "./job-service.js";
 export {
   subscribe,
@@ -10,11 +10,7 @@ export {
 export type { PipelineEvent } from "./events.js";
 
 export { abortJob } from "./job-abort-controller.js";
-export type {
-  PipelineDeps,
-  PipelineState,
-  PipelineResult,
-} from "./types.js";
+export type { PipelineDeps, PipelineState, PipelineResult } from "./types.js";
 export { compileStylePrompt } from "./style-compiler.js";
 export type {
   CompileStyleInput,

@@ -15,7 +15,7 @@ export function decodeKeyValue(
 ): { key: string; scale: "major" | "minor" } {
   const parts = (keyValue ?? "C").split(" ");
   const key = parts[0] ?? "C";
-  const scaleHint = parts[1] ?? (scaleRaw ?? "major");
+  const scaleHint = parts[1] ?? scaleRaw ?? "major";
   const scale =
     scaleHint === "min" || scaleHint === "minor" ? "minor" : "major";
   return { key, scale };

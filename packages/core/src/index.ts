@@ -51,6 +51,7 @@ export type {
 // Pipeline
 export {
   runPipeline,
+  trace,
   createJob,
   loadJob,
   resetJobStage,

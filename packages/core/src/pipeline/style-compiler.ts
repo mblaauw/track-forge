@@ -4,7 +4,7 @@
  * Used by:
  *  - POST /api/preview-style (unsaved sessions)
  *  - POST /api/jobs/:id/preview-style (saved sessions)
- *  - style_writing pipeline stage (via renderers.style)
+ *  - compilation pipeline stage
  *
  * The fixed ordering contract is documented in LOGIC_AND_ALGORITHMS.md § compiledStyle().
  * Changing the order here changes what the UI preview shows AND what the pipeline sends to Suno.

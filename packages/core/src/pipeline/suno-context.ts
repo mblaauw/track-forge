@@ -28,17 +28,19 @@ export function buildSunoContext(input: SunoContextInput): string {
   const lines: string[] = [];
 
   // Style prompt block — use pre-compiled style if available, otherwise compile
-  const style = input.styleOverride ?? compileStylePrompt({
-    genreName: input.genreName,
-    presetLabels: input.presetLabels,
-    descriptors: input.descriptors,
-    bpm: input.bpm,
-    key: input.key,
-    scale: input.scale,
-    sections: input.sections.map((s) => ({ name: s.section, fn: s.fn })),
-    lyricsMode: input.lyricsMode,
-    vocalType: input.vocalType,
-  }).style;
+  const style =
+    input.styleOverride ??
+    compileStylePrompt({
+      genreName: input.genreName,
+      presetLabels: input.presetLabels,
+      descriptors: input.descriptors,
+      bpm: input.bpm,
+      key: input.key,
+      scale: input.scale,
+      sections: input.sections.map((s) => ({ name: s.section, fn: s.fn })),
+      lyricsMode: input.lyricsMode,
+      vocalType: input.vocalType,
+    }).style;
 
   lines.push("STYLE PROMPT:");
   lines.push(style);

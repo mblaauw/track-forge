@@ -10,7 +10,12 @@ import {
 } from "@track-forge/contracts";
 import { getModule } from "../lib/modules.js";
 import { findRowOr404 } from "../lib/db-utils.js";
-import { validateParams, validateBody, IdParams, BulkExportBody } from "../lib/validate.js";
+import {
+  validateParams,
+  validateBody,
+  IdParams,
+  BulkExportBody,
+} from "../lib/validate.js";
 
 export interface ImportExportRouteDeps {
   db: Db;
@@ -102,7 +107,9 @@ export function registerImportExportRoutes(
   // ── Bulk export ────────────────────────────────────────────────────
 
   server.post("/api/jobs/export", async (req, reply) => {
-    const body = req.body ? validateBody(BulkExportBody, req) : { ids: undefined };
+    const body = req.body
+      ? validateBody(BulkExportBody, req)
+      : { ids: undefined };
     const ids = body?.ids;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {

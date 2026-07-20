@@ -195,15 +195,6 @@ export function ComposeShell() {
     s.forgeDisabled,
   ]);
 
-  // Set onForge in session
-  useEffect(() => {
-    const disabled = !s.genreId || s.forgeRunning;
-    s.setSession({
-      onForge: disabled ? null : handleForge,
-      forgeDisabled: disabled,
-    });
-  }, [handleForge, s.genreId, s.forgeRunning]);
-
   // Cleanup SSE on unmount
   useEffect(() => {
     return () => {
@@ -271,7 +262,10 @@ export function ComposeShell() {
   return (
     <div class="compose-shell">
       <div class="compose-main">
-        <ContextBar />
+        <ContextBar
+          onForge={handleForge}
+          forgeDisabled={!s.genreId || s.forgeRunning}
+        />
         <ForgeStrip />
         <div class="compose-grid" style={{ gridTemplateColumns: gridCols }}>
           <SetupColumn />

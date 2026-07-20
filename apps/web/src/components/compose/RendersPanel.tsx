@@ -75,7 +75,9 @@ export function RendersPanel() {
     try {
       const updated = await favoriteTake(takeId);
       s.setSession({
-        takes: takes.map((t) => (t.id === takeId ? { ...t, ...updated } : t)) as any[],
+        takes: takes.map((t) =>
+          t.id === takeId ? { ...t, ...updated } : t,
+        ) as any[],
       });
     } catch (err) {
       console.error("Favorite failed:", err);
@@ -113,7 +115,11 @@ export function RendersPanel() {
       <div class="col-body tf-scroll">
         <div class="renders-subheader">
           <span class="renders-subheader-label">GENERATED SONGS</span>
-          <button class="renders-new-btn" onClick={handleNewRender} disabled={rendering}>
+          <button
+            class="renders-new-btn"
+            onClick={handleNewRender}
+            disabled={rendering}
+          >
             <Plus size={14} /> {rendering ? "Rendering…" : "New render"}
           </button>
         </div>
@@ -163,7 +169,10 @@ export function RendersPanel() {
                           : "—"}
                       </span>
                     </div>
-                    <button class="rende-star-btn" onClick={() => handleFavorite(take.id)}>
+                    <button
+                      class="rende-star-btn"
+                      onClick={() => handleFavorite(take.id)}
+                    >
                       <Star
                         size={16}
                         weight={take.isFavorite ? "fill" : "regular"}

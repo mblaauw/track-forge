@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc, sql, inArray } from "drizzle-orm";
-import type { Db, LlmClient, SunoClient } from "@track-forge/core";
+import type { Db } from "@track-forge/core";
+import type { LlmRequest, LlmResponse } from "@track-forge/core";
 import {
   createJob,
   runPipeline,
@@ -23,6 +24,7 @@ import {
   validateQuery,
   validateParams,
   IdParams,
+  GenreIdParams,
   PaginationQuery,
   CreateJobBody,
   UpdateJobNameBody,
@@ -32,8 +34,13 @@ import {
 export interface JobRouteDeps {
   db: Db;
   config: Config;
-  llm: LlmClient;
-  suno: SunoClient;
+  llm: { complete(req: LlmRequest): Promise<LlmResponse> };
+  suno: {
+    submit(
+      req: unknown,
+    ): Promise<{ taskId: string; callbackConfigured: boolean }>;
+    waitForCompletion(id: string): Promise<unknown>;
+  };
 }
 
 export function registerJobRoutes(
@@ -49,7 +56,7 @@ export function registerJobRoutes(
     label: string,
   ): void {
     const mod = getModuleOrThrow(genreId);
-    const pipelineDeps: PipelineDeps = { db, llm, suno, config };
+    const pipelineDeps: PipelineDeps = { db, llm, config };
 
     runPipeline(jobId, pipelineDeps, mod).catch((err) => {
       log.error({ jobId, err }, `${label} error`);
@@ -74,7 +81,8 @@ export function registerJobRoutes(
     // Merge preset values into inputs before validation so genre-specific
     // fields like subgenre, soundscape, flowPattern are populated from the
     // preset YAML config when the frontend only sends common fields.
-    const presetValues = getPresets(genreId).find((p) => p.id === presetId)?.values ?? {};
+    const presetValues =
+      getPresets(genreId).find((p) => p.id === presetId)?.values ?? {};
     const merged = { ...presetValues, ...inputs };
 
     const parsed = mod.inputSchema.safeParse(merged);
@@ -276,10 +284,25 @@ export function registerJobRoutes(
     abortJob(id);
 
     // Signal cancellation via events then update DB (atomic)
-    await db.transaction(async (tx) => {
-      await publish(tx, id, { stage: "cancelled", status: "cancelled" });
-      await cancelJob(tx, id as JobId);
-    });
+    const sqlite = (db as any).$client;
+    sqlite.transaction(() => {
+      const now = new Date().toISOString();
+      sqlite
+        .prepare(
+          "INSERT INTO job_events (id, job_id, sequence, stage, status, timestamp) VALUES (?, ?, (SELECT COALESCE(MAX(sequence), 0) + 1 FROM job_events WHERE job_id = ?), ?, ?, ?)",
+        )
+        .run(crypto.randomUUID(), id, id, "cancelled", "cancelled", now);
+      sqlite
+        .prepare(
+          "UPDATE jobs SET status = 'cancelled', error = 'Cancelled by user', updated_at = ? WHERE id = ?",
+        )
+        .run(now, id);
+    })();
+
+    // Notify in-memory subscribers
+    publish(db, id, { stage: "cancelled", status: "cancelled" }).catch(
+      () => {},
+    );
 
     return reply.code(200).send({ status: "cancelled", jobId: id });
   });
@@ -319,7 +342,7 @@ export function registerJobRoutes(
   // ── Genre presets (from YAML config) ─────────────────────────────────
 
   server.get("/api/genres/:id/presets", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(GenreIdParams, req);
     try {
       return getPresets(id);
     } catch {
@@ -330,7 +353,7 @@ export function registerJobRoutes(
   // ── Genre tag categories (from YAML config) ──────────────────────────
 
   server.get("/api/genres/:id/tag-categories", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(GenreIdParams, req);
     try {
       return getTagCategories(id);
     } catch {
@@ -338,10 +361,10 @@ export function registerJobRoutes(
     }
   });
 
-  // ── Genre descriptor defaults (interim TS; Subissue 7 → YAML) ────────
+  // ── Genre descriptor defaults ────────────────────────────────────────
 
   server.get("/api/genres/:id/descriptor-defaults", async (req, reply) => {
-    const { id } = req.params as { id: string };
+    const { id } = validateParams(GenreIdParams, req);
     try {
       return getDescriptorDefaults(id);
     } catch {

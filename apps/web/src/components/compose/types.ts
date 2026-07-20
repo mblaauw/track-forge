@@ -1,7 +1,12 @@
-export type DescriptorCategory =
-  "sound" | "rhythm" | "atmosphere" | "production" | "energy";
+import type { LyricsFormat } from "@track-forge/contracts";
+import type {
+  DescriptorCategory,
+  DescriptorWeight,
+  SectionFunction,
+  Vocal,
+} from "@track-forge/genre-core";
 
-export type DescriptorWeight = 1 | 2 | 3;
+export type { DescriptorCategory, DescriptorWeight, SectionFunction, Vocal };
 
 export interface Descriptor {
   id: string;
@@ -9,23 +14,6 @@ export interface Descriptor {
   cat: DescriptorCategory;
   weight: DescriptorWeight;
   muted: boolean;
-}
-
-export type SectionFunction =
-  | "establish"
-  | "introduce"
-  | "escalate"
-  | "contrast"
-  | "remove"
-  | "peak"
-  | "resolve";
-
-export interface Vocal {
-  type: string;
-  delivery: string;
-  energy: number;
-  adlibs: boolean;
-  harmonies: boolean;
 }
 
 export interface Section {
@@ -37,8 +25,7 @@ export interface Section {
   vocal?: Vocal;
 }
 
-export type LyricsMode =
-  "full_lyrics" | "strict_instrumental";
+export type LyricsMode = LyricsFormat;
 
 export type LyricAngle = "first_person" | "story" | "abstract" | "anthemic";
 

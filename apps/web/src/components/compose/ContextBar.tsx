@@ -6,7 +6,13 @@ function keyLabel(key: string, scale: "major" | "minor"): string {
   return key + (scale === "minor" ? "m" : "");
 }
 
-export function ContextBar() {
+export function ContextBar({
+  onForge,
+  forgeDisabled,
+}: {
+  onForge: () => void;
+  forgeDisabled: boolean;
+}) {
   const s = useSession();
   const forging = s.status === "in_progress" || s.forgeRunning;
   const statusDot = forging ? "#E0A63E" : "#3DDC84";
@@ -49,8 +55,8 @@ export function ContextBar() {
         </div>
         <button
           class={`ctx-forge-btn${forging ? " running" : ""}`}
-          disabled={s.forgeDisabled || forging || !s.onForge}
-          onClick={() => s.onForge?.()}
+          disabled={forgeDisabled || forging}
+          onClick={onForge}
         >
           {forging ? (
             <CircleNotch size={16} class="tf-spin" />

@@ -33,11 +33,16 @@ for (const id of ALL_GENRE_IDS) {
 }
 
 /** Validate genre configs at startup — check all presets against Zod schemas */
-export function validateGenreConfigs(logger?: { warn: (msg: string) => void }): void {
+export function validateGenreConfigs(logger?: {
+  warn: (msg: string) => void;
+}): void {
   const log = logger ?? console;
   for (const id of ALL_GENRE_IDS) {
     const mod = MODULES[id];
-    if (!mod) { log.warn(`Genre ${id}: module not loaded`); continue; }
+    if (!mod) {
+      log.warn(`Genre ${id}: module not loaded`);
+      continue;
+    }
 
     const presets = getPresets(id);
     for (const preset of presets) {
@@ -50,13 +55,19 @@ export function validateGenreConfigs(logger?: { warn: (msg: string) => void }): 
     }
 
     const dd = getDescriptorDefaults(id);
-    const chipsByCat = new Map(dd.categories.map((c) => [c.cat, new Set(c.chips)]));
+    const chipsByCat = new Map(
+      dd.categories.map((c) => [c.cat, new Set(c.chips)]),
+    );
     for (const def of dd.defaults) {
       const chips = chipsByCat.get(def.cat);
       if (!chips) {
-        log.warn(`Genre "${id}" descriptor default "${def.label}" references unknown category "${def.cat}"`);
+        log.warn(
+          `Genre "${id}" descriptor default "${def.label}" references unknown category "${def.cat}"`,
+        );
       } else if (!chips.has(def.label)) {
-        log.warn(`Genre "${id}" descriptor default "${def.label}" not found in category "${def.cat}" chips`);
+        log.warn(
+          `Genre "${id}" descriptor default "${def.label}" not found in category "${def.cat}" chips`,
+        );
       }
     }
   }

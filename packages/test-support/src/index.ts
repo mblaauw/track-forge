@@ -18,7 +18,7 @@ export function mockLlm(response?: string) {
 export function mockSuno() {
   return {
     async submit() {
-      return { ids: ["mock-id"], callbackConfigured: false };
+      return { taskId: "mock-id", callbackConfigured: false };
     },
     async getGenerationStatus() {
       return {

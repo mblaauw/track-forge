@@ -153,6 +153,20 @@ export function createDb(dbPath: string): Db {
     created_at TEXT NOT NULL
   )`);
 
+  // ── Indexes ──────────────────────────────────────────────────────────
+
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_jobs_genre_id ON jobs(genre_id)`);
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status)`);
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_generations_job_id ON generations(job_id)`,
+  );
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_generations_version_id ON generations(version_id)`,
+  );
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_suno_tracks_generation_id ON suno_tracks(generation_id)`,
+  );
+
   return db;
 }
 

@@ -54,9 +54,7 @@ export function registerLyricsRoutes(
             }
           | undefined,
       })),
-      lyricsMode: body.lyricsMode as
-        | "full_lyrics"
-        | "strict_instrumental",
+      lyricsMode: body.lyricsMode as "full_lyrics" | "strict_instrumental",
       vocalType: body.vocalType ?? undefined,
       lyricTopic: body.lyricTopic ?? "",
       lyricThemes: body.lyricThemes ?? [],
@@ -66,11 +64,17 @@ export function registerLyricsRoutes(
     const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
 
     const PROJECT_ROOT = resolve(process.cwd(), "..");
-    writeFileSync(resolve(PROJECT_ROOT, "LLM_IN.md"), `System: You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}\n\nUser:\n${sunoContext}`);
+    writeFileSync(
+      resolve(PROJECT_ROOT, "LLM_IN.md"),
+      `System: You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}\n\nUser:\n${sunoContext}`,
+    );
 
     const response = await deps.llm.complete({
       messages: [
-        { role: "system", content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}` },
+        {
+          role: "system",
+          content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}`,
+        },
         { role: "user", content: sunoContext },
       ],
       temperature: 0.8,

@@ -1,4 +1,4 @@
-import { writeFileSync, appendFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { eq, desc, sql } from "drizzle-orm";
 import type { Db, SunoClient } from "@track-forge/core";
@@ -9,6 +9,7 @@ import {
   generateSunoPayload,
   storeGeneration,
   updateGeneration,
+  trace,
 } from "@track-forge/core";
 import type { SunoArtifact } from "@track-forge/contracts";
 import { findRowOr404 } from "../lib/db-utils.js";
@@ -18,12 +19,6 @@ import {
   IdParams,
   JobIdParams,
 } from "../lib/validate.js";
-
-function trace(section: string, data: unknown): void {
-  try {
-    appendFileSync("LLM_TRACE.md", `\n## ${section} (${new Date().toISOString()})\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`);
-  } catch { /* swallow */ }
-}
 
 export interface VersionRouteDeps {
   db: Db;
@@ -214,10 +209,7 @@ export function registerVersionRoutes(
           }).catch(() => {});
         })
         .catch(async (err: Error) => {
-          req.log.error(
-            { taskId: result.taskId, err },
-            "Suno poll failed",
-          );
+          req.log.error({ taskId: result.taskId, err }, "Suno poll failed");
           await updateGeneration(db, result.taskId, {
             status: "error",
             error: err.message,

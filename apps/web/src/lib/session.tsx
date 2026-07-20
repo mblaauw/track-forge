@@ -24,7 +24,6 @@ export interface SessionState {
   scale: "major" | "minor";
   status: string;
   reference: string;
-  onForge: (() => void) | null;
   forgeLabel: string;
   forgeDisabled: boolean;
   lyricsMode: LyricsMode;
@@ -60,7 +59,6 @@ const DEFAULT: SessionState = {
   scale: "minor",
   status: "idle",
   reference: "",
-  onForge: null,
   forgeLabel: "Forge",
   forgeDisabled: true,
   lyricsMode: "strict_instrumental",
@@ -103,7 +101,7 @@ const Ctx = createContext<SessionCtx>({
   resetSession: () => {},
   toggleCard: () => {},
   togglePanel: () => {},
-});
+} as SessionCtx);
 
 export function useSession(): SessionCtx {
   return useContext(Ctx);
@@ -129,18 +127,7 @@ export function SessionProvider({
     (which: "left" | "right" | "library") =>
       setState((s) => ({
         ...s,
-        [which === "left"
-          ? "leftCollapsed"
-          : which === "right"
-            ? "rightCollapsed"
-            : "libraryCollapsed"]:
-          !s[
-            which === "left"
-              ? "leftCollapsed"
-              : which === "right"
-                ? "rightCollapsed"
-                : "libraryCollapsed"
-          ],
+        [`${which}Collapsed`]: !s[`${which}Collapsed`],
       })),
     [],
   );

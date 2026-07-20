@@ -12,13 +12,11 @@ import type {
   VersionStatus,
   SunoArtifact,
   LyricsWriterResult,
-  LyricsFormat,
 } from "@track-forge/contracts";
 
 export interface StageData {
   lyricsWriterResult?: LyricsWriterResult | null;
   compiledJson?: string | null;
-  lyricsFormat?: LyricsFormat | null;
 }
 
 // ── Job CRUD ──────────────────────────────────────────────────────────
@@ -125,12 +123,16 @@ export async function completeJob(db: Db, jobId: JobId): Promise<Job> {
   const now = new Date().toISOString();
   await db
     .update(schema.jobs)
-    .set({ status: "completed", currentStage: "versioning", updatedAt: now })
+    .set({ status: "completed", currentStage: "completed", updatedAt: now })
     .where(eq(schema.jobs.id, jobId));
   return loadJobOrThrow(db, jobId);
 }
 
-export async function failJob(db: Db, jobId: JobId, error: string): Promise<Job> {
+export async function failJob(
+  db: Db,
+  jobId: JobId,
+  error: string,
+): Promise<Job> {
   const now = new Date().toISOString();
   await db
     .update(schema.jobs)

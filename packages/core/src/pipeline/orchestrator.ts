@@ -8,13 +8,19 @@ import {
   type LyricsWriterResult,
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
-import type { PipelineDeps, PipelineState, PipelineResult, ParsedInputs } from "./types.js";
+import type {
+  PipelineDeps,
+  PipelineState,
+  PipelineResult,
+  ParsedInputs,
+} from "./types.js";
 import { eq } from "drizzle-orm";
 import { schema } from "../db/index.js";
 import {
   loadJob,
   advanceStage,
   failJob,
+  failStage,
   completeJob,
   savePipelineState,
   createVersion,
@@ -26,10 +32,15 @@ import { publish } from "./events.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
 import { safeJsonParse, readJobInputs } from "../json-utils.js";
 
-function trace(section: string, data: unknown): void {
+export function trace(section: string, data: unknown): void {
   try {
-    appendFileSync("LLM_TRACE.md", `\n## ${section} (${new Date().toISOString()})\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`);
-  } catch { /* swallow */ }
+    appendFileSync(
+      "LLM_TRACE.md",
+      `\n## ${section} (${new Date().toISOString()})\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`,
+    );
+  } catch {
+    /* swallow */
+  }
 }
 
 // ── Stage order ───────────────────────────────────────────────────────
@@ -48,13 +59,18 @@ function nextStage(current: GenerationStage): GenerationStage | undefined {
 
 // ── Shared input parsing ──────────────────────────────────────────────
 
-function parsePipelineInputs(job: PipelineState["job"], module: PipelineState["module"]): ParsedInputs {
+function parsePipelineInputs(
+  job: PipelineState["job"],
+  module: PipelineState["module"],
+): ParsedInputs {
   const inputs = readJobInputs(job.inputs) ?? {};
   const presetIds = (inputs.presetIds as string[]) ?? [];
-  const presetLabels = presetIds.map((id) => {
-    const p = (module.presets ?? []).find((pr) => pr.id === id);
-    return p ? p.name : "";
-  }).filter(Boolean);
+  const presetLabels = presetIds
+    .map((id) => {
+      const p = (module.presets ?? []).find((pr) => pr.id === id);
+      return p ? p.name : "";
+    })
+    .filter(Boolean);
 
   const rawDescriptors = (inputs.tags as Array<Record<string, unknown>>) ?? [];
   const descriptors = rawDescriptors
@@ -66,7 +82,13 @@ function parsePipelineInputs(job: PipelineState["job"], module: PipelineState["m
     }));
 
   const rawSections = (inputs.sections as Array<Record<string, unknown>>) ?? [];
-  trace("parsePipelineInputs", { jobId: job.id, descriptorCount: descriptors.length, presetLabels, hasTags: !!inputs.tags, tagCount: (inputs.tags as any[])?.length });
+  trace("parsePipelineInputs", {
+    jobId: job.id,
+    descriptorCount: descriptors.length,
+    presetLabels,
+    hasTags: !!inputs.tags,
+    tagCount: (inputs.tags as any[])?.length,
+  });
   return { inputs, presetIds, presetLabels, descriptors, rawSections };
 }
 
@@ -122,7 +144,14 @@ async function handleCompilation(
     vocalType: vocalType || undefined,
   });
 
-  trace("handleCompilation", { genreName, presetLabels, descriptorCount: descriptors.length, descriptors, compiledActiveCount: compiled.activeCount, compiledStyle: compiled.style });
+  trace("handleCompilation", {
+    genreName,
+    presetLabels,
+    descriptorCount: descriptors.length,
+    descriptors,
+    compiledActiveCount: compiled.activeCount,
+    compiledStyle: compiled.style,
+  });
 
   const title = String(inputs.title ?? "Untitled");
   const negativeTags: string[] = [];
@@ -186,7 +215,10 @@ async function handleLyricsWriting(
       }));
 
     if (sections.length > 0) {
-      trace("handleLyricsWriting.preGenerated", { sectionCount: sections.length, totalLines: sections.reduce((a, s) => a + s.lines.length, 0) });
+      trace("handleLyricsWriting.preGenerated", {
+        sectionCount: sections.length,
+        totalLines: sections.reduce((a, s) => a + s.lines.length, 0),
+      });
       return {
         ...state,
         lyricsWriterResult: { document: { sections, metadata: {} } },
@@ -226,7 +258,8 @@ async function handleLyricsWriting(
   })?.vocal?.type;
 
   const compiledStyle = state.compiledJson
-    ? safeJsonParse<Record<string, string>>(state.compiledJson, {}).style ?? ""
+    ? (safeJsonParse<Record<string, string>>(state.compiledJson, {}).style ??
+      "")
     : "";
 
   const sunoContext = buildSunoContext({
@@ -237,8 +270,7 @@ async function handleLyricsWriting(
     key: String(inputs.key ?? "C"),
     scale: (inputs.scale ?? "minor") as "major" | "minor",
     sections,
-    lyricsMode: lyricsMode as
-      "full_lyrics" | "strict_instrumental",
+    lyricsMode: lyricsMode as "full_lyrics" | "strict_instrumental",
     vocalType,
     lyricTopic: String(inputs.lyricTopic ?? ""),
     lyricThemes: (inputs.lyricThemes as string[]) ?? [],
@@ -248,11 +280,18 @@ async function handleLyricsWriting(
 
   const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
 
-  trace("handleLyricsWriting.prompt", { prompt: sunoContext, descriptorCount: descriptors.length, lyricsMode });
+  trace("handleLyricsWriting.prompt", {
+    prompt: sunoContext,
+    descriptorCount: descriptors.length,
+    lyricsMode,
+  });
 
   const response = await deps.llm.complete({
     messages: [
-      { role: "system", content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}` },
+      {
+        role: "system",
+        content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}`,
+      },
       { role: "user", content: sunoContext },
     ],
     temperature: 0.8,
@@ -260,7 +299,12 @@ async function handleLyricsWriting(
     signal: deps.signal,
   });
 
-  trace("handleLyricsWriting.response", { outputLength: response.content.length, outputPreview: response.content.slice(0, 500), reasoningPreview: response.reasoningContent?.slice(0, 500), usage: response.usage });
+  trace("handleLyricsWriting.response", {
+    outputLength: response.content.length,
+    outputPreview: response.content.slice(0, 500),
+    reasoningPreview: response.reasoningContent?.slice(0, 500),
+    usage: response.usage,
+  });
 
   let lyricsDoc: any = { sections: [], metadata: {} };
   try {
@@ -316,12 +360,22 @@ async function handleVersioning(
   const style = compiled.style ?? "";
   const excludedStyles = compiled.excludedStyles ?? "";
 
-  trace("handleVersioning", { compiledTitle: title, compiledStyle: style, compiledExcludedStyles: excludedStyles, lyricsLength: lyricsText.length, lyricsPreview: lyricsText.slice(0, 500) });
+  trace("handleVersioning", {
+    compiledTitle: title,
+    compiledStyle: style,
+    compiledExcludedStyles: excludedStyles,
+    lyricsLength: lyricsText.length,
+    lyricsPreview: lyricsText.slice(0, 500),
+  });
 
   const artifacts: SunoArtifact[] = [
     { type: SunoArtifactType.Title, value: title, versionId: "" as VersionId },
     { type: SunoArtifactType.Style, value: style, versionId: "" as VersionId },
-    { type: SunoArtifactType.Lyrics, value: lyricsText, versionId: "" as VersionId },
+    {
+      type: SunoArtifactType.Lyrics,
+      value: lyricsText,
+      versionId: "" as VersionId,
+    },
   ];
   if (excludedStyles) {
     artifacts.push({
@@ -344,7 +398,14 @@ export async function runPipeline(
   deps: PipelineDeps,
   module: GenreModule,
 ): Promise<PipelineResult> {
-  try { writeFileSync("LLM_TRACE.md", `# Pipeline Trace — ${new Date().toISOString()}\n`); } catch { /* swallow */ }
+  try {
+    writeFileSync(
+      "LLM_TRACE.md",
+      `# Pipeline Trace — ${new Date().toISOString()}\n`,
+    );
+  } catch {
+    /* swallow */
+  }
   const controller = createAbortController(jobId);
   if (deps.signal) {
     if (deps.signal.aborted) {
@@ -387,7 +448,13 @@ export async function runPipeline(
   // Parse inputs once; cached in state.parsed for all stages
   state = { ...state, parsed: parsePipelineInputs(state.job, state.module) };
 
-  trace("runPipeline.start", { jobId: state.job.id, genreId: state.job.genreId, presetId: state.job.presetId, status: state.job.status, inputs: readJobInputs(state.job.inputs) });
+  trace("runPipeline.start", {
+    jobId: state.job.id,
+    genreId: state.job.genreId,
+    presetId: state.job.presetId,
+    status: state.job.status,
+    inputs: readJobInputs(state.job.inputs),
+  });
 
   if (state.job.status !== "in_progress") {
     const now = new Date().toISOString();
@@ -464,13 +531,13 @@ export async function runPipeline(
       error: null,
     };
   } catch (err) {
-    const msg = (err as Error).message ?? String(err);
+    const msg = err instanceof Error ? err.message : String(err);
     await publish(deps.db, state.job.id, {
       stage: currentStage,
       status: "error",
       error: msg,
     });
-    await failJob(deps.db, state.job.id as JobId, msg);
+    await failStage(deps.db, state.job.id as JobId, msg);
     cleanupJob(state.job.id);
     return { success: false, jobId: state.job.id, versionId: null, error: msg };
   }

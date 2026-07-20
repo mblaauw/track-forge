@@ -442,28 +442,28 @@ presets:
 song_structure:
   - section: intro
     bars: 8
-    tags: []
+    tags: [atmospheric, sparse, building]
   - section: verse
     bars: 16
-    tags: []
+    tags: [vocal focus, rhythmic, storytelling]
   - section: hook
     bars: 8
-    tags: []
+    tags: [catchy, full arrangement, anthemic]
   - section: verse
     bars: 16
-    tags: []
+    tags: [vocal focus, rhythmic, contrast]
   - section: hook
     bars: 8
-    tags: []
+    tags: [catchy, full arrangement, climactic]
   - section: bridge
     bars: 8
-    tags: []
+    tags: [stripped back, introspective, atmospheric]
   - section: hook
     bars: 8
-    tags: []
+    tags: [catchy, full arrangement, peak]
   - section: outro
     bars: 8
-    tags: []
+    tags: [dissolving, sparse, receding]
 
 taxonomy:
   subgenres:
@@ -844,11 +844,28 @@ descriptor_categories:
   - cat: sound
     label: SOUND
     hue: var(--hue-cyan)
-    chips: ["808 bass", keys, "chopped vocal", "brass stab", "synth pad", pluck, organ]
+    chips:
+      [
+        "808 bass",
+        keys,
+        "chopped vocal",
+        "brass stab",
+        "synth pad",
+        pluck,
+        organ,
+      ]
   - cat: rhythm
     label: "RHYTHM & FLOW"
     hue: var(--hue-amber)
-    chips: ["trap hi-hats", "swing groove", "slow roll", "double-time", "snare rolls", "finger snaps"]
+    chips:
+      [
+        "trap hi-hats",
+        "swing groove",
+        "slow roll",
+        "double-time",
+        "snare rolls",
+        "finger snaps",
+      ]
   - cat: atmosphere
     label: MOOD
     hue: var(--hue-violet)
@@ -856,7 +873,15 @@ descriptor_categories:
   - cat: production
     label: PRODUCTION
     hue: var(--hue-green)
-    chips: ["lofi warmth", "crisp mix", "wide stereo", "tape saturation", sidechain, "heavy 808s"]
+    chips:
+      [
+        "lofi warmth",
+        "crisp mix",
+        "wide stereo",
+        "tape saturation",
+        sidechain,
+        "heavy 808s",
+      ]
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
@@ -869,11 +894,36 @@ descriptor_defaults:
   - { label: dark, cat: atmosphere, weight: 2 }
   - { label: smooth, cat: energy, weight: 2 }
 
-lyric_themes: ["the come-up", "the city", loyalty, "late nights", ambition, reflection]
+lyric_themes:
+  ["the come-up", "the city", loyalty, "late nights", ambition, reflection]
 
-section_functions: [establish, introduce, escalate, contrast, remove, peak, resolve]
-delta_palette: ["sparse texture", atmospheric, filtered, "add rhythm", "rising tension", "full groove", "bass-led", "wide theme", "full arrangement", catchy, "strip drums", "expose harmony", "add countermelody", "added impact", climactic, introspective, "half-time feel", "vocal focus", instrumental, "reduce layers"]
-section_palette: [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+section_functions:
+  [establish, introduce, escalate, contrast, remove, peak, resolve]
+delta_palette:
+  [
+    "sparse texture",
+    atmospheric,
+    filtered,
+    "add rhythm",
+    "rising tension",
+    "full groove",
+    "bass-led",
+    "wide theme",
+    "full arrangement",
+    catchy,
+    "strip drums",
+    "expose harmony",
+    "add countermelody",
+    "added impact",
+    climactic,
+    introspective,
+    "half-time feel",
+    "vocal focus",
+    instrumental,
+    "reduce layers",
+  ]
+section_palette:
+  [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
 vocal_presets:
   - { type: "Female lead", delivery_style: "laid back", default_energy: 3 }
   - { type: "Male lead", delivery_style: "laid back", default_energy: 3 }

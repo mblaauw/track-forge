@@ -155,9 +155,11 @@ export class LlmClient {
 
     // ── Parse provider-specific response shape ─────────────────────
     if (isOpenAI) {
-      const choices = json.choices as Array<{
-        message: { content: string; reasoning_content?: string };
-      }> | undefined;
+      const choices = json.choices as
+        | Array<{
+            message: { content: string; reasoning_content?: string };
+          }>
+        | undefined;
       const msg = choices?.[0]?.message;
       return {
         content: msg?.content ?? "",

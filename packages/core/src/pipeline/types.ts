@@ -7,14 +7,13 @@ import type {
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
 import type { Db } from "../db/index.js";
-import type { LlmClient } from "../llm/index.js";
-import type { SunoClient } from "../suno/index.js";
+import type { LlmRequest, LlmResponse } from "../llm/index.js";
 
 /** Injectable dependencies for pipeline execution */
 export interface PipelineDeps {
   db: Db;
-  llm: LlmClient;
-  suno: SunoClient;
+  /** Any object with a `complete` method matching the LLM contract */
+  llm: { complete(req: LlmRequest): Promise<LlmResponse> };
   config: Config;
   signal?: AbortSignal;
 }
@@ -49,5 +48,3 @@ export interface PipelineResult {
   versionId: VersionId | null;
   error: string | null;
 }
-
-

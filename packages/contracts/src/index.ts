@@ -6,6 +6,7 @@ export const GenerationStage = {
   Compilation: "compilation",
   LyricsWriting: "lyrics_writing",
   Versioning: "versioning",
+  Completed: "completed",
 } as const;
 export type GenerationStage =
   (typeof GenerationStage)[keyof typeof GenerationStage];
@@ -93,8 +94,7 @@ export interface LyricsWriterResult {
   document: LyricsDocument;
 }
 
-export type LyricsFormat =
-  "strict_instrumental" | "full_lyrics";
+export type LyricsFormat = "strict_instrumental" | "full_lyrics";
 
 // ── Job & Version ────────────────────────────────────────────────────
 
@@ -253,12 +253,3 @@ export const ConfigSchema = z.object({
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
-
-// ── Style compiler types ─────────────────────────────────────────────
-
-export interface CompiledStyle {
-  description: string;
-  tags: string[];
-  negativeTags: string[];
-  clauses: { key: string; value: string; order: number }[];
-}

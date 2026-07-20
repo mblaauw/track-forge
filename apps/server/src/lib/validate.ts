@@ -32,6 +32,9 @@ export function validateParams<T>(
 // ── Common request shapes ──────────────────────────────────────────────
 
 export const IdParams = z.object({ id: z.string().min(1) });
+export const GenreIdParams = z.object({
+  id: z.enum(["edm", "hiphop", "ambient"]),
+});
 export const JobIdParams = z.object({ jobId: z.string().min(1) });
 export const PaginationQuery = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),

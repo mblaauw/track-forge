@@ -42,10 +42,6 @@ export interface GenreConfigYaml {
     chips: string[];
   }[];
   descriptor_defaults?: { label: string; cat: string; weight: number }[];
-  preset_descriptor_seeds?: Record<
-    string,
-    { label: string; cat: string; weight: number }[]
-  >;
   lyric_themes?: string[];
   section_functions?: string[];
   delta_palette?: string[];

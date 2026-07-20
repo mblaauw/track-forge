@@ -6,19 +6,20 @@ import { tmpdir } from "node:os";
 import { createDb } from "@track-forge/core";
 import { registerJobRoutes } from "../src/routes/jobs.js";
 import { registerHealthRoutes } from "../src/routes/health.js";
-import type { Db, PipelineDeps } from "@track-forge/core";
+import type { Db } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
+import type { JobRouteDeps } from "../src/routes/jobs.js";
 
 import { mockLlm, mockSuno } from "@track-forge/test-support";
 
 function createTestDeps(
   db: Db,
   configOverrides: Partial<Config> = {},
-): PipelineDeps {
+): JobRouteDeps {
   return {
     db,
-    llm: mockLlm as any,
-    suno: mockSuno as any,
+    llm: mockLlm(),
+    suno: mockSuno(),
     config: {
       sunoBaseUrl: "https://api.sunomusic.com/v1",
       sunoAuthToken: undefined,
@@ -26,6 +27,7 @@ function createTestDeps(
       dbPath: ":memory:",
       logLevel: "fatal",
       port: 0,
+      host: "127.0.0.1",
       llmProvider: "openai",
       llmApiKey: undefined,
       llmModel: "gpt-4o",

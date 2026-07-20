@@ -60,11 +60,13 @@ export function LyricsBlock() {
       const result = await generateLyrics({
         genreId: s.genreId,
         presetIds: s.presetIds,
-        descriptors: s.tags.filter((t: any) => !t.muted).map((t: any) => ({
-          label: t.label,
-          cat: t.cat,
-          weight: t.weight,
-        })),
+        descriptors: s.tags
+          .filter((t: any) => !t.muted)
+          .map((t: any) => ({
+            label: t.label,
+            cat: t.cat,
+            weight: t.weight,
+          })),
         bpm: s.bpm as number,
         key: s.key,
         scale: s.scale,
@@ -135,7 +137,8 @@ export function LyricsBlock() {
                 disabled={generating}
                 onClick={handleGenerate}
               >
-                <Sparkle size={14} /> {generating ? "Generating…" : "Generate lyrics"}
+                <Sparkle size={14} />{" "}
+                {generating ? "Generating…" : "Generate lyrics"}
               </button>
             )}
           {s.lyricsGenerated && (
@@ -144,7 +147,8 @@ export function LyricsBlock() {
               disabled={generating}
               onClick={handleGenerate}
             >
-              <ArrowClockwise size={14} /> {generating ? "Generating…" : "Redraft"}
+              <ArrowClockwise size={14} />{" "}
+              {generating ? "Generating…" : "Redraft"}
             </button>
           )}
         </div>

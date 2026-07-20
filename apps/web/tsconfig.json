@@ -10,6 +10,6 @@
   "include": ["src"],
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/genre-core" },
+    { "path": "../../packages/genre-core" }
   ]
 }

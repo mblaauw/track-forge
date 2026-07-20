@@ -64,6 +64,7 @@ presets:
       scale: major
       mood: "meditative"
       complexity: 3
+      energy: 2
       lyricsMode: strict_instrumental
       soundscape: "deep drones"
   - id: generative_evolving
@@ -76,6 +77,7 @@ presets:
       scale: minor
       mood: "serene"
       complexity: 6
+      energy: 3
       lyricsMode: strict_instrumental
       soundscape: "evolving textures"
 
@@ -97,11 +99,27 @@ descriptor_categories:
   - cat: sound
     label: TEXTURE
     hue: var(--hue-cyan)
-    chips: ["granular pad", "field recording", "glass harmonica", "tape loop", drone, glockenspiel, organ]
+    chips:
+      [
+        "granular pad",
+        "field recording",
+        "glass harmonica",
+        "tape loop",
+        drone,
+        glockenspiel,
+        organ,
+      ]
   - cat: rhythm
     label: PULSE
     hue: var(--hue-amber)
-    chips: ["slow pulse", "no beat", "irregular rhythm", "gentle swell", "lullaby tempo"]
+    chips:
+      [
+        "slow pulse",
+        "no beat",
+        "irregular rhythm",
+        "gentle swell",
+        "lullaby tempo",
+      ]
   - cat: atmosphere
     label: SPACE
     hue: var(--hue-violet)
@@ -109,7 +127,14 @@ descriptor_categories:
   - cat: production
     label: LUSH
     hue: var(--hue-green)
-    chips: ["wide stereo", "analog warmth", "reverb wash", "tape saturation", "soft compression"]
+    chips:
+      [
+        "wide stereo",
+        "analog warmth",
+        "reverb wash",
+        "tape saturation",
+        "soft compression",
+      ]
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
@@ -124,9 +149,33 @@ descriptor_defaults:
 
 lyric_themes: [stillness, memory, nature, solitude, dreams, distance]
 
-section_functions: [establish, introduce, escalate, contrast, remove, peak, resolve]
-delta_palette: ["sparse texture", atmospheric, filtered, "add rhythm", "rising tension", "full groove", "bass-led", "wide theme", "full arrangement", catchy, "strip drums", "expose harmony", "add countermelody", "added impact", climactic, introspective, "half-time feel", "vocal focus", instrumental, "reduce layers"]
-section_palette: [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+section_functions:
+  [establish, introduce, escalate, contrast, remove, peak, resolve]
+delta_palette:
+  [
+    "sparse texture",
+    atmospheric,
+    filtered,
+    "add rhythm",
+    "rising tension",
+    "full groove",
+    "bass-led",
+    "wide theme",
+    "full arrangement",
+    catchy,
+    "strip drums",
+    "expose harmony",
+    "add countermelody",
+    "added impact",
+    climactic,
+    introspective,
+    "half-time feel",
+    "vocal focus",
+    instrumental,
+    "reduce layers",
+  ]
+section_palette:
+  [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
 vocal_presets:
   - { type: "Female lead", delivery_style: ethereal, default_energy: 1 }
   - { type: "Male lead", delivery_style: ethereal, default_energy: 1 }

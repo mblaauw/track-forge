@@ -34,12 +34,20 @@ server.setErrorHandler((error: unknown, _request, reply) => {
   if (error instanceof ApiError) {
     return reply.code(error.statusCode).send({ error: error.message });
   }
-  const fastifyErr = error as { validation?: unknown[]; statusCode?: number; message?: string };
+  const fastifyErr = error as {
+    validation?: unknown[];
+    statusCode?: number;
+    message?: string;
+  };
   if (fastifyErr.validation) {
-    return reply.code(400).send({ error: "Validation error", details: fastifyErr.validation });
+    return reply
+      .code(400)
+      .send({ error: "Validation error", details: fastifyErr.validation });
   }
   const status = fastifyErr.statusCode ?? 500;
-  return reply.code(status).send({ error: fastifyErr.message ?? "Internal server error" });
+  return reply
+    .code(status)
+    .send({ error: fastifyErr.message ?? "Internal server error" });
 });
 
 if (config.logLevel !== "fatal") {
@@ -67,7 +75,10 @@ if (stuck && stuck.cnt > 0) {
       "UPDATE jobs SET status = 'failed', error = 'Interrupted by server restart', updated_at = ? WHERE status = 'in_progress'",
     )
     .run(now);
-  logger.warn({ count: stuck.cnt }, "Reset stuck in_progress jobs after restart");
+  logger.warn(
+    { count: stuck.cnt },
+    "Reset stuck in_progress jobs after restart",
+  );
 }
 
 const start = async () => {

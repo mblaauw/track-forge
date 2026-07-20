@@ -9,7 +9,14 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import { fetchJobs, fetchVersions, fetchTakes, favoriteJob, deleteJob, type JobInfo } from "../../api";
+import {
+  fetchJobs,
+  fetchVersions,
+  fetchTakes,
+  favoriteJob,
+  deleteJob,
+  type JobInfo,
+} from "../../api";
 
 function wave(seed: string, n: number): number[] {
   let h = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -102,8 +109,7 @@ export function LibraryPanel() {
       status: job.status,
       reference: job.reference ?? "",
       lyricsMode:
-        (inputs.lyricsMode as
-          "full_lyrics" | "strict_instrumental" | "guided_instrumental") ??
+        (inputs.lyricsMode as "full_lyrics" | "strict_instrumental") ??
         "strict_instrumental",
       lyricTopic: (inputs.lyricTopic as string) ?? "",
       lyricAngle:

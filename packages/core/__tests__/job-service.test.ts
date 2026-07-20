@@ -93,8 +93,8 @@ describe("JobService", () => {
       "{}",
       null,
     );
-    const advanced = await advanceStage(db, job.id, "planning");
-    expect(advanced.currentStage).toBe("planning");
+    const advanced = await advanceStage(db, job.id, "lyrics_writing");
+    expect(advanced.currentStage).toBe("lyrics_writing");
     expect(advanced.stageAttempt).toBe(0);
   });
 
@@ -121,7 +121,7 @@ describe("JobService", () => {
     expect(fail3.error).toBe("final error");
   });
 
-  it("completeJob marks job completed and stage versioning", async () => {
+  it("completeJob marks job completed and stage completed", async () => {
     const job = await createJob(
       db,
       "edm" as GenreId,
@@ -131,7 +131,7 @@ describe("JobService", () => {
     );
     const completed = await completeJob(db, job.id);
     expect(completed.status).toBe("completed");
-    expect(completed.currentStage).toBe("versioning");
+    expect(completed.currentStage).toBe("completed");
   });
 
   it("createVersion creates version with incrementing numbers", async () => {

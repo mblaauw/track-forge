@@ -23,7 +23,6 @@ import type {
   GenreId,
   PresetId,
   SunoArtifact,
-  CriticFinding,
   GenerationStage,
 } from "@track-forge/contracts";
 
@@ -54,8 +53,7 @@ describe("Pipeline orchestrator", () => {
     );
     const deps: PipelineDeps = {
       db,
-      llm: mockLlm() as any,
-      suno: mockSuno() as any,
+      llm: mockLlm(),
       config: {
         sunoBaseUrl: "https://api.sunomusic.com/v1",
         logLevel: "fatal" as any,
@@ -75,8 +73,7 @@ describe("Pipeline orchestrator", () => {
   it("returns error for nonexistent job", async () => {
     const deps: PipelineDeps = {
       db,
-      llm: mockLlm() as any,
-      suno: mockSuno() as any,
+      llm: mockLlm(),
       config: {} as any,
     };
     const result = await runPipeline("nonexistent-id", deps, mockModule);
@@ -109,8 +106,7 @@ describe("Pipeline orchestrator", () => {
       );
       const deps: PipelineDeps = {
         db,
-        llm: mockLlm() as any,
-        suno: mockSuno() as any,
+        llm: mockLlm(),
         config: {
           sunoBaseUrl: "https://api.sunomusic.com/v1",
           logLevel: "fatal" as any,
@@ -242,8 +238,7 @@ describe("Pipeline orchestrator", () => {
       );
       const deps: PipelineDeps = {
         db,
-        llm: mockLlm() as any,
-        suno: mockSuno() as any,
+        llm: mockLlm(),
         config: {
           sunoBaseUrl: "https://api.sunomusic.com/v1",
           logLevel: "fatal" as any,
@@ -297,8 +292,7 @@ describe("Pipeline orchestrator", () => {
       );
       const deps: PipelineDeps = {
         db,
-        llm: mockLlm() as any,
-        suno: mockSuno() as any,
+        llm: mockLlm(),
         config: {
           sunoBaseUrl: "https://api.sunomusic.com/v1",
           logLevel: "fatal" as any,
@@ -361,8 +355,7 @@ describe("Pipeline orchestrator", () => {
       );
       const deps: PipelineDeps = {
         db,
-        llm: mockLlm() as any,
-        suno: mockSuno() as any,
+        llm: mockLlm(),
         config: {
           sunoBaseUrl: "https://api.sunomusic.com/v1",
           logLevel: "fatal" as any,
@@ -382,7 +375,7 @@ describe("Pipeline orchestrator", () => {
         .where(eq(schema.jobs.id, job.id));
 
       expect(finalJob!.status).toBe("completed");
-      expect(finalJob!.currentStage).toBe("versioning");
+      expect(finalJob!.currentStage).toBe("completed");
     });
 
     it("skips LLM call when lyricsMode is strict_instrumental", async () => {
@@ -391,7 +384,8 @@ describe("Pipeline orchestrator", () => {
         async complete() {
           llmCalled = true;
           return {
-            content: '{"document":{"sections":[{"type":"verse","lines":["test"]}]}}',
+            content:
+              '{"document":{"sections":[{"type":"verse","lines":["test"]}]}}',
             model: "mock",
             usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
           };
@@ -407,8 +401,7 @@ describe("Pipeline orchestrator", () => {
       );
       const deps: PipelineDeps = {
         db,
-        llm: llm as any,
-        suno: mockSuno() as any,
+        llm,
         config: {
           sunoBaseUrl: "https://api.sunomusic.com/v1",
           logLevel: "fatal" as any,

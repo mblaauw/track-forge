@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@track-forge/contracts": "*",
+    "@track-forge/genre-core": "*",
     "preact": "^10.25.0"
   },
   "devDependencies": {

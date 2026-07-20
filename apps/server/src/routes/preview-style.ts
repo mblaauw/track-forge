@@ -18,7 +18,7 @@ export interface PreviewStyleRouteDeps {
 
 export function registerPreviewStyleRoutes(
   server: FastifyInstance,
-  deps?: PreviewStyleRouteDeps,
+  deps: PreviewStyleRouteDeps,
 ): void {
   // ── Unsaved session ────────────────────────────────────────────────────
 
@@ -55,11 +55,12 @@ export function registerPreviewStyleRoutes(
     const { id } = validateParams(IdParams, req);
     const body = validateBody(JobPreviewStyleBody, req);
 
-    if (!deps) {
-      return reply.code(500).send({ error: "Server not configured" });
-    }
-
-    const job = await findRowOr404(deps.db, schema.jobs, eq(schema.jobs.id, id), "Job");
+    const job = await findRowOr404(
+      deps.db,
+      schema.jobs,
+      eq(schema.jobs.id, id),
+      "Job",
+    );
     const mod = getModuleOrThrow(job.genreId);
 
     const input: CompileStyleInput = {

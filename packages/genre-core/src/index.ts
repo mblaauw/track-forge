@@ -2,7 +2,9 @@ import { z } from "zod";
 
 // ── Genre module contract ────────────────────────────────────────────
 
-export interface GenreModule<TInputs extends Record<string, unknown> = Record<string, unknown>> {
+export interface GenreModule<
+  TInputs extends Record<string, unknown> = Record<string, unknown>,
+> {
   id: string;
   name: string;
   inputSchema: z.ZodType<TInputs, z.ZodTypeDef, Record<string, unknown>>;
@@ -122,8 +124,7 @@ export function createBaseInputSchema(opts?: {
     mood: z.string(),
     complexity: z.number().int().min(1).max(10),
     lyricsMode:
-      opts?.lyricsMode ??
-      z.enum(["strict_instrumental", "full_lyrics"]),
+      opts?.lyricsMode ?? z.enum(["strict_instrumental", "full_lyrics"]),
   });
   if (opts?.extra) {
     for (const [k, v] of Object.entries(opts.extra)) {
