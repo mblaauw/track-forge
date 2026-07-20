@@ -19,11 +19,22 @@ export interface PipelineDeps {
   signal?: AbortSignal;
 }
 
+/** Parsed inputs shared across pipeline stages */
+export interface ParsedInputs {
+  inputs: Record<string, unknown>;
+  presetIds: string[];
+  presetLabels: string[];
+  descriptors: { label: string; cat: string; weight: number }[];
+  rawSections: Record<string, unknown>[];
+}
+
 /** Mutable state built up across pipeline stages (in-memory, not persisted) */
 export interface PipelineState {
   job: Job;
   module: GenreModule;
 
+  /** Parsed inputs (cached after first parse) */
+  parsed?: ParsedInputs;
   /** Compiled style JSON (produced by compilation stage) */
   compiledJson: string | null;
   /** Lyrics writer result (produced by lyrics_writing stage) */

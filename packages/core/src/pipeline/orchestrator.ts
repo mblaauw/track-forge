@@ -8,7 +8,7 @@ import {
   type LyricsWriterResult,
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
-import type { PipelineDeps, PipelineState, PipelineResult } from "./types.js";
+import type { PipelineDeps, PipelineState, PipelineResult, ParsedInputs } from "./types.js";
 import { eq } from "drizzle-orm";
 import { schema } from "../db/index.js";
 import {
@@ -48,7 +48,7 @@ function nextStage(current: GenerationStage): GenerationStage | undefined {
 
 // ── Shared input parsing ──────────────────────────────────────────────
 
-function parsePipelineInputs(job: PipelineState["job"], module: PipelineState["module"]) {
+function parsePipelineInputs(job: PipelineState["job"], module: PipelineState["module"]): ParsedInputs {
   const inputs = readJobInputs(job.inputs) ?? {};
   const presetIds = (inputs.presetIds as string[]) ?? [];
   const presetLabels = presetIds.map((id) => {
@@ -76,7 +76,8 @@ async function handleCompilation(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const { inputs, presetLabels, descriptors, rawSections } = parsePipelineInputs(state.job, state.module);
+  const p = state.parsed!;
+  const { inputs, presetLabels, descriptors, rawSections } = p;
   const genreName = state.module.name;
 
   const bpm = Number(inputs.bpm ?? 128);
@@ -150,7 +151,8 @@ async function handleLyricsWriting(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const { inputs, presetLabels, descriptors, rawSections } = parsePipelineInputs(state.job, state.module);
+  const p = state.parsed!;
+  const { inputs, presetLabels, descriptors, rawSections } = p;
   const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental");
   const genreName = state.module.name;
 
@@ -164,6 +166,32 @@ async function handleLyricsWriting(
         } as LyricsWriterResult["document"],
       },
     };
+  }
+
+  // Check for pre-generated lyrics from "Generate lyrics" button
+  const lyricLines = inputs.lyricLines as Record<string, string[]> | undefined;
+  const lyricsGenerated = inputs.lyricsGenerated === true;
+  if (lyricLines && lyricsGenerated) {
+    const sections = rawSections
+      .filter((s) => {
+        const id = String(s.id ?? "");
+        return id && lyricLines[id] && lyricLines[id]!.length > 0;
+      })
+      .map((s) => ({
+        type: String(s.name ?? "verse") as any,
+        lines: lyricLines[String(s.id)] ?? [],
+        bars: Number(s.bars ?? 8),
+        tags: (s.tags as string[]) ?? [],
+        instrumental: false,
+      }));
+
+    if (sections.length > 0) {
+      trace("handleLyricsWriting.preGenerated", { sectionCount: sections.length, totalLines: sections.reduce((a, s) => a + s.lines.length, 0) });
+      return {
+        ...state,
+        lyricsWriterResult: { document: { sections, metadata: {} } },
+      };
+    }
   }
 
   const sections = rawSections.map((s) => ({
@@ -351,6 +379,9 @@ export async function runPipeline(
   };
 
   let state = initialState;
+
+  // Parse inputs once; cached in state.parsed for all stages
+  state = { ...state, parsed: parsePipelineInputs(state.job, state.module) };
 
   trace("runPipeline.start", { jobId: state.job.id, genreId: state.job.genreId, presetId: state.job.presetId, status: state.job.status, inputs: readJobInputs(state.job.inputs) });
 

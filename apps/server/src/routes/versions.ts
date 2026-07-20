@@ -142,7 +142,9 @@ export function registerVersionRoutes(
     });
     writeFileSync("LLM_SUNO_IN.md", JSON.stringify(request, null, 2));
 
-    const skipSuno = process.env.SUNO_DRY_RUN === "true";
+    const dryRunVal = process.env.SUNO_DRY_RUN;
+    req.log.info({ SUNO_DRY_RUN: dryRunVal }, "dry run check");
+    const skipSuno = dryRunVal === "true";
     if (skipSuno) {
       req.log.info("SUNO_DRY_RUN=true — skipping Suno submit");
       await publish(db, version.jobId, {

@@ -78,6 +78,8 @@ export function ComposeShell() {
           reference: s.reference,
           title: s.title,
           name: s.name,
+          lyricLines: s.lyricLines,
+          lyricsGenerated: s.lyricsGenerated,
         };
 
         console.log("[forge] inputPack:", JSON.stringify(inputPack, null, 2));
