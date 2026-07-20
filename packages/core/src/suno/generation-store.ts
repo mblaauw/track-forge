@@ -1,6 +1,7 @@
 import type { Db } from "../db/index.js";
-import { schema } from "../db/index.js";
+import { schema, getSqlite } from "../db/index.js";
 import { eq, desc } from "drizzle-orm";
+import type { SunoTrack } from "./types.js";
 
 export interface GenerationRecord {
   id: string;
@@ -108,6 +109,52 @@ function mapGenerationRow(row: Record<string, unknown>): GenerationRecord {
     style: (row.style as string) ?? undefined,
     error: (row.error as string) ?? undefined,
   };
+}
+
+/**
+ * Track record stored in suno_tracks table
+ */
+export interface TrackRecord {
+  id: string;
+  generationId: string;
+  index: number;
+  audioUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  title?: string;
+}
+
+/**
+ * Store all tracks for a generation into the suno_tracks table.
+ * Uses raw SQL via getSqlite for batch insert efficiency.
+ */
+export function storeTracks(
+  db: Db,
+  generationId: string,
+  tracks: SunoTrack[],
+): void {
+  if (tracks.length === 0) return;
+  const sqlite = getSqlite(db);
+  const now = new Date().toISOString();
+  const insert = sqlite.prepare(
+    "INSERT INTO suno_tracks (id, generation_id, \"index\", audio_url, image_url, video_url, duration, title, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  );
+  sqlite.transaction(() => {
+    for (const t of tracks) {
+      insert.run(
+        t.id,
+        generationId,
+        t.index,
+        t.audioUrl ?? null,
+        t.imageUrl ?? null,
+        t.videoUrl ?? null,
+        t.duration ?? null,
+        t.title ?? null,
+        now,
+      );
+    }
+  })();
 }
 
 /**

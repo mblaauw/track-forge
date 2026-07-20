@@ -9,6 +9,7 @@ import {
   generateSunoPayload,
   storeGeneration,
   updateGeneration,
+  storeTracks,
   trace,
 } from "@track-forge/core";
 import type { SunoArtifact } from "@track-forge/contracts";
@@ -67,7 +68,7 @@ export function registerVersionRoutes(
     return version;
   });
 
-  // ── Takes (generations scoped to a version) ─────────────────────────
+  // ── Takes (generations scoped to a version, with tracks) ────────────
 
   server.get("/api/versions/:id/takes", async (req, reply) => {
     const { id } = validateParams(IdParams, req);
@@ -79,13 +80,27 @@ export function registerVersionRoutes(
       "Version",
     );
 
-    const rows = await db
+    const generations = await db
       .select()
       .from(schema.generations)
       .where(eq(schema.generations.versionId, id))
       .orderBy(desc(schema.generations.createdAt));
 
-    return rows;
+    // Attach tracks to each generation
+    const sqlite = (db as any).$client;
+    const genIds = generations.map((g: any) => g.id);
+    const result: unknown[] = [];
+
+    for (const gen of generations) {
+      const tracks = sqlite
+        .prepare(
+          "SELECT * FROM suno_tracks WHERE generation_id = ? ORDER BY \"index\" ASC",
+        )
+        .all((gen as any).id);
+      result.push({ ...gen, tracks });
+    }
+
+    return result;
   });
 
   server.post("/api/versions/:id/takes", async (req, reply) => {
@@ -202,6 +217,10 @@ export function registerVersionRoutes(
             generatedTitle: item.title,
             style: item.style,
           }).catch(() => {});
+          // Store all tracks from the generation (typically 2 per Suno task)
+          if (item.tracks && item.tracks.length > 0) {
+            storeTracks(db, result.taskId, item.tracks);
+          }
           await publish(db, version.jobId, {
             stage: "suno_render_complete",
             status: "completed",

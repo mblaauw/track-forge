@@ -43,6 +43,16 @@ export interface SetupCardsOpen {
   reference: boolean;
 }
 
+export interface TakeTrack {
+  id: string;
+  index: number;
+  audioUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  title?: string;
+}
+
 export interface Take {
   id: string;
   jobId?: string;
@@ -58,4 +68,5 @@ export interface Take {
   isFavorite?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  tracks?: TakeTrack[];
 }

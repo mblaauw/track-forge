@@ -7,9 +7,11 @@ import {
   Pause,
   Star,
   Plus,
+  MusicNote,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { createTake, fetchVersions, fetchTakes, favoriteTake } from "../../api";
+import type { Take, TakeTrack } from "./types";
 
 function wave(seed: string, n: number): number[] {
   let h = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -21,10 +23,12 @@ function wave(seed: string, n: number): number[] {
   return bars;
 }
 
+type PlayTarget = { takeId: string; trackIndex: number };
+
 export function RendersPanel() {
   const s = useSession();
   const { rightCollapsed, togglePanel, takes, jobId } = s;
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<PlayTarget | null>(null);
   const [rendering, setRendering] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -53,22 +57,26 @@ export function RendersPanel() {
     }
   };
 
-  const handlePlay = (take: { id: string; audioUrl?: string }) => {
-    if (playingId === take.id) {
+  const handlePlay = (
+    takeId: string,
+    trackIndex: number,
+    audioUrl?: string,
+  ) => {
+    if (playing?.takeId === takeId && playing?.trackIndex === trackIndex) {
       audioRef.current?.pause();
-      setPlayingId(null);
+      setPlaying(null);
       return;
     }
-    if (!take.audioUrl) return;
+    if (!audioUrl) return;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    const audio = new Audio(take.audioUrl);
-    audio.onended = () => setPlayingId(null);
+    const audio = new Audio(audioUrl);
+    audio.onended = () => setPlaying(null);
     audio.play().catch(() => {});
     audioRef.current = audio;
-    setPlayingId(take.id);
+    setPlaying({ takeId, trackIndex });
   };
 
   const handleFavorite = async (takeId: string) => {
@@ -82,6 +90,82 @@ export function RendersPanel() {
     } catch (err) {
       console.error("Favorite failed:", err);
     }
+  };
+
+  const renderTrack = (
+    track: TakeTrack,
+    take: Take,
+    isOnly: boolean,
+  ) => {
+    const isPlaying =
+      playing?.takeId === take.id && playing?.trackIndex === track.index;
+    const bars = wave(track.id || take.id + track.index, 40);
+    const label = track.title || `Track ${track.index + 1}`;
+
+    return (
+      <div
+        key={track.id || `${take.id}-${track.index}`}
+        class="rende-track"
+        style={{
+          padding: isOnly ? "0" : "4px 0 4px 8px",
+          marginTop: isOnly ? 0 : 4,
+        }}
+      >
+        <div class="rende-card-top">
+          <button
+            class="rende-play-btn"
+            style={{
+              width: 28,
+              height: 28,
+              minWidth: 28,
+              background: isPlaying
+                ? "var(--forge)"
+                : "var(--success-fill)",
+              color: isPlaying ? "var(--acc)" : "var(--success-text)",
+            }}
+            onClick={() =>
+              handlePlay(take.id, track.index, track.audioUrl)
+            }
+            title={`Play ${label}`}
+          >
+            {isPlaying ? (
+              <Pause size={12} weight="fill" />
+            ) : (
+              <Play size={12} weight="fill" />
+            )}
+          </button>
+          <div class="rende-card-info" style={{ marginLeft: 6 }}>
+            <span class="rende-card-title" style={{ fontSize: 12 }}>
+              {!isOnly ? label : take.generatedTitle || "Untitled"}
+            </span>
+            <span class="rende-card-meta" style={{ fontSize: 10 }}>
+              {track.duration
+                ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, "0")}`
+                : take.duration
+                  ? `${Math.floor(take.duration / 60)}:${(take.duration % 60).toString().padStart(2, "0")}`
+                  : "—"}
+            </span>
+          </div>
+        </div>
+        {!isOnly && (
+          <div class="rende-waveform" style={{ height: 20, marginLeft: 34 }}>
+            {bars.slice(0, 30).map((h, i) => (
+              <div
+                key={i}
+                class="rende-wave-bar"
+                style={{
+                  height: `${Math.min(h, 18)}px`,
+                  background:
+                    isPlaying && i < 14
+                      ? "var(--acc)"
+                      : "var(--border)",
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (rightCollapsed) {
@@ -133,40 +217,27 @@ export function RendersPanel() {
             style="display:flex;flex-direction:column;gap:8px"
           >
             {takes.map((take) => {
-              const isPlaying = playingId === take.id;
-              const bars = wave(take.id, 40);
+              const tracks = (take as any).tracks as TakeTrack[] | undefined;
+              const hasTracks = tracks && tracks.length > 0;
               return (
                 <div
                   key={take.id}
                   class={`rende-card${take.isFavorite ? " fav" : ""}`}
+                  style={hasTracks ? { padding: "6px" } : undefined}
                 >
                   <div class="rende-card-top">
-                    <button
-                      class="rende-play-btn"
-                      style={{
-                        background: isPlaying
-                          ? "var(--forge)"
-                          : "var(--success-fill)",
-                        color: isPlaying ? "var(--acc)" : "var(--success-text)",
-                      }}
-                      onClick={() => handlePlay(take)}
-                    >
-                      {isPlaying ? (
-                        <Pause size={16} weight="fill" />
-                      ) : (
-                        <Play size={16} weight="fill" />
-                      )}
-                    </button>
-                    <div class="rende-card-info">
+                    <div class="rende-card-info" style={{ flex: 1 }}>
                       <span class="rende-card-title">
                         {take.generatedTitle ?? "Untitled"}
                       </span>
                       <span class="rende-card-meta">
                         v{take.versionId?.slice(0, 4) ?? "?"} ·{" "}
                         {take.id.slice(0, 8)} ·{" "}
-                        {take.duration
-                          ? `${Math.floor(take.duration / 60)}:${(take.duration % 60).toString().padStart(2, "0")}`
-                          : "—"}
+                        {hasTracks
+                          ? `${tracks!.length} tracks`
+                          : take.duration
+                            ? `${Math.floor(take.duration / 60)}:${(take.duration % 60).toString().padStart(2, "0")}`
+                            : "—"}
                       </span>
                     </div>
                     <button
@@ -184,21 +255,21 @@ export function RendersPanel() {
                       />
                     </button>
                   </div>
-                  <div class="rende-waveform" style={{ height: 30 }}>
-                    {bars.slice(0, 40).map((h, i) => (
-                      <div
-                        key={i}
-                        class="rende-wave-bar"
-                        style={{
-                          height: `${h}px`,
-                          background:
-                            isPlaying && i < 18
-                              ? "var(--acc)"
-                              : "var(--border)",
-                        }}
-                      />
-                    ))}
-                  </div>
+                  {hasTracks
+                    ? tracks!.map((t) => renderTrack(t, take, tracks!.length === 1))
+                    : renderTrack(
+                        {
+                          id: take.id,
+                          index: 0,
+                          audioUrl: take.audioUrl,
+                          imageUrl: take.imageUrl,
+                          videoUrl: take.videoUrl,
+                          duration: take.duration,
+                          title: take.generatedTitle,
+                        },
+                        take,
+                        true,
+                      )}
                 </div>
               );
             })}

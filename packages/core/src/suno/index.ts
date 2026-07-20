@@ -13,12 +13,14 @@ export {
   updateGeneration,
   getGeneration,
   listGenerations,
+  storeTracks,
 } from "./generation-store.js";
-export type { GenerationRecord } from "./generation-store.js";
+export type { GenerationRecord, TrackRecord } from "./generation-store.js";
 export type {
   SunoClientConfig,
   SunoGenerateRequest,
   SunoFeedItem,
+  SunoTrack,
   SunoSubmitResult,
   SunoGenerationStatus,
   SunoModelVersion,

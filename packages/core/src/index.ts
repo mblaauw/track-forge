@@ -23,12 +23,14 @@ export {
   updateGeneration,
   getGeneration,
   listGenerations,
+  storeTracks,
 } from "./suno/index.js";
 export type {
   SunoCapabilities,
   SunoClientConfig,
   SunoGenerateRequest,
   SunoFeedItem,
+  SunoTrack,
   SunoSubmitResult,
   SunoGenerationStatus,
   SunoModelVersion,

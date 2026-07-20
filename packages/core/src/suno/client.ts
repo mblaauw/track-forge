@@ -222,7 +222,8 @@ export function normalizeTaskResponse(
   },
 ): SunoFeedItem {
   const status = TASK_STATUS_MAP[data.status] ?? "processing";
-  const firstSong = data.response?.sunoData?.[0];
+  const allSongs = data.response?.sunoData ?? [];
+  const firstSong = allSongs[0];
 
   if (!firstSong) {
     return {
@@ -232,6 +233,16 @@ export function normalizeTaskResponse(
       error: data.errorMessage ?? data.errorCode ?? undefined,
     };
   }
+
+  const mapSong = (s: Record<string, unknown>, idx: number) => ({
+    id: String(s.id ?? `${taskId}-${idx}`),
+    index: idx,
+    audioUrl: s.audioUrl as string | undefined,
+    imageUrl: s.imageUrl as string | undefined,
+    videoUrl: s.videoUrl as string | undefined,
+    duration: s.duration as number | undefined,
+    title: s.title as string | undefined,
+  });
 
   return {
     id: String(firstSong.id ?? taskId),
@@ -248,6 +259,7 @@ export function normalizeTaskResponse(
     tags: firstSong.tags as string | undefined,
     modelVersion: firstSong.modelName as string | undefined,
     createdAt: firstSong.createTime as string | undefined,
+    tracks: allSongs.map(mapSong),
   };
 }
 

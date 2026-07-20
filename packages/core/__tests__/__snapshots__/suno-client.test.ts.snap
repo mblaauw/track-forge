@@ -88,6 +88,17 @@ Hello",
   "tags": "deep house, warm",
   "taskId": "task-001",
   "title": "My Song",
+  "tracks": [
+    {
+      "audioUrl": "https://cdn.example.com/audio.mp3",
+      "duration": 180,
+      "id": "song-001",
+      "imageUrl": "https://cdn.example.com/image.png",
+      "index": 0,
+      "title": "My Song",
+      "videoUrl": "https://cdn.example.com/video.mp4",
+    },
+  ],
   "videoUrl": "https://cdn.example.com/video.mp4",
 }
 `;
@@ -107,6 +118,17 @@ exports[`normalizeTaskResponse > TEXT_SUCCESS status maps to processing 1`] = `
   "tags": undefined,
   "taskId": "task-005",
   "title": undefined,
+  "tracks": [
+    {
+      "audioUrl": undefined,
+      "duration": undefined,
+      "id": "song-005",
+      "imageUrl": undefined,
+      "index": 0,
+      "title": undefined,
+      "videoUrl": undefined,
+    },
+  ],
   "videoUrl": undefined,
 }
 `;

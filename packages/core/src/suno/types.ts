@@ -40,6 +40,17 @@ export interface SunoGenerateRequest {
 export type SunoGenerationStatus =
   "queued" | "processing" | "completed" | "error";
 
+/** An individual track within a Suno generation task */
+export interface SunoTrack {
+  id: string;
+  index: number;
+  audioUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  title?: string;
+}
+
 /** Response from Suno API record-info endpoint */
 export interface SunoFeedItem {
   /** Generation ID */
@@ -48,13 +59,13 @@ export interface SunoFeedItem {
   taskId?: string;
   status: SunoGenerationStatus;
   title?: string;
-  /** URL to generated audio */
+  /** URL to generated audio (first track) */
   audioUrl?: string;
-  /** URL to cover image */
+  /** URL to cover image (first track) */
   imageUrl?: string;
-  /** URL to video */
+  /** URL to video (first track) */
   videoUrl?: string;
-  /** Duration in seconds */
+  /** Duration in seconds (first track) */
   duration?: number;
   /** Error message if failed */
   error?: string;
@@ -68,6 +79,8 @@ export interface SunoFeedItem {
   modelVersion?: string;
   /** Timestamp */
   createdAt?: string;
+  /** All tracks returned by Suno (typically 2 per task) */
+  tracks?: SunoTrack[];
 }
 
 /** Client response wrapping Suno results */
