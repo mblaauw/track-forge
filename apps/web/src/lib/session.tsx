@@ -1,5 +1,5 @@
 import { createContext } from "preact";
-import { randomSessionName } from "../components/compose/arrangement";
+import { randomSessionName, randomTitle } from "../components/compose/arrangement";
 import {
   useContext,
   useState,
@@ -151,7 +151,7 @@ export function SessionProvider({
 }) {
   // Initialize from localStorage if available
   const [state, setState] = useState<SessionState>(
-    () => loadPersistedSession() ?? { ...DEFAULT, name: randomSessionName() },
+    () => loadPersistedSession() ?? { ...DEFAULT, name: randomSessionName(), title: randomTitle() },
   );
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -170,7 +170,7 @@ export function SessionProvider({
   );
   const resetSession = useCallback(() => {
     clearPersistedSession();
-    setState({ ...DEFAULT, name: randomSessionName() });
+    setState({ ...DEFAULT, name: randomSessionName(), title: randomTitle() });
   }, []);
   const toggleCard = useCallback(
     (id: SetupCardId) =>

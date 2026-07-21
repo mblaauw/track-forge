@@ -14,7 +14,7 @@ import type {
   DescriptorWeight,
 } from "./types";
 import { defaultSections } from "./arrangement";
-import { randomTitle } from "./BundleCanvas";
+import { randomTitle } from "./arrangement";
 import {
   fetchGenres,
   fetchPresets,

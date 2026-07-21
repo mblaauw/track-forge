@@ -2,69 +2,9 @@ import { useState, useEffect, useRef } from "preact/hooks";
 import { Textbox, SlidersHorizontal, Shuffle } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { previewStyle } from "../../api";
+import { randomTitle } from "./arrangement";
 import { ArrangementEditor } from "./ArrangementEditor";
 import { LyricsBlock } from "./LyricsBlock";
-
-const TITLE_A = [
-  "Neon",
-  "Shadow",
-  "Crystal",
-  "Velvet",
-  "Midnight",
-  "Broken",
-  "Electric",
-  "Silent",
-  "Burning",
-  "Fading",
-  "Golden",
-  "Hollow",
-  "Iron",
-  "Jade",
-  "Karma",
-  "Lunar",
-  "Mystic",
-  "Phantom",
-  "Rebel",
-  "Silver",
-  "Cosmic",
-  "Distant",
-  "Frozen",
-  "Wandering",
-  "Crimson",
-];
-const TITLE_B = [
-  "Dreams",
-  "Fires",
-  "Wolves",
-  "Kings",
-  "Nights",
-  "Heart",
-  "Light",
-  "Storm",
-  "Tears",
-  "Venom",
-  "Wings",
-  "Dawn",
-  "Echo",
-  "Flame",
-  "Grace",
-  "Haze",
-  "Lanes",
-  "Myth",
-  "Rain",
-  "Skies",
-  "Embers",
-  "Shadows",
-  "Horizon",
-  "Ruins",
-  "Strangers",
-];
-
-export function randomTitle(): string {
-  const a = TITLE_A[Math.floor(Math.random() * TITLE_A.length)]!;
-  const b = TITLE_B[Math.floor(Math.random() * TITLE_B.length)!];
-  return `${a} ${b}`;
-}
 
 export function BundleCanvas() {
   const s = useSession();
