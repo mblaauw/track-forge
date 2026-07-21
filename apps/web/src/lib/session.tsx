@@ -170,7 +170,7 @@ export function SessionProvider({
   );
   const resetSession = useCallback(() => {
     clearPersistedSession();
-    setState(DEFAULT);
+    setState({ ...DEFAULT, name: randomSessionName() });
   }, []);
   const toggleCard = useCallback(
     (id: SetupCardId) =>
