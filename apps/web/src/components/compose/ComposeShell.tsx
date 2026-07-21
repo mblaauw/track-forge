@@ -44,10 +44,34 @@ function stageToDisplay(stage: string): { label: string; index: number } {
   return { label: stage, index: 0 };
 }
 
+function buildInputPack(
+  s: ReturnType<typeof useSession>,
+): Record<string, unknown> {
+  return {
+    bpm: s.bpm ?? 128,
+    key: s.key,
+    scale: s.scale,
+    genreId: s.genreId,
+    presetIds: s.presetIds,
+    lyricsMode: s.lyricsMode,
+    lyricTopic: s.lyricTopic,
+    lyricAngle: s.lyricAngle,
+    lyricThemes: s.lyricThemes,
+    tags: s.tags,
+    sections: s.sections,
+    reference: s.reference,
+    title: s.title,
+    name: s.name,
+    lyricLines: s.lyricLines,
+    lyricsGenerated: s.lyricsGenerated,
+  };
+}
+
 export function ComposeShell() {
   const s = useSession();
   const { leftCollapsed, rightCollapsed, libraryCollapsed } = s;
   const cleanupRef = useRef<(() => void) | null>(null);
+  const draftRef = useRef(false);
 
   const handleForge = useCallback(async () => {
     if (s.forgeRunning || s.forgeDisabled) return;
@@ -61,33 +85,13 @@ export function ComposeShell() {
     try {
       let jobId = s.jobId;
 
-      // Create job if not yet saved
+      // Create job if not yet saved (should be rare — draft auto-create
+      // usually fires on first meaningful input)
       if (!jobId) {
-        const inputPack = {
-          bpm: s.bpm ?? 128,
-          key: s.key,
-          scale: s.scale,
-          genreId: s.genreId,
-          presetIds: s.presetIds,
-          lyricsMode: s.lyricsMode,
-          lyricTopic: s.lyricTopic,
-          lyricAngle: s.lyricAngle,
-          lyricThemes: s.lyricThemes,
-          tags: s.tags,
-          sections: s.sections,
-          reference: s.reference,
-          title: s.title,
-          name: s.name,
-          lyricLines: s.lyricLines,
-          lyricsGenerated: s.lyricsGenerated,
-        };
-
-        console.log("[forge] inputPack:", JSON.stringify(inputPack, null, 2));
-
         const job = await createJob({
           genreId: s.genreId,
           presetId: s.presetId || s.presetIds[0] || "",
-          inputs: inputPack as unknown as Record<string, unknown>,
+          inputs: buildInputPack(s),
           reference: s.reference || undefined,
           name: s.name || undefined,
         });
@@ -202,34 +206,44 @@ export function ComposeShell() {
     };
   }, []);
 
-  // Debounced autosave to backend (only when job exists)
+  // Debounced autosave to backend — auto-creates draft job on first meaningful input
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
+    const hasMeaningfulInput =
+      s.presetIds.length > 0 ||
+      s.sections.length > 0 ||
+      s.lyricTopic ||
+      s.tags.length > 0;
+
+    // Auto-create draft job on first meaningful change
+    if (
+      hasMeaningfulInput &&
+      !s.jobId &&
+      !s.forgeRunning &&
+      !draftRef.current
+    ) {
+      draftRef.current = true;
+      createJob({
+        genreId: s.genreId,
+        presetId: s.presetIds[0] || "",
+        inputs: buildInputPack(s),
+        name: s.name || undefined,
+      })
+        .then((job) => s.setSession({ jobId: job.id }))
+        .catch(() => {
+          draftRef.current = false;
+        });
+      return;
+    }
+
+    // Existing autosave (only when a job exists)
     if (!s.jobId) return;
     if (persistRef.current) clearTimeout(persistRef.current);
     persistRef.current = setTimeout(() => {
-      const inputs: Record<string, unknown> = {
-        name: s.name,
-        title: s.title,
-        genreId: s.genreId,
-        presetIds: s.presetIds,
-        presetId: s.presetIds[0] ?? s.presetId,
-        bpm: s.bpm,
-        key: s.key,
-        scale: s.scale,
-        lyricsMode: s.lyricsMode,
-        lyricTopic: s.lyricTopic,
-        lyricAngle: s.lyricAngle,
-        lyricThemes: s.lyricThemes,
-        lyricLines: s.lyricLines,
-        lyricsGenerated: s.lyricsGenerated,
-        tags: s.tags,
-        sections: s.sections,
-        reference: s.reference,
-      };
-      updateJobInputs(s.jobId!, { inputs, name: s.name || undefined }).catch(
-        () => {},
-      );
+      updateJobInputs(s.jobId!, {
+        inputs: buildInputPack(s),
+        name: s.name || undefined,
+      }).catch(() => {});
     }, 800);
     return () => {
       if (persistRef.current) clearTimeout(persistRef.current);
@@ -252,6 +266,7 @@ export function ComposeShell() {
     s.tags.map((t) => `${t.label}:${t.weight}`).join(","),
     s.sections.map((sec) => `${sec.name}:${sec.fn}:${sec.bars}`).join(","),
     s.reference,
+    s.forgeRunning,
   ]);
 
   const leftW = leftCollapsed ? "42px" : "270px";
