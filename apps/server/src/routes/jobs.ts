@@ -251,9 +251,7 @@ export function registerJobRoutes(
             `DELETE FROM suno_tracks WHERE generation_id IN (${placeholders})`,
           )
           .run(...genIds);
-        sqlite
-          .prepare(`DELETE FROM generations WHERE job_id = ?`)
-          .run(id);
+        sqlite.prepare(`DELETE FROM generations WHERE job_id = ?`).run(id);
       }
       sqlite.prepare("DELETE FROM versions WHERE job_id = ?").run(id);
       sqlite.prepare("DELETE FROM job_events WHERE job_id = ?").run(id);

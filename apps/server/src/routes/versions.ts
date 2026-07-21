@@ -156,18 +156,39 @@ export function registerVersionRoutes(
     req.log.info({ SUNO_DRY_RUN: dryRunVal }, "dry run check");
     const skipSuno = dryRunVal === "true";
     if (skipSuno) {
-      req.log.info("SUNO_DRY_RUN=true — skipping Suno submit");
+      req.log.info("SUNO_DRY_RUN=true — storing dry-run generation");
+      const dryRunId = "dry-" + id;
+      const title = getValue("title") || "Dry Run";
+      const style = getValue("style") || "";
+      const lyrics = getValue("lyrics") || "";
+      await storeGeneration(db, {
+        id: dryRunId,
+        jobId: version.jobId,
+        versionId: id,
+        status: "completed",
+        generatedTitle: title,
+        style,
+        duration: 30,
+      });
+      storeTracks(db, dryRunId, [
+        {
+          id: dryRunId + "-t0",
+          index: 0,
+          title,
+          duration: 30,
+        },
+      ]);
       await publish(db, version.jobId, {
         stage: "suno_render_complete",
         status: "completed",
         message: "Suno render completed (dry run)",
       }).catch(() => {});
-      return reply.code(201).send({
-        id: "dry-run-" + id,
-        jobId: version.jobId,
-        versionId: id,
-        status: "completed",
-      });
+      const [created] = await db
+        .select()
+        .from(schema.generations)
+        .where(eq(schema.generations.id, dryRunId))
+        .limit(1);
+      return reply.code(201).send(created);
     }
 
     let result: { taskId: string; callbackConfigured: boolean };

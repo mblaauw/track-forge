@@ -19,6 +19,8 @@ design-system/
 data/
 LLM_*.md
 apps/LLM_*.md
+apps/LLM_IN.md
+apps/LLM_OUT.md
 apps/server/LLM_*.md
 playwright-report/
 test-results/

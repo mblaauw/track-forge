@@ -1,5 +1,11 @@
 import { createContext } from "preact";
-import { useContext, useState, useCallback, useEffect, useRef } from "preact/hooks";
+import {
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "preact/hooks";
 import type {
   Descriptor,
   Section,

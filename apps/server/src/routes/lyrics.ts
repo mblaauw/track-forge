@@ -1,5 +1,3 @@
-import { writeFileSync } from "node:fs";
-import { resolve } from "node:path";
 import type { FastifyInstance } from "fastify";
 import type { Db, LlmClient } from "@track-forge/core";
 import { buildSunoContext } from "@track-forge/core";
@@ -63,12 +61,6 @@ export function registerLyricsRoutes(
 
     const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
 
-    const PROJECT_ROOT = resolve(process.cwd(), "..");
-    writeFileSync(
-      resolve(PROJECT_ROOT, "LLM_IN.md"),
-      `System: You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}\n\nUser:\n${sunoContext}`,
-    );
-
     const response = await deps.llm.complete({
       messages: [
         {
@@ -80,8 +72,6 @@ export function registerLyricsRoutes(
       temperature: 0.8,
       maxTokens: 16384,
     });
-
-    writeFileSync(resolve(PROJECT_ROOT, "LLM_OUT.md"), response.content);
 
     let lyricsDoc: Record<string, unknown> = { sections: [], metadata: {} };
     try {
