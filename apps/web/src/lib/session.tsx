@@ -1,4 +1,5 @@
 import { createContext } from "preact";
+import { randomSessionName } from "../components/compose/arrangement";
 import {
   useContext,
   useState,
@@ -150,7 +151,7 @@ export function SessionProvider({
 }) {
   // Initialize from localStorage if available
   const [state, setState] = useState<SessionState>(
-    () => loadPersistedSession() ?? DEFAULT,
+    () => loadPersistedSession() ?? { ...DEFAULT, name: randomSessionName() },
   );
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
 
