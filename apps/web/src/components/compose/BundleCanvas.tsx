@@ -140,7 +140,7 @@ export function BundleCanvas() {
         <ArrangementEditor />
 
         {/* LYRICS / ARRANGEMENT */}
-        <LyricsBlock />
+        <LyricsBlock style={stylePreview} />
       </div>
     </div>
   );

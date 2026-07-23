@@ -16,6 +16,42 @@ export interface PreviewStyleRouteDeps {
   db: Db;
 }
 
+interface StyleCompileFields {
+  presetIds?: string[];
+  descriptors?: { label: string; cat: string; weight: number }[];
+  bpm: number;
+  key?: string;
+  scale?: string;
+  sections?: { name: string; fn?: string }[];
+  lyricsMode?: string;
+  vocalType?: string | null;
+}
+
+function toCompileStyleInput(
+  genreId: string,
+  body: StyleCompileFields,
+): CompileStyleInput {
+  const mod = getModuleOrThrow(genreId);
+  const presetIds = body.presetIds ?? [];
+  return {
+    genreName: mod.name,
+    presetLabels:
+      mod.presets?.filter((p) => presetIds.includes(p.id)).map((p) => p.name) ??
+      [],
+    descriptors: body.descriptors ?? [],
+    bpm: body.bpm,
+    key: body.key ?? "",
+    scale: (body.scale ?? "minor") as "major" | "minor",
+    sections: (body.sections ?? []).map((s) => ({
+      name: s.name,
+      fn: s.fn ?? "establish",
+    })),
+    lyricsMode: (body.lyricsMode ??
+      "strict_instrumental") as CompileStyleInput["lyricsMode"],
+    vocalType: body.vocalType ?? undefined,
+  };
+}
+
 export function registerPreviewStyleRoutes(
   server: FastifyInstance,
   deps: PreviewStyleRouteDeps,
@@ -24,29 +60,8 @@ export function registerPreviewStyleRoutes(
 
   server.post("/api/preview-style", async (req, reply) => {
     const body = validateBody(PreviewStyleBody, req);
-    const mod = getModuleOrThrow(body.genreId);
-
-    const input: CompileStyleInput = {
-      genreName: mod.name,
-      presetLabels:
-        mod.presets
-          ?.filter((p) => body.presetIds!.includes(p.id))
-          .map((p) => p.name) ?? [],
-      descriptors: body.descriptors ?? [],
-      bpm: body.bpm!,
-      key: body.key ?? "",
-      scale: (body.scale ?? "minor") as "major" | "minor",
-      sections: (body.sections ?? []).map((s) => ({
-        name: s.name,
-        fn: s.fn ?? "establish",
-      })),
-      lyricsMode: (body.lyricsMode ??
-        "strict_instrumental") as CompileStyleInput["lyricsMode"],
-      vocalType: body.vocalType ?? undefined,
-    };
-
-    const result = compileStylePrompt(input);
-    return reply.send(result);
+    const input = toCompileStyleInput(body.genreId, body);
+    return reply.send(compileStylePrompt(input));
   });
 
   // ── Saved session ──────────────────────────────────────────────────────
@@ -61,28 +76,8 @@ export function registerPreviewStyleRoutes(
       eq(schema.jobs.id, id),
       "Job",
     );
-    const mod = getModuleOrThrow(job.genreId);
 
-    const input: CompileStyleInput = {
-      genreName: mod.name,
-      presetLabels:
-        mod.presets
-          ?.filter((p) => (body.presetIds ?? []).includes(p.id))
-          .map((p) => p.name) ?? [],
-      descriptors: body.descriptors ?? [],
-      bpm: body.bpm,
-      key: body.key ?? "",
-      scale: (body.scale ?? "minor") as "major" | "minor",
-      sections: (body.sections ?? []).map((s) => ({
-        name: s.name,
-        fn: s.fn ?? "establish",
-      })),
-      lyricsMode: (body.lyricsMode ??
-        "strict_instrumental") as CompileStyleInput["lyricsMode"],
-      vocalType: body.vocalType ?? undefined,
-    };
-
-    const result = compileStylePrompt(input);
-    return reply.send(result);
+    const input = toCompileStyleInput(job.genreId, body);
+    return reply.send(compileStylePrompt(input));
   });
 }

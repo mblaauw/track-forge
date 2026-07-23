@@ -10,6 +10,15 @@ export type {
   LlmResponse,
   LlmProvider,
 } from "./llm/index.js";
+export { writeLyrics, buildLyricsPrompt } from "./llm/index.js";
+export type {
+  LyricsLlm,
+  LyricsWriterInput,
+  LyricsWriterOutput,
+  LyricsWriterSectionInput,
+  LyricsWriterSectionResult,
+  LyricsWriterVocal,
+} from "./llm/index.js";
 
 // Suno integration
 export {
@@ -40,15 +49,10 @@ export type {
   GenerationRecord,
 } from "./suno/index.js";
 
-export {
-  abortJob,
-  compileStylePrompt,
-  buildSunoContext,
-} from "./pipeline/index.js";
+export { abortJob, compileStylePrompt } from "./pipeline/index.js";
 export type {
   CompileStyleInput,
   CompileStyleResult,
-  SunoContextInput,
 } from "./pipeline/index.js";
 // Pipeline
 export {

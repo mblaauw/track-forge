@@ -12,6 +12,8 @@ export interface LlmRequest {
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
+  /** Request strict JSON output from providers that support it (OpenAI-compatible, Ollama). */
+  responseFormat?: "json_object";
 }
 
 export interface LlmResponse {

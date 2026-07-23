@@ -41,7 +41,7 @@ export const versions = sqliteTable("versions", {
   id: text("id").primaryKey(),
   jobId: text("job_id")
     .notNull()
-    .references(() => jobs.id),
+    .references(() => jobs.id, { onDelete: "cascade" }),
   status: text("status").notNull().default("draft"),
   number: integer("number").notNull(),
   /** JSON-encoded SunoArtifact[] */
@@ -58,8 +58,10 @@ export const generations = sqliteTable("generations", {
   id: text("id").primaryKey(),
   jobId: text("job_id")
     .notNull()
-    .references(() => jobs.id),
-  versionId: text("version_id").references(() => versions.id),
+    .references(() => jobs.id, { onDelete: "cascade" }),
+  versionId: text("version_id").references(() => versions.id, {
+    onDelete: "cascade",
+  }),
   status: text("status").notNull().default("queued"),
   audioUrl: text("audio_url"),
   imageUrl: text("image_url"),
@@ -82,7 +84,7 @@ export const jobEvents = sqliteTable("job_events", {
   id: text("id").primaryKey(),
   jobId: text("job_id")
     .notNull()
-    .references(() => jobs.id),
+    .references(() => jobs.id, { onDelete: "cascade" }),
   sequence: integer("sequence").notNull(),
   stage: text("stage"),
   status: text("status").notNull(),
@@ -97,7 +99,7 @@ export const sunoTracks = sqliteTable("suno_tracks", {
   id: text("id").primaryKey(),
   generationId: text("generation_id")
     .notNull()
-    .references(() => generations.id),
+    .references(() => generations.id, { onDelete: "cascade" }),
   index: integer("index").notNull(),
   audioUrl: text("audio_url"),
   imageUrl: text("image_url"),

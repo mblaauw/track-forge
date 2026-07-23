@@ -1116,3 +1116,14 @@ vocal_presets:
   - { type: Duet, delivery_style: anthemic, default_energy: 4 }
   - { type: "Group·choir", delivery_style: anthemic, default_energy: 4 }
   - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 2 }
+
+lyrics_guidance: |
+  EDM lyrics exist to be shouted back at a festival, not read on a page.
+  Prioritize hook economy over narrative: choruses/hooks should be 1-4 short,
+  repeatable phrases built around a single title-worthy line — favor broad,
+  universal emotion (release, euphoria, longing, defiance) over specific
+  storytelling detail. Verses can be sparser and more impressionistic; they
+  exist to set up the hook, not compete with it. Avoid dense internal rhyme
+  or rapid syllable runs — leave rhythmic space for the drop. Lyrics for
+  build/breakdown sections should be minimal or a single repeated phrase that
+  intensifies with the arrangement.

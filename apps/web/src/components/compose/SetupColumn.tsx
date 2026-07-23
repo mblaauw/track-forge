@@ -752,14 +752,33 @@ function DescriptorsCardContent({
 
 function ReferenceCardContent({ s }: { s: ReturnType<typeof useSession> }) {
   return (
-    <textarea
-      class="setup-textarea"
-      style="min-height:72px"
-      placeholder="Paste a reference track URL or describe the vibe…"
-      value={s.reference}
-      onInput={(e) =>
-        s.setSession({ reference: (e.target as HTMLTextAreaElement).value })
-      }
-    />
+    <>
+      <textarea
+        class="setup-textarea"
+        style="min-height:72px"
+        placeholder="Paste a reference track URL or describe the vibe…"
+        value={s.reference}
+        onInput={(e) =>
+          s.setSession({ reference: (e.target as HTMLTextAreaElement).value })
+        }
+      />
+      <div
+        class="tf-mono"
+        style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin:10px 0 7px"
+      >
+        AVOID (comma-separated)
+      </div>
+      <textarea
+        class="setup-textarea"
+        style="min-height:48px"
+        placeholder="e.g. autotune, distortion, orchestral swells…"
+        value={s.excludedStyles}
+        onInput={(e) =>
+          s.setSession({
+            excludedStyles: (e.target as HTMLTextAreaElement).value,
+          })
+        }
+      />
+    </>
   );
 }

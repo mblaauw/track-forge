@@ -106,7 +106,7 @@ export async function publish(
   return fullEvent;
 }
 
-/** Get recent events for a job (for replay). */
+/** Get recent events for a job (for replay), always in chronological order. */
 export async function getJobEvents(
   db: Db,
   jobId: string,
@@ -115,26 +115,28 @@ export async function getJobEvents(
   const limit = options?.limit ?? 50;
   const afterSequence = options?.afterSequence ?? 0;
 
-  const query = db
+  if (afterSequence > 0) {
+    // Already ascending — this is a reconnect replaying everything after a
+    // known sequence, so no reversal needed.
+    const rows = await db
+      .select()
+      .from(schema.jobEvents)
+      .where(
+        sql`${schema.jobEvents.jobId} = ${jobId} AND ${schema.jobEvents.sequence} > ${afterSequence}`,
+      )
+      .orderBy(schema.jobEvents.sequence)
+      .limit(limit);
+    return rows as unknown as JobEvent[];
+  }
+
+  // Most-recent-N: query descending (to get the tail), then flip to
+  // chronological order for the caller.
+  const rows = await db
     .select()
     .from(schema.jobEvents)
     .where(eq(schema.jobEvents.jobId, jobId))
     .orderBy(desc(schema.jobEvents.sequence))
     .limit(limit);
-
-  const rows =
-    afterSequence > 0
-      ? await db
-          .select()
-          .from(schema.jobEvents)
-          .where(
-            sql`${schema.jobEvents.jobId} = ${jobId} AND ${schema.jobEvents.sequence} > ${afterSequence}`,
-          )
-          .orderBy(schema.jobEvents.sequence)
-          .limit(limit)
-      : await query;
-
-  // Reverse to chronological order
   return rows.reverse() as unknown as JobEvent[];
 }
 

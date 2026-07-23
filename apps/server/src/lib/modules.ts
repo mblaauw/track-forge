@@ -3,13 +3,14 @@ import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
 import { ambientModule } from "@track-forge/genre-ambient";
 import {
-  ALL_GENRE_IDS,
+  getAllGenreIds,
   listGenreConfigs,
   getSongStructure,
   getPresets,
   getTagCategories,
   getTaxonomy,
   getDescriptorDefaults,
+  getLyricsGuidance,
 } from "./genre-config.js";
 const MODULE_IMPORTS: Record<string, GenreModule> = {
   edm: edmModule as GenreModule,
@@ -24,12 +25,15 @@ function augment(id: string, mod: GenreModule): GenreModule {
     tagCategories: getTagCategories(id) as TagCategory[],
     songStructure: getSongStructure(id),
     taxonomy: getTaxonomy(id) as Record<string, unknown> | undefined,
+    lyricsGuidance: getLyricsGuidance(id),
   };
 }
 
 const MODULES: Record<string, GenreModule> = {};
-for (const id of ALL_GENRE_IDS) {
-  MODULES[id] = augment(id, MODULE_IMPORTS[id]!);
+for (const id of getAllGenreIds()) {
+  const imported = MODULE_IMPORTS[id];
+  if (!imported) continue; // YAML exists but no TS genre module registered yet
+  MODULES[id] = augment(id, imported);
 }
 
 /** Validate genre configs at startup — check all presets against Zod schemas */
@@ -37,7 +41,7 @@ export function validateGenreConfigs(logger?: {
   warn: (msg: string) => void;
 }): void {
   const log = logger ?? console;
-  for (const id of ALL_GENRE_IDS) {
+  for (const id of getAllGenreIds()) {
     const mod = MODULES[id];
     if (!mod) {
       log.warn(`Genre ${id}: module not loaded`);

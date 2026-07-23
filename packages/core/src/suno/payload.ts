@@ -19,6 +19,8 @@ export interface SunoPayloadInput {
   modelVersion?: SunoModelVersion;
   /** Optional callback URL */
   callbackUrl?: string;
+  /** Dominant vocal gender across the arrangement's vocal sections, if any. */
+  vocalGender?: "m" | "f";
 }
 
 export interface SunoGenreTransform {
@@ -126,6 +128,11 @@ export function generateSunoPayload(
   // Only include prompt (lyrics) if not instrumental
   if (!instrumental && prompt.length > 0) {
     request.prompt = prompt;
+  }
+
+  // vocalGender only makes sense for a vocal (non-instrumental) generation.
+  if (!instrumental && input.vocalGender) {
+    request.vocalGender = input.vocalGender;
   }
 
   // Only include negativeTags if supported and non-empty

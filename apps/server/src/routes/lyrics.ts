@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Db, LlmClient } from "@track-forge/core";
-import { buildSunoContext } from "@track-forge/core";
+import { writeLyrics } from "@track-forge/core";
 import { getModuleOrThrow } from "../lib/modules.js";
 import { validateBody, LyricsGenerateBody } from "../lib/validate.js";
 
@@ -22,80 +22,27 @@ export function registerLyricsRoutes(
         ?.filter((p) => (body.presetIds ?? []).includes(p.id))
         .map((p) => p.name) ?? [];
 
-    const sunoContext = buildSunoContext({
+    const result = await writeLyrics(deps.llm, {
       genreName: mod.name,
       presetLabels,
-      descriptors: body.descriptors ?? [],
       bpm: body.bpm,
       key: body.key ?? "C",
       scale: body.scale as "major" | "minor",
       sections: (body.sections ?? []).map((s) => ({
-        section: s.name,
+        id: s.id,
+        name: s.name,
         bars: s.bars ?? 8,
-        fn: (s.fn ?? "establish") as
-          | "establish"
-          | "introduce"
-          | "escalate"
-          | "contrast"
-          | "remove"
-          | "peak"
-          | "resolve",
+        fn: s.fn ?? "establish",
         deltas: s.deltas ?? [],
-        tags: s.tags ?? [],
-        vocal: s.vocal as
-          | {
-              type: string;
-              delivery: string;
-              energy: number;
-              adlibs: boolean;
-              harmonies: boolean;
-            }
-          | undefined,
+        vocal: s.vocal,
       })),
-      lyricsMode: body.lyricsMode as "full_lyrics" | "strict_instrumental",
-      vocalType: body.vocalType ?? undefined,
-      lyricTopic: body.lyricTopic ?? "",
-      lyricThemes: body.lyricThemes ?? [],
-      lyricAngle: body.lyricAngle ?? "",
+      lyricTopic: body.lyricTopic,
+      lyricThemes: body.lyricThemes,
+      lyricAngle: body.lyricAngle,
+      style: body.style ?? "",
+      lyricsGuidance: mod.lyricsGuidance,
     });
 
-    const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
-
-    const response = await deps.llm.complete({
-      messages: [
-        {
-          role: "system",
-          content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}`,
-        },
-        { role: "user", content: sunoContext },
-      ],
-      temperature: 0.8,
-      maxTokens: 16384,
-    });
-
-    let lyricsDoc: Record<string, unknown> = { sections: [], metadata: {} };
-    try {
-      const parsed = JSON.parse(response.content) as Record<string, unknown>;
-      if (parsed.document && typeof parsed.document === "object") {
-        lyricsDoc = parsed.document as Record<string, unknown>;
-      } else if (parsed.sections) {
-        lyricsDoc = { sections: parsed.sections, metadata: {} };
-      }
-    } catch {
-      lyricsDoc = {
-        sections: [
-          {
-            type: "verse",
-            lines: response.content.split("\n").filter(Boolean),
-            bars: 8,
-            tags: [],
-            instrumental: false,
-          },
-        ],
-        metadata: {},
-      };
-    }
-
-    return reply.send({ document: lyricsDoc });
+    return reply.send(result);
   });
 }

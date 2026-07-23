@@ -1,3 +1,4 @@
+import { isVocalSection } from "@track-forge/genre-core";
 import type { Section, SectionFunction } from "./types";
 
 export type { Section, SectionFunction };
@@ -81,18 +82,58 @@ export function randomSessionName(): string {
 }
 
 const TITLE_A = [
-  "Neon", "Shadow", "Crystal", "Velvet", "Midnight",
-  "Broken", "Electric", "Silent", "Burning", "Fading",
-  "Golden", "Hollow", "Iron", "Jade", "Karma",
-  "Lunar", "Mystic", "Phantom", "Rebel", "Silver",
-  "Cosmic", "Distant", "Frozen", "Wandering", "Crimson",
+  "Neon",
+  "Shadow",
+  "Crystal",
+  "Velvet",
+  "Midnight",
+  "Broken",
+  "Electric",
+  "Silent",
+  "Burning",
+  "Fading",
+  "Golden",
+  "Hollow",
+  "Iron",
+  "Jade",
+  "Karma",
+  "Lunar",
+  "Mystic",
+  "Phantom",
+  "Rebel",
+  "Silver",
+  "Cosmic",
+  "Distant",
+  "Frozen",
+  "Wandering",
+  "Crimson",
 ];
 const TITLE_B = [
-  "Dreams", "Fires", "Wolves", "Kings", "Nights",
-  "Heart", "Light", "Storm", "Tears", "Venom",
-  "Wings", "Dawn", "Echo", "Flame", "Grace",
-  "Haze", "Lanes", "Myth", "Rain", "Skies",
-  "Embers", "Shadows", "Horizon", "Ruins", "Strangers",
+  "Dreams",
+  "Fires",
+  "Wolves",
+  "Kings",
+  "Nights",
+  "Heart",
+  "Light",
+  "Storm",
+  "Tears",
+  "Venom",
+  "Wings",
+  "Dawn",
+  "Echo",
+  "Flame",
+  "Grace",
+  "Haze",
+  "Lanes",
+  "Myth",
+  "Rain",
+  "Skies",
+  "Embers",
+  "Shadows",
+  "Horizon",
+  "Ruins",
+  "Strangers",
 ];
 
 export function randomTitle(): string {
@@ -127,11 +168,7 @@ export function sectionColor(name: string): string {
 }
 
 export function sectionIsVocal(sec: Section): boolean {
-  const lowerDeltas = sec.deltas.map((d) => d.toLowerCase());
-  if (lowerDeltas.includes("instrumental")) return false;
-  if (lowerDeltas.includes("vocal focus") || lowerDeltas.includes("catchy"))
-    return true;
-  return /verse|chorus|hook|pre-chorus|refrain|bridge|drop/i.test(sec.name);
+  return isVocalSection(sec);
 }
 
 export const SECTION_FUNCTIONS: { id: SectionFunction; label: string }[] = [

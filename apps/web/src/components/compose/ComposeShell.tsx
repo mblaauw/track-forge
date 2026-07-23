@@ -60,6 +60,7 @@ function buildInputPack(
     tags: s.tags,
     sections: s.sections,
     reference: s.reference,
+    excludedStyles: s.excludedStyles,
     title: s.title,
     name: s.name,
     lyricLines: s.lyricLines,
@@ -72,9 +73,27 @@ export function ComposeShell() {
   const { leftCollapsed, rightCollapsed, libraryCollapsed } = s;
   const cleanupRef = useRef<(() => void) | null>(null);
   const draftRef = useRef(false);
+  // Shared with the autosave effect below — flushed synchronously before a
+  // forge starts so the pipeline never reads stale inputs from a debounce
+  // window that hasn't fired yet.
+  const persistRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleForge = useCallback(async () => {
     if (s.forgeRunning || s.forgeDisabled) return;
+
+    // Flush any pending debounced autosave write immediately — otherwise a
+    // change made in the last 800ms could start the pipeline on stale inputs.
+    if (persistRef.current) {
+      clearTimeout(persistRef.current);
+      persistRef.current = undefined;
+      if (s.jobId) {
+        await updateJobInputs(s.jobId, {
+          inputs: buildInputPack(s),
+          name: s.name || undefined,
+        }).catch(() => {});
+      }
+    }
+
     s.setSession({
       forgeRunning: true,
       forgeStageIdx: 0,
@@ -124,7 +143,10 @@ export function ComposeShell() {
             fetchVersions(jobId!)
               .then((versions) => {
                 if (versions.length > 0) {
-                  const latest = versions[versions.length - 1]!;
+                  // fetchVersions returns newest-first (server orders by
+                  // number DESC) — index 0 is the latest version, not the
+                  // last element.
+                  const latest = versions[0]!;
                   fetchTakes(latest.id)
                     .then((takes) => {
                       s.setSession({ takes: takes as any[] });
@@ -148,7 +170,10 @@ export function ComposeShell() {
             fetchVersions(jobId!)
               .then((versions) => {
                 if (versions.length > 0) {
-                  const latest = versions[versions.length - 1]!;
+                  // fetchVersions returns newest-first (server orders by
+                  // number DESC) — index 0 is the latest version, not the
+                  // last element.
+                  const latest = versions[0]!;
                   createTake(latest.id).catch((err) => {
                     console.error("Failed to auto-trigger take:", err);
                     s.setSession({ forgeRunning: false, status: "failed" });
@@ -207,7 +232,6 @@ export function ComposeShell() {
   }, []);
 
   // Debounced autosave to backend — auto-creates draft job on first meaningful input
-  const persistRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     const hasMeaningfulInput =
       s.presetIds.length > 0 ||
@@ -266,6 +290,7 @@ export function ComposeShell() {
     s.tags.map((t) => `${t.label}:${t.weight}`).join(","),
     s.sections.map((sec) => `${sec.name}:${sec.fn}:${sec.bars}`).join(","),
     s.reference,
+    s.excludedStyles,
     s.forgeRunning,
   ]);
 

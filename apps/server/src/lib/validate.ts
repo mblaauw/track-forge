@@ -32,9 +32,10 @@ export function validateParams<T>(
 // ── Common request shapes ──────────────────────────────────────────────
 
 export const IdParams = z.object({ id: z.string().min(1) });
-export const GenreIdParams = z.object({
-  id: z.enum(["edm", "hiphop", "ambient"]),
-});
+// Genre existence is validated dynamically against the loaded genre modules
+// (getModuleOrThrow → 404) — not a hardcoded enum, so adding a new genre's
+// YAML + module registration doesn't also require touching this file.
+export const GenreIdParams = z.object({ id: z.string().min(1) });
 export const JobIdParams = z.object({ jobId: z.string().min(1) });
 export const PaginationQuery = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),
@@ -60,81 +61,55 @@ export const UpdateJobInputsBody = z.object({
 export const BulkExportBody = z.object({
   ids: z.array(z.string()).optional(),
 });
-export const PreviewStyleBody = z.object({
+// Shared sub-schemas — descriptors and style-relevant sections are
+// validated identically everywhere they appear (preview-style, both
+// variants, and lyrics generation).
+export const DescriptorInput = z.object({
+  label: z.string(),
+  cat: z.string(),
+  weight: z.number().int().min(0).max(3),
+});
+const StyleSectionInput = z.object({
+  name: z.string(),
+  fn: z.string().default("establish"),
+});
+const StyleCompileFields = z.object({
+  presetIds: z.array(z.string()).default([]),
+  descriptors: z.array(DescriptorInput).default([]),
+  bpm: z.number().int().min(40).max(220),
+  key: z.string().default(""),
+  scale: z.enum(["major", "minor"]).default("minor"),
+  sections: z.array(StyleSectionInput).default([]),
+  lyricsMode: z
+    .enum(["full_lyrics", "strict_instrumental"])
+    .default("strict_instrumental"),
+  vocalType: z.string().nullable().optional(),
+});
+
+/** Unsaved-session variant — genre isn't implied by an existing job row. */
+export const PreviewStyleBody = StyleCompileFields.extend({
   genreId: z.string().min(1),
-  presetIds: z.array(z.string()).default([]),
-  descriptors: z
-    .array(
-      z.object({
-        label: z.string(),
-        cat: z.string(),
-        weight: z.number().int().min(0).max(3),
-      }),
-    )
-    .default([]),
-  bpm: z.number().int().min(40).max(220),
-  key: z.string().default(""),
-  scale: z.enum(["major", "minor"]).default("minor"),
-  sections: z
-    .array(
-      z.object({
-        name: z.string(),
-        fn: z.string().default("establish"),
-      }),
-    )
-    .default([]),
-  lyricsMode: z
-    .enum(["full_lyrics", "strict_instrumental"])
-    .default("strict_instrumental"),
-  vocalType: z.string().nullable().optional(),
 });
-export const JobPreviewStyleBody = z.object({
-  presetIds: z.array(z.string()).default([]),
-  descriptors: z
-    .array(
-      z.object({
-        label: z.string(),
-        cat: z.string(),
-        weight: z.number().int().min(0).max(3),
-      }),
-    )
-    .default([]),
-  bpm: z.number().int().min(40).max(220),
-  key: z.string().default(""),
-  scale: z.enum(["major", "minor"]).default("minor"),
-  sections: z
-    .array(
-      z.object({
-        name: z.string(),
-        fn: z.string().default("establish"),
-      }),
-    )
-    .default([]),
-  lyricsMode: z
-    .enum(["full_lyrics", "strict_instrumental"])
-    .default("strict_instrumental"),
-  vocalType: z.string().nullable().optional(),
-});
+/** Saved-session variant — genre comes from the job row at :id. */
+export const JobPreviewStyleBody = StyleCompileFields;
+
 // ── Lyrics generation ──────────────────────────────────────────────────
 
 export const LyricsGenerateBody = z.object({
   genreId: z.string().min(1),
   presetIds: z.array(z.string()).default([]),
-  descriptors: z
-    .array(
-      z.object({
-        label: z.string(),
-        cat: z.string(),
-        weight: z.number().int().min(0).max(3),
-      }),
-    )
-    .default([]),
+  descriptors: z.array(DescriptorInput).default([]),
   bpm: z.number().int().min(40).max(220),
   key: z.string().default("C"),
   scale: z.enum(["major", "minor"]).default("minor"),
+  /** Pre-compiled style string (Suno STYLE PROMPT block) — see previewStyle. */
+  style: z.string().default(""),
   sections: z
     .array(
       z.object({
+        // Section id from the arrangement editor — lines are mapped back
+        // onto sections by id, never by re-matching display names.
+        id: z.string().min(1),
         name: z.string(),
         bars: z.number().optional(),
         fn: z.string().default("establish"),

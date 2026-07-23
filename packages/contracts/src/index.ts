@@ -74,6 +74,8 @@ export type SectionType = (typeof SectionType)[keyof typeof SectionType];
 export interface LyricsSection {
   type: SectionType;
   label?: string;
+  /** Arrangement section id this block belongs to — used to map lyric lines back onto sections without string-matching display names (which breaks on duplicate/numbered names like "Verse 1", "Hook"). */
+  id?: string;
   lines: string[];
   bars: number;
   tags: string[];

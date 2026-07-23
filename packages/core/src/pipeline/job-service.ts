@@ -89,6 +89,10 @@ export async function failStage(
   maxAttempts = 3,
 ): Promise<Job> {
   const job = await loadJobOrThrow(db, jobId);
+  // A concurrent cancel (POST /jobs/:id/cancel) may land between the
+  // in-flight stage's abort and this write — never resurrect a cancelled
+  // job back to in_progress/failed.
+  if (job.status === "cancelled") return job;
   const attempt = job.stageAttempt + 1;
   const now = new Date().toISOString();
 
@@ -243,6 +247,13 @@ async function loadVersionOrThrow(
 
 // ── Pipeline state persistence ────────────────────────────────────────
 
+/**
+ * Persist stage output to the job row. This is an audit trail (consumed by
+ * /trace-generation and asserted by e2e idempotency tests) — the pipeline
+ * itself always reruns compilation → lyrics_writing → versioning from
+ * scratch on (re)start rather than resuming mid-pipeline from this data;
+ * see resetJobStage() and the /start route.
+ */
 export async function savePipelineState(
   db: Db,
   jobId: JobId,
@@ -256,19 +267,6 @@ export async function savePipelineState(
       updatedAt: now,
     })
     .where(eq(schema.jobs.id, jobId));
-}
-
-export async function loadPipelineState(
-  db: Db,
-  jobId: JobId,
-): Promise<StageData | null> {
-  const job = await loadJob(db, jobId);
-  if (!job?.stageData) return null;
-  try {
-    return JSON.parse(job.stageData) as StageData;
-  } catch {
-    return null;
-  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────

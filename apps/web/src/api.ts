@@ -1,3 +1,5 @@
+import type { Job, Version, SunoArtifact } from "@track-forge/contracts";
+
 const API_BASE =
   typeof import.meta !== "undefined" &&
   (import.meta as unknown as Record<string, unknown>).env
@@ -41,37 +43,17 @@ export interface GenreInfo {
   subgenre_count?: string;
 }
 
-export interface JobInfo {
-  id: string;
-  name: string | null;
-  genreId: string;
-  presetId: string;
-  status: string;
-  currentStage: string;
-  reference: string | null;
-  sourceHash: string | null;
-  inputs: string | null;
-  nlAdjustments: string | null;
-  findings: string | null;
-  compiledJson: string | null;
-  stageAttempt: number;
-  error: string | null;
-  createdAt: string;
-  updatedAt: string;
-  isFavorite?: boolean;
-}
+// Job/Version shapes come straight from @track-forge/contracts — the
+// server's DB rows serialize to exactly this shape over the wire, so the
+// web layer must not redeclare it locally (see CLAUDE.md invariants).
+export type JobInfo = Job;
 
-export interface VersionInfo {
-  id: string;
-  jobId: string;
-  status: string;
-  number: number;
-  artifacts: { type: string; value: string; versionId: string }[];
-  stage: string | null;
-  parentVersionId: string | null;
-  finalizedAt: string | null;
-  createdAt: string;
-}
+// Version.artifacts is JSON text on the wire (the versions.artifacts DB
+// column); parseVersion() below is what turns it into SunoArtifact[]. This
+// type describes the post-parse shape every exported function returns.
+export type VersionInfo = Omit<Version, "artifacts"> & {
+  artifacts: SunoArtifact[];
+};
 // ── API functions ────────────────────────────────────────────────────
 
 export function fetchGenres(): Promise<GenreInfo[]> {
@@ -215,7 +197,9 @@ export interface LyricsGenerateBody {
   bpm: number;
   key: string;
   scale: string;
+  style?: string;
   sections: {
+    id: string;
     name: string;
     bars?: number;
     fn?: string;
@@ -236,9 +220,13 @@ export interface LyricsGenerateBody {
   lyricAngle?: string;
 }
 
+export interface LyricsGenerateResult {
+  sections: { id: string; lines: string[] }[];
+}
+
 export function generateLyrics(
   body: LyricsGenerateBody,
-): Promise<{ document: { sections: { type: string; lines: string[] }[] } }> {
+): Promise<LyricsGenerateResult> {
   return api("/api/lyrics/generate", {
     method: "POST",
     body: JSON.stringify(body),

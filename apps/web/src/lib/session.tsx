@@ -1,5 +1,8 @@
 import { createContext } from "preact";
-import { randomSessionName, randomTitle } from "../components/compose/arrangement";
+import {
+  randomSessionName,
+  randomTitle,
+} from "../components/compose/arrangement";
 import {
   useContext,
   useState,
@@ -61,6 +64,7 @@ export interface SessionState {
   scale: "major" | "minor";
   status: string;
   reference: string;
+  excludedStyles: string;
   forgeLabel: string;
   forgeDisabled: boolean;
   lyricsMode: LyricsMode;
@@ -96,6 +100,7 @@ const DEFAULT: SessionState = {
   scale: "minor",
   status: "idle",
   reference: "",
+  excludedStyles: "",
   forgeLabel: "Forge",
   forgeDisabled: true,
   lyricsMode: "strict_instrumental",
@@ -151,7 +156,12 @@ export function SessionProvider({
 }) {
   // Initialize from localStorage if available
   const [state, setState] = useState<SessionState>(
-    () => loadPersistedSession() ?? { ...DEFAULT, name: randomSessionName(), title: randomTitle() },
+    () =>
+      loadPersistedSession() ?? {
+        ...DEFAULT,
+        name: randomSessionName(),
+        title: randomTitle(),
+      },
   );
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
 

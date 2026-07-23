@@ -122,7 +122,13 @@ export class LlmClient {
         content: m.content,
       }));
     }
-    if (isOllama) bodyObj.stream = false;
+    if (isOllama) {
+      bodyObj.stream = false;
+      if (req.responseFormat === "json_object") bodyObj.format = "json";
+    }
+    if (isOpenAI && req.responseFormat === "json_object") {
+      bodyObj.response_format = { type: "json_object" };
+    }
 
     // ── Fire with timeout + combined abort ─────────────────────────
     const timeoutController = new AbortController();

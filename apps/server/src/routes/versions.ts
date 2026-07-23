@@ -1,4 +1,3 @@
-import { writeFileSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { eq, desc, sql } from "drizzle-orm";
 import type { Db, SunoClient } from "@track-forge/core";
@@ -9,6 +8,7 @@ import {
   generateSunoPayload,
   storeGeneration,
   updateGeneration,
+  getGeneration,
   storeTracks,
   trace,
 } from "@track-forge/core";
@@ -136,12 +136,33 @@ export function registerVersionRoutes(
       ? new URL("/api/suno/callback", deps.config.publicBaseUrl).toString()
       : undefined;
 
+    // Dominant vocal gender, derived by the compilation stage and stashed on
+    // the job row's compiledJson — Suno's vocalGender knob was previously
+    // wired end-to-end (SunoClient.submit already forwards it) but never set.
+    const [jobRow] = await db
+      .select()
+      .from(schema.jobs)
+      .where(eq(schema.jobs.id, version.jobId))
+      .limit(1);
+    let vocalGender: "m" | "f" | undefined;
+    if (jobRow?.compiledJson) {
+      try {
+        const compiled = JSON.parse(jobRow.compiledJson) as {
+          vocalGender?: "m" | "f";
+        };
+        vocalGender = compiled.vocalGender;
+      } catch {
+        // ignore malformed compiledJson
+      }
+    }
+
     const { request } = generateSunoPayload({
       title: getValue("title"),
       style: getValue("style"),
       excludedStyles: getValue("excluded_styles"),
       lyrics: getValue("lyrics"),
       callbackUrl,
+      vocalGender,
     });
 
     trace("sunoPayload", {
@@ -150,14 +171,15 @@ export function registerVersionRoutes(
       rawArtifacts: artifacts,
       request,
     });
-    writeFileSync("LLM_SUNO_IN.md", JSON.stringify(request, null, 2));
 
     const dryRunVal = process.env.SUNO_DRY_RUN;
     req.log.info({ SUNO_DRY_RUN: dryRunVal }, "dry run check");
     const skipSuno = dryRunVal === "true";
     if (skipSuno) {
       req.log.info("SUNO_DRY_RUN=true — storing dry-run generation");
-      const dryRunId = "dry-" + id;
+      // Suffixed with a random id — a version can be taken more than once
+      // (re-render), and "dry-" + versionId alone collides on the second take.
+      const dryRunId = `dry-${id}-${crypto.randomUUID().slice(0, 8)}`;
       const title = getValue("title") || "Dry Run";
       const style = getValue("style") || "";
       const lyrics = getValue("lyrics") || "";
@@ -229,6 +251,20 @@ export function registerVersionRoutes(
       deps.suno
         .waitForCompletion(result.taskId)
         .then(async (item) => {
+          // The callback webhook (POST /api/suno/callback) may have already
+          // resolved this generation — whichever writer gets here first
+          // wins, so a late poll doesn't overwrite a terminal state or
+          // double-publish the completion event.
+          const current = await getGeneration(db, result.taskId).catch(
+            () => null,
+          );
+          if (
+            current &&
+            (current.status === "completed" || current.status === "error")
+          ) {
+            return;
+          }
+
           await updateGeneration(db, result.taskId, {
             status: item.status,
             audioUrl: item.audioUrl,

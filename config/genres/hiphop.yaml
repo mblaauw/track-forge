@@ -930,3 +930,15 @@ vocal_presets:
   - { type: Duet, delivery_style: "laid back", default_energy: 3 }
   - { type: "Group·choir", delivery_style: powerful, default_energy: 4 }
   - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 2 }
+
+lyrics_guidance: |
+  Hip-hop lyrics are carried by flow and rhyme scheme as much as meaning.
+  Write to the bar, not just the syllable count: keep a consistent rhythmic
+  cadence per line so it scans as rapped, not spoken. Use multi-syllabic or
+  internal rhyme within verses when the preset's rhyme style calls for it;
+  keep hooks simpler and more repeatable than verses. Verses should carry
+  the narrative/braggadocio/conscious content specified by the brief and
+  themes; hooks should distill that content into one quotable line repeated
+  with minor variation. Match delivery energy to the section's vocal
+  delivery setting (laid back vs hype vs intense) — don't write a hype hook
+  over a laid-back delivery marker.

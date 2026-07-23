@@ -9,6 +9,7 @@ import {
   cancelJob,
   abortJob,
   publish,
+  resetJobStage,
 } from "@track-forge/core";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config, JobId } from "@track-forge/contracts";
@@ -230,33 +231,12 @@ export function registerJobRoutes(
   server.delete("/api/jobs/:id", async (req, reply) => {
     const { id } = validateParams(IdParams, req);
 
-    const job = await findRowOr404(
-      db,
-      schema.jobs,
-      eq(schema.jobs.id, id),
-      "Job",
-    );
+    await findRowOr404(db, schema.jobs, eq(schema.jobs.id, id), "Job");
 
-    // Cascade delete using raw SQLite (sync transactions)
-    const sqlite = (db as any).$client;
-    sqlite.transaction(() => {
-      const genIds = sqlite
-        .prepare("SELECT id FROM generations WHERE job_id = ?")
-        .all(id)
-        .map((r: any) => r.id);
-      if (genIds.length > 0) {
-        const placeholders = genIds.map(() => "?").join(",");
-        sqlite
-          .prepare(
-            `DELETE FROM suno_tracks WHERE generation_id IN (${placeholders})`,
-          )
-          .run(...genIds);
-        sqlite.prepare(`DELETE FROM generations WHERE job_id = ?`).run(id);
-      }
-      sqlite.prepare("DELETE FROM versions WHERE job_id = ?").run(id);
-      sqlite.prepare("DELETE FROM job_events WHERE job_id = ?").run(id);
-      sqlite.prepare("DELETE FROM jobs WHERE id = ?").run(id);
-    })();
+    // versions/generations/suno_tracks/job_events all cascade from jobs via
+    // ON DELETE CASCADE (see db/index.ts) — no need to hand-delete each
+    // table, which was also a place a new dependent table could be forgotten.
+    await db.delete(schema.jobs).where(eq(schema.jobs.id, id));
 
     return reply.code(204).send();
   });
@@ -311,8 +291,18 @@ export function registerJobRoutes(
       eq(schema.jobs.id, id),
       "Job",
     );
-    if (job.status !== "pending") {
-      return reply.code(400).send({ error: "Job not in pending status" });
+    if (job.status !== "pending" && job.status !== "failed") {
+      return reply
+        .code(400)
+        .send({ error: "Job not in pending or failed status" });
+    }
+
+    // A failed job (e.g. retries exhausted after a transient LLM/DB error)
+    // is retried as a full fresh run — compilation is cheap and inputs may
+    // have changed since the failure, so there's no reason to resume
+    // mid-pipeline.
+    if (job.status === "failed") {
+      await resetJobStage(db, id as JobId, "compilation");
     }
 
     const now = new Date().toISOString();

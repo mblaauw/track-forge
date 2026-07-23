@@ -14,6 +14,8 @@ export interface GenreModule<
   tagCategories?: TagCategory[];
   songStructure?: SongStructureSection[];
   taxonomy?: Record<string, unknown>;
+  /** Genre-specific songwriting conventions fed into the lyrics-writing prompt. */
+  lyricsGuidance?: string;
 }
 
 // ── Sub-types ────────────────────────────────────────────────────────
@@ -53,6 +55,22 @@ export interface ArrangementSection {
   fn: SectionFunction;
   deltas: string[];
   vocal?: Vocal;
+}
+
+/**
+ * Single source of truth for "does this section carry vocals" — reused by
+ * the web arrangement editor and the pipeline's compilation/lyrics stages.
+ * Do not reimplement this heuristic elsewhere.
+ */
+export function isVocalSection(section: {
+  name: string;
+  deltas: string[];
+}): boolean {
+  const lowerDeltas = section.deltas.map((d) => d.toLowerCase());
+  if (lowerDeltas.includes("instrumental")) return false;
+  if (lowerDeltas.includes("vocal focus") || lowerDeltas.includes("catchy"))
+    return true;
+  return /verse|chorus|hook|pre-chorus|refrain|bridge|drop/i.test(section.name);
 }
 
 export interface GenrePreset {

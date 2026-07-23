@@ -6,6 +6,7 @@ import {
   MicrophoneStage,
   Waveform,
   Copy,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { sectionColor, sectionIsVocal } from "./arrangement";
@@ -48,14 +49,28 @@ function vocalMeta(vocal?: {
   return parts.filter(Boolean).join(", ");
 }
 
-export function LyricsBlock() {
+export function LyricsBlock({ style }: { style: string }) {
   const s = useSession();
   const vocalSections = s.sections.filter(sectionIsVocal);
   const totalSyl = totalSyllables(s.lyricLines);
   const [generating, setGenerating] = useState(false);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const sectionsPayload = () =>
+    s.sections.map((sec: any) => ({
+      id: sec.id,
+      name: sec.name,
+      bars: sec.bars,
+      fn: sec.fn,
+      deltas: sec.deltas,
+      tags: sec.tags,
+      vocal: sec.vocal,
+    }));
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setError(null);
     try {
       const result = await generateLyrics({
         genreId: s.genreId,
@@ -70,14 +85,8 @@ export function LyricsBlock() {
         bpm: s.bpm as number,
         key: s.key,
         scale: s.scale,
-        sections: s.sections.map((sec: any) => ({
-          name: sec.name,
-          bars: sec.bars,
-          fn: sec.fn,
-          deltas: sec.deltas,
-          tags: sec.tags,
-          vocal: sec.vocal,
-        })),
+        style,
+        sections: sectionsPayload(),
         lyricsMode: s.lyricsMode,
         vocalType: null,
         lyricTopic: s.lyricTopic,
@@ -85,26 +94,69 @@ export function LyricsBlock() {
         lyricAngle: s.lyricAngle,
       });
 
+      // Sections are addressed by id — no name matching, no ambiguity for
+      // duplicate/numbered section names (e.g. "Verse 1", "Verse 2", two
+      // "Hook"s).
       const lines: Record<string, string[]> = {};
-      for (const sec of result.document.sections) {
-        const sectionName = sec.type.toLowerCase();
-        const match = s.sections.find(
-          (s: any) => s.name.toLowerCase() === sectionName,
-        );
-        if (match) {
-          lines[match.id] = sec.lines;
-        }
+      for (const sec of result.sections) {
+        lines[sec.id] = sec.lines;
       }
 
       s.setSession({ lyricsGenerated: true, lyricLines: lines });
-    } catch {
-      console.error("Lyrics generation failed, using fallback");
-      s.setSession({
-        lyricsGenerated: true,
-        lyricLines: generateMockLyrics(s.sections),
-      });
+    } catch (err) {
+      // Never fabricate placeholder lyrics on failure — that content would
+      // silently flow into the versioned Suno artifact as if it were real.
+      setError(err instanceof Error ? err.message : "Lyrics generation failed");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleRegenerateSection = async (sec: Section) => {
+    setRegeneratingId(sec.id);
+    setError(null);
+    try {
+      const result = await generateLyrics({
+        genreId: s.genreId,
+        presetIds: s.presetIds,
+        descriptors: s.tags
+          .filter((t: any) => !t.muted)
+          .map((t: any) => ({
+            label: t.label,
+            cat: t.cat,
+            weight: t.weight,
+          })),
+        bpm: s.bpm as number,
+        key: s.key,
+        scale: s.scale,
+        style,
+        sections: [
+          {
+            id: sec.id,
+            name: sec.name,
+            bars: sec.bars,
+            fn: sec.fn,
+            deltas: sec.deltas,
+            vocal: sec.vocal,
+          },
+        ],
+        lyricsMode: s.lyricsMode,
+        vocalType: null,
+        lyricTopic: s.lyricTopic,
+        lyricThemes: s.lyricThemes,
+        lyricAngle: s.lyricAngle,
+      });
+      const fresh = result.sections.find((r) => r.id === sec.id);
+      if (fresh) {
+        const lines = { ...s.lyricLines, [sec.id]: fresh.lines };
+        s.setSession({ lyricLines: lines });
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Section regeneration failed",
+      );
+    } finally {
+      setRegeneratingId(null);
     }
   };
 
@@ -154,6 +206,15 @@ export function LyricsBlock() {
         </div>
       </div>
       <div class="bundle-block-body">
+        {error && (
+          <div
+            class="lyrics-info-box"
+            style="margin-bottom:12px;color:var(--danger-text)"
+          >
+            <WarningCircle size={14} />
+            <span>{error}</span>
+          </div>
+        )}
         {s.lyricsMode === "strict_instrumental" && (
           <div class="lyrics-info-box" style="margin-bottom:12px">
             <Waveform size={14} />
@@ -183,20 +244,17 @@ export function LyricsBlock() {
                   <span>{vocalMeta(sec.vocal)}</span>
                 </div>
               )}
-              {s.lyricsGenerated && (
+              {s.lyricsGenerated && isVocal && (
                 <div style="margin:4px 0 6px">
                   <button
                     class="arr-action-btn"
-                    onClick={() => {
-                      const lines = { ...s.lyricLines };
-                      lines[sec.id] = [
-                        `(Regenerated lyrics for ${sec.name} — line 1)`,
-                        `(Regenerated lyrics for ${sec.name} — line 2)`,
-                      ];
-                      s.setSession({ lyricLines: lines });
-                    }}
+                    disabled={regeneratingId === sec.id}
+                    onClick={() => handleRegenerateSection(sec)}
                   >
-                    <ArrowClockwise size={12} /> Regenerate block
+                    <ArrowClockwise size={12} />{" "}
+                    {regeneratingId === sec.id
+                      ? "Regenerating…"
+                      : "Regenerate block"}
                   </button>
                 </div>
               )}
@@ -263,22 +321,4 @@ function lyricsAsText(
     blocks.push("");
   }
   return blocks.join("\n").trim();
-}
-
-function generateMockLyrics(sections: Section[]): Record<string, string[]> {
-  const result: Record<string, string[]> = {};
-  for (const sec of sections) {
-    const d = sec.deltas.map((dd) => dd.toLowerCase());
-    if (d.includes("instrumental")) continue;
-    const isVocal = sectionIsVocal(sec);
-    if (isVocal) {
-      result[sec.id] = [
-        `(Lyrics for ${sec.name} — line 1)`,
-        `(Lyrics for ${sec.name} — line 2)`,
-        `(Lyrics for ${sec.name} — line 3)`,
-        `(Lyrics for ${sec.name} — line 4)`,
-      ];
-    }
-  }
-  return result;
 }

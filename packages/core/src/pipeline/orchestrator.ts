@@ -1,13 +1,15 @@
-import { appendFileSync, writeFileSync } from "node:fs";
+import pino from "pino";
 import {
   GenerationStage,
+  SectionType,
   SunoArtifactType,
   type JobId,
   type VersionId,
   type SunoArtifact,
+  type LyricsSection,
   type LyricsWriterResult,
 } from "@track-forge/contracts";
-import type { GenreModule } from "@track-forge/genre-core";
+import { isVocalSection, type GenreModule } from "@track-forge/genre-core";
 import type {
   PipelineDeps,
   PipelineState,
@@ -27,20 +29,26 @@ import {
 } from "./job-service.js";
 import type { StageData } from "./job-service.js";
 import { compileStylePrompt } from "./style-compiler.js";
-import { buildSunoContext } from "./suno-context.js";
+import { writeLyrics } from "../llm/lyrics-writer.js";
+import type { LyricsWriterSectionInput } from "../llm/lyrics-writer.js";
 import { publish } from "./events.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
 import { safeJsonParse, readJobInputs } from "../json-utils.js";
 
+// Trace is a debug aid for /trace-generation — routed through pino (silent
+// by default) rather than sync file writes, which used to block the pipeline
+// hot path and clobber concurrent jobs' traces into one shared file.
+const traceLogger = pino({
+  level: process.env.TRACE_LOG_LEVEL ?? "silent",
+  name: "pipeline-trace",
+});
+
 export function trace(section: string, data: unknown): void {
-  try {
-    appendFileSync(
-      "LLM_TRACE.md",
-      `\n## ${section} (${new Date().toISOString()})\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`,
-    );
-  } catch {
-    /* swallow */
-  }
+  traceLogger.debug({ section, data }, section);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ── Stage order ───────────────────────────────────────────────────────
@@ -113,23 +121,21 @@ async function handleCompilation(
     fn: String(s.fn ?? "establish"),
   }));
 
-  const vocalSections = rawSections.filter((s: Record<string, unknown>) => {
-    const deltas = (s.deltas as string[]) ?? [];
-    if (deltas.some((d) => d.toLowerCase() === "instrumental")) return false;
-    if (
-      deltas.some(
-        (d) =>
-          d.toLowerCase() === "vocal focus" || d.toLowerCase() === "catchy",
-      )
-    )
-      return true;
-    return /verse|chorus|hook|pre-chorus|refrain|bridge|drop/i.test(
-      String(s.name ?? ""),
-    );
-  });
+  const vocalSections = rawSections.filter((s: Record<string, unknown>) =>
+    isVocalSection({
+      name: String(s.name ?? ""),
+      deltas: (s.deltas as string[]) ?? [],
+    }),
+  );
   const vocalType =
     vocalSections.length > 0
       ? String((vocalSections[0]!.vocal as Record<string, unknown>)?.type ?? "")
+      : undefined;
+
+  const presetMood = inputs.mood ? String(inputs.mood) : undefined;
+  const presetEnergy =
+    inputs.energy !== undefined && inputs.energy !== null
+      ? Number(inputs.energy)
       : undefined;
 
   const compiled = compileStylePrompt({
@@ -142,6 +148,8 @@ async function handleCompilation(
     sections,
     lyricsMode,
     vocalType: vocalType || undefined,
+    presetMood,
+    presetEnergy: Number.isFinite(presetEnergy) ? presetEnergy : undefined,
   });
 
   trace("handleCompilation", {
@@ -158,6 +166,15 @@ async function handleCompilation(
   if (lyricsMode !== "full_lyrics") {
     negativeTags.push("vocals", "singing", "lyrics", "voice");
   }
+  const userExcluded = String(inputs.excludedStyles ?? "")
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const tag of userExcluded) {
+    if (!negativeTags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+      negativeTags.push(tag);
+    }
+  }
 
   const compiledJson = JSON.stringify({
     title,
@@ -167,6 +184,7 @@ async function handleCompilation(
     bpm,
     key,
     vocalDescription: vocalType ?? "",
+    vocalGender: deriveVocalGender(vocalType),
     negativeTags,
     titleCandidates: [title],
   });
@@ -174,14 +192,66 @@ async function handleCompilation(
   return { ...state, compiledJson };
 }
 
+function deriveVocalGender(
+  vocalType: string | undefined,
+): "m" | "f" | undefined {
+  if (!vocalType) return undefined;
+  const lower = vocalType.toLowerCase();
+  if (lower.includes("female")) return "f";
+  if (lower.includes("male")) return "m";
+  return undefined;
+}
+
 // ── Stage: Lyrics Writing ─────────────────────────────────────────────
+
+/** Map a display name to the closest SectionType bucket (best-effort — `label` carries the exact name). */
+function toSectionType(name: string): SectionType {
+  const n = name.toLowerCase();
+  if (n.includes("pre-chorus") || n.includes("pre chorus"))
+    return SectionType.PreChorus;
+  if (n.includes("chorus")) return SectionType.Chorus;
+  if (n.includes("hook")) return SectionType.Hook;
+  if (n.includes("bridge")) return SectionType.Bridge;
+  if (n.includes("breakdown")) return SectionType.Breakdown;
+  if (n.includes("build")) return SectionType.Build;
+  if (n.includes("drop")) return SectionType.Drop;
+  if (n.includes("verse")) return SectionType.Verse;
+  if (n.includes("intro")) return SectionType.Intro;
+  if (n.includes("outro")) return SectionType.Outro;
+  if (n.includes("solo")) return SectionType.Solo;
+  if (n.includes("interlude")) return SectionType.Interlude;
+  return SectionType.Verse;
+}
+
+/** Build the LyricsDocument from arrangement sections + lines keyed by section id. Sections with no lines are dropped (id-based — never string-matched against model output). */
+function sectionsToLyricsDocument(
+  sections: LyricsWriterSectionInput[],
+  linesById: Record<string, string[]>,
+): LyricsWriterResult["document"] {
+  const docSections: LyricsSection[] = [];
+  for (const s of sections) {
+    const lines = linesById[s.id] ?? [];
+    if (lines.length === 0) continue;
+    docSections.push({
+      type: toSectionType(s.name),
+      label: s.name,
+      id: s.id,
+      lines,
+      bars: s.bars,
+      tags: s.deltas,
+      instrumental: false,
+    });
+  }
+
+  return { sections: docSections, metadata: {} };
+}
 
 async function handleLyricsWriting(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const p = state.parsed!;
-  const { inputs, presetLabels, descriptors, rawSections } = p;
+  const { inputs, presetLabels, rawSections } = p;
   const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental");
   const genreName = state.module.name;
 
@@ -197,142 +267,102 @@ async function handleLyricsWriting(
     };
   }
 
-  // Check for pre-generated lyrics from "Generate lyrics" button
+  const sections: LyricsWriterSectionInput[] = rawSections.map((s) => ({
+    id: String(s.id ?? ""),
+    name: String(s.name ?? ""),
+    bars: Number(s.bars ?? 8),
+    fn: String(s.fn ?? "establish"),
+    deltas: (s.deltas as string[]) ?? [],
+    vocal: s.vocal as LyricsWriterSectionInput["vocal"],
+  }));
+
+  // Pre-generated lyrics from the "Generate lyrics" UI button — already
+  // keyed by section id, same contract the writer produces below.
   const lyricLines = inputs.lyricLines as Record<string, string[]> | undefined;
   const lyricsGenerated = inputs.lyricsGenerated === true;
   if (lyricLines && lyricsGenerated) {
-    const sections = rawSections
-      .filter((s) => {
-        const id = String(s.id ?? "");
-        return id && lyricLines[id] && lyricLines[id]!.length > 0;
-      })
-      .map((s) => ({
-        type: String(s.name ?? "verse") as any,
-        lines: lyricLines[String(s.id)] ?? [],
-        bars: Number(s.bars ?? 8),
-        tags: (s.tags as string[]) ?? [],
-        instrumental: false,
-      }));
-
-    if (sections.length > 0) {
+    const doc = sectionsToLyricsDocument(sections, lyricLines);
+    if (doc.sections.length > 0) {
       trace("handleLyricsWriting.preGenerated", {
-        sectionCount: sections.length,
-        totalLines: sections.reduce((a, s) => a + s.lines.length, 0),
+        sectionCount: doc.sections.length,
+        totalLines: doc.sections.reduce((a, s) => a + s.lines.length, 0),
       });
-      return {
-        ...state,
-        lyricsWriterResult: { document: { sections, metadata: {} } },
-      };
+      return { ...state, lyricsWriterResult: { document: doc } };
     }
   }
 
-  const sections = rawSections.map((s) => ({
-    section: String(s.name ?? ""),
-    bars: Number(s.bars ?? 8),
-    fn: String(s.fn ?? "establish") as
-      | "establish"
-      | "introduce"
-      | "escalate"
-      | "contrast"
-      | "remove"
-      | "peak"
-      | "resolve",
-    deltas: (s.deltas as string[]) ?? [],
-    tags: (s.tags as string[]) ?? [],
-    vocal: s.vocal as
-      | {
-          type: string;
-          delivery: string;
-          energy: number;
-          adlibs: boolean;
-          harmonies: boolean;
-        }
-      | undefined,
-  }));
+  const vocalSections = sections.filter((s) =>
+    isVocalSection({ name: s.name, deltas: s.deltas }),
+  );
 
-  const vocalType = sections.find((s) => {
-    const d = s.deltas.map((dd) => dd.toLowerCase());
-    if (d.includes("instrumental")) return false;
-    if (d.includes("vocal focus") || d.includes("catchy")) return true;
-    return /verse|chorus|hook|pre-chorus|refrain|bridge|drop/i.test(s.section);
-  })?.vocal?.type;
+  if (vocalSections.length === 0) {
+    // full_lyrics mode but nothing in the arrangement is marked vocal —
+    // nothing for the writer to do.
+    return {
+      ...state,
+      lyricsWriterResult: { document: { sections: [], metadata: {} } },
+    };
+  }
 
   const compiledStyle = state.compiledJson
     ? (safeJsonParse<Record<string, string>>(state.compiledJson, {}).style ??
       "")
     : "";
 
-  const sunoContext = buildSunoContext({
+  const writerInput = {
     genreName,
     presetLabels,
-    descriptors,
     bpm: Number(inputs.bpm ?? 128),
     key: String(inputs.key ?? "C"),
     scale: (inputs.scale ?? "minor") as "major" | "minor",
-    sections,
-    lyricsMode: lyricsMode as "full_lyrics" | "strict_instrumental",
-    vocalType,
+    sections: vocalSections,
     lyricTopic: String(inputs.lyricTopic ?? ""),
     lyricThemes: (inputs.lyricThemes as string[]) ?? [],
     lyricAngle: String(inputs.lyricAngle ?? ""),
-    styleOverride: compiledStyle,
-  });
+    style: compiledStyle,
+    lyricsGuidance: state.module.lyricsGuidance,
+  };
 
-  const schema = `{"document":{"sections":[{"type":"verse","lines":["line 1","line 2"]}]}}`;
+  trace("handleLyricsWriting.request", { input: writerInput });
 
-  trace("handleLyricsWriting.prompt", {
-    prompt: sunoContext,
-    descriptorCount: descriptors.length,
-    lyricsMode,
-  });
-
-  const response = await deps.llm.complete({
-    messages: [
-      {
-        role: "system",
-        content: `You are a songwriter. Return ONLY valid JSON matching this schema: ${schema}`,
-      },
-      { role: "user", content: sunoContext },
-    ],
-    temperature: 0.8,
-    maxTokens: 16384,
+  const writerResult = await writeLyrics(deps.llm, writerInput, {
     signal: deps.signal,
   });
 
   trace("handleLyricsWriting.response", {
-    outputLength: response.content.length,
-    outputPreview: response.content.slice(0, 500),
-    reasoningPreview: response.reasoningContent?.slice(0, 500),
-    usage: response.usage,
+    sectionCount: writerResult.sections.length,
+    ids: writerResult.sections.map((s) => s.id),
   });
 
-  let lyricsDoc: any = { sections: [], metadata: {} };
-  try {
-    const parsed = JSON.parse(response.content);
-    if (parsed.document?.sections) {
-      lyricsDoc = parsed.document;
-    } else if (parsed.sections) {
-      lyricsDoc = { sections: parsed.sections, metadata: {} };
-    }
-  } catch {
-    lyricsDoc = {
-      sections: [
-        {
-          type: "verse",
-          lines: response.content.split("\n").filter(Boolean),
-          bars: 8,
-          tags: [],
-          instrumental: false,
-        },
-      ],
-      metadata: {},
-    };
-  }
+  const linesById: Record<string, string[]> = {};
+  for (const s of writerResult.sections) linesById[s.id] = s.lines;
 
   return {
     ...state,
-    lyricsWriterResult: { document: lyricsDoc },
+    lyricsWriterResult: {
+      document: sectionsToLyricsDocument(sections, linesById),
+    },
   };
+}
+
+/**
+ * Shared formatter for the versioned lyrics artifact — every arrangement
+ * section becomes a Suno bracket metatag (`[Name: delta1, delta2]`), with
+ * lyric lines under vocal sections and a bare marker under instrumental
+ * ones, so the full arrangement (not just the sung parts) reaches Suno.
+ */
+function formatLyricsArtifact(
+  sections: { id: string; name: string; deltas: string[] }[],
+  linesById: Record<string, string[]>,
+): string {
+  return sections
+    .map((s) => {
+      const tagStr = s.deltas.length > 0 ? `: ${s.deltas.join(", ")}` : "";
+      const header = `[${s.name}${tagStr}]`;
+      const lines = linesById[s.id] ?? [];
+      return lines.length > 0 ? `${header}\n${lines.join("\n")}` : header;
+    })
+    .join("\n\n");
 }
 
 // ── Stage: Versioning ─────────────────────────────────────────────────
@@ -346,14 +376,33 @@ async function handleVersioning(
     throw new Error("Pipeline state missing compiledJson before versioning");
 
   const compiled = safeJsonParse<Record<string, string>>(compiledJson, {});
+  const lyricsMode = String(
+    state.parsed?.inputs.lyricsMode ?? "strict_instrumental",
+  );
 
-  // Build lyrics from writer result
+  // Build the lyrics artifact. For full_lyrics jobs this carries the FULL
+  // arrangement as Suno bracket metatags — vocal sections get their lines,
+  // instrumental sections (Intro, Breakdown, ...) get a bracket-only marker
+  // so Suno still reads the structure. For strict_instrumental jobs this
+  // must stay empty: generateSunoPayload() infers `instrumental` from
+  // whether this text is empty, and a non-empty prompt would flip a
+  // deliberately-instrumental job to vocal. Instrumental structure is
+  // instead carried in the style string (see compileStructureNote).
   let lyricsText = "";
-  if (state.lyricsWriterResult?.document?.sections) {
-    const doc = state.lyricsWriterResult.document;
-    lyricsText = doc.sections
-      .map((s) => `[${s.type}]\n${(s.lines ?? []).join("\n")}`)
-      .join("\n\n");
+  if (lyricsMode === "full_lyrics" && state.parsed) {
+    const linesById: Record<string, string[]> = {};
+    for (const s of state.lyricsWriterResult?.document?.sections ?? []) {
+      const id = (s as LyricsSection).id;
+      if (id) linesById[id] = s.lines ?? [];
+    }
+    lyricsText = formatLyricsArtifact(
+      state.parsed.rawSections.map((s) => ({
+        id: String(s.id ?? ""),
+        name: String(s.name ?? ""),
+        deltas: (s.deltas as string[]) ?? [],
+      })),
+      linesById,
+    );
   }
 
   const title = compiled.title ?? "Untitled";
@@ -398,14 +447,6 @@ export async function runPipeline(
   deps: PipelineDeps,
   module: GenreModule,
 ): Promise<PipelineResult> {
-  try {
-    writeFileSync(
-      "LLM_TRACE.md",
-      `# Pipeline Trace — ${new Date().toISOString()}\n`,
-    );
-  } catch {
-    /* swallow */
-  }
   const controller = createAbortController(jobId);
   if (deps.signal) {
     if (deps.signal.aborted) {
@@ -499,15 +540,61 @@ export async function runPipeline(
       const handler = stageHandlers[stage];
       if (!handler) throw new Error(`No handler for stage: ${stage}`);
 
-      await publish(deps.db, state.job.id, {
-        stage,
-        status: "started",
-      });
-      state = await handler(state, deps);
-      await publish(deps.db, state.job.id, {
-        stage,
-        status: "completed",
-      });
+      // Re-attempt loop: failStage() tracks attempts on the job row and
+      // returns status "in_progress" while attempts remain, "failed" once
+      // exhausted (or "cancelled" if a concurrent cancel won the race —
+      // either way we stop). This makes the documented "stage errors get up
+      // to 3 attempts" behavior real, instead of one try wrapped in a catch
+      // that gave up immediately.
+      let stageSucceeded = false;
+      while (!stageSucceeded) {
+        try {
+          await publish(deps.db, state.job.id, { stage, status: "started" });
+          state = await handler(state, deps);
+          await publish(deps.db, state.job.id, { stage, status: "completed" });
+          stageSucceeded = true;
+        } catch (err) {
+          if (deps.signal?.aborted) {
+            await publish(deps.db, state.job.id, {
+              stage,
+              status: "error",
+              error: "Cancelled",
+            });
+            cleanupJob(state.job.id);
+            return {
+              success: false,
+              jobId: state.job.id,
+              versionId: null,
+              error: "Cancelled by user",
+            };
+          }
+
+          const msg = err instanceof Error ? err.message : String(err);
+          await publish(deps.db, state.job.id, {
+            stage,
+            status: "error",
+            error: msg,
+          });
+          const updatedJob = await failStage(
+            deps.db,
+            state.job.id as JobId,
+            msg,
+          );
+          state.job = updatedJob;
+
+          if (updatedJob.status !== "in_progress") {
+            // Attempts exhausted (failed) or cancelled concurrently — stop.
+            cleanupJob(state.job.id);
+            return {
+              success: false,
+              jobId: state.job.id,
+              versionId: null,
+              error: msg,
+            };
+          }
+          await sleep(Math.min(500 * updatedJob.stageAttempt, 4000));
+        }
+      }
 
       const stageData: StageData = {
         compiledJson: state.compiledJson,
@@ -531,13 +618,15 @@ export async function runPipeline(
       error: null,
     };
   } catch (err) {
+    // Infra-level failure outside a stage handler (e.g. publish/db errors) —
+    // fail immediately, no attempt tracking or further attempts.
     const msg = err instanceof Error ? err.message : String(err);
     await publish(deps.db, state.job.id, {
       stage: currentStage,
       status: "error",
       error: msg,
-    });
-    await failStage(deps.db, state.job.id as JobId, msg);
+    }).catch(() => {});
+    await failJob(deps.db, state.job.id as JobId, msg).catch(() => {});
     cleanupJob(state.job.id);
     return { success: false, jobId: state.job.id, versionId: null, error: msg };
   }

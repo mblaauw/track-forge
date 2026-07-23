@@ -61,7 +61,7 @@ export function createDb(dbPath: string): Db {
   )`);
   sqlite.exec(`CREATE TABLE IF NOT EXISTS versions (
     id TEXT PRIMARY KEY,
-    job_id TEXT NOT NULL REFERENCES jobs(id),
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     status TEXT NOT NULL DEFAULT 'draft',
     number INTEGER NOT NULL,
     artifacts TEXT NOT NULL DEFAULT '[]',
@@ -95,8 +95,8 @@ export function createDb(dbPath: string): Db {
   } catch {}
   sqlite.exec(`CREATE TABLE IF NOT EXISTS generations (
     id TEXT PRIMARY KEY,
-    job_id TEXT NOT NULL REFERENCES jobs(id),
-    version_id TEXT REFERENCES versions(id),
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    version_id TEXT REFERENCES versions(id) ON DELETE CASCADE,
     status TEXT NOT NULL DEFAULT 'queued',
     audio_url TEXT,
     image_url TEXT,
@@ -120,7 +120,7 @@ export function createDb(dbPath: string): Db {
   } catch {}
   sqlite.exec(`CREATE TABLE IF NOT EXISTS job_events (
     id TEXT PRIMARY KEY,
-    job_id TEXT NOT NULL REFERENCES jobs(id),
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     sequence INTEGER NOT NULL,
     stage TEXT,
     status TEXT NOT NULL,
@@ -143,7 +143,7 @@ export function createDb(dbPath: string): Db {
   );
   sqlite.exec(`CREATE TABLE IF NOT EXISTS suno_tracks (
     id TEXT PRIMARY KEY,
-    generation_id TEXT NOT NULL REFERENCES generations(id),
+    generation_id TEXT NOT NULL REFERENCES generations(id) ON DELETE CASCADE,
     "index" INTEGER NOT NULL,
     audio_url TEXT,
     image_url TEXT,

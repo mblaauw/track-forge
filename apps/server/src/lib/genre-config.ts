@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as yaml from "js-yaml";
@@ -51,6 +51,7 @@ export interface GenreConfigYaml {
     delivery_style: string;
     default_energy: number;
   }[];
+  lyrics_guidance?: string;
 }
 
 const ROOT = join(
@@ -95,7 +96,26 @@ function loadYaml(id: string): GenreConfigYaml {
   }
 }
 
-export const ALL_GENRE_IDS = ["edm", "hiphop", "ambient"] as const;
+let genreIdsCache: string[] | null = null;
+
+/**
+ * Genre ids derived from config/genres/*.yaml, not hardcoded — adding a new
+ * YAML file makes it show up here immediately. Registering a matching
+ * TypeScript genre module (input schema) in apps/server/src/lib/modules.ts
+ * is still required; that part can't be inferred from YAML alone.
+ */
+export function getAllGenreIds(): string[] {
+  if (genreIdsCache) return genreIdsCache;
+  try {
+    genreIdsCache = readdirSync(GENRE_DIR)
+      .filter((f) => f.endsWith(".yaml"))
+      .map((f) => f.slice(0, -".yaml".length))
+      .sort();
+  } catch {
+    genreIdsCache = [];
+  }
+  return genreIdsCache;
+}
 
 export function listGenreConfigs(): {
   id: string;
@@ -103,7 +123,7 @@ export function listGenreConfigs(): {
   color: string;
   subgenre_count: string;
 }[] {
-  const ids = ALL_GENRE_IDS;
+  const ids = getAllGenreIds();
   return ids.map((id) => {
     const cfg = loadYaml(id);
     return {
@@ -131,9 +151,14 @@ export function getTaxonomy(id: string): unknown {
   return loadYaml(id).taxonomy ?? null;
 }
 
+export function getLyricsGuidance(id: string): string | undefined {
+  return loadYaml(id).lyrics_guidance;
+}
+
 /** Force reload on next access. */
 export function clearCache(): void {
   cache.clear();
+  genreIdsCache = null;
 }
 
 /** Number of cached entries (for diagnostics). */
