@@ -6,6 +6,20 @@
 section_functions:
   [establish, introduce, escalate, contrast, remove, peak, resolve]
 
+# Shared vocal preset types referenced by genre files via short `type` id.
+# The server resolves the id → full label at load time (see genre-config.ts).
+vocal_preset_types:
+  - id: female_lead
+    label: "Female lead"
+  - id: male_lead
+    label: "Male lead"
+  - id: duet
+    label: Duet
+  - id: group_choir
+    label: "Group·choir"
+  - id: wordless_textural
+    label: "Wordless·textural"
+
 delta_palette:
   [
     "sparse texture",

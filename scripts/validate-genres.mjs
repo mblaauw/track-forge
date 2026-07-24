@@ -45,7 +45,7 @@ function warn(file, msg) {
   warnings.push(`${file}: ${msg}`);
 }
 
-function validateGenre(file, id, cfg) {
+function validateGenre(file, id, cfg, validVocalTypeIds) {
   // ── Required fields ──────────────────────────────────────────────
   if (!cfg.name) error(file, "missing required field: name");
   if (!cfg.color) error(file, "missing required field: color");
@@ -200,6 +200,12 @@ function validateGenre(file, id, cfg) {
   // ── Vocal presets ────────────────────────────────────────────────
   for (const vp of cfg.vocal_presets ?? []) {
     if (!vp.type) error(file, "vocal_preset missing type");
+    if (validVocalTypeIds && vp.type && !validVocalTypeIds.has(vp.type)) {
+      error(
+        file,
+        `vocal_preset type "${vp.type}" not found in shared.yaml vocal_preset_types`,
+      );
+    }
     if (!vp.delivery_style)
       error(file, `vocal_preset "${vp.type}" missing delivery_style`);
     if (vp.default_energy < 1 || vp.default_energy > 10) {
@@ -226,6 +232,7 @@ function validateGenre(file, id, cfg) {
 // ── Main ────────────────────────────────────────────────────────────────
 
 let shared = {};
+let validVocalTypeIds = null;
 try {
   shared = yaml.load(readFileSync(SHARED_PATH, "utf-8")) ?? {};
   if (shared.section_functions) {
@@ -233,6 +240,14 @@ try {
       if (!VALID_SECTION_FUNCTIONS.includes(fn)) {
         warn("shared.yaml", `unknown section_function: "${fn}"`);
       }
+    }
+  }
+  if (shared.vocal_preset_types) {
+    validVocalTypeIds = new Set(shared.vocal_preset_types.map((vt) => vt.id));
+    for (const vt of shared.vocal_preset_types) {
+      if (!vt.id) error("shared.yaml", "vocal_preset_type missing id");
+      if (!vt.label)
+        error("shared.yaml", `vocal_preset_type "${vt.id}" missing label`);
     }
   }
 } catch (err) {
@@ -261,7 +276,7 @@ for (const f of files) {
     // Mirror that here so validation sees the effective values.
     cfg.section_functions ??= shared.section_functions;
     cfg.delta_palette ??= shared.delta_palette;
-    validateGenre(f, id, cfg);
+    validateGenre(f, id, cfg, validVocalTypeIds);
   } catch (err) {
     error(f, `YAML parse error: ${err.message}`);
   }

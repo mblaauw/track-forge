@@ -60,9 +60,15 @@ const ROOT = join(
 const GENRE_DIR = join(ROOT, "genres");
 const SHARED_PATH = join(ROOT, "shared.yaml");
 
+interface VocalPresetTypeDef {
+  id: string;
+  label: string;
+}
+
 interface SharedConfigYaml {
   section_functions?: string[];
   delta_palette?: string[];
+  vocal_preset_types?: VocalPresetTypeDef[];
 }
 
 let sharedCache: { mtime: number; data: SharedConfigYaml } | null = null;
@@ -122,6 +128,17 @@ function loadYaml(id: string): GenreConfigYaml {
     const shared = loadShared();
     parsed.section_functions ??= shared.section_functions;
     parsed.delta_palette ??= shared.delta_palette;
+
+    // Resolve vocal preset type ids → full labels from shared definitions
+    const vocalTypeMap = new Map(
+      (shared.vocal_preset_types ?? []).map((vt) => [vt.id, vt.label]),
+    );
+    if (parsed.vocal_presets) {
+      for (const vp of parsed.vocal_presets) {
+        vp.type = vocalTypeMap.get(vp.type) ?? vp.type;
+      }
+    }
+
     cache.set(id, {
       mtime: statSync(filePath).mtimeMs,
       sharedMtime: statSync(SHARED_PATH).mtimeMs,

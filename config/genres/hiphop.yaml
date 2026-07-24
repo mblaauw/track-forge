@@ -896,11 +896,21 @@ descriptor_categories:
     chips: [smooth, bouncy, aggressive, relaxed, "build-up", "hard hitting"]
 
 descriptor_defaults:
-  - { label: "808 bass", cat: sound, weight: 2 }
-  - { label: "trap hi-hats", cat: rhythm, weight: 2 }
-  - { label: "lofi warmth", cat: production, weight: 2 }
-  - { label: dark, cat: atmosphere, weight: 2 }
-  - { label: smooth, cat: energy, weight: 2 }
+  - label: "808 bass"
+    cat: sound
+    weight: 2
+  - label: "trap hi-hats"
+    cat: rhythm
+    weight: 2
+  - label: "lofi warmth"
+    cat: production
+    weight: 2
+  - label: dark
+    cat: atmosphere
+    weight: 2
+  - label: smooth
+    cat: energy
+    weight: 2
 
 lyric_themes:
   ["the come-up", "the city", loyalty, "late nights", ambition, reflection]
@@ -908,11 +918,21 @@ lyric_themes:
 section_palette:
   [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
 vocal_presets:
-  - { type: "Female lead", delivery_style: "laid back", default_energy: 3 }
-  - { type: "Male lead", delivery_style: "laid back", default_energy: 3 }
-  - { type: Duet, delivery_style: "laid back", default_energy: 3 }
-  - { type: "Group·choir", delivery_style: powerful, default_energy: 4 }
-  - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 2 }
+  - type: female_lead
+    delivery_style: "laid back"
+    default_energy: 3
+  - type: male_lead
+    delivery_style: "laid back"
+    default_energy: 3
+  - type: duet
+    delivery_style: "laid back"
+    default_energy: 3
+  - type: group_choir
+    delivery_style: powerful
+    default_energy: 4
+  - type: wordless_textural
+    delivery_style: ethereal
+    default_energy: 2
 
 lyrics_guidance: |
   Hip-hop lyrics are carried by flow and rhyme scheme as much as meaning.

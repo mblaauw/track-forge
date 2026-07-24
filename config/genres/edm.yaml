@@ -1079,11 +1079,21 @@ descriptor_categories:
       ]
 
 descriptor_defaults:
-  - { label: supersaw, cat: sound, weight: 2 }
-  - { label: "four-on-the-floor", cat: rhythm, weight: 2 }
-  - { label: "sidechain pump", cat: production, weight: 2 }
-  - { label: euphoric, cat: atmosphere, weight: 2 }
-  - { label: "high energy", cat: energy, weight: 2 }
+  - label: supersaw
+    cat: sound
+    weight: 2
+  - label: "four-on-the-floor"
+    cat: rhythm
+    weight: 2
+  - label: "sidechain pump"
+    cat: production
+    weight: 2
+  - label: euphoric
+    cat: atmosphere
+    weight: 2
+  - label: "high energy"
+    cat: energy
+    weight: 2
 
 lyric_themes:
   [euphoria, nightlife, "letting go", transcendence, togetherness, "the drop"]
@@ -1092,11 +1102,21 @@ section_palette:
   [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
 
 vocal_presets:
-  - { type: "Female lead", delivery_style: anthemic, default_energy: 4 }
-  - { type: "Male lead", delivery_style: anthemic, default_energy: 4 }
-  - { type: Duet, delivery_style: anthemic, default_energy: 4 }
-  - { type: "Group·choir", delivery_style: anthemic, default_energy: 4 }
-  - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 2 }
+  - type: female_lead
+    delivery_style: anthemic
+    default_energy: 4
+  - type: male_lead
+    delivery_style: anthemic
+    default_energy: 4
+  - type: duet
+    delivery_style: anthemic
+    default_energy: 4
+  - type: group_choir
+    delivery_style: anthemic
+    default_energy: 4
+  - type: wordless_textural
+    delivery_style: ethereal
+    default_energy: 2
 
 lyrics_guidance: |
   EDM lyrics exist to be shouted back at a festival, not read on a page.

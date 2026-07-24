@@ -183,21 +183,41 @@ descriptor_categories:
     chips: [still, "slow build", floating, calm, hypnotic, sparse, dense]
 
 descriptor_defaults:
-  - { label: "granular pad", cat: sound, weight: 2 }
-  - { label: "slow pulse", cat: rhythm, weight: 2 }
-  - { label: cinematic, cat: atmosphere, weight: 2 }
-  - { label: ethereal, cat: atmosphere, weight: 2 }
-  - { label: "wide stereo", cat: production, weight: 2 }
+  - label: "granular pad"
+    cat: sound
+    weight: 2
+  - label: "slow pulse"
+    cat: rhythm
+    weight: 2
+  - label: cinematic
+    cat: atmosphere
+    weight: 2
+  - label: ethereal
+    cat: atmosphere
+    weight: 2
+  - label: "wide stereo"
+    cat: production
+    weight: 2
 
 lyric_themes: [stillness, memory, nature, solitude, dreams, distance]
 
 section_palette: [Emerge, Swell, Drift, Movement, Interlude, Fade]
 vocal_presets:
-  - { type: "Female lead", delivery_style: ethereal, default_energy: 1 }
-  - { type: "Male lead", delivery_style: ethereal, default_energy: 1 }
-  - { type: Duet, delivery_style: ethereal, default_energy: 1 }
-  - { type: "Group·choir", delivery_style: ethereal, default_energy: 2 }
-  - { type: "Wordless·textural", delivery_style: ethereal, default_energy: 1 }
+  - type: female_lead
+    delivery_style: ethereal
+    default_energy: 1
+  - type: male_lead
+    delivery_style: ethereal
+    default_energy: 1
+  - type: duet
+    delivery_style: ethereal
+    default_energy: 1
+  - type: group_choir
+    delivery_style: ethereal
+    default_energy: 2
+  - type: wordless_textural
+    delivery_style: ethereal
+    default_energy: 1
 
 lyrics_guidance: |
   Ambient vocals are texture, not narration. Favor short, fragmentary
