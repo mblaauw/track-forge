@@ -29,7 +29,6 @@ export interface GenreConfigYaml {
   tag_categories: TagCategoryYaml[];
   presets: GenrePresetYaml[];
   song_structure?: SongStructureSection[];
-  taxonomy?: unknown;
   descriptor_categories?: {
     cat: string;
     label: string;
@@ -97,7 +96,6 @@ function loadShared(): SharedConfigYaml {
 
 interface CacheEntry {
   mtime: number;
-  sharedMtime: number;
   data: GenreConfigYaml;
 }
 
@@ -110,13 +108,7 @@ function loadYaml(id: string): GenreConfigYaml {
   if (cached) {
     try {
       const currentMtime = statSync(filePath).mtimeMs;
-      const currentSharedMtime = statSync(SHARED_PATH).mtimeMs;
-      if (
-        currentMtime <= cached.mtime &&
-        currentSharedMtime <= cached.sharedMtime
-      ) {
-        return cached.data;
-      }
+      if (currentMtime <= cached.mtime) return cached.data;
     } catch {
       // if stat fails, fall through to re-read
     }
@@ -141,7 +133,6 @@ function loadYaml(id: string): GenreConfigYaml {
 
     cache.set(id, {
       mtime: statSync(filePath).mtimeMs,
-      sharedMtime: statSync(SHARED_PATH).mtimeMs,
       data: parsed,
     });
     return parsed;
@@ -201,10 +192,6 @@ export function getTagCategories(id: string): TagCategoryYaml[] {
 
 export function getSongStructure(id: string): SongStructureSection[] {
   return loadYaml(id).song_structure ?? [];
-}
-
-export function getTaxonomy(id: string): unknown {
-  return loadYaml(id).taxonomy ?? null;
 }
 
 export function getLyricsGuidance(id: string): string | undefined {

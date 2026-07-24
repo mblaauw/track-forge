@@ -70,20 +70,6 @@ function validateGenre(file, id, cfg, validVocalTypeIds) {
     }
   }
 
-  // ── Preset subgenre → taxonomy cross-reference ───────────────────
-  const subgenreIds = new Set((cfg.taxonomy?.subgenres ?? []).map((s) => s.id));
-  if (subgenreIds.size > 0) {
-    for (const p of cfg.presets ?? []) {
-      const sg = p.values?.subgenre;
-      if (sg && !subgenreIds.has(sg)) {
-        error(
-          file,
-          `preset "${p.id}" subgenre "${sg}" not found in taxonomy.subgenres`,
-        );
-      }
-    }
-  }
-
   // ── song_structure ────────────────────────────────────────────────
   const effectiveFns = cfg.section_functions ?? VALID_SECTION_FUNCTIONS;
   const effectiveDeltas = new Set(cfg.delta_palette ?? []);

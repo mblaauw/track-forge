@@ -8,7 +8,6 @@ import {
   getSongStructure,
   getPresets,
   getTagCategories,
-  getTaxonomy,
   getDescriptorDefaults,
   getLyricsGuidance,
 } from "./genre-config.js";
@@ -24,7 +23,6 @@ function augment(id: string, mod: GenreModule): GenreModule {
     presets: getPresets(id),
     tagCategories: getTagCategories(id) as TagCategory[],
     songStructure: getSongStructure(id),
-    taxonomy: getTaxonomy(id) as Record<string, unknown> | undefined,
     lyricsGuidance: getLyricsGuidance(id),
   };
 }

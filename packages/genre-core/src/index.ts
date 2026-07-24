@@ -13,7 +13,6 @@ export interface GenreModule<
   presets?: GenrePreset[];
   tagCategories?: TagCategory[];
   songStructure?: SongStructureSection[];
-  taxonomy?: Record<string, unknown>;
   /** Genre-specific songwriting conventions fed into the lyrics-writing prompt. */
   lyricsGuidance?: string;
 }

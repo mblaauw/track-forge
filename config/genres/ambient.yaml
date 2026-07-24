@@ -67,6 +67,13 @@ presets:
       energy: 2
       lyricsMode: strict_instrumental
       soundscape: "deep drones"
+      characteristics:
+        - meditative
+        - minimal
+        - sustained
+        - "deep drones"
+        - "slow-evolving"
+        - spacious
   - id: generative_evolving
     name: "Generative — Evolving"
     description: "Evolving generative textures that shift over time"
@@ -80,6 +87,12 @@ presets:
       energy: 3
       lyricsMode: strict_instrumental
       soundscape: "evolving textures"
+      characteristics:
+        - evolving
+        - serene
+        - "shifting textures"
+        - generative
+        - spacious
 
 song_structure:
   - section: emerge
@@ -98,44 +111,6 @@ song_structure:
     fn: resolve
     bars: { base: 12, per_complexity: 1.5 }
     tags: ["reduce layers"]
-
-taxonomy:
-  subgenres:
-    - id: drone
-      label: Drone
-      bpmRange: [40, 75]
-      bpmDefault: 62
-      scale: major
-      characteristics:
-        [
-          meditative,
-          minimal,
-          sustained,
-          "deep drones",
-          "slow-evolving",
-          spacious,
-        ]
-      vocalMode: none
-      arrangementTags:
-        emerge: [spacious, "slow entry"]
-        swell: [layered, deepening]
-        drift: [floating, textural]
-        fade: [dissolving, receding]
-      description: "Deep, sustained drone with minimal harmonic movement and a meditative pace."
-    - id: generative
-      label: Generative
-      bpmRange: [50, 90]
-      bpmDefault: 70
-      scale: minor
-      characteristics:
-        [evolving, serene, "shifting textures", generative, spacious]
-      vocalMode: none
-      arrangementTags:
-        emerge: [spacious, "texture build"]
-        swell: [layered, evolving]
-        drift: [floating, wide]
-        fade: [dissolving, sparse]
-      description: "Evolving generative textures that shift gradually over a serene, spacious backdrop."
 
 descriptor_categories:
   - cat: sound
