@@ -170,9 +170,11 @@ export function LibraryPanel() {
         class="col-rail collapsed"
         onClick={() => togglePanel("library")}
         title="Expand library"
+        aria-label={`Expand library, ${jobs.length} sessions`}
       >
         <CaretLeft size={16} />
-        <span class="rail-vertical-label">LIBRARY</span>
+        <Stack size={18} />
+        {jobs.length > 0 && <span class="rail-count-badge">{jobs.length}</span>}
       </div>
     );
   }
@@ -241,7 +243,7 @@ export function LibraryPanel() {
               >
                 <div class="library-row-top">
                   <span class="library-row-name">
-                    {job.name || "Untitled Session"}
+                    {job.name || "Untitled track"}
                   </span>
                   <span class="library-row-time">
                     {formatUpdated(job.updatedAt)}

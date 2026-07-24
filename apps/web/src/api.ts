@@ -1,4 +1,5 @@
 import type { Job, Version, SunoArtifact } from "@track-forge/contracts";
+import type { SongStructureSection } from "@track-forge/genre-core";
 
 const API_BASE =
   typeof import.meta !== "undefined" &&
@@ -97,6 +98,7 @@ export interface GenreDescriptorDefaults {
     deliveryStyle: string;
     defaultEnergy: number;
   }[];
+  songStructure: SongStructureSection[];
 }
 
 export function fetchDescriptorDefaults(

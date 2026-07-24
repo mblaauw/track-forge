@@ -1,84 +1,16 @@
 import { isVocalSection } from "@track-forge/genre-core";
-import type { Section, SectionFunction } from "./types";
+import type {
+  Section,
+  SectionFunction,
+  LyricsMode,
+  SongStructureSection,
+  SongStructureBarSpec,
+} from "./types";
 
 export type { Section, SectionFunction };
 
 export function generateId(): string {
   return Math.random().toString(36).slice(2, 9);
-}
-
-const NAME_A = [
-  "Midnight",
-  "Golden",
-  "Silent",
-  "Crimson",
-  "Velvet",
-  "Broken",
-  "Electric",
-  "Fading",
-  "Hollow",
-  "Neon",
-  "Cosmic",
-  "Distant",
-  "Frozen",
-  "Wandering",
-  "Burning",
-  "Crystal",
-  "Shadow",
-  "Lunar",
-  "Mystic",
-  "Silver",
-];
-const NAME_B = [
-  "Session",
-  "Studio",
-  "Project",
-  "Forge",
-  "Experiment",
-  "Vibes",
-  "Horizon",
-  "Circuit",
-  "Signal",
-  "Frequency",
-  "Chronicles",
-  "Outlines",
-  "Blueprint",
-  "Blueprint",
-  "Pulse",
-  "Vision",
-  "Echo",
-  "Groove",
-  "Temple",
-  "Cipher",
-];
-const NAME_C = [
-  "Alpha",
-  "Beta",
-  "Vol.1",
-  "Vol.2",
-  "Side A",
-  "Side B",
-  "Draft",
-  "Final",
-  "Rev.1",
-  "Rev.2",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-];
-
-export function randomSessionName(): string {
-  const a = NAME_A[Math.floor(Math.random() * NAME_A.length)]!;
-  const b = NAME_B[Math.floor(Math.random() * NAME_B.length)]!;
-  const c = NAME_C[Math.floor(Math.random() * NAME_C.length)]!;
-  return c ? `${a} ${b} ${c}` : `${a} ${b}`;
 }
 
 const TITLE_A = [
@@ -145,18 +77,21 @@ export function randomTitle(): string {
 export const SEC_COLORS: Record<string, string> = {
   intro: "var(--hue-slate)",
   outro: "var(--hue-slate)",
+  emerge: "var(--hue-slate)",
+  fade: "var(--hue-slate)",
   build: "var(--hue-amber)",
   swell: "var(--hue-amber)",
   "pre-chorus": "var(--hue-amber)",
   drop: "var(--hue-green)",
   hook: "var(--hue-green)",
   chorus: "var(--hue-green)",
+  drift: "var(--hue-green)",
   breakdown: "var(--hue-violet)",
   bridge: "var(--hue-violet)",
+  interlude: "var(--hue-violet)",
   verse: "var(--hue-cyan)",
   groove: "var(--hue-cyan)",
-  "movement i": "var(--hue-cyan)",
-  "movement ii": "var(--hue-green)",
+  movement: "var(--hue-cyan)",
 };
 
 export function sectionColor(name: string): string {
@@ -171,12 +106,44 @@ export function sectionIsVocal(sec: Section): boolean {
   return isVocalSection(sec);
 }
 
+// A section's vocal preset/badges should only surface in the UI when lyrics
+// are actually being generated — with lyrics off, nothing vocal will render,
+// so showing vocal chrome would contradict the instrumental setting.
+export function sectionShowsVocal(
+  sec: Section,
+  lyricsMode: LyricsMode,
+): boolean {
+  return lyricsMode !== "strict_instrumental" && isVocalSection(sec);
+}
+
+export function vocalMeta(vocal?: {
+  type?: string;
+  delivery?: string;
+  energy?: number;
+  adlibs?: boolean;
+  harmonies?: boolean;
+}): string {
+  if (!vocal) return "";
+  const energyWords = [
+    "",
+    "intimate",
+    "restrained",
+    "balanced",
+    "powerful",
+    "explosive",
+  ];
+  const parts = [vocal.type, vocal.delivery, energyWords[vocal.energy ?? 0]];
+  if (vocal.adlibs) parts.push("ad-libs");
+  if (vocal.harmonies) parts.push("harmonies");
+  return parts.filter(Boolean).join(", ");
+}
+
 export const SECTION_FUNCTIONS: { id: SectionFunction; label: string }[] = [
   { id: "establish", label: "Establish" },
   { id: "introduce", label: "Introduce" },
   { id: "escalate", label: "Escalate" },
   { id: "contrast", label: "Contrast" },
-  { id: "remove", label: "Remove" },
+  { id: "remove", label: "Strip back" },
   { id: "peak", label: "Peak" },
   { id: "resolve", label: "Resolve" },
 ];
@@ -220,211 +187,64 @@ export const STAGE_LABELS = [
   "Composing arrangement",
   "Writing lyrics",
   "Finalizing bundle",
-  "Rendering with Suno",
+  "Forging audio with Suno",
 ];
 
-export function defaultSections(genreId: string): Section[] {
-  const defaults: Record<string, Section[]> = {
-    edm: [
-      {
-        id: generateId(),
-        name: "Intro",
-        bars: 8,
-        fn: "establish",
-        deltas: ["atmospheric", "sparse texture"],
-      },
-      {
-        id: generateId(),
-        name: "Build",
-        bars: 16,
-        fn: "introduce",
-        deltas: ["add rhythm", "rising tension"],
-      },
-      {
-        id: generateId(),
-        name: "Drop",
-        bars: 32,
-        fn: "peak",
-        deltas: ["full groove", "bass-led", "wide theme"],
-        vocal: {
-          type: "Female lead",
-          delivery: "anthemic",
-          energy: 4,
-          adlibs: false,
-          harmonies: true,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Breakdown",
-        bars: 16,
-        fn: "remove",
-        deltas: ["strip drums", "expose harmony"],
-      },
-      {
-        id: generateId(),
-        name: "Build 2",
-        bars: 8,
-        fn: "escalate",
-        deltas: ["rising tension"],
-      },
-      {
-        id: generateId(),
-        name: "Drop 2",
-        bars: 32,
-        fn: "peak",
-        deltas: ["added impact", "add countermelody"],
-        vocal: {
-          type: "Female lead",
-          delivery: "anthemic",
-          energy: 5,
-          adlibs: true,
-          harmonies: true,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Outro",
-        bars: 8,
-        fn: "resolve",
-        deltas: ["reduce layers"],
-      },
-    ],
-    hiphop: [
-      {
-        id: generateId(),
-        name: "Intro",
-        bars: 4,
-        fn: "establish",
-        deltas: ["atmospheric"],
-      },
-      {
-        id: generateId(),
-        name: "Verse 1",
-        bars: 16,
-        fn: "introduce",
-        deltas: ["vocal focus"],
-        vocal: {
-          type: "Male lead",
-          delivery: "laid back",
-          energy: 3,
-          adlibs: false,
-          harmonies: false,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Hook",
-        bars: 8,
-        fn: "peak",
-        deltas: ["full arrangement", "catchy"],
-        vocal: {
-          type: "Male lead",
-          delivery: "laid back",
-          energy: 4,
-          adlibs: false,
-          harmonies: true,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Verse 2",
-        bars: 16,
-        fn: "contrast",
-        deltas: ["vocal focus"],
-        vocal: {
-          type: "Male lead",
-          delivery: "laid back",
-          energy: 3,
-          adlibs: false,
-          harmonies: false,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Hook",
-        bars: 8,
-        fn: "peak",
-        deltas: ["full arrangement"],
-        vocal: {
-          type: "Male lead",
-          delivery: "laid back",
-          energy: 4,
-          adlibs: false,
-          harmonies: true,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Bridge",
-        bars: 8,
-        fn: "contrast",
-        deltas: ["strip drums", "introspective"],
-      },
-      {
-        id: generateId(),
-        name: "Outro",
-        bars: 4,
-        fn: "resolve",
-        deltas: ["reduce layers"],
-      },
-    ],
-    ambient: [
-      {
-        id: generateId(),
-        name: "Intro",
-        bars: 16,
-        fn: "establish",
-        deltas: ["atmospheric", "sparse texture"],
-      },
-      {
-        id: generateId(),
-        name: "Movement I",
-        bars: 32,
-        fn: "introduce",
-        deltas: ["expose harmony", "add countermelody"],
-        vocal: {
-          type: "Wordless·textural",
-          delivery: "ethereal",
-          energy: 1,
-          adlibs: false,
-          harmonies: false,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Swell",
-        bars: 16,
-        fn: "escalate",
-        deltas: ["rising tension"],
-      },
-      {
-        id: generateId(),
-        name: "Movement II",
-        bars: 32,
-        fn: "peak",
-        deltas: ["full arrangement", "wide theme"],
-        vocal: {
-          type: "Wordless·textural",
-          delivery: "ethereal",
-          energy: 2,
-          adlibs: false,
-          harmonies: false,
-        },
-      },
-      {
-        id: generateId(),
-        name: "Outro",
-        bars: 16,
-        fn: "resolve",
-        deltas: ["reduce layers"],
-      },
-    ],
-  };
-  if (!defaults[genreId]) {
-    console.warn(
-      `Unknown genre "${genreId}" in defaultSections — falling back to EDM`,
-    );
-  }
-  return defaults[genreId] ?? defaults.edm!;
+const VALID_FNS = new Set(SECTION_FUNCTIONS.map((f) => f.id));
+
+function resolveBars(
+  bars: SongStructureBarSpec,
+  energy: number,
+  complexity: number,
+): number {
+  if (typeof bars === "number") return bars;
+  const raw =
+    bars.base +
+    (bars.per_energy ?? 0) * energy +
+    (bars.per_complexity ?? 0) * complexity;
+  const rounded = Math.round(raw / 4) * 4;
+  return Math.max(4, Math.min(64, rounded));
+}
+
+function titleCase(base: string): string {
+  return base
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// "build_2" -> explicit "Build 2"; a bare "verse" repeated in the list -> "Verse", "Verse 2", ...
+function formatSectionName(raw: string, counts: Map<string, number>): string {
+  const m = raw.match(/^(.*)_(\d+)$/);
+  const base = m ? m[1]! : raw;
+  const title = titleCase(base);
+  if (m) return `${title} ${m[2]}`;
+  const count = (counts.get(base) ?? 0) + 1;
+  counts.set(base, count);
+  return count > 1 ? `${title} ${count}` : title;
+}
+
+/**
+ * Builds an arrangement from the genre's YAML song_structure, sized by the
+ * active preset's energy/complexity (bars-as-formula sections scale with
+ * them; plain integer bars stay fixed). This is the single source of truth
+ * for default arrangements — there is no per-genre hardcoded fallback, so an
+ * empty songStructure (data not loaded yet) correctly yields no sections,
+ * which the arrangement editor already renders as its "restore default" empty
+ * state.
+ */
+export function buildSections(
+  songStructure: SongStructureSection[],
+  energy: number,
+  complexity: number,
+): Section[] {
+  const nameCounts = new Map<string, number>();
+  return songStructure.map((entry) => ({
+    id: generateId(),
+    name: formatSectionName(entry.section, nameCounts),
+    bars: resolveBars(entry.bars, energy, complexity),
+    fn: entry.fn && VALID_FNS.has(entry.fn) ? entry.fn : "establish",
+    deltas: [...entry.tags],
+  }));
 }

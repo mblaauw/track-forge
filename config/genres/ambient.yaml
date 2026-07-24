@@ -1,7 +1,7 @@
 # Ambient genre module config
 name: Ambient
-color: accent
-subgenre_count: "15+"
+color: violet
+subgenre_count: "2"
 
 tag_categories:
   - id: genre
@@ -83,17 +83,59 @@ presets:
 
 song_structure:
   - section: emerge
+    fn: establish
     bars: { base: 12, per_complexity: 1.5 }
-    tags: [spacious, texture build, slow entry]
+    tags: [atmospheric, "sparse texture"]
   - section: swell
+    fn: escalate
     bars: { base: 16, per_complexity: 2 }
-    tags: [layered, evolving, deepening]
+    tags: ["rising tension"]
   - section: drift
+    fn: peak
     bars: { base: 16, per_complexity: 1.5 }
-    tags: [floating, wide, textural]
+    tags: ["wide theme", "full arrangement"]
   - section: fade
+    fn: resolve
     bars: { base: 12, per_complexity: 1.5 }
-    tags: [dissolving, sparse, receding]
+    tags: ["reduce layers"]
+
+taxonomy:
+  subgenres:
+    - id: drone
+      label: Drone
+      bpmRange: [40, 75]
+      bpmDefault: 62
+      scale: major
+      characteristics:
+        [
+          meditative,
+          minimal,
+          sustained,
+          "deep drones",
+          "slow-evolving",
+          spacious,
+        ]
+      vocalMode: none
+      arrangementTags:
+        emerge: [spacious, "slow entry"]
+        swell: [layered, deepening]
+        drift: [floating, textural]
+        fade: [dissolving, receding]
+      description: "Deep, sustained drone with minimal harmonic movement and a meditative pace."
+    - id: generative
+      label: Generative
+      bpmRange: [50, 90]
+      bpmDefault: 70
+      scale: minor
+      characteristics:
+        [evolving, serene, "shifting textures", generative, spacious]
+      vocalMode: none
+      arrangementTags:
+        emerge: [spacious, "texture build"]
+        swell: [layered, evolving]
+        drift: [floating, wide]
+        fade: [dissolving, sparse]
+      description: "Evolving generative textures that shift gradually over a serene, spacious backdrop."
 
 descriptor_categories:
   - cat: sound
@@ -149,33 +191,7 @@ descriptor_defaults:
 
 lyric_themes: [stillness, memory, nature, solitude, dreams, distance]
 
-section_functions:
-  [establish, introduce, escalate, contrast, remove, peak, resolve]
-delta_palette:
-  [
-    "sparse texture",
-    atmospheric,
-    filtered,
-    "add rhythm",
-    "rising tension",
-    "full groove",
-    "bass-led",
-    "wide theme",
-    "full arrangement",
-    catchy,
-    "strip drums",
-    "expose harmony",
-    "add countermelody",
-    "added impact",
-    climactic,
-    introspective,
-    "half-time feel",
-    "vocal focus",
-    instrumental,
-    "reduce layers",
-  ]
-section_palette:
-  [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+section_palette: [Emerge, Swell, Drift, Movement, Interlude, Fade]
 vocal_presets:
   - { type: "Female lead", delivery_style: ethereal, default_energy: 1 }
   - { type: "Male lead", delivery_style: ethereal, default_energy: 1 }

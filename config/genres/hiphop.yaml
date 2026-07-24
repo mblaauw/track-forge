@@ -1,7 +1,7 @@
 # Hip-Hop genre module config
 name: Hip-Hop
 color: amber
-subgenre_count: "40+"
+subgenre_count: "20+"
 
 tag_categories:
   - id: genre
@@ -198,7 +198,7 @@ presets:
     name: "Lo-fi — Study Beats"
     description: "Chilled lo-fi beats for focused study sessions"
     values:
-      subgenre: lo_fi
+      subgenre: lo_fi_hip_hop
       bpm: 75
       key: A
       scale: major
@@ -215,7 +215,7 @@ presets:
     name: "Lo-fi — Chillhop"
     description: "Laid-back chillhop with jazzy samples and warm textures"
     values:
-      subgenre: lo_fi
+      subgenre: lo_fi_hip_hop
       bpm: 80
       key: C
       scale: major
@@ -232,7 +232,7 @@ presets:
     name: "Lo-fi — Jazzhop"
     description: "Smooth jazzhop with live instrumentation and vinyl warmth"
     values:
-      subgenre: lo_fi
+      subgenre: lo_fi_hip_hop
       bpm: 82
       key: E
       scale: major
@@ -321,7 +321,7 @@ presets:
     description: "High-energy crunk with call-and-response hooks and heavy 808s"
     values:
       subgenre: crunk
-      bpm: 155
+      bpm: 80
       key: C
       scale: major
       mood: hype
@@ -338,7 +338,7 @@ presets:
     description: "Southern-style crunk with laid-back swing and heavy bass"
     values:
       subgenre: crunk
-      bpm: 150
+      bpm: 76
       key: D
       scale: minor
       mood: hype
@@ -390,7 +390,7 @@ presets:
     name: "Abstract — Experimental"
     description: "Experimental abstract hip-hop with unconventional structures"
     values:
-      subgenre: abstract
+      subgenre: alternative_hip_hop
       bpm: 100
       key: A
       scale: minor
@@ -407,7 +407,7 @@ presets:
     name: "Abstract — Conscious"
     description: "Conscious abstract hip-hop with deep lyrical themes"
     values:
-      subgenre: abstract
+      subgenre: conscious_rap
       bpm: 88
       key: E
       scale: minor
@@ -425,7 +425,7 @@ presets:
     name: "Storytelling — Narrative"
     description: "Narrative-driven hip-hop with detailed storytelling"
     values:
-      subgenre: storytelling
+      subgenre: gangsta_rap
       bpm: 85
       key: A
       scale: minor
@@ -441,29 +441,37 @@ presets:
 
 song_structure:
   - section: intro
+    fn: establish
     bars: 8
-    tags: [atmospheric, sparse, building]
+    tags: [atmospheric, "sparse texture"]
   - section: verse
+    fn: introduce
     bars: 16
-    tags: [vocal focus, rhythmic, storytelling]
+    tags: ["vocal focus"]
   - section: hook
+    fn: peak
     bars: 8
-    tags: [catchy, full arrangement, anthemic]
+    tags: ["full arrangement", catchy]
   - section: verse
+    fn: contrast
     bars: 16
-    tags: [vocal focus, rhythmic, contrast]
+    tags: ["vocal focus"]
   - section: hook
+    fn: peak
     bars: 8
-    tags: [catchy, full arrangement, climactic]
+    tags: ["full arrangement", catchy, climactic]
   - section: bridge
+    fn: contrast
     bars: 8
-    tags: [stripped back, introspective, atmospheric]
+    tags: ["strip drums", introspective]
   - section: hook
+    fn: peak
     bars: 8
-    tags: [catchy, full arrangement, peak]
+    tags: ["full arrangement", catchy]
   - section: outro
+    fn: resolve
     bars: 8
-    tags: [dissolving, sparse, receding]
+    tags: ["reduce layers"]
 
 taxonomy:
   subgenres:
@@ -897,31 +905,6 @@ descriptor_defaults:
 lyric_themes:
   ["the come-up", "the city", loyalty, "late nights", ambition, reflection]
 
-section_functions:
-  [establish, introduce, escalate, contrast, remove, peak, resolve]
-delta_palette:
-  [
-    "sparse texture",
-    atmospheric,
-    filtered,
-    "add rhythm",
-    "rising tension",
-    "full groove",
-    "bass-led",
-    "wide theme",
-    "full arrangement",
-    catchy,
-    "strip drums",
-    "expose harmony",
-    "add countermelody",
-    "added impact",
-    climactic,
-    introspective,
-    "half-time feel",
-    "vocal focus",
-    instrumental,
-    "reduce layers",
-  ]
 section_palette:
   [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
 vocal_presets:

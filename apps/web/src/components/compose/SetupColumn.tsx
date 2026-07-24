@@ -5,16 +5,18 @@ import {
   CaretLeft,
   MagnifyingGlass,
   CheckCircle,
+  SlidersHorizontal,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
+import type { SessionState } from "../../lib/session";
 import type {
   SetupCardId,
+  SetupCardsOpen,
   Descriptor,
   DescriptorCategory,
   DescriptorWeight,
 } from "./types";
-import { defaultSections } from "./arrangement";
-import { randomTitle } from "./arrangement";
+import { buildSections, randomTitle } from "./arrangement";
 import {
   fetchGenres,
   fetchPresets,
@@ -24,32 +26,51 @@ import {
   type GenreDescriptorDefaults,
 } from "../../api";
 
-const KEY_OPTIONS = [
-  "C maj",
-  "Db maj",
-  "D maj",
-  "Eb maj",
-  "E maj",
-  "F maj",
-  "F# maj",
-  "G maj",
-  "Ab maj",
-  "A maj",
-  "Bb maj",
-  "B maj",
-  "C min",
-  "C# min",
-  "D min",
-  "D# min",
-  "E min",
-  "F min",
-  "F# min",
-  "G min",
-  "G# min",
-  "A min",
-  "A# min",
-  "B min",
+const NOTE_NAMES = [
+  "C",
+  "Db",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
 ];
+
+// Selecting a preset is meaningless if it doesn't actually change the sound —
+// pull the preset's own bpm/key/scale/lyricsMode into the session so the
+// preset is a real sonic starting point, not just a label.
+function presetSessionPatch(preset: GenrePreset): Partial<SessionState> {
+  const v = preset.values as {
+    bpm?: number;
+    key?: string;
+    scale?: "major" | "minor";
+    lyricsMode?: "full_lyrics" | "strict_instrumental";
+    energy?: number;
+    complexity?: number;
+  };
+  const patch: Partial<SessionState> = {
+    presetIds: [preset.id],
+    presetId: preset.id,
+    presetLabels: [preset.name],
+  };
+  if (typeof v.bpm === "number") patch.bpm = v.bpm;
+  if (typeof v.key === "string") patch.key = v.key;
+  if (v.scale === "major" || v.scale === "minor") patch.scale = v.scale;
+  if (
+    v.lyricsMode === "full_lyrics" ||
+    v.lyricsMode === "strict_instrumental"
+  ) {
+    patch.lyricsMode = v.lyricsMode;
+  }
+  if (typeof v.energy === "number") patch.energy = v.energy;
+  if (typeof v.complexity === "number") patch.complexity = v.complexity;
+  return patch;
+}
 
 function defaultDescriptors(
   genreId: string,
@@ -99,10 +120,7 @@ function cycleTag(
 }
 
 const CARDS: { id: SetupCardId; label: string }[] = [
-  { id: "genre", label: "GENRE" },
-  { id: "preset", label: "PRESET" },
-  { id: "lyrics", label: "LYRICS" },
-  { id: "tempo", label: "TEMPO & KEY" },
+  { id: "sound", label: "SOUND" },
   { id: "descriptors", label: "DESCRIPTORS" },
   { id: "reference", label: "REFERENCE" },
 ];
@@ -116,7 +134,6 @@ export function SetupColumn() {
   const [presets, setPresets] = useState<GenrePreset[]>([]);
   const [descDefaults, setDescDefaults] =
     useState<GenreDescriptorDefaults | null>(null);
-  const [genreSearch, setGenreSearch] = useState("");
   const [presetSearch, setPresetSearch] = useState("");
 
   useEffect(() => {
@@ -127,11 +144,15 @@ export function SetupColumn() {
 
   useEffect(() => {
     if (s.genreId) {
-      fetchPresets(s.genreId)
-        .then(setPresets)
-        .catch(() => {});
-      fetchDescriptorDefaults(s.genreId)
-        .then(setDescDefaults)
+      // Fetch together and commit together — setting these from two
+      // independent promises risks the seed effect below firing with one
+      // genre's presets paired against another genre's still-stale
+      // songStructure/descriptor data.
+      Promise.all([fetchPresets(s.genreId), fetchDescriptorDefaults(s.genreId)])
+        .then(([p, d]) => {
+          setPresets(p);
+          setDescDefaults(d);
+        })
         .catch(() => {});
     }
   }, [s.genreId]);
@@ -155,11 +176,14 @@ export function SetupColumn() {
     ) {
       seededRef.current = true;
       const themes = descDefaults.lyricThemes;
-      const sections = defaultSections(s.genreId);
+      const presetPatch = presetSessionPatch(presets[0]!);
+      const sections = buildSections(
+        descDefaults.songStructure,
+        presetPatch.energy ?? s.energy,
+        presetPatch.complexity ?? s.complexity,
+      );
       s.setSession({
-        presetIds: [presets[0]!.id],
-        presetId: presets[0]!.id,
-        presetLabels: [presets[0]!.name],
+        ...presetPatch,
         tags: defaultDescriptors(s.genreId, descDefaults.defaults),
         sections,
         selSectionId: sections[0]?.id ?? null,
@@ -169,18 +193,16 @@ export function SetupColumn() {
     }
   }, [presets, descDefaults]);
 
-  // Genre color lookup (from API color field or known mapping)
-  const genreColor = genres.find((g) => g.id === s.genreId)?.color ?? "cyan";
-
   if (leftCollapsed) {
     return (
       <div
         class="col-rail collapsed"
         onClick={() => togglePanel("left")}
         title="Expand setup"
+        aria-label="Expand setup"
       >
         <CaretRight size={16} />
-        <span class="rail-vertical-label">SETUP</span>
+        <SlidersHorizontal size={18} />
       </div>
     );
   }
@@ -198,34 +220,73 @@ export function SetupColumn() {
         </button>
       </div>
       <div class="col-body tf-scroll">
-        {CARDS.map((c) => (
-          <div class="setup-card" key={c.id}>
-            <button class="setup-card-header" onClick={() => toggleCard(c.id)}>
-              <span class="setup-card-label">{c.label}</span>
-              <span class="setup-card-summary">{cardSummary(c.id, s)}</span>
-              {cards[c.id] ? (
-                <CaretDown size={14} class="setup-card-chevron" />
-              ) : (
-                <CaretRight size={14} class="setup-card-chevron" />
-              )}
-            </button>
-            {cards[c.id] && (
-              <div class="setup-card-body">
-                {renderCardBody(c.id, s, {
-                  genres,
-                  presets,
-                  descDefaults,
-                  genreSearch,
-                  setGenreSearch,
-                  presetSearch,
-                  setPresetSearch,
-                  genreColor,
-                })}
-              </div>
-            )}
+        {renderCard("sound", s, cards, toggleCard, {
+          genres,
+          presets,
+          descDefaults,
+          presetSearch,
+          setPresetSearch,
+        })}
+
+        <div class="setup-card static">
+          <div class="setup-card-header static">
+            <span class="setup-card-label">LYRICS</span>
           </div>
-        ))}
+          <div class="setup-card-body">
+            <LyricsCardContent descDefaults={descDefaults} s={s} />
+          </div>
+        </div>
+
+        <div class="setup-card static">
+          <div class="setup-card-header static">
+            <span class="setup-card-label">TEMPO & KEY</span>
+          </div>
+          <div class="setup-card-body">
+            <TempoCardContent s={s} />
+          </div>
+        </div>
+
+        {renderCard("descriptors", s, cards, toggleCard, {
+          genres,
+          presets,
+          descDefaults,
+          presetSearch,
+          setPresetSearch,
+        })}
+        {renderCard("reference", s, cards, toggleCard, {
+          genres,
+          presets,
+          descDefaults,
+          presetSearch,
+          setPresetSearch,
+        })}
       </div>
+    </div>
+  );
+}
+
+function renderCard(
+  id: SetupCardId,
+  s: ReturnType<typeof useSession>,
+  cards: SetupCardsOpen,
+  toggleCard: (id: SetupCardId) => void,
+  ctx: CardCtx,
+): preact.VNode {
+  const label = CARDS.find((c) => c.id === id)!.label;
+  return (
+    <div class="setup-card" key={id}>
+      <button class="setup-card-header" onClick={() => toggleCard(id)}>
+        <span class="setup-card-label">{label}</span>
+        <span class="setup-card-summary">{cardSummary(id, s)}</span>
+        {cards[id] ? (
+          <CaretDown size={14} class="setup-card-chevron" />
+        ) : (
+          <CaretRight size={14} class="setup-card-chevron" />
+        )}
+      </button>
+      {cards[id] && (
+        <div class="setup-card-body">{renderCardBody(id, s, ctx)}</div>
+      )}
     </div>
   );
 }
@@ -235,24 +296,21 @@ function cardSummary(
   s: ReturnType<typeof useSession>,
 ): string {
   switch (id) {
-    case "genre":
-      return s.genreId ? s.genreId.toUpperCase() : "—";
-    case "preset":
-      return s.presetLabels.length
+    case "sound": {
+      const genre = s.genreId ? s.genreId.toUpperCase() : "—";
+      const preset = s.presetLabels.length
         ? s.presetLabels.join(", ")
         : s.presetIds.length
           ? s.presetIds.map((p) => p.replace(/_/g, " ")).join(", ")
-          : "—";
-    case "lyrics":
-      return s.lyricsMode === "full_lyrics" ? "On" : "Off";
-    case "tempo":
-      return s.bpm ? `${s.bpm} BPM · ${s.key || "—"}` : "—";
+          : "";
+      return preset ? `${genre} · ${preset}` : genre;
+    }
     case "descriptors": {
       const active = s.tags.filter((t) => !t.muted).length;
-      return `${active} active`;
+      return active > 0 ? `${active} active` : "None";
     }
     case "reference":
-      return s.reference ? "set" : "none";
+      return s.reference ? "Added" : "None";
   }
 }
 
@@ -260,11 +318,8 @@ interface CardCtx {
   genres: GenreInfo[];
   presets: GenrePreset[];
   descDefaults: GenreDescriptorDefaults | null;
-  genreSearch: string;
-  setGenreSearch: (v: string) => void;
   presetSearch: string;
   setPresetSearch: (v: string) => void;
-  genreColor: string;
 }
 
 function renderCardBody(
@@ -273,14 +328,8 @@ function renderCardBody(
   ctx: CardCtx,
 ): preact.VNode {
   switch (id) {
-    case "genre":
-      return <GenreCardContent {...ctx} s={s} />;
-    case "preset":
-      return <PresetCardContent {...ctx} s={s} />;
-    case "lyrics":
-      return <LyricsCardContent descDefaults={ctx.descDefaults} s={s} />;
-    case "tempo":
-      return <TempoCardContent s={s} />;
+    case "sound":
+      return <SoundCardContent {...ctx} s={s} />;
     case "descriptors":
       return <DescriptorsCardContent {...ctx} s={s} />;
     case "reference":
@@ -288,57 +337,48 @@ function renderCardBody(
   }
 }
 
-/* ─── GENRE ─── */
+/* ─── SOUND (genre + preset) ─── */
 
-function GenreCardContent({
+function SoundCardContent({
   genres,
-  genreSearch,
-  setGenreSearch,
   presets,
+  presetSearch,
+  setPresetSearch,
   descDefaults,
   s,
 }: CardCtx & { s: ReturnType<typeof useSession> }) {
-  const filtered = genres.filter(
-    (g) =>
-      !genreSearch ||
-      g.name.toLowerCase().includes(genreSearch.toLowerCase()) ||
-      g.id.toLowerCase().includes(genreSearch.toLowerCase()),
+  const filteredPresets = presets.filter(
+    (p) =>
+      !presetSearch ||
+      p.name.toLowerCase().includes(presetSearch.toLowerCase()),
   );
 
   return (
     <>
-      <div style="position:relative;margin-bottom:8px">
-        <MagnifyingGlass
-          size={14}
-          style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--faint)"
-        />
-        <input
-          class="setup-search"
-          placeholder={`Search ${genres.length} genres…`}
-          value={genreSearch}
-          onInput={(e) => setGenreSearch((e.target as HTMLInputElement).value)}
-        />
-      </div>
-      <div class="setup-select-list tf-scroll" style="max-height:200px">
-        {filtered.map((g) => {
+      <div class="setup-genre-chip-row">
+        {genres.map((g) => {
           const active = s.genreId === g.id;
           return (
             <button
               key={g.id}
-              class={`setup-select-item${active ? " active" : ""}`}
+              class={`setup-genre-chip${active ? " active" : ""}`}
               onClick={() => {
                 if (g.id === s.genreId) return;
                 const themes = descDefaults?.lyricThemes ?? [];
                 const firstTheme = themes[0] ?? "";
-                const genreSections = defaultSections(g.id);
+                // Sections/tags reset to empty here and get rebuilt by the
+                // seed effect once this genre's own descriptor-defaults
+                // (song_structure, presets) have loaded — using the
+                // previous genre's still-cached data would build the wrong
+                // arrangement for a moment.
                 s.setSession({
                   genreId: g.id,
                   presetId: "",
                   presetIds: [],
                   presetLabels: [],
                   tags: [],
-                  sections: genreSections,
-                  selSectionId: genreSections[0]?.id ?? null,
+                  sections: [],
+                  selSectionId: null,
                   lyricThemes: firstTheme ? [firstTheme] : [],
                   lyricsGenerated: false,
                   lyricLines: {},
@@ -347,45 +387,16 @@ function GenreCardContent({
             >
               <span
                 class="setup-dot"
-                style={{
-                  background: `var(--hue-${g.color ?? "slate"})`,
-                }}
+                style={{ background: `var(--hue-${g.color ?? "slate"})` }}
               />
-              <span class="setup-select-name">{g.name}</span>
-              {g.subgenre_count && (
-                <span class="setup-select-sub">{g.subgenre_count}</span>
-              )}
-              {active && (
-                <CheckCircle
-                  size={16}
-                  weight="fill"
-                  style="color:var(--success-text);margin-left:auto"
-                />
-              )}
+              {g.name}
+              {active && <CheckCircle size={14} weight="fill" />}
             </button>
           );
         })}
       </div>
-    </>
-  );
-}
 
-/* ─── PRESET ─── */
-
-function PresetCardContent({
-  presets,
-  presetSearch,
-  setPresetSearch,
-  s,
-}: CardCtx & { s: ReturnType<typeof useSession> }) {
-  const filtered = presets.filter(
-    (p) =>
-      !presetSearch ||
-      p.name.toLowerCase().includes(presetSearch.toLowerCase()),
-  );
-
-  return (
-    <>
+      <div class="setup-eyebrow">PRESET</div>
       <div style="position:relative;margin-bottom:8px">
         <MagnifyingGlass
           size={14}
@@ -399,26 +410,31 @@ function PresetCardContent({
         />
       </div>
       <div class="setup-select-list tf-scroll" style="max-height:200px">
-        {filtered.map((p) => {
+        {filteredPresets.map((p) => {
           const active = s.presetIds.includes(p.id);
           return (
             <button
               key={p.id}
               class={`setup-select-item${active ? " active" : ""}`}
               onClick={() => {
-                // Toggle multi-select
-                const next = active
-                  ? s.presetIds.filter((id) => id !== p.id)
-                  : [...s.presetIds, p.id];
-                const labels = next.map((id) => {
-                  const match = presets.find((pr) => pr.id === id);
-                  return match?.name ?? id.replace(/_/g, " ");
-                });
-                s.setSession({
-                  presetIds: next,
-                  presetId: p.id,
-                  presetLabels: labels,
-                });
+                if (active) return;
+                const patch = presetSessionPatch(p);
+                // Regenerate the arrangement to match the new preset's
+                // energy/complexity — unless the user has already
+                // customized it, in which case switching presets shouldn't
+                // silently discard their edits.
+                if (s.arrangeSource !== "custom" && descDefaults) {
+                  const sections = buildSections(
+                    descDefaults.songStructure,
+                    patch.energy ?? s.energy,
+                    patch.complexity ?? s.complexity,
+                  );
+                  patch.sections = sections;
+                  patch.selSectionId = sections[0]?.id ?? null;
+                  patch.lyricsGenerated = false;
+                  patch.lyricLines = {};
+                }
+                s.setSession(patch);
               }}
             >
               <span style="flex:1;text-align:left;font-size:12px;font-weight:600;color:var(--tx)">
@@ -483,12 +499,7 @@ function LyricsCardContent({
             Adding lyrics? Set the vibe and angle below, or leave blank for the
             AI to invent.
           </p>
-          <div
-            class="tf-mono"
-            style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin:10px 0 7px"
-          >
-            WHAT'S THE SONG ABOUT?
-          </div>
+          <div class="setup-eyebrow">WHAT'S THE SONG ABOUT?</div>
           <textarea
             class="setup-textarea"
             placeholder="e.g. a late-night drive after a breakup, chasing the last of the city lights…"
@@ -500,12 +511,7 @@ function LyricsCardContent({
             }
           />
 
-          <div
-            class="tf-mono"
-            style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin:10px 0 7px"
-          >
-            ANGLE
-          </div>
+          <div class="setup-eyebrow">ANGLE</div>
           <div class="setup-chip-row">
             {(descDefaults?.lyricAngles ?? []).map((a) => {
               const active = s.lyricAngle === a.id;
@@ -523,12 +529,7 @@ function LyricsCardContent({
             })}
           </div>
 
-          <div
-            class="tf-mono"
-            style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin:10px 0 7px"
-          >
-            THEMES
-          </div>
+          <div class="setup-eyebrow">THEMES</div>
           <div class="setup-pill-row">
             {themes.map((t) => {
               const active = s.lyricThemes.includes(t);
@@ -558,76 +559,64 @@ function LyricsCardContent({
 
 function TempoCardContent({ s }: { s: ReturnType<typeof useSession> }) {
   const bpm = s.bpm ?? 128;
-  const currentKey =
-    s.key && s.scale ? `${s.key} ${s.scale === "major" ? "maj" : "min"}` : "";
+  const scale = s.scale ?? "major";
+
+  const setBpm = (v: number) => {
+    if (!Number.isNaN(v)) s.setSession({ bpm: Math.min(200, Math.max(60, v)) });
+  };
 
   return (
     <>
-      <div
-        class="tf-mono"
-        style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin-bottom:7px"
-      >
-        TEMPO
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span
-          class="tf-mono"
-          style="font-size:14px;font-weight:700;color:var(--forge)"
-        >
-          {bpm}
-          <span style="font-size:9px;color:var(--faint);font-weight:500">
-            {" "}
-            BPM
-          </span>
-        </span>
-        <div style="flex:1">
-          <input
-            type="range"
-            class="setup-slider"
-            min={60}
-            max={200}
-            value={bpm}
-            onInput={(e) =>
-              s.setSession({
-                bpm: Number((e.target as HTMLInputElement).value),
-              })
-            }
-          />
-        </div>
+      <div class="setup-eyebrow">TEMPO</div>
+      <div class="setup-tempo-row">
+        <input
+          type="number"
+          class="setup-tempo-input tf-mono"
+          min={60}
+          max={200}
+          value={bpm}
+          onInput={(e) => setBpm(Number((e.target as HTMLInputElement).value))}
+        />
+        <span class="setup-tempo-unit tf-mono">BPM</span>
+        <input
+          type="range"
+          class="setup-slider"
+          min={60}
+          max={200}
+          value={bpm}
+          onInput={(e) => setBpm(Number((e.target as HTMLInputElement).value))}
+        />
       </div>
 
-      <div
-        class="tf-mono"
-        style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin-bottom:7px"
-      >
-        KEY
-      </div>
-      <select
-        class="setup-select"
-        value={currentKey}
-        onChange={(e) => {
-          const val = (e.target as HTMLSelectElement).value;
-          const parts = val.split(" ");
-          if (parts.length === 2) {
-            const scale =
-              parts[1] === "maj"
-                ? "major"
-                : parts[1] === "min"
-                  ? "minor"
-                  : parts[1]!;
-            s.setSession({ key: parts[0]!, scale: scale as "major" | "minor" });
-          }
-        }}
-      >
-        <option value="" disabled>
-          Select a key
-        </option>
-        {KEY_OPTIONS.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
+      <div class="setup-eyebrow">KEY</div>
+      <div class="setup-key-grid">
+        {NOTE_NAMES.map((note) => (
+          <button
+            key={note}
+            type="button"
+            class={`setup-key-btn${s.key === note ? " on" : ""}`}
+            onClick={() => s.setSession({ key: note })}
+          >
+            {note}
+          </button>
         ))}
-      </select>
+      </div>
+      <div class="setup-scale-toggle">
+        <button
+          type="button"
+          class={`setup-scale-btn${scale === "major" ? " on" : ""}`}
+          onClick={() => s.setSession({ scale: "major" })}
+        >
+          Major
+        </button>
+        <button
+          type="button"
+          class={`setup-scale-btn${scale === "minor" ? " on" : ""}`}
+          onClick={() => s.setSession({ scale: "minor" })}
+        >
+          Minor
+        </button>
+      </div>
     </>
   );
 }
@@ -691,12 +680,12 @@ function DescriptorsCardContent({
                 <span class="setup-dot" style={{ background: cat.hue }} />
                 <span
                   class="tf-mono"
-                  style="font-size:9px;letter-spacing:.08em;color:var(--dim);font-weight:600"
+                  style="font-size:10.5px;letter-spacing:.08em;color:var(--label);font-weight:600"
                 >
                   {cat.label}
                 </span>
                 <span class="setup-desc-lane-divider" />
-                <span class="tf-mono" style="font-size:9px;color:var(--faint)">
+                <span class="tf-mono" style="font-size:10px;color:var(--dim)">
                   {catTags.length}
                 </span>
               </div>
@@ -762,12 +751,7 @@ function ReferenceCardContent({ s }: { s: ReturnType<typeof useSession> }) {
           s.setSession({ reference: (e.target as HTMLTextAreaElement).value })
         }
       />
-      <div
-        class="tf-mono"
-        style="font-size:9.5px;letter-spacing:.1em;color:var(--faint);font-weight:600;margin:10px 0 7px"
-      >
-        AVOID (comma-separated)
-      </div>
+      <div class="setup-eyebrow">AVOID (comma-separated)</div>
       <textarea
         class="setup-textarea"
         style="min-height:48px"

@@ -15,7 +15,7 @@ test.describe("Ambient forge", () => {
     await page.waitForLoadState("networkidle");
 
     // TEMPO & KEY section should be visible
-    const tempoKeySection = page.getByText("TEMPO");
+    const tempoKeySection = page.getByText("TEMPO & KEY", { exact: true });
     await expect(tempoKeySection).toBeVisible();
   });
 });

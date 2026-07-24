@@ -5,17 +5,19 @@ test.describe("Hip-Hop vocal forge", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // The genre card should be visible
-    const genreCard = page.getByRole("button", { name: /^GENRE/ });
-    await expect(genreCard).toBeVisible();
+    // The sound card (genre + preset) should be visible
+    const soundCard = page.getByRole("button", { name: /^SOUND/ });
+    await expect(soundCard).toBeVisible();
   });
 
-  test("lyrics card toggle works", async ({ page }) => {
+  test("lyrics toggle works", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // The LYRICS card toggle should be present (exact match)
-    const lyricsBtn = page.getByRole("button", { name: /^LYRICS/ });
-    await expect(lyricsBtn).toBeVisible();
+    // The LYRICS section is always visible (not collapsible) with a toggle switch
+    const lyricsLabel = page.getByText("LYRICS", { exact: true });
+    await expect(lyricsLabel).toBeVisible();
+    const toggle = page.locator(".setup-toggle");
+    await expect(toggle).toBeVisible();
   });
 });

@@ -3,10 +3,19 @@ import type {
   DescriptorCategory,
   DescriptorWeight,
   SectionFunction,
+  SongStructureSection,
+  SongStructureBarSpec,
   Vocal,
 } from "@track-forge/genre-core";
 
-export type { DescriptorCategory, DescriptorWeight, SectionFunction, Vocal };
+export type {
+  DescriptorCategory,
+  DescriptorWeight,
+  SectionFunction,
+  SongStructureSection,
+  SongStructureBarSpec,
+  Vocal,
+};
 
 export interface Descriptor {
   id: string;
@@ -31,14 +40,10 @@ export type LyricAngle = "first_person" | "story" | "abstract" | "anthemic";
 
 export type ArrangeSource = "default" | "custom";
 
-export type SetupCardId =
-  "genre" | "preset" | "tempo" | "lyrics" | "descriptors" | "reference";
+export type SetupCardId = "sound" | "descriptors" | "reference";
 
 export interface SetupCardsOpen {
-  genre: boolean;
-  preset: boolean;
-  tempo: boolean;
-  lyrics: boolean;
+  sound: boolean;
   descriptors: boolean;
   reference: boolean;
 }

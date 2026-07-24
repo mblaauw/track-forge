@@ -1,0 +1,31 @@
+# Vocabulary shared identically across every genre module. Edit here once —
+# it's merged into each genre's config at load time (see genre-config.ts's
+# loadYaml()). A genre file may still define its own section_functions or
+# delta_palette to override this if it ever needs to diverge; today none do.
+
+section_functions:
+  [establish, introduce, escalate, contrast, remove, peak, resolve]
+
+delta_palette:
+  [
+    "sparse texture",
+    atmospheric,
+    filtered,
+    "add rhythm",
+    "rising tension",
+    "full groove",
+    "bass-led",
+    "wide theme",
+    "full arrangement",
+    catchy,
+    "strip drums",
+    "expose harmony",
+    "add countermelody",
+    "added impact",
+    climactic,
+    introspective,
+    "half-time feel",
+    "vocal focus",
+    instrumental,
+    "reduce layers",
+  ]

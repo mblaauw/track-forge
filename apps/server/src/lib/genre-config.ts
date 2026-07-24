@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as yaml from "js-yaml";
+import type { SongStructureSection } from "@track-forge/genre-core";
 
 interface PresetValue {
   [key: string]: unknown;
@@ -21,19 +22,13 @@ interface TagCategoryYaml {
   suggestions: string[];
 }
 
-interface SongStructureSectionYaml {
-  section: string;
-  bars: number | { base: number; per_energy?: number; per_complexity?: number };
-  tags: string[];
-}
-
 export interface GenreConfigYaml {
   name: string;
   color: string;
   subgenre_count: string;
   tag_categories: TagCategoryYaml[];
   presets: GenrePresetYaml[];
-  song_structure?: SongStructureSectionYaml[];
+  song_structure?: SongStructureSection[];
   taxonomy?: unknown;
   descriptor_categories?: {
     cat: string;
@@ -63,9 +58,40 @@ const ROOT = join(
   "config",
 );
 const GENRE_DIR = join(ROOT, "genres");
+const SHARED_PATH = join(ROOT, "shared.yaml");
+
+interface SharedConfigYaml {
+  section_functions?: string[];
+  delta_palette?: string[];
+}
+
+let sharedCache: { mtime: number; data: SharedConfigYaml } | null = null;
+
+// Vocabulary identical across every genre (section_functions, delta_palette)
+// lives in config/shared.yaml instead of being copy-pasted into each genre
+// file — a genre file can still define its own to override this.
+function loadShared(): SharedConfigYaml {
+  if (sharedCache) {
+    try {
+      const currentMtime = statSync(SHARED_PATH).mtimeMs;
+      if (currentMtime <= sharedCache.mtime) return sharedCache.data;
+    } catch {
+      // if stat fails, fall through to re-read
+    }
+  }
+  try {
+    const raw = readFileSync(SHARED_PATH, "utf-8");
+    const parsed = (yaml.load(raw) as SharedConfigYaml) ?? {};
+    sharedCache = { mtime: statSync(SHARED_PATH).mtimeMs, data: parsed };
+    return parsed;
+  } catch {
+    return {};
+  }
+}
 
 interface CacheEntry {
   mtime: number;
+  sharedMtime: number;
   data: GenreConfigYaml;
 }
 
@@ -78,7 +104,13 @@ function loadYaml(id: string): GenreConfigYaml {
   if (cached) {
     try {
       const currentMtime = statSync(filePath).mtimeMs;
-      if (currentMtime <= cached.mtime) return cached.data;
+      const currentSharedMtime = statSync(SHARED_PATH).mtimeMs;
+      if (
+        currentMtime <= cached.mtime &&
+        currentSharedMtime <= cached.sharedMtime
+      ) {
+        return cached.data;
+      }
     } catch {
       // if stat fails, fall through to re-read
     }
@@ -87,7 +119,14 @@ function loadYaml(id: string): GenreConfigYaml {
   try {
     const raw = readFileSync(filePath, "utf-8");
     const parsed = yaml.load(raw) as GenreConfigYaml;
-    cache.set(id, { mtime: statSync(filePath).mtimeMs, data: parsed });
+    const shared = loadShared();
+    parsed.section_functions ??= shared.section_functions;
+    parsed.delta_palette ??= shared.delta_palette;
+    cache.set(id, {
+      mtime: statSync(filePath).mtimeMs,
+      sharedMtime: statSync(SHARED_PATH).mtimeMs,
+      data: parsed,
+    });
     return parsed;
   } catch (err) {
     throw new Error(
@@ -143,7 +182,7 @@ export function getTagCategories(id: string): TagCategoryYaml[] {
   return loadYaml(id).tag_categories;
 }
 
-export function getSongStructure(id: string): SongStructureSectionYaml[] {
+export function getSongStructure(id: string): SongStructureSection[] {
   return loadYaml(id).song_structure ?? [];
 }
 
@@ -194,6 +233,7 @@ export interface GenreDescriptorDefaults {
     deliveryStyle: string;
     defaultEnergy: number;
   }[];
+  songStructure: SongStructureSection[];
 }
 
 export function getDescriptorDefaults(id: string): GenreDescriptorDefaults {
@@ -216,5 +256,6 @@ export function getDescriptorDefaults(id: string): GenreDescriptorDefaults {
       deliveryStyle: v.delivery_style,
       defaultEnergy: v.default_energy,
     })),
+    songStructure: cfg.song_structure ?? [],
   };
 }

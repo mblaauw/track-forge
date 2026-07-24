@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import * as yaml from "js-yaml";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const GENRE_DIR = join(__dirname, "..", "config", "genres");
+const CONFIG_DIR = join(__dirname, "..", "config");
+const GENRE_DIR = join(CONFIG_DIR, "genres");
+const SHARED_PATH = join(CONFIG_DIR, "shared.yaml");
 
 // ── Known valid values ────────────────────────────────────────────────
 
@@ -65,6 +67,43 @@ function validateGenre(file, id, cfg) {
     const scale = p.values?.scale;
     if (scale && !VALID_SCALES.includes(scale)) {
       error(file, `preset "${p.id}" invalid scale: ${scale}`);
+    }
+  }
+
+  // ── Preset subgenre → taxonomy cross-reference ───────────────────
+  const subgenreIds = new Set((cfg.taxonomy?.subgenres ?? []).map((s) => s.id));
+  if (subgenreIds.size > 0) {
+    for (const p of cfg.presets ?? []) {
+      const sg = p.values?.subgenre;
+      if (sg && !subgenreIds.has(sg)) {
+        error(
+          file,
+          `preset "${p.id}" subgenre "${sg}" not found in taxonomy.subgenres`,
+        );
+      }
+    }
+  }
+
+  // ── song_structure ────────────────────────────────────────────────
+  const effectiveFns = cfg.section_functions ?? VALID_SECTION_FUNCTIONS;
+  const effectiveDeltas = new Set(cfg.delta_palette ?? []);
+  for (const s of cfg.song_structure ?? []) {
+    if (!s.section) error(file, "song_structure entry missing section");
+    if (s.fn && !effectiveFns.includes(s.fn)) {
+      error(
+        file,
+        `song_structure "${s.section}" invalid fn: "${s.fn}" (not in section_functions)`,
+      );
+    }
+    if (effectiveDeltas.size > 0) {
+      for (const t of s.tags ?? []) {
+        if (!effectiveDeltas.has(t)) {
+          error(
+            file,
+            `song_structure "${s.section}" tag "${t}" not found in delta_palette`,
+          );
+        }
+      }
     }
   }
 
@@ -186,6 +225,20 @@ function validateGenre(file, id, cfg) {
 
 // ── Main ────────────────────────────────────────────────────────────────
 
+let shared = {};
+try {
+  shared = yaml.load(readFileSync(SHARED_PATH, "utf-8")) ?? {};
+  if (shared.section_functions) {
+    for (const fn of shared.section_functions) {
+      if (!VALID_SECTION_FUNCTIONS.includes(fn)) {
+        warn("shared.yaml", `unknown section_function: "${fn}"`);
+      }
+    }
+  }
+} catch (err) {
+  error("shared.yaml", `YAML parse error: ${err.message}`);
+}
+
 const files = readdirSync(GENRE_DIR).filter((f) => f.endsWith(".yaml"));
 
 if (files.length === 0) {
@@ -203,6 +256,11 @@ for (const f of files) {
       error(f, "not a valid YAML object");
       continue;
     }
+    // Genre files no longer carry section_functions/delta_palette directly —
+    // they're merged from config/shared.yaml at load time in genre-config.ts.
+    // Mirror that here so validation sees the effective values.
+    cfg.section_functions ??= shared.section_functions;
+    cfg.delta_palette ??= shared.delta_palette;
     validateGenre(f, id, cfg);
   } catch (err) {
     error(f, `YAML parse error: ${err.message}`);

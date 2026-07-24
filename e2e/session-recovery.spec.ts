@@ -5,19 +5,25 @@ test.describe("session recovery", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Genre card should show EDM as default
-    const genreCard = page.getByRole("button", { name: /^GENRE/ });
-    await expect(genreCard).toBeVisible();
-    await expect(genreCard).toContainText("EDM");
+    // Sound card should show EDM as default
+    const soundCard = page.getByRole("button", { name: /^SOUND/ });
+    await expect(soundCard).toBeVisible();
+    await expect(soundCard).toContainText("EDM");
   });
 
-  test("preset card can be expanded", async ({ page }) => {
+  test("sound card can be collapsed and expanded", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // The PRESET section header should be present
-    const presetBtn = page.getByRole("button", { name: /^PRESET/ });
-    await expect(presetBtn).toBeVisible();
+    const soundCard = page.getByRole("button", { name: /^SOUND/ });
+    const presetLabel = page.getByText("PRESET", { exact: true });
+    await expect(presetLabel).toBeVisible();
+
+    await soundCard.click();
+    await expect(presetLabel).not.toBeVisible();
+
+    await soundCard.click();
+    await expect(presetLabel).toBeVisible();
   });
 
   test("library panel can be toggled", async ({ page }) => {

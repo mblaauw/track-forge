@@ -4,12 +4,11 @@ import {
   Sparkle,
   ArrowClockwise,
   MicrophoneStage,
-  Waveform,
   Copy,
   WarningCircle,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import { sectionColor, sectionIsVocal } from "./arrangement";
+import { sectionColor, sectionIsVocal, vocalMeta } from "./arrangement";
 import { generateLyrics } from "../../api";
 import type { Section } from "./types";
 
@@ -25,28 +24,6 @@ function totalSyllables(lines: Record<string, string[]>): number {
     for (const line of arr) total += syl(line);
   }
   return total;
-}
-
-function vocalMeta(vocal?: {
-  type?: string;
-  delivery?: string;
-  energy?: number;
-  adlibs?: boolean;
-  harmonies?: boolean;
-}): string {
-  if (!vocal) return "";
-  const energyWords = [
-    "",
-    "intimate",
-    "restrained",
-    "balanced",
-    "powerful",
-    "explosive",
-  ];
-  const parts = [vocal.type, vocal.delivery, energyWords[vocal.energy ?? 0]];
-  if (vocal.adlibs) parts.push("ad-libs");
-  if (vocal.harmonies) parts.push("harmonies");
-  return parts.filter(Boolean).join(", ");
 }
 
 export function LyricsBlock({ style }: { style: string }) {
@@ -164,7 +141,7 @@ export function LyricsBlock({ style }: { style: string }) {
     <div class="bundle-block">
       <div class="bundle-block-header">
         <MusicNotes size={16} style="color:var(--icon-lyrics)" />
-        <span class="bundle-block-title">ARRANGEMENT</span>
+        <span class="bundle-block-title">LYRICS</span>
         {s.lyricsGenerated && (
           <span class="bundle-block-meta">{totalSyl} syllables</span>
         )}
@@ -215,17 +192,7 @@ export function LyricsBlock({ style }: { style: string }) {
             <span>{error}</span>
           </div>
         )}
-        {s.lyricsMode === "strict_instrumental" && (
-          <div class="lyrics-info-box" style="margin-bottom:12px">
-            <Waveform size={14} />
-            <span>
-              Instrumental — the arrangement structure below uses Suno metatags
-              to describe movement. Suno reads these metatags directly.
-            </span>
-          </div>
-        )}
-        {s.sections.map((sec) => {
-          const isVocal = sectionIsVocal(sec);
+        {vocalSections.map((sec) => {
           const hue = sectionColor(sec.name);
           return (
             <div class="lyrics-section-block" key={sec.id}>
@@ -238,13 +205,13 @@ export function LyricsBlock({ style }: { style: string }) {
                   {sec.deltas.length > 0 ? `: ${sec.deltas.join(", ")}` : ""}]
                 </span>
               </div>
-              {isVocal && sec.vocal && (
+              {sec.vocal && (
                 <div class="lyrics-delivery-pill">
                   <MicrophoneStage size={12} style="color:var(--danger-text)" />
                   <span>{vocalMeta(sec.vocal)}</span>
                 </div>
               )}
-              {s.lyricsGenerated && isVocal && (
+              {s.lyricsGenerated && (
                 <div style="margin:4px 0 6px">
                   <button
                     class="arr-action-btn"
@@ -275,9 +242,7 @@ export function LyricsBlock({ style }: { style: string }) {
                     />
                   </div>
                 ))
-              ) : !s.lyricsGenerated &&
-                isVocal &&
-                s.lyricsMode !== "strict_instrumental" ? (
+              ) : !s.lyricsGenerated ? (
                 <p class="lyrics-not-generated">
                   Lyrics not generated yet. Click Generate above.
                 </p>
@@ -285,21 +250,17 @@ export function LyricsBlock({ style }: { style: string }) {
             </div>
           );
         })}
-        {!s.lyricsGenerated &&
-          s.lyricsMode !== "strict_instrumental" &&
-          vocalSections.length > 0 && (
-            <p class="lyrics-not-generated">
-              Generate lyrics from your arrangement, style & lyrical brief.
-            </p>
-          )}
-        {!s.lyricsGenerated &&
-          s.lyricsMode !== "strict_instrumental" &&
-          vocalSections.length === 0 && (
-            <p class="lyrics-not-generated">
-              No vocal sections in the arrangement. Add a section with 'vocal
-              focus' or a Verse/Chorus/Hook/Drop name.
-            </p>
-          )}
+        {!s.lyricsGenerated && vocalSections.length > 0 && (
+          <p class="lyrics-not-generated">
+            Generate lyrics from your arrangement, style & lyrical brief.
+          </p>
+        )}
+        {vocalSections.length === 0 && (
+          <p class="lyrics-not-generated">
+            No vocal sections in the arrangement. Add a section with 'vocal
+            focus' or a Verse/Chorus/Hook/Drop name.
+          </p>
+        )}
       </div>
     </div>
   );

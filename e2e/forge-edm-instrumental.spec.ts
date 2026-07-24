@@ -14,10 +14,10 @@ test.describe("EDM instrumental forge", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // The GENRE card summary should show EDM as default
-    const genreCard = page.getByRole("button", { name: /^GENRE/ });
-    await expect(genreCard).toBeVisible();
-    await expect(genreCard).toContainText("EDM");
+    // The SOUND card summary should show EDM as default
+    const soundCard = page.getByRole("button", { name: /^SOUND/ });
+    await expect(soundCard).toBeVisible();
+    await expect(soundCard).toContainText("EDM");
   });
 
   test("descriptor card is present and toggleable", async ({ page }) => {

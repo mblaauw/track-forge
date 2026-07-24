@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useState } from "preact/hooks";
 import {
   CaretLeft,
   CaretRight,
@@ -7,9 +7,9 @@ import {
   Pause,
   Star,
   Plus,
-  MusicNote,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
+import { usePlayer } from "../../lib/player";
 import { createTake, fetchVersions, fetchTakes, favoriteTake } from "../../api";
 import type { Take, TakeTrack } from "./types";
 
@@ -23,21 +23,11 @@ function wave(seed: string, n: number): number[] {
   return bars;
 }
 
-type PlayTarget = { takeId: string; trackIndex: number };
-
 export function RendersPanel() {
   const s = useSession();
+  const player = usePlayer();
   const { rightCollapsed, togglePanel, takes, jobId } = s;
-  const [playing, setPlaying] = useState<PlayTarget | null>(null);
   const [rendering, setRendering] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-      audioRef.current = null;
-    };
-  }, []);
 
   const handleNewRender = async () => {
     if (!jobId || rendering) return;
@@ -60,23 +50,11 @@ export function RendersPanel() {
   const handlePlay = (
     takeId: string,
     trackIndex: number,
-    audioUrl?: string,
+    audioUrl: string | undefined,
+    label: string,
   ) => {
-    if (playing?.takeId === takeId && playing?.trackIndex === trackIndex) {
-      audioRef.current?.pause();
-      setPlaying(null);
-      return;
-    }
     if (!audioUrl) return;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    const audio = new Audio(audioUrl);
-    audio.onended = () => setPlaying(null);
-    audio.play().catch(() => {});
-    audioRef.current = audio;
-    setPlaying({ takeId, trackIndex });
+    player.toggle({ takeId, trackIndex, audioUrl, label });
   };
 
   const handleFavorite = async (takeId: string) => {
@@ -94,7 +72,9 @@ export function RendersPanel() {
 
   const renderTrack = (track: TakeTrack, take: Take, isOnly: boolean) => {
     const isPlaying =
-      playing?.takeId === take.id && playing?.trackIndex === track.index;
+      player.isPlaying &&
+      player.current?.takeId === take.id &&
+      player.current?.trackIndex === track.index;
     const bars = wave(track.id || take.id + track.index, 40);
     const label = track.title || `Track ${track.index + 1}`;
 
@@ -117,7 +97,14 @@ export function RendersPanel() {
               background: isPlaying ? "var(--forge)" : "var(--success-fill)",
               color: isPlaying ? "var(--acc)" : "var(--success-text)",
             }}
-            onClick={() => handlePlay(take.id, track.index, track.audioUrl)}
+            onClick={() =>
+              handlePlay(
+                take.id,
+                track.index,
+                track.audioUrl,
+                !isOnly ? label : take.generatedTitle || "Untitled",
+              )
+            }
             title={`Play ${label}`}
           >
             {isPlaying ? (
@@ -163,10 +150,14 @@ export function RendersPanel() {
       <div
         class="col-rail collapsed"
         onClick={() => togglePanel("right")}
-        title="Expand renders"
+        title="Expand takes"
+        aria-label={`Expand takes, ${takes.length} takes`}
       >
         <CaretLeft size={16} />
-        <span class="rail-vertical-label">RENDERS</span>
+        <Waveform size={18} />
+        {takes.length > 0 && (
+          <span class="rail-count-badge">{takes.length}</span>
+        )}
       </div>
     );
   }
@@ -177,29 +168,29 @@ export function RendersPanel() {
         <button
           class="col-collapse-btn"
           onClick={() => togglePanel("right")}
-          title="Collapse renders"
+          title="Collapse takes"
         >
           <CaretRight size={16} />
         </button>
         <span class="col-pill">
           <Waveform size={14} />
-          Renders · {takes.length}
+          Takes · {takes.length}
         </span>
       </div>
       <div class="col-body tf-scroll">
         <div class="renders-subheader">
-          <span class="renders-subheader-label">GENERATED SONGS</span>
+          <span class="renders-subheader-label">TAKES</span>
           <button
             class="renders-new-btn"
             onClick={handleNewRender}
             disabled={rendering}
           >
-            <Plus size={14} /> {rendering ? "Rendering…" : "New render"}
+            <Plus size={14} /> {rendering ? "Forging…" : "New take"}
           </button>
         </div>
         {takes.length === 0 ? (
           <p class="renders-empty">
-            No renders yet. Forge the bundle to generate.
+            No takes yet. Forge the bundle to create one.
           </p>
         ) : (
           <div
@@ -207,7 +198,7 @@ export function RendersPanel() {
             style="display:flex;flex-direction:column;gap:8px"
           >
             {takes.map((take) => {
-              const tracks = (take as any).tracks as TakeTrack[] | undefined;
+              const tracks = take.tracks;
               const hasTracks = tracks && tracks.length > 0;
               return (
                 <div

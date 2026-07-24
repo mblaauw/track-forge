@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from "preact/hooks";
 import { useSession } from "../../lib/session";
+import { usePlayer, flattenTakes } from "../../lib/player";
 import {
   createJob,
   startJob,
@@ -11,7 +12,7 @@ import {
   type ProgressEvent,
 } from "../../api";
 import { ContextBar } from "./ContextBar";
-import { ForgeStrip } from "./ForgeStrip";
+import { TransportBar } from "./TransportBar";
 import { SetupColumn } from "./SetupColumn";
 import { BundleCanvas } from "./BundleCanvas";
 import { RendersPanel } from "./RendersPanel";
@@ -22,7 +23,7 @@ const STAGE_TO_LABEL: Record<string, string> = {
   compilation: "Composing arrangement",
   lyrics_writing: "Writing lyrics",
   versioning: "Finalizing bundle",
-  suno_render: "Rendering with Suno",
+  suno_render: "Forging audio with Suno",
 };
 
 function stageToDisplay(stage: string): { label: string; index: number } {
@@ -70,6 +71,7 @@ function buildInputPack(
 
 export function ComposeShell() {
   const s = useSession();
+  const player = usePlayer();
   const { leftCollapsed, rightCollapsed, libraryCollapsed } = s;
   const cleanupRef = useRef<(() => void) | null>(null);
   const draftRef = useRef(false);
@@ -79,7 +81,7 @@ export function ComposeShell() {
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleForge = useCallback(async () => {
-    if (s.forgeRunning || s.forgeDisabled) return;
+    if (s.forgeRunning || !s.genreId) return;
 
     // Flush any pending debounced autosave write immediately — otherwise a
     // change made in the last 800ms could start the pipeline on stale inputs.
@@ -128,7 +130,7 @@ export function ComposeShell() {
           if (event.stage === "suno_render" && event.status === "started") {
             s.setSession({
               forgeStageIdx: 3,
-              forgeStageLabel: "Rendering with Suno",
+              forgeStageLabel: "Forging audio with Suno",
             });
           } else if (
             event.stage === "suno_render_complete" ||
@@ -139,7 +141,7 @@ export function ComposeShell() {
               forgeStageIdx: 4,
               status: "completed",
             });
-            // Refresh renders
+            // Refresh takes
             fetchVersions(jobId!)
               .then((versions) => {
                 if (versions.length > 0) {
@@ -150,6 +152,14 @@ export function ComposeShell() {
                   fetchTakes(latest.id)
                     .then((takes) => {
                       s.setSession({ takes: takes as any[] });
+                      s.expandPanel("right");
+                      // takes are newest-first — load the take that just
+                      // finished, paused (never autoplay).
+                      const newest = takes[0];
+                      const playable = newest
+                        ? flattenTakes([newest as any])[0]
+                        : undefined;
+                      if (playable) player.loadPaused(playable);
                     })
                     .catch(() => {});
                 }
@@ -221,7 +231,6 @@ export function ComposeShell() {
     s.title,
     s.name,
     s.forgeRunning,
-    s.forgeDisabled,
   ]);
 
   // Cleanup SSE on unmount
@@ -306,13 +315,13 @@ export function ComposeShell() {
           onForge={handleForge}
           forgeDisabled={!s.genreId || s.forgeRunning}
         />
-        <ForgeStrip />
         <div class="compose-grid" style={{ gridTemplateColumns: gridCols }}>
           <SetupColumn />
           <BundleCanvas />
           <RendersPanel />
           <LibraryPanel />
         </div>
+        <TransportBar />
       </div>
     </div>
   );

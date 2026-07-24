@@ -1,7 +1,7 @@
 # EDM genre module config
 name: EDM
 color: cyan
-subgenre_count: "80+"
+subgenre_count: "40+"
 
 tag_categories:
   - id: genre
@@ -295,29 +295,37 @@ presets:
 
 song_structure:
   - section: intro
+    fn: establish
     bars: { base: 8, per_complexity: 0.5 }
-    tags: [filtered, atmospheric]
+    tags: [atmospheric, "sparse texture"]
   - section: build
+    fn: introduce
     bars: 8
-    tags: [layered, rising, percussion build]
+    tags: ["add rhythm", "rising tension"]
   - section: drop
+    fn: peak
     bars: { base: 16, per_energy: 1.2 }
-    tags: [full, driving]
+    tags: ["full groove", "bass-led", "wide theme"]
   - section: breakdown
+    fn: remove
     bars: { base: 8, per_complexity: 0.8 }
-    tags: [stripped, atmospheric]
+    tags: ["strip drums", "expose harmony"]
   - section: build_2
+    fn: escalate
     bars: 8
-    tags: [layered, rising, tension]
+    tags: ["rising tension"]
   - section: drop_2
+    fn: peak
     bars: { base: 16, per_energy: 1.2 }
-    tags: [full, variation]
+    tags: ["added impact", "add countermelody"]
   - section: bridge
+    fn: contrast
     bars: 8
-    tags: [transition]
+    tags: [introspective]
   - section: outro
+    fn: resolve
     bars: { base: 8, per_complexity: 0.5 }
-    tags: [filtered, fading]
+    tags: ["reduce layers"]
 
 taxonomy:
   families:
@@ -1079,33 +1087,6 @@ descriptor_defaults:
 
 lyric_themes:
   [euphoria, nightlife, "letting go", transcendence, togetherness, "the drop"]
-
-section_functions:
-  [establish, introduce, escalate, contrast, remove, peak, resolve]
-
-delta_palette:
-  [
-    "sparse texture",
-    atmospheric,
-    filtered,
-    "add rhythm",
-    "rising tension",
-    "full groove",
-    "bass-led",
-    "wide theme",
-    "full arrangement",
-    catchy,
-    "strip drums",
-    "expose harmony",
-    "add countermelody",
-    "added impact",
-    climactic,
-    introspective,
-    "half-time feel",
-    "vocal focus",
-    instrumental,
-    "reduce layers",
-  ]
 
 section_palette:
   [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]

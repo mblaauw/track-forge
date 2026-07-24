@@ -16,10 +16,11 @@ import {
   SECTION_PALETTE,
   sectionColor,
   sectionIsVocal,
-  defaultSections,
+  sectionShowsVocal,
+  buildSections,
   generateId,
 } from "./arrangement";
-import type { Section, SectionFunction } from "./types";
+import type { Section, SectionFunction, SongStructureSection } from "./types";
 
 function estTime(totalBars: number, bpm: number): string {
   const sec = (totalBars * 4 * 60) / Math.max(bpm, 1);
@@ -43,6 +44,7 @@ export function ArrangementEditor() {
       deliveryStyle: string;
       defaultEnergy: number;
     }[];
+    songStructure: SongStructureSection[];
   } | null>(null);
 
   useEffect(() => {
@@ -130,7 +132,11 @@ export function ArrangementEditor() {
               class="arr-action-btn"
               onClick={() =>
                 s.setSession({
-                  sections: defaultSections(s.genreId),
+                  sections: buildSections(
+                    vocab?.songStructure ?? [],
+                    s.energy,
+                    s.complexity,
+                  ),
                   arrangeSource: "default",
                   selSectionId: null,
                   lyricsGenerated: false,
@@ -169,7 +175,11 @@ export function ArrangementEditor() {
                 class="arr-restore-btn"
                 onClick={() =>
                   s.setSession({
-                    sections: defaultSections(s.genreId),
+                    sections: buildSections(
+                      vocab?.songStructure ?? [],
+                      s.energy,
+                      s.complexity,
+                    ),
                     arrangeSource: "default",
                   })
                 }
@@ -344,11 +354,12 @@ export function ArrangementEditor() {
             {/* Local deltas */}
             <div class="arr-editor-section">
               <span class="arr-editor-section-label">LOCAL CHANGE</span>
-              <p class="arr-editor-helper">
-                Only local changes live here — global sound belongs in the Style
-                Console. A "vocal focus" delta (or Verse/Chorus/Hook/Drop
-                section) gets lyrics; everything else stays instrumental.
-              </p>
+              {s.lyricsMode !== "strict_instrumental" && (
+                <p class="arr-editor-helper">
+                  Local changes for this section only — global sound lives in
+                  the Suno Prompt.
+                </p>
+              )}
               <div class="arr-delta-row">
                 {sel.deltas.map((delta) => (
                   <span class="arr-delta-pill">
@@ -379,6 +390,11 @@ export function ArrangementEditor() {
                 <div class="arr-delta-add-group">
                   {deltas
                     .filter((d) => !sel.deltas.includes(d))
+                    .filter(
+                      (d) =>
+                        d !== "vocal focus" ||
+                        s.lyricsMode !== "strict_instrumental",
+                    )
                     .map((delta) => (
                       <button
                         key={delta}
@@ -404,8 +420,8 @@ export function ArrangementEditor() {
               </div>
             </div>
 
-            {/* Vocal delivery (only when section is vocal and not instrumental mode) */}
-            {sectionIsVocal(sel) && (
+            {/* Vocal delivery (only when section is vocal and lyrics are on) */}
+            {sectionShowsVocal(sel, s.lyricsMode) && (
               <div class="arr-vocal-editor">
                 <MicrophoneStage size={14} style="color:var(--danger-text)" />
                 <span

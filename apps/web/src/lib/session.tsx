@@ -1,8 +1,5 @@
 import { createContext } from "preact";
-import {
-  randomSessionName,
-  randomTitle,
-} from "../components/compose/arrangement";
+import { randomTitle } from "../components/compose/arrangement";
 import {
   useContext,
   useState,
@@ -62,11 +59,14 @@ export interface SessionState {
   bpm: number | null;
   key: string;
   scale: "major" | "minor";
+  // Preset's own 1-10 energy/complexity — drive the size of formula-based
+  // arrangement sections (see buildSections in components/compose/arrangement.ts).
+  energy: number;
+  complexity: number;
   status: string;
   reference: string;
   excludedStyles: string;
   forgeLabel: string;
-  forgeDisabled: boolean;
   lyricsMode: LyricsMode;
   lyricTopic: string;
   lyricAngle: LyricAngle;
@@ -79,6 +79,7 @@ export interface SessionState {
   arrangeSource: ArrangeSource;
   takes: Take[];
   cards: SetupCardsOpen;
+  promptInspectorOpen: boolean;
   leftCollapsed: boolean;
   rightCollapsed: boolean;
   libraryCollapsed: boolean;
@@ -98,11 +99,12 @@ const DEFAULT: SessionState = {
   bpm: 128,
   key: "C",
   scale: "minor",
+  energy: 5,
+  complexity: 5,
   status: "idle",
   reference: "",
   excludedStyles: "",
   forgeLabel: "Forge",
-  forgeDisabled: true,
   lyricsMode: "strict_instrumental",
   lyricTopic: "",
   lyricAngle: "first_person",
@@ -115,13 +117,11 @@ const DEFAULT: SessionState = {
   arrangeSource: "default",
   takes: [],
   cards: {
-    genre: true,
-    preset: false,
-    tempo: false,
-    lyrics: false,
+    sound: true,
     descriptors: false,
     reference: false,
   },
+  promptInspectorOpen: false,
   leftCollapsed: false,
   rightCollapsed: true,
   libraryCollapsed: true,
@@ -135,6 +135,7 @@ interface SessionCtx extends SessionState {
   resetSession: () => void;
   toggleCard: (id: SetupCardId) => void;
   togglePanel: (which: "left" | "right" | "library") => void;
+  expandPanel: (which: "left" | "right" | "library") => void;
 }
 
 const Ctx = createContext<SessionCtx>({
@@ -143,6 +144,7 @@ const Ctx = createContext<SessionCtx>({
   resetSession: () => {},
   toggleCard: () => {},
   togglePanel: () => {},
+  expandPanel: () => {},
 } as SessionCtx);
 
 export function useSession(): SessionCtx {
@@ -155,14 +157,12 @@ export function SessionProvider({
   children: preact.ComponentChildren;
 }) {
   // Initialize from localStorage if available
-  const [state, setState] = useState<SessionState>(
-    () =>
-      loadPersistedSession() ?? {
-        ...DEFAULT,
-        name: randomSessionName(),
-        title: randomTitle(),
-      },
-  );
+  const [state, setState] = useState<SessionState>(() => {
+    const persisted = loadPersistedSession();
+    if (persisted) return persisted;
+    const title = randomTitle();
+    return { ...DEFAULT, name: title, title };
+  });
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Auto-persist on every state change (debounced)
@@ -180,7 +180,8 @@ export function SessionProvider({
   );
   const resetSession = useCallback(() => {
     clearPersistedSession();
-    setState({ ...DEFAULT, name: randomSessionName(), title: randomTitle() });
+    const title = randomTitle();
+    setState({ ...DEFAULT, name: title, title });
   }, []);
   const toggleCard = useCallback(
     (id: SetupCardId) =>
@@ -195,9 +196,23 @@ export function SessionProvider({
       })),
     [],
   );
+  const expandPanel = useCallback(
+    (which: "left" | "right" | "library") =>
+      setState((s) =>
+        s[`${which}Collapsed`] ? { ...s, [`${which}Collapsed`]: false } : s,
+      ),
+    [],
+  );
   return (
     <Ctx.Provider
-      value={{ ...state, setSession, resetSession, toggleCard, togglePanel }}
+      value={{
+        ...state,
+        setSession,
+        resetSession,
+        toggleCard,
+        togglePanel,
+        expandPanel,
+      }}
     >
       {children}
     </Ctx.Provider>

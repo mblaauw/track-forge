@@ -1,6 +1,6 @@
 import { Flame, CircleNotch, Shuffle } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import { randomSessionName } from "./arrangement";
+import { randomTitle } from "./arrangement";
 
 function keyLabel(key: string, scale: "major" | "minor"): string {
   if (!key) return "—";
@@ -32,18 +32,22 @@ export function ContextBar({
         <div style="display:flex;align-items:center;gap:6px">
           <input
             class="ctx-name-input"
-            aria-label="Session name"
-            placeholder="Untitled Session"
-            value={s.name}
-            onInput={(e) =>
-              s.setSession({ name: (e.target as HTMLInputElement).value })
-            }
+            aria-label="Track title"
+            placeholder="Untitled track"
+            value={s.title}
+            onInput={(e) => {
+              const value = (e.target as HTMLInputElement).value;
+              s.setSession({ title: value, name: value });
+            }}
           />
           <button
             class="ctx-name-gen-btn"
-            onClick={() => s.setSession({ name: randomSessionName() })}
-            title="Generate session name"
-            style="background:none;border:none;cursor:pointer;color:var(--faint);padding:4px;display:flex"
+            onClick={() => {
+              const title = randomTitle();
+              s.setSession({ title, name: title });
+            }}
+            title="Generate title"
+            aria-label="Generate title"
           >
             <Shuffle size={14} />
           </button>

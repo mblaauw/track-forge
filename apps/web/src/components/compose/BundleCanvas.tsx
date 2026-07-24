@@ -1,17 +1,15 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import { Textbox, SlidersHorizontal, Shuffle } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { previewStyle } from "../../api";
-import { randomTitle } from "./arrangement";
 import { ArrangementEditor } from "./ArrangementEditor";
 import { LyricsBlock } from "./LyricsBlock";
+import { PromptInspector } from "./PromptInspector";
 
 export function BundleCanvas() {
   const s = useSession();
   const [stylePreview, setStylePreview] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
-  const [copied, setCopied] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const activeDescs = s.tags.filter((t) => !t.muted);
@@ -70,77 +68,23 @@ export function BundleCanvas() {
     s.lyricsMode,
   ]);
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(stylePreview);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1400);
-    } catch {
-      // clipboard not available
-    }
-  };
-
   return (
     <div class="bundle-canvas tf-scroll">
       <div class="bundle-inner">
-        {/* TITLE block */}
-        <div class="bundle-block">
-          <div class="bundle-block-header">
-            <Textbox size={16} style="color:var(--icon-title)" />
-            <span class="bundle-block-title">TITLE</span>
-          </div>
-          <div
-            class="bundle-block-body"
-            style="display:flex;gap:8px;align-items:center"
-          >
-            <input
-              class="bundle-title-input"
-              placeholder="Untitled"
-              value={s.title}
-              onInput={(e) =>
-                s.setSession({ title: (e.target as HTMLInputElement).value })
-              }
-            />
-            <button
-              class="bundle-gen-btn"
-              onClick={() => s.setSession({ title: randomTitle() })}
-              title="Generate title"
-            >
-              <Shuffle size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* STYLE CONSOLE block */}
-        <div class="bundle-block">
-          <div class="bundle-block-header">
-            <SlidersHorizontal size={16} style="color:var(--icon-style)" />
-            <span class="bundle-block-title">STYLE CONSOLE</span>
-            {activeCount > 0 && (
-              <span class="bundle-block-meta">
-                {activeCount} active · {charCount} chars
-              </span>
-            )}
-            <div style="margin-left:auto">
-              {stylePreview && activeCount > 0 && (
-                <button class="bundle-copy-btn" onClick={handleCopy}>
-                  {copied ? "Copied" : "Copy"}
-                </button>
-              )}
-            </div>
-          </div>
-          <div class="bundle-block-body">
-            <div class="style-preview-box">
-              {stylePreview || "Add descriptors to compile your style prompt…"}
-            </div>
-          </div>
-        </div>
-
         {/* ARRANGEMENT STRUCTURE */}
         <ArrangementEditor />
 
-        {/* LYRICS / ARRANGEMENT */}
-        <LyricsBlock style={stylePreview} />
+        {/* LYRICS (vocal sections only) */}
+        {s.lyricsMode !== "strict_instrumental" && (
+          <LyricsBlock style={stylePreview} />
+        )}
+
+        {/* SUNO PROMPT (collapsed by default) */}
+        <PromptInspector
+          style={stylePreview}
+          charCount={charCount}
+          activeCount={activeCount}
+        />
       </div>
     </div>
   );
