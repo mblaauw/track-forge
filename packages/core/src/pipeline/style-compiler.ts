@@ -24,6 +24,17 @@ export interface CompileStyleInput {
   presetMood?: string;
   /** Preset/job energy 1-10, folded into the mood arc when no energy-category descriptors are active. */
   presetEnergy?: number;
+  /** Genre characteristics from the preset (e.g. "hard drums", "1990s era", "intense delivery"). Merged into the character part. */
+  characteristics?: string[];
+  /** HipHop-specific: flow/rhyme style description (e.g. "laid_back", "multi_syllabic"). */
+  hipHopFlowPattern?: string;
+  hipHopRhymeStyle?: string;
+  /** HipHop-specific: narrative arc (e.g. "braggadocio", "storytelling"). */
+  hipHopNarrativeArc?: string;
+  /** HipHop-specific: prose vocal style description (e.g. "assertive, commanding delivery with precise phrasing"). */
+  hipHopVocalStyle?: string;
+  /** HipHop-specific: ordered section structure (replaces generic structure note when present). */
+  hipHopTypicalSongStructure?: string[];
 }
 
 export interface CompileStyleResult {
@@ -60,14 +71,20 @@ export function compileStylePrompt(
     input.presetEnergy,
   );
   const prodPart = compileProduction(active);
-  const structureNote = compileStructureNote(input.sections, input.lyricsMode);
+  const charPart = compileCharacter(input.characteristics);
+  const hipHopPart = compileHipHopVocalCharacter(input);
+  const structureNote = input.hipHopTypicalSongStructure
+    ? compileTypedStructure(input.hipHopTypicalSongStructure)
+    : compileStructureNote(input.sections, input.lyricsMode);
 
   const parts = [core, rhythmPart];
 
   if (soundPart) parts.push(soundPart);
+  if (charPart) parts.push(charPart);
   if (identityPart) parts.push(identityPart);
   if (moodArc) parts.push(moodArc);
   if (prodPart) parts.push(prodPart);
+  if (hipHopPart) parts.push(hipHopPart);
   if (structureNote) parts.push(structureNote);
 
   const style = parts
@@ -211,6 +228,59 @@ function compileProduction(
   const prod = active.filter((d) => d.cat === "production").map((d) => d.label);
   if (prod.length === 0) return null;
   return `${prod.join(", ")} production`;
+}
+
+/**
+ * Inject genre characteristics (from the preset) into the style string.
+ * These are subgenre-level descriptors like "hard drums", "1990s era",
+ * "intense delivery" — applicable to any genre.
+ */
+function compileCharacter(characteristics?: string[]): string | null {
+  if (!characteristics || characteristics.length === 0) return null;
+  return characteristics.join(", ");
+}
+
+/**
+ * HipHop-specific vocal/flow character — flow pattern, rhyme style,
+ * narrative arc, and prose vocal style. These are genre-specific
+ * concepts that don't fit the generic descriptor categories.
+ */
+function compileHipHopVocalCharacter(input: CompileStyleInput): string | null {
+  const parts: string[] = [];
+
+  // Flow + rhyme: "laid-back flow with multi-syllabic rhymes"
+  if (input.hipHopFlowPattern && input.hipHopRhymeStyle) {
+    const flow = input.hipHopFlowPattern.replace(/_/g, "-");
+    const rhyme = input.hipHopRhymeStyle.replace(/_/g, " ");
+    parts.push(`${flow} flow with ${rhyme} rhymes`);
+  } else if (input.hipHopFlowPattern) {
+    parts.push(`${input.hipHopFlowPattern.replace(/_/g, "-")} flow`);
+  } else if (input.hipHopRhymeStyle) {
+    parts.push(`${input.hipHopRhymeStyle.replace(/_/g, " ")} rhymes`);
+  }
+
+  // Narrative arc: "braggadocio narrative"
+  if (input.hipHopNarrativeArc) {
+    parts.push(`${input.hipHopNarrativeArc.replace(/_/g, " ")} narrative`);
+  }
+
+  // Prose vocal style: "assertive, commanding delivery with precise phrasing"
+  if (input.hipHopVocalStyle) {
+    parts.push(input.hipHopVocalStyle);
+  }
+
+  if (parts.length === 0) return null;
+  return parts.join(". ");
+}
+
+/**
+ * Compact typed structure note used when a genre provides an explicit
+ * typical song structure (e.g. HipHop's typicalSongStructure from presets).
+ */
+function compileTypedStructure(sections: string[]): string | null {
+  if (sections.length === 0) return null;
+  const note = `structure: ${sections.join(" → ")}`;
+  return note.length > 220 ? null : note;
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────── */

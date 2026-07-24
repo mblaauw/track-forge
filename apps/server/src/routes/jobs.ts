@@ -14,11 +14,7 @@ import {
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config, JobId } from "@track-forge/contracts";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
-import {
-  getPresets,
-  getTagCategories,
-  getDescriptorDefaults,
-} from "../lib/genre-config.js";
+import { getPresets, getDescriptorDefaults } from "../lib/genre-config.js";
 import { findRowOr404, parsePagination } from "../lib/db-utils.js";
 import {
   validateBody,
@@ -328,17 +324,6 @@ export function registerJobRoutes(
     const { id } = validateParams(GenreIdParams, req);
     try {
       return getPresets(id);
-    } catch {
-      return reply.code(404).send({ error: `Unknown genre: ${id}` });
-    }
-  });
-
-  // ── Genre tag categories (from YAML config) ──────────────────────────
-
-  server.get("/api/genres/:id/tag-categories", async (req, reply) => {
-    const { id } = validateParams(GenreIdParams, req);
-    try {
-      return getTagCategories(id);
     } catch {
       return reply.code(404).send({ error: `Unknown genre: ${id}` });
     }

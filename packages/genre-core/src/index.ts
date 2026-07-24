@@ -11,7 +11,6 @@ export interface GenreModule<
   defaults: TInputs;
   /** Augmented at runtime with YAML config data */
   presets?: GenrePreset[];
-  tagCategories?: TagCategory[];
   songStructure?: SongStructureSection[];
   /** Genre-specific songwriting conventions fed into the lyrics-writing prompt. */
   lyricsGuidance?: string;
@@ -95,13 +94,6 @@ export interface DescriptorCategoryPool {
   label: string;
   hue: string;
   chips: string[];
-}
-
-export interface TagCategory {
-  id: string;
-  name: string;
-  color: string;
-  suggestions: string[];
 }
 
 // ── Module factory ────────────────────────────────────────────────────

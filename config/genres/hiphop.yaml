@@ -1,65 +1,10 @@
-# Hip-Hop genre module config
 name: Hip-Hop
 color: amber
-subgenre_count: "20+"
-
-tag_categories:
-  - id: genre
-    name: Genre
-    color: accent
-    suggestions:
-      - "Boom Bap"
-      - Trap
-      - Lo-fi
-      - Drill
-      - Grime
-      - "Cloud Rap"
-      - Crunk
-      - G-Funk
-  - id: mood
-    name: Mood
-    color: amber
-    suggestions:
-      - Hard
-      - Chill
-      - Dark
-      - Hype
-      - Nostalgic
-      - Soulful
-      - Aggressive
-      - Introspective
-  - id: inst
-    name: Instruments
-    color: cyan
-    suggestions:
-      - "808 Bass"
-      - Hi-hats
-      - Snare
-      - Kick
-      - "Sample Chop"
-      - Strings
-      - Keys
-      - Brass
-  - id: prod
-    name: Production
-    color: violet
-    suggestions:
-      - Sidechain
-      - "Vinyl Crackle"
-      - "Tape Hiss"
-      - "Heavy 808"
-      - "Double Time"
-      - Layering
-      - Reverb
-      - Delay
-
 presets:
-  # Boom Bap
   - id: boom_bap_classic
-    name: "Boom Bap Classic"
-    description: "Raw, gritty boom bap with hard drums and sampled loops"
+    name: Boom Bap Classic
+    description: Raw, gritty boom bap with hard drums and sampled loops
     values:
-      subgenre: boom_bap
       bpm: 90
       key: D
       scale: minor
@@ -67,17 +12,17 @@ presets:
       narrativeArc: braggadocio
       rhymeStyle: multi_syllabic
       flowPattern: laid_back
-      delivery: intense
-      productionStyle: vintage
       energy: 7
       complexity: 7
       lyricsMode: full_lyrics
       characteristics:
-        - "hard drums"
-        - "sampled loops"
+        - hard drums
+        - sampled loops
         - gritty
         - raw
-        - "head-nod groove"
+        - head-nod groove
+        - intense delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -87,13 +32,11 @@ presets:
         - bridge
         - verse
         - outro
-      vocalStyle: "assertive, commanding delivery with precise phrasing"
-      era: "1990s"
+      vocalStyle: assertive, commanding delivery with precise phrasing
   - id: boom_bap_jazz_rap
-    name: "Boom Bap — Jazz Rap"
-    description: "Smooth jazz-infused boom bap with dusty samples"
+    name: Boom Bap — Jazz Rap
+    description: Smooth jazz-infused boom bap with dusty samples
     values:
-      subgenre: boom_bap
       bpm: 85
       key: E
       scale: minor
@@ -101,17 +44,17 @@ presets:
       narrativeArc: conscious
       rhymeStyle: internal
       flowPattern: laid_back
-      delivery: conversational
-      productionStyle: vintage
       energy: 5
       complexity: 7
       lyricsMode: full_lyrics
       characteristics:
-        - "hard drums"
-        - "sampled loops"
+        - hard drums
+        - sampled loops
         - gritty
         - raw
-        - "head-nod groove"
+        - head-nod groove
+        - conversational delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -121,13 +64,11 @@ presets:
         - bridge
         - verse
         - outro
-      vocalStyle: "assertive, commanding delivery with precise phrasing"
-      era: "1990s"
+      vocalStyle: assertive, commanding delivery with precise phrasing
   - id: boom_bap_hardcore
-    name: "Boom Bap — Hardcore"
-    description: "Aggressive hardcore boom bap with rapid-fire delivery"
+    name: Boom Bap — Hardcore
+    description: Aggressive hardcore boom bap with rapid-fire delivery
     values:
-      subgenre: boom_bap
       bpm: 94
       key: E
       scale: minor
@@ -135,17 +76,17 @@ presets:
       narrativeArc: braggadocio
       rhymeStyle: multi_syllabic
       flowPattern: aggressive
-      delivery: intense
-      productionStyle: vintage
       energy: 9
       complexity: 8
       lyricsMode: full_lyrics
       characteristics:
-        - "hard drums"
-        - "sampled loops"
+        - hard drums
+        - sampled loops
         - gritty
         - raw
-        - "head-nod groove"
+        - head-nod groove
+        - intense delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -155,14 +96,11 @@ presets:
         - bridge
         - verse
         - outro
-      vocalStyle: "assertive, commanding delivery with precise phrasing"
-      era: "1990s"
-  # Trap
+      vocalStyle: assertive, commanding delivery with precise phrasing
   - id: trap_banger
-    name: "Trap Banger"
-    description: "Hard-hitting trap anthem with 808s and hi-hat rolls"
+    name: Trap Banger
+    description: Hard-hitting trap anthem with 808s and hi-hat rolls
     values:
-      subgenre: trap
       bpm: 140
       key: G
       scale: minor
@@ -170,17 +108,17 @@ presets:
       narrativeArc: braggadocio
       rhymeStyle: end_rhyme
       flowPattern: aggressive
-      delivery: intense
-      productionStyle: polished
       energy: 9
       complexity: 5
       lyricsMode: full_lyrics
       characteristics:
-        - "808 bass"
-        - "rolling hi-hats"
+        - 808 bass
+        - rolling hi-hats
         - dark
-        - "synth-heavy"
-        - "snare rolls"
+        - synth-heavy
+        - snare rolls
+        - intense delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -190,13 +128,11 @@ presets:
         - bridge
         - hook
         - outro
-      vocalStyle: "rhythmic, triplet flows with ad-libs and melodic hooks"
-      era: "2010s"
+      vocalStyle: rhythmic, triplet flows with ad-libs and melodic hooks
   - id: trap_melodic
-    name: "Trap — Melodic"
-    description: "Melodic trap with sung hooks and emotional chord progressions"
+    name: Trap — Melodic
+    description: Melodic trap with sung hooks and emotional chord progressions
     values:
-      subgenre: trap
       bpm: 145
       key: B
       scale: minor
@@ -204,17 +140,17 @@ presets:
       narrativeArc: storytelling
       rhymeStyle: internal
       flowPattern: melodic
-      delivery: conversational
-      productionStyle: polished
       energy: 7
       complexity: 6
       lyricsMode: full_lyrics
       characteristics:
-        - "808 bass"
-        - "rolling hi-hats"
+        - 808 bass
+        - rolling hi-hats
         - dark
-        - "synth-heavy"
-        - "snare rolls"
+        - synth-heavy
+        - snare rolls
+        - conversational delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -224,13 +160,11 @@ presets:
         - bridge
         - hook
         - outro
-      vocalStyle: "rhythmic, triplet flows with ad-libs and melodic hooks"
-      era: "2010s"
+      vocalStyle: rhythmic, triplet flows with ad-libs and melodic hooks
   - id: trap_dark
-    name: "Trap — Dark"
-    description: "Dark, atmospheric trap with ominous production"
+    name: Trap — Dark
+    description: Dark, atmospheric trap with ominous production
     values:
-      subgenre: trap
       bpm: 138
       key: D
       scale: minor
@@ -238,17 +172,17 @@ presets:
       narrativeArc: introspective
       rhymeStyle: free_form
       flowPattern: syncopated
-      delivery: calm
-      productionStyle: electronic
       energy: 8
       complexity: 7
       lyricsMode: full_lyrics
       characteristics:
-        - "808 bass"
-        - "rolling hi-hats"
+        - 808 bass
+        - rolling hi-hats
         - dark
-        - "synth-heavy"
-        - "snare rolls"
+        - synth-heavy
+        - snare rolls
+        - calm delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -258,14 +192,11 @@ presets:
         - bridge
         - hook
         - outro
-      vocalStyle: "rhythmic, triplet flows with ad-libs and melodic hooks"
-      era: "2010s"
-  # Drill
+      vocalStyle: rhythmic, triplet flows with ad-libs and melodic hooks
   - id: drill_uk
-    name: "Drill — UK"
-    description: "Gritty UK drill with sliding 808s and sparse percussion"
+    name: Drill — UK
+    description: Gritty UK drill with sliding 808s and sparse percussion
     values:
-      subgenre: drill
       bpm: 140
       key: F
       scale: minor
@@ -273,17 +204,17 @@ presets:
       narrativeArc: party
       rhymeStyle: slang_rhyme
       flowPattern: aggressive
-      delivery: hype
-      productionStyle: minimal
       energy: 8
       complexity: 6
       lyricsMode: full_lyrics
       characteristics:
-        - "sliding 808s"
-        - "minimal percussion"
+        - sliding 808s
+        - minimal percussion
         - aggressive
         - dark
         - raw
+        - hype delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -292,13 +223,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "gritty, confrontational delivery with distinct cadence"
-      era: "2010s"
+      vocalStyle: gritty, confrontational delivery with distinct cadence
   - id: drill_chicago
-    name: "Drill — Chicago"
-    description: "Raw Chicago drill with heavy bass and aggressive delivery"
+    name: Drill — Chicago
+    description: Raw Chicago drill with heavy bass and aggressive delivery
     values:
-      subgenre: drill
       bpm: 150
       key: D
       scale: minor
@@ -306,17 +235,17 @@ presets:
       narrativeArc: braggadocio
       rhymeStyle: end_rhyme
       flowPattern: aggressive
-      delivery: hype
-      productionStyle: polished
       energy: 9
       complexity: 5
       lyricsMode: full_lyrics
       characteristics:
-        - "sliding 808s"
-        - "minimal percussion"
+        - sliding 808s
+        - minimal percussion
         - aggressive
         - dark
         - raw
+        - hype delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -325,14 +254,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "gritty, confrontational delivery with distinct cadence"
-      era: "2010s"
-  # Lo-fi
+      vocalStyle: gritty, confrontational delivery with distinct cadence
   - id: lo_fi_study
-    name: "Lo-fi — Study Beats"
-    description: "Chilled lo-fi beats for focused study sessions"
+    name: Lo-fi — Study Beats
+    description: Chilled lo-fi beats for focused study sessions
     values:
-      subgenre: lo_fi_hip_hop
       bpm: 75
       key: A
       scale: major
@@ -340,17 +266,17 @@ presets:
       narrativeArc: introspective
       rhymeStyle: free_form
       flowPattern: laid_back
-      delivery: calm
-      productionStyle: lo_fi
       energy: 3
       complexity: 4
       lyricsMode: strict_instrumental
       characteristics:
         - chill
-        - "jazz samples"
-        - "vinyl crackle"
+        - jazz samples
+        - vinyl crackle
         - relaxed
         - mellow
+        - calm delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -359,13 +285,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "gentle, relaxed delivery with smooth flow"
-      era: "2010s"
+      vocalStyle: gentle, relaxed delivery with smooth flow
   - id: lo_fi_chillhop
-    name: "Lo-fi — Chillhop"
-    description: "Laid-back chillhop with jazzy samples and warm textures"
+    name: Lo-fi — Chillhop
+    description: Laid-back chillhop with jazzy samples and warm textures
     values:
-      subgenre: lo_fi_hip_hop
       bpm: 80
       key: C
       scale: major
@@ -373,17 +297,17 @@ presets:
       narrativeArc: party
       rhymeStyle: internal
       flowPattern: laid_back
-      delivery: conversational
-      productionStyle: lo_fi
       energy: 4
       complexity: 5
       lyricsMode: full_lyrics
       characteristics:
         - chill
-        - "jazz samples"
-        - "vinyl crackle"
+        - jazz samples
+        - vinyl crackle
         - relaxed
         - mellow
+        - conversational delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -392,13 +316,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "gentle, relaxed delivery with smooth flow"
-      era: "2010s"
+      vocalStyle: gentle, relaxed delivery with smooth flow
   - id: lo_fi_jazzhop
-    name: "Lo-fi — Jazzhop"
-    description: "Smooth jazzhop with live instrumentation and vinyl warmth"
+    name: Lo-fi — Jazzhop
+    description: Smooth jazzhop with live instrumentation and vinyl warmth
     values:
-      subgenre: lo_fi_hip_hop
       bpm: 82
       key: E
       scale: major
@@ -406,17 +328,17 @@ presets:
       narrativeArc: storytelling
       rhymeStyle: multi_syllabic
       flowPattern: melodic
-      delivery: conversational
-      productionStyle: lo_fi
       energy: 5
       complexity: 6
       lyricsMode: full_lyrics
       characteristics:
         - chill
-        - "jazz samples"
-        - "vinyl crackle"
+        - jazz samples
+        - vinyl crackle
         - relaxed
         - mellow
+        - conversational delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -425,14 +347,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "gentle, relaxed delivery with smooth flow"
-      era: "2010s"
-  # Grime
+      vocalStyle: gentle, relaxed delivery with smooth flow
   - id: grime_eskibeat
-    name: "Grime — Eskibeat"
-    description: "Classic eskibeat grime with skippy percussion"
+    name: Grime — Eskibeat
+    description: Classic eskibeat grime with skippy percussion
     values:
-      subgenre: grime
       bpm: 140
       key: D
       scale: minor
@@ -440,17 +359,17 @@ presets:
       narrativeArc: braggadocio
       rhymeStyle: internal
       flowPattern: syncopated
-      delivery: hype
-      productionStyle: electronic
       energy: 8
       complexity: 8
       lyricsMode: full_lyrics
       characteristics:
         - breakneck
-        - "synth stabs"
-        - "uk garage"
+        - synth stabs
+        - uk garage
         - energetic
         - rewinds
+        - hype delivery
+        - 2000s era
       typicalSongStructure:
         - intro
         - verse
@@ -460,13 +379,11 @@ presets:
         - verse
         - hook
         - outro
-      vocalStyle: "rapid-fire, aggressive delivery with UK accent and energy"
-      era: "2000s"
+      vocalStyle: rapid-fire, aggressive delivery with UK accent and energy
   - id: grime_modern
-    name: "Grime — Modern"
-    description: "Modern grime with evolved production and complex flows"
+    name: Grime — Modern
+    description: Modern grime with evolved production and complex flows
     values:
-      subgenre: grime
       bpm: 140
       key: F
       scale: minor
@@ -474,17 +391,17 @@ presets:
       narrativeArc: abstract
       rhymeStyle: free_form
       flowPattern: double_time
-      delivery: hype
-      productionStyle: polished
       energy: 9
       complexity: 9
       lyricsMode: full_lyrics
       characteristics:
         - breakneck
-        - "synth stabs"
-        - "uk garage"
+        - synth stabs
+        - uk garage
         - energetic
         - rewinds
+        - hype delivery
+        - 2000s era
       typicalSongStructure:
         - intro
         - verse
@@ -494,14 +411,11 @@ presets:
         - verse
         - hook
         - outro
-      vocalStyle: "rapid-fire, aggressive delivery with UK accent and energy"
-      era: "2000s"
-  # Cloud Rap
+      vocalStyle: rapid-fire, aggressive delivery with UK accent and energy
   - id: cloud_rap_ethereal
-    name: "Cloud Rap — Ethereal"
-    description: "Dreamy cloud rap with atmospheric production and distant vocals"
+    name: Cloud Rap — Ethereal
+    description: Dreamy cloud rap with atmospheric production and distant vocals
     values:
-      subgenre: cloud_rap
       bpm: 70
       key: E
       scale: major
@@ -509,8 +423,6 @@ presets:
       narrativeArc: introspective
       rhymeStyle: end_rhyme
       flowPattern: melodic
-      delivery: calm
-      productionStyle: experimental
       energy: 4
       complexity: 6
       lyricsMode: full_lyrics
@@ -518,8 +430,10 @@ presets:
         - ethereal
         - dreamy
         - atmospheric
-        - "laid-back"
+        - laid-back
         - reverberant
+        - calm delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -528,13 +442,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "ethereal, echoey delivery with atmospheric effects"
-      era: "2010s"
+      vocalStyle: ethereal, echoey delivery with atmospheric effects
   - id: cloud_rap_spacey
-    name: "Cloud Rap — Spacey"
-    description: "Spacey cloud rap with psychedelic beats and trippy lyrics"
+    name: Cloud Rap — Spacey
+    description: Spacey cloud rap with psychedelic beats and trippy lyrics
     values:
-      subgenre: cloud_rap
       bpm: 74
       key: G
       scale: minor
@@ -542,8 +454,6 @@ presets:
       narrativeArc: storytelling
       rhymeStyle: internal
       flowPattern: laid_back
-      delivery: conversational
-      productionStyle: experimental
       energy: 5
       complexity: 7
       lyricsMode: full_lyrics
@@ -551,8 +461,10 @@ presets:
         - ethereal
         - dreamy
         - atmospheric
-        - "laid-back"
+        - laid-back
         - reverberant
+        - conversational delivery
+        - 2010s era
       typicalSongStructure:
         - intro
         - verse
@@ -561,14 +473,11 @@ presets:
         - hook
         - verse
         - outro
-      vocalStyle: "ethereal, echoey delivery with atmospheric effects"
-      era: "2010s"
-  # Crunk
+      vocalStyle: ethereal, echoey delivery with atmospheric effects
   - id: crunk_classic
-    name: "Crunk Classic"
-    description: "High-energy crunk with call-and-response hooks and heavy 808s"
+    name: Crunk Classic
+    description: High-energy crunk with call-and-response hooks and heavy 808s
     values:
-      subgenre: crunk
       bpm: 80
       key: C
       scale: major
@@ -576,17 +485,17 @@ presets:
       narrativeArc: party
       rhymeStyle: end_rhyme
       flowPattern: aggressive
-      delivery: hype
-      productionStyle: polished
       energy: 10
       complexity: 4
       lyricsMode: full_lyrics
       characteristics:
-        - "high-energy"
+        - high-energy
         - party
-        - "call-outs"
-        - "heavy bass"
-        - "repetitive hooks"
+        - call-outs
+        - heavy bass
+        - repetitive hooks
+        - hype delivery
+        - 2000s era
       typicalSongStructure:
         - intro
         - hook
@@ -596,13 +505,11 @@ presets:
         - hook
         - break
         - hook
-      vocalStyle: "loud, energetic shouting delivery with call-and-response"
-      era: "2000s"
+      vocalStyle: loud, energetic shouting delivery with call-and-response
   - id: crunk_southern
-    name: "Crunk — Southern"
-    description: "Southern-style crunk with laid-back swing and heavy bass"
+    name: Crunk — Southern
+    description: Southern-style crunk with laid-back swing and heavy bass
     values:
-      subgenre: crunk
       bpm: 76
       key: D
       scale: minor
@@ -610,17 +517,17 @@ presets:
       narrativeArc: party
       rhymeStyle: internal
       flowPattern: syncopated
-      delivery: hype
-      productionStyle: vintage
       energy: 9
       complexity: 5
       lyricsMode: full_lyrics
       characteristics:
-        - "high-energy"
+        - high-energy
         - party
-        - "call-outs"
-        - "heavy bass"
-        - "repetitive hooks"
+        - call-outs
+        - heavy bass
+        - repetitive hooks
+        - hype delivery
+        - 2000s era
       typicalSongStructure:
         - intro
         - hook
@@ -630,14 +537,11 @@ presets:
         - hook
         - break
         - hook
-      vocalStyle: "loud, energetic shouting delivery with call-and-response"
-      era: "2000s"
-  # G-Funk
+      vocalStyle: loud, energetic shouting delivery with call-and-response
   - id: g_funk_classic
-    name: "G-Funk Classic"
-    description: "West coast G-funk with funky synths and laid-back grooves"
+    name: G-Funk Classic
+    description: West coast G-funk with funky synths and laid-back grooves
     values:
-      subgenre: g_funk
       bpm: 92
       key: E
       scale: major
@@ -645,17 +549,17 @@ presets:
       narrativeArc: braggadocio
       rhymeStyle: end_rhyme
       flowPattern: laid_back
-      delivery: calm
-      productionStyle: polished
       energy: 6
       complexity: 6
       lyricsMode: full_lyrics
       characteristics:
-        - "p-funk samples"
-        - "smooth grooves"
-        - "whiny synths"
-        - "laid-back"
+        - p-funk samples
+        - smooth grooves
+        - whiny synths
+        - laid-back
         - melodic
+        - calm delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -665,14 +569,11 @@ presets:
         - verse
         - hook
         - outro
-      vocalStyle: "smooth, melodic delivery with sung hooks"
-      era: "1990s"
-  # Abstract
+      vocalStyle: smooth, melodic delivery with sung hooks
   - id: abstract_experimental
-    name: "Abstract — Experimental"
-    description: "Experimental abstract hip-hop with unconventional structures"
+    name: Abstract — Experimental
+    description: Experimental abstract hip-hop with unconventional structures
     values:
-      subgenre: alternative_hip_hop
       bpm: 100
       key: A
       scale: minor
@@ -680,17 +581,17 @@ presets:
       narrativeArc: abstract
       rhymeStyle: free_form
       flowPattern: experimental
-      delivery: conversational
-      productionStyle: experimental
       energy: 6
       complexity: 9
       lyricsMode: full_lyrics
       characteristics:
         - eclectic
         - experimental
-        - "non-traditional"
-        - "genre-blending"
+        - non-traditional
+        - genre-blending
         - artistic
+        - conversational delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -699,13 +600,11 @@ presets:
         - bridge
         - verse
         - outro
-      vocalStyle: "creative, unconventional delivery with artistic expression"
-      era: "1990s"
+      vocalStyle: creative, unconventional delivery with artistic expression
   - id: abstract_conscious
-    name: "Abstract — Conscious"
-    description: "Conscious abstract hip-hop with deep lyrical themes"
+    name: Abstract — Conscious
+    description: Conscious abstract hip-hop with deep lyrical themes
     values:
-      subgenre: conscious_rap
       bpm: 88
       key: E
       scale: minor
@@ -713,17 +612,17 @@ presets:
       narrativeArc: conscious
       rhymeStyle: multi_syllabic
       flowPattern: laid_back
-      delivery: conversational
-      productionStyle: polished
       energy: 5
       complexity: 8
       lyricsMode: full_lyrics
       characteristics:
-        - "socially aware"
+        - socially aware
         - political
         - intellectual
-        - "message-driven"
-        - "thought-provoking"
+        - message-driven
+        - thought-provoking
+        - conversational delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -733,13 +632,11 @@ presets:
         - verse
         - hook
         - outro
-      vocalStyle: "thoughtful, articulate delivery with emphasis on message"
-      era: "1990s"
+      vocalStyle: thoughtful, articulate delivery with emphasis on message
   - id: g_funk_modern
-    name: "G-Funk — Modern"
-    description: "Modern take on G-funk with contemporary production"
+    name: G-Funk — Modern
+    description: Modern take on G-funk with contemporary production
     values:
-      subgenre: g_funk
       bpm: 95
       key: E
       scale: minor
@@ -747,17 +644,17 @@ presets:
       narrativeArc: storytelling
       rhymeStyle: multi_syllabic
       flowPattern: melodic
-      delivery: conversational
-      productionStyle: polished
       energy: 7
       complexity: 7
       lyricsMode: full_lyrics
       characteristics:
-        - "p-funk samples"
-        - "smooth grooves"
-        - "whiny synths"
-        - "laid-back"
+        - p-funk samples
+        - smooth grooves
+        - whiny synths
+        - laid-back
         - melodic
+        - conversational delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -767,14 +664,11 @@ presets:
         - verse
         - hook
         - outro
-      vocalStyle: "smooth, melodic delivery with sung hooks"
-      era: "1990s"
-  # Storytelling
+      vocalStyle: smooth, melodic delivery with sung hooks
   - id: storytelling_narrative
-    name: "Storytelling — Narrative"
-    description: "Narrative-driven hip-hop with detailed storytelling"
+    name: Storytelling — Narrative
+    description: Narrative-driven hip-hop with detailed storytelling
     values:
-      subgenre: gangsta_rap
       bpm: 85
       key: A
       scale: minor
@@ -782,17 +676,17 @@ presets:
       narrativeArc: storytelling
       rhymeStyle: internal
       flowPattern: laid_back
-      delivery: conversational
-      productionStyle: polished
       energy: 6
       complexity: 7
       lyricsMode: full_lyrics
       characteristics:
-        - "heavy bass"
-        - "cinematic samples"
+        - heavy bass
+        - cinematic samples
         - storytelling
         - raw
-        - "street narratives"
+        - street narratives
+        - conversational delivery
+        - 1990s era
       typicalSongStructure:
         - intro
         - verse
@@ -802,65 +696,76 @@ presets:
         - verse
         - hook
         - outro
-      vocalStyle: "authoritative, narrative delivery with vivid imagery"
-      era: "1990s"
-
+      vocalStyle: authoritative, narrative delivery with vivid imagery
 song_structure:
   - section: intro
     fn: establish
     bars: 8
-    tags: [atmospheric, "sparse texture"]
+    tags:
+      - atmospheric
+      - sparse texture
   - section: verse
     fn: introduce
     bars: 16
-    tags: ["vocal focus"]
+    tags:
+      - vocal focus
   - section: hook
     fn: peak
     bars: 8
-    tags: ["full arrangement", catchy]
+    tags:
+      - full arrangement
+      - catchy
   - section: verse
     fn: contrast
     bars: 16
-    tags: ["vocal focus"]
+    tags:
+      - vocal focus
   - section: hook
     fn: peak
     bars: 8
-    tags: ["full arrangement", catchy, climactic]
+    tags:
+      - full arrangement
+      - catchy
+      - climactic
   - section: bridge
     fn: contrast
     bars: 8
-    tags: ["strip drums", introspective]
+    tags:
+      - strip drums
+      - introspective
   - section: hook
     fn: peak
     bars: 8
-    tags: ["full arrangement", catchy]
+    tags:
+      - full arrangement
+      - catchy
   - section: outro
     fn: resolve
     bars: 8
-    tags: ["reduce layers"]
-
+    tags:
+      - reduce layers
 descriptor_categories:
   - cat: sound
     label: SOUND
     hue: var(--hue-cyan)
     chips:
-      - "808 bass"
+      - 808 bass
       - keys
-      - "chopped vocal"
-      - "brass stab"
-      - "synth pad"
+      - chopped vocal
+      - brass stab
+      - synth pad
       - pluck
       - organ
   - cat: rhythm
-    label: "RHYTHM & FLOW"
+    label: RHYTHM & FLOW
     hue: var(--hue-amber)
     chips:
-      - "trap hi-hats"
-      - "swing groove"
-      - "slow roll"
-      - "double-time"
-      - "snare rolls"
-      - "finger snaps"
+      - trap hi-hats
+      - swing groove
+      - slow roll
+      - double-time
+      - snare rolls
+      - finger snaps
   - cat: atmosphere
     label: MOOD
     hue: var(--hue-violet)
@@ -869,19 +774,19 @@ descriptor_categories:
       - soulful
       - melancholic
       - hype
-      - "laid back"
+      - laid back
       - gritty
       - smooth
   - cat: production
     label: PRODUCTION
     hue: var(--hue-green)
     chips:
-      - "lofi warmth"
-      - "crisp mix"
-      - "wide stereo"
-      - "tape saturation"
+      - lofi warmth
+      - crisp mix
+      - wide stereo
+      - tape saturation
       - sidechain
-      - "heavy 808s"
+      - heavy 808s
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
@@ -890,17 +795,16 @@ descriptor_categories:
       - bouncy
       - aggressive
       - relaxed
-      - "build-up"
-      - "hard hitting"
-
+      - build-up
+      - hard hitting
 descriptor_defaults:
-  - label: "808 bass"
+  - label: 808 bass
     cat: sound
     weight: 2
-  - label: "trap hi-hats"
+  - label: trap hi-hats
     cat: rhythm
     weight: 2
-  - label: "lofi warmth"
+  - label: lofi warmth
     cat: production
     weight: 2
   - label: dark
@@ -909,26 +813,32 @@ descriptor_defaults:
   - label: smooth
     cat: energy
     weight: 2
-
 lyric_themes:
-  - "the come-up"
-  - "the city"
+  - the come-up
+  - the city
   - loyalty
-  - "late nights"
+  - late nights
   - ambition
   - reflection
-
 section_palette:
-  [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
+  - Intro
+  - Build
+  - Drop
+  - Breakdown
+  - Bridge
+  - Verse
+  - Chorus
+  - Hook
+  - Outro
 vocal_presets:
   - type: female_lead
-    delivery_style: "laid back"
+    delivery_style: laid back
     default_energy: 3
   - type: male_lead
-    delivery_style: "laid back"
+    delivery_style: laid back
     default_energy: 3
   - type: duet
-    delivery_style: "laid back"
+    delivery_style: laid back
     default_energy: 3
   - type: group_choir
     delivery_style: powerful
@@ -936,7 +846,6 @@ vocal_presets:
   - type: wordless_textural
     delivery_style: ethereal
     default_energy: 2
-
 lyrics_guidance: |
   Hip-hop lyrics are carried by flow and rhyme scheme as much as meaning.
   Write to the bar, not just the syllable count: keep a consistent rhythmic

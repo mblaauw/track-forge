@@ -1,4 +1,4 @@
-import type { GenreModule, TagCategory } from "@track-forge/genre-core";
+import type { GenreModule } from "@track-forge/genre-core";
 import { edmModule } from "@track-forge/genre-edm";
 import { hipHopModule } from "@track-forge/genre-hiphop";
 import { ambientModule } from "@track-forge/genre-ambient";
@@ -7,7 +7,6 @@ import {
   listGenreConfigs,
   getSongStructure,
   getPresets,
-  getTagCategories,
   getDescriptorDefaults,
   getLyricsGuidance,
 } from "./genre-config.js";
@@ -21,7 +20,6 @@ function augment(id: string, mod: GenreModule): GenreModule {
   return {
     ...mod,
     presets: getPresets(id),
-    tagCategories: getTagCategories(id) as TagCategory[],
     songStructure: getSongStructure(id),
     lyricsGuidance: getLyricsGuidance(id),
   };
@@ -89,7 +87,6 @@ export function listGenres(): {
   id: string;
   name: string;
   color: string;
-  subgenre_count: string;
 }[] {
   return listGenreConfigs();
 }

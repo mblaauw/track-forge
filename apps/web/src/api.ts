@@ -40,8 +40,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 export interface GenreInfo {
   id: string;
   name: string;
-  color?: string;
-  subgenre_count?: string;
+  color: string;
 }
 
 // Job/Version shapes come straight from @track-forge/contracts — the

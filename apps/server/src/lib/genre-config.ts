@@ -15,18 +15,10 @@ interface GenrePresetYaml {
   values: PresetValue;
 }
 
-interface TagCategoryYaml {
-  id: string;
-  name: string;
-  color: string;
-  suggestions: string[];
-}
-
 export interface GenreConfigYaml {
   name: string;
   color: string;
-  subgenre_count: string;
-  tag_categories: TagCategoryYaml[];
+
   presets: GenrePresetYaml[];
   song_structure?: SongStructureSection[];
   descriptor_categories?: {
@@ -168,7 +160,6 @@ export function listGenreConfigs(): {
   id: string;
   name: string;
   color: string;
-  subgenre_count: string;
 }[] {
   const ids = getAllGenreIds();
   return ids.map((id) => {
@@ -177,17 +168,12 @@ export function listGenreConfigs(): {
       id,
       name: cfg.name,
       color: cfg.color,
-      subgenre_count: cfg.subgenre_count,
     };
   });
 }
 
 export function getPresets(id: string): GenrePresetYaml[] {
   return loadYaml(id).presets;
-}
-
-export function getTagCategories(id: string): TagCategoryYaml[] {
-  return loadYaml(id).tag_categories;
 }
 
 export function getSongStructure(id: string): SongStructureSection[] {

@@ -25,6 +25,13 @@ interface StyleCompileFields {
   sections?: { name: string; fn?: string }[];
   lyricsMode?: string;
   vocalType?: string | null;
+  characteristics?: string[];
+  /** HipHop-specific preset fields. */
+  flowPattern?: string;
+  rhymeStyle?: string;
+  narrativeArc?: string;
+  vocalStyle?: string;
+  typicalSongStructure?: string[];
 }
 
 function toCompileStyleInput(
@@ -49,6 +56,12 @@ function toCompileStyleInput(
     lyricsMode: (body.lyricsMode ??
       "strict_instrumental") as CompileStyleInput["lyricsMode"],
     vocalType: body.vocalType ?? undefined,
+    characteristics: body.characteristics,
+    hipHopFlowPattern: body.flowPattern,
+    hipHopRhymeStyle: body.rhymeStyle,
+    hipHopNarrativeArc: body.narrativeArc,
+    hipHopVocalStyle: body.vocalStyle,
+    hipHopTypicalSongStructure: body.typicalSongStructure,
   };
 }
 

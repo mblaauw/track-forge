@@ -93,19 +93,6 @@ function validateGenre(file, id, cfg, validVocalTypeIds) {
     }
   }
 
-  // ── Tag categories ───────────────────────────────────────────────
-  const tagIds = new Set();
-  for (const tc of cfg.tag_categories ?? []) {
-    if (!tc.id) {
-      error(file, "tag_category missing id");
-      continue;
-    }
-    if (tagIds.has(tc.id)) error(file, `duplicate tag_category id: ${tc.id}`);
-    tagIds.add(tc.id);
-    if (!tc.name) error(file, `tag_category "${tc.id}" missing name`);
-    if (!tc.color) error(file, `tag_category "${tc.id}" missing color`);
-  }
-
   // ── Descriptor categories ────────────────────────────────────────
   const catIds = new Set();
   for (const dc of cfg.descriptor_categories ?? []) {

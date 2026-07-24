@@ -138,6 +138,20 @@ async function handleCompilation(
       ? Number(inputs.energy)
       : undefined;
 
+  // Genre characteristics from preset values (all genres)
+  const characteristics = Array.isArray(inputs.characteristics)
+    ? (inputs.characteristics as string[])
+    : undefined;
+
+  // HipHop-specific fields from preset values
+  const hipHopFlowPattern = String(inputs.flowPattern ?? "");
+  const hipHopRhymeStyle = String(inputs.rhymeStyle ?? "");
+  const hipHopNarrativeArc = String(inputs.narrativeArc ?? "");
+  const hipHopVocalStyle = String(inputs.vocalStyle ?? "");
+  const hipHopTypicalSongStructure = Array.isArray(inputs.typicalSongStructure)
+    ? (inputs.typicalSongStructure as string[])
+    : undefined;
+
   const compiled = compileStylePrompt({
     genreName,
     presetLabels,
@@ -150,6 +164,12 @@ async function handleCompilation(
     vocalType: vocalType || undefined,
     presetMood,
     presetEnergy: Number.isFinite(presetEnergy) ? presetEnergy : undefined,
+    characteristics,
+    hipHopFlowPattern: hipHopFlowPattern || undefined,
+    hipHopRhymeStyle: hipHopRhymeStyle || undefined,
+    hipHopNarrativeArc: hipHopNarrativeArc || undefined,
+    hipHopVocalStyle: hipHopVocalStyle || undefined,
+    hipHopTypicalSongStructure,
   });
 
   trace("handleCompilation", {

@@ -1,134 +1,69 @@
-# EDM genre module config
 name: EDM
 color: cyan
-subgenre_count: "40+"
-
-tag_categories:
-  - id: genre
-    name: Genre
-    color: accent
-    suggestions:
-      - "Progressive House"
-      - "Deep House"
-      - Techno
-      - Trance
-      - "Drum & Bass"
-      - "Future Bass"
-      - Dubstep
-      - Garage
-  - id: mood
-    name: Mood
-    color: amber
-    suggestions:
-      - Euphoric
-      - Dark
-      - Dreamy
-      - Aggressive
-      - Uplifting
-      - Hypnotic
-      - Melancholic
-      - Energetic
-  - id: inst
-    name: Instruments
-    color: cyan
-    suggestions:
-      - "Supersaw Lead"
-      - "808 Bass"
-      - Piano
-      - "Arp Sequence"
-      - "Vocal Chops"
-      - "Pluck Chords"
-      - Pads
-      - Strings
-  - id: prod
-    name: Production
-    color: violet
-    suggestions:
-      - "Sidechain Pump"
-      - "Analog Warmth"
-      - "Wide Stereo"
-      - "Tape Saturation"
-      - "Reverb Wash"
-      - "Heavy Compression"
-      - "Filter Sweeps"
-      - Layering
-
 presets:
   - id: deep_house_chill
-    name: "Deep House — Chill"
-    description: "Warm, laid-back deep house with soulful chords"
+    name: Deep House — Chill
+    description: Warm, laid-back deep house with soulful chords
     values:
-      family: house
-      subgenre: deep_house
       bpm: 118
       key: C
       scale: minor
-      mood: "warm and soulful"
+      mood: warm and soulful
       energy: 5
       complexity: 4
-      soundscape: warm
       lyricsMode: strict_instrumental
       characteristics:
         - warm
         - soulful
         - groovy
-        - "jazzy chords"
-        - "subby bass"
-        - "lush pads"
+        - jazzy chords
+        - subby bass
+        - lush pads
   - id: tech_house_driving
-    name: "Tech House — Driving"
-    description: "Loopy, driving tech house for the dancefloor"
+    name: Tech House — Driving
+    description: Loopy, driving tech house for the dancefloor
     values:
-      family: house
-      subgenre: tech_house
       bpm: 126
       key: G
       scale: minor
-      mood: "driving and hypnotic"
+      mood: driving and hypnotic
       energy: 8
       complexity: 5
-      soundscape: driving
       lyricsMode: strict_instrumental
       characteristics:
         - driving
         - minimal
         - loopy
-        - "punchy kick"
-        - "acid elements"
+        - punchy kick
+        - acid elements
         - groove
   - id: progressive_house_euphoric
-    name: "Progressive House — Euphoric"
-    description: "Building, euphoric progressive house with melodic peaks"
+    name: Progressive House — Euphoric
+    description: Building, euphoric progressive house with melodic peaks
     values:
-      family: house
-      subgenre: progressive_house
       bpm: 128
       key: Ab
       scale: minor
-      mood: "euphoric and building"
+      mood: euphoric and building
       energy: 8
       complexity: 7
-      soundscape: euphoric
       lyricsMode: strict_instrumental
       characteristics:
         - building
         - atmospheric
         - melodic
-        - "long transitions"
+        - long transitions
         - euphoric
   - id: detroit_techno_deep
-    name: "Detroit Techno — Deep"
-    description: "Hypnotic, deep Detroit techno"
+    name: Detroit Techno — Deep
+    description: Hypnotic, deep Detroit techno
     values:
-      family: techno
-      subgenre: detroit_techno
       bpm: 128
       key: D
       scale: minor
-      mood: "deep and hypnotic"
+      mood: deep and hypnotic
       energy: 7
       complexity: 6
-      soundscape: hypnotic
       lyricsMode: strict_instrumental
       characteristics:
         - futuristic
@@ -138,18 +73,15 @@ presets:
         - hypnotic
         - deep
   - id: industrial_techno_aggressive
-    name: "Industrial Techno — Aggressive"
-    description: "Dark, aggressive industrial techno"
+    name: Industrial Techno — Aggressive
+    description: Dark, aggressive industrial techno
     values:
-      family: techno
-      subgenre: industrial_techno
       bpm: 140
       key: F
       scale: minor
-      mood: "dark and aggressive"
+      mood: dark and aggressive
       energy: 9
       complexity: 6
-      soundscape: aggressive
       lyricsMode: strict_instrumental
       characteristics:
         - aggressive
@@ -159,182 +91,155 @@ presets:
         - dark
         - relentless
   - id: melodic_techno_emotional
-    name: "Melodic Techno — Emotional"
-    description: "Emotional, atmospheric melodic techno"
+    name: Melodic Techno — Emotional
+    description: Emotional, atmospheric melodic techno
     values:
-      family: techno
-      subgenre: melodic_techno
       bpm: 124
       key: E
       scale: minor
-      mood: "emotional and atmospheric"
+      mood: emotional and atmospheric
       energy: 6
       complexity: 7
-      soundscape: atmospheric
       lyricsMode: strict_instrumental
       characteristics:
         - emotional
         - atmospheric
-        - "melodic leads"
-        - "rich pads"
+        - melodic leads
+        - rich pads
         - driving
   - id: uplifting_trance_anthem
-    name: "Uplifting Trance — Anthem"
-    description: "Euphoric anthem trance with soaring leads"
+    name: Uplifting Trance — Anthem
+    description: Euphoric anthem trance with soaring leads
     values:
-      family: trance
-      subgenre: uplifting_trance
       bpm: 140
       key: F#
       scale: minor
-      mood: "euphoric and uplifting"
+      mood: euphoric and uplifting
       energy: 9
       complexity: 7
-      soundscape: euphoric
       lyricsMode: strict_instrumental
       characteristics:
         - euphoric
         - emotional
-        - "soaring leads"
+        - soaring leads
         - arpeggios
-        - "build-ups"
+        - build-ups
         - anthemic
   - id: psytrance_trippy
-    name: "Psytrance — Trippy"
-    description: "Fast, psychedelic trance with rolling bass"
+    name: Psytrance — Trippy
+    description: Fast, psychedelic trance with rolling bass
     values:
-      family: trance
-      subgenre: psytrance
       bpm: 145
       key: G
       scale: minor
-      mood: "psychedelic and intense"
+      mood: psychedelic and intense
       energy: 9
       complexity: 8
-      soundscape: trippy
       lyricsMode: strict_instrumental
       characteristics:
         - psychedelic
-        - "rolling bass"
+        - rolling bass
         - trippy
         - layered
         - fast
         - complex
   - id: liquid_funk_soulful
-    name: "Liquid Funk — Soulful"
-    description: "Melodic, soulful drum & bass"
+    name: Liquid Funk — Soulful
+    description: Melodic, soulful drum & bass
     values:
-      family: dnb
-      subgenre: liquid_funk
       bpm: 174
       key: D
       scale: minor
-      mood: "soulful and melodic"
+      mood: soulful and melodic
       energy: 7
       complexity: 7
-      soundscape: soulful
       lyricsMode: strict_instrumental
       characteristics:
         - melodic
         - soulful
         - rolling
-        - "warm bass"
-        - "jazz-influenced"
+        - warm bass
+        - jazz-influenced
         - smooth
   - id: neurofunk_dark
-    name: "Neurofunk — Dark"
-    description: "Dark, techy neurofunk with complex bass"
+    name: Neurofunk — Dark
+    description: Dark, techy neurofunk with complex bass
     values:
-      family: dnb
-      subgenre: neurofunk
       bpm: 174
       key: F
       scale: minor
-      mood: "dark and techy"
+      mood: dark and techy
       energy: 8
       complexity: 9
-      soundscape: dark
       lyricsMode: strict_instrumental
       characteristics:
         - techy
-        - "complex bass"
+        - complex bass
         - dark
-        - "sci-fi"
+        - sci-fi
         - chopped
         - intricate
   - id: dubstep_heavy
-    name: "Dubstep — Heavy"
-    description: "Massive dubstep with heavy wobble bass"
+    name: Dubstep — Heavy
+    description: Massive dubstep with heavy wobble bass
     values:
-      family: bass
-      subgenre: dubstep
       bpm: 140
       key: G
       scale: minor
-      mood: "dark and massive"
+      mood: dark and massive
       energy: 9
       complexity: 6
-      soundscape: massive
       lyricsMode: strict_instrumental
       characteristics:
-        - "half-time"
-        - "heavy wobble bass"
+        - half-time
+        - heavy wobble bass
         - dark
         - sparse
-        - "massive drops"
+        - massive drops
   - id: future_bass_bright
-    name: "Future Bass — Bright"
-    description: "Bright, melodic future bass with emotional chords"
+    name: Future Bass — Bright
+    description: Bright, melodic future bass with emotional chords
     values:
-      family: bass
-      subgenre: future_bass
       bpm: 145
       key: C
       scale: major
-      mood: "bright and emotional"
+      mood: bright and emotional
       energy: 7
       complexity: 6
-      soundscape: bright
       lyricsMode: strict_instrumental
       characteristics:
         - bright
-        - "synth-heavy"
-        - "chord stabs"
+        - synth-heavy
+        - chord stabs
         - melodic
         - emotional
   - id: hardstyle_anthem
-    name: "Hardstyle — Anthem"
-    description: "Hard-hitting euphoric hardstyle"
+    name: Hardstyle — Anthem
+    description: Hard-hitting euphoric hardstyle
     values:
-      family: hardcore
-      subgenre: hardstyle
       bpm: 150
       key: E
       scale: minor
-      mood: "hard and euphoric"
+      mood: hard and euphoric
       energy: 10
       complexity: 6
-      soundscape: powerful
       lyricsMode: strict_instrumental
       characteristics:
-        - "hard kick"
-        - "distorted bass"
-        - "anthemic leads"
+        - hard kick
+        - distorted bass
+        - anthemic leads
         - euphoric
         - climactic
   - id: chillout_relaxed
-    name: "Chillout — Relaxed"
-    description: "Warm, relaxed ambient downtempo"
+    name: Chillout — Relaxed
+    description: Warm, relaxed ambient downtempo
     values:
-      family: downtempo
-      subgenre: chillout
       bpm: 90
       key: C
       scale: major
-      mood: "relaxed and warm"
+      mood: relaxed and warm
       energy: 3
       complexity: 3
-      soundscape: relaxed
       lyricsMode: strict_instrumental
       characteristics:
         - relaxed
@@ -342,129 +247,142 @@ presets:
         - smooth
         - melodic
         - warm
-        - "laid-back"
+        - laid-back
   - id: lo_fi_chilled
-    name: "Lo-Fi — Chilled"
-    description: "Warm, dusty lo-fi beats"
+    name: Lo-Fi — Chilled
+    description: Warm, dusty lo-fi beats
     values:
-      family: downtempo
-      subgenre: lo_fi_beats
       bpm: 80
       key: G
       scale: major
-      mood: "chilled and nostalgic"
+      mood: chilled and nostalgic
       energy: 3
       complexity: 3
-      soundscape: warm
       lyricsMode: strict_instrumental
       characteristics:
         - warm
         - dusty
         - crackling
-        - "sample-based"
+        - sample-based
         - chilled
         - nostalgic
   - id: dance_pop_catchy
-    name: "Dance-Pop — Catchy"
-    description: "Upbeat, radio-friendly dance-pop"
+    name: Dance-Pop — Catchy
+    description: Upbeat, radio-friendly dance-pop
     values:
-      family: pop
-      subgenre: dance_pop
       bpm: 118
       key: C
       scale: major
-      mood: "catchy and upbeat"
+      mood: catchy and upbeat
       energy: 7
       complexity: 4
-      soundscape: bright
       lyricsMode: full_lyrics
       characteristics:
         - catchy
         - upbeat
-        - "radio-friendly"
-        - "four-on-the-floor"
+        - radio-friendly
+        - four-on-the-floor
         - accessible
   - id: nu_disco_funky
-    name: "Nu-Disco — Funky"
-    description: "Funky, disco-inspired dance pop"
+    name: Nu-Disco — Funky
+    description: Funky, disco-inspired dance pop
     values:
-      family: pop
-      subgenre: nu_disco
       bpm: 118
       key: D
       scale: major
-      mood: "funky and uplifting"
+      mood: funky and uplifting
       energy: 7
       complexity: 5
-      soundscape: funky
       lyricsMode: full_lyrics
       characteristics:
         - funky
-        - "disco-inspired"
-        - "groovy bass"
+        - disco-inspired
+        - groovy bass
         - strings
-        - "four-on-the-floor"
-
+        - four-on-the-floor
 song_structure:
   - section: intro
     fn: establish
-    bars: { base: 8, per_complexity: 0.5 }
-    tags: [atmospheric, "sparse texture"]
+    bars:
+      base: 8
+      per_complexity: 0.5
+    tags:
+      - atmospheric
+      - sparse texture
   - section: build
     fn: introduce
     bars: 8
-    tags: ["add rhythm", "rising tension"]
+    tags:
+      - add rhythm
+      - rising tension
   - section: drop
     fn: peak
-    bars: { base: 16, per_energy: 1.2 }
-    tags: ["full groove", "bass-led", "wide theme"]
+    bars:
+      base: 16
+      per_energy: 1.2
+    tags:
+      - full groove
+      - bass-led
+      - wide theme
   - section: breakdown
     fn: remove
-    bars: { base: 8, per_complexity: 0.8 }
-    tags: ["strip drums", "expose harmony"]
+    bars:
+      base: 8
+      per_complexity: 0.8
+    tags:
+      - strip drums
+      - expose harmony
   - section: build_2
     fn: escalate
     bars: 8
-    tags: ["rising tension"]
+    tags:
+      - rising tension
   - section: drop_2
     fn: peak
-    bars: { base: 16, per_energy: 1.2 }
-    tags: ["added impact", "add countermelody"]
+    bars:
+      base: 16
+      per_energy: 1.2
+    tags:
+      - added impact
+      - add countermelody
   - section: bridge
     fn: contrast
     bars: 8
-    tags: [introspective]
+    tags:
+      - introspective
   - section: outro
     fn: resolve
-    bars: { base: 8, per_complexity: 0.5 }
-    tags: ["reduce layers"]
-
+    bars:
+      base: 8
+      per_complexity: 0.5
+    tags:
+      - reduce layers
 descriptor_categories:
   - cat: sound
     label: SOUND DESIGN
     hue: var(--hue-cyan)
     chips:
       - supersaw
-      - "reese bass"
-      - "pluck lead"
-      - "fm bells"
-      - "granular pad"
-      - "detuned saw"
-      - "sine sub"
-      - "vocal chops"
-      - "arp sequence"
-      - "saw stabs"
+      - reese bass
+      - pluck lead
+      - fm bells
+      - granular pad
+      - detuned saw
+      - sine sub
+      - vocal chops
+      - arp sequence
+      - saw stabs
   - cat: rhythm
     label: RHYTHM
     hue: var(--hue-amber)
     chips:
-      - "four-on-the-floor"
-      - "syncopated hats"
-      - "offbeat bass"
-      - "rolling toms"
+      - four-on-the-floor
+      - syncopated hats
+      - offbeat bass
+      - rolling toms
       - breakbeat
-      - "driving kick"
-      - "shuffled groove"
+      - driving kick
+      - shuffled groove
   - cat: atmosphere
     label: ATMOSPHERE
     hue: var(--hue-violet)
@@ -481,52 +399,56 @@ descriptor_categories:
     label: PRODUCTION
     hue: var(--hue-green)
     chips:
-      - "sidechain pump"
-      - "wide stereo"
-      - "analog warmth"
-      - "crisp transients"
-      - "tape saturation"
-      - "polished master"
-      - "heavy compression"
+      - sidechain pump
+      - wide stereo
+      - analog warmth
+      - crisp transients
+      - tape saturation
+      - polished master
+      - heavy compression
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
     chips:
-      - "high energy"
+      - high energy
       - driving
-      - "restrained build"
-      - "explosive drop"
+      - restrained build
+      - explosive drop
       - relentless
-      - "dynamic swells"
-
+      - dynamic swells
 descriptor_defaults:
   - label: supersaw
     cat: sound
     weight: 2
-  - label: "four-on-the-floor"
+  - label: four-on-the-floor
     cat: rhythm
     weight: 2
-  - label: "sidechain pump"
+  - label: sidechain pump
     cat: production
     weight: 2
   - label: euphoric
     cat: atmosphere
     weight: 2
-  - label: "high energy"
+  - label: high energy
     cat: energy
     weight: 2
-
 lyric_themes:
   - euphoria
   - nightlife
-  - "letting go"
+  - letting go
   - transcendence
   - togetherness
-  - "the drop"
-
+  - the drop
 section_palette:
-  [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
-
+  - Intro
+  - Build
+  - Drop
+  - Breakdown
+  - Bridge
+  - Verse
+  - Chorus
+  - Hook
+  - Outro
 vocal_presets:
   - type: female_lead
     delivery_style: anthemic
@@ -543,7 +465,6 @@ vocal_presets:
   - type: wordless_textural
     delivery_style: ethereal
     default_energy: 2
-
 lyrics_guidance: |
   EDM lyrics exist to be shouted back at a festival, not read on a page.
   Prioritize hook economy over narrative: choruses/hooks should be 1-4 short,
