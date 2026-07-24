@@ -1022,61 +1022,60 @@ descriptor_categories:
     label: SOUND DESIGN
     hue: var(--hue-cyan)
     chips:
-      [
-        supersaw,
-        "reese bass",
-        "pluck lead",
-        "fm bells",
-        "granular pad",
-        "detuned saw",
-        "sine sub",
-        "vocal chops",
-        "arp sequence",
-        "saw stabs",
-      ]
+      - supersaw
+      - "reese bass"
+      - "pluck lead"
+      - "fm bells"
+      - "granular pad"
+      - "detuned saw"
+      - "sine sub"
+      - "vocal chops"
+      - "arp sequence"
+      - "saw stabs"
   - cat: rhythm
     label: RHYTHM
     hue: var(--hue-amber)
     chips:
-      [
-        "four-on-the-floor",
-        "syncopated hats",
-        "offbeat bass",
-        "rolling toms",
-        breakbeat,
-        "driving kick",
-        "shuffled groove",
-      ]
+      - "four-on-the-floor"
+      - "syncopated hats"
+      - "offbeat bass"
+      - "rolling toms"
+      - breakbeat
+      - "driving kick"
+      - "shuffled groove"
   - cat: atmosphere
     label: ATMOSPHERE
     hue: var(--hue-violet)
     chips:
-      [euphoric, dark, dreamy, hypnotic, cinematic, nostalgic, uplifting, tense]
+      - euphoric
+      - dark
+      - dreamy
+      - hypnotic
+      - cinematic
+      - nostalgic
+      - uplifting
+      - tense
   - cat: production
     label: PRODUCTION
     hue: var(--hue-green)
     chips:
-      [
-        "sidechain pump",
-        "wide stereo",
-        "analog warmth",
-        "crisp transients",
-        "tape saturation",
-        "polished master",
-        "heavy compression",
-      ]
+      - "sidechain pump"
+      - "wide stereo"
+      - "analog warmth"
+      - "crisp transients"
+      - "tape saturation"
+      - "polished master"
+      - "heavy compression"
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
     chips:
-      [
-        "high energy",
-        driving,
-        "restrained build",
-        "explosive drop",
-        relentless,
-        "dynamic swells",
-      ]
+      - "high energy"
+      - driving
+      - "restrained build"
+      - "explosive drop"
+      - relentless
+      - "dynamic swells"
 
 descriptor_defaults:
   - label: supersaw
@@ -1096,7 +1095,12 @@ descriptor_defaults:
     weight: 2
 
 lyric_themes:
-  [euphoria, nightlife, "letting go", transcendence, togetherness, "the drop"]
+  - euphoria
+  - nightlife
+  - "letting go"
+  - transcendence
+  - togetherness
+  - "the drop"
 
 section_palette:
   [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]

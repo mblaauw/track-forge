@@ -142,45 +142,53 @@ descriptor_categories:
     label: TEXTURE
     hue: var(--hue-cyan)
     chips:
-      [
-        "granular pad",
-        "field recording",
-        "glass harmonica",
-        "tape loop",
-        drone,
-        glockenspiel,
-        organ,
-      ]
+      - "granular pad"
+      - "field recording"
+      - "glass harmonica"
+      - "tape loop"
+      - drone
+      - glockenspiel
+      - organ
   - cat: rhythm
     label: PULSE
     hue: var(--hue-amber)
     chips:
-      [
-        "slow pulse",
-        "no beat",
-        "irregular rhythm",
-        "gentle swell",
-        "lullaby tempo",
-      ]
+      - "slow pulse"
+      - "no beat"
+      - "irregular rhythm"
+      - "gentle swell"
+      - "lullaby tempo"
   - cat: atmosphere
     label: SPACE
     hue: var(--hue-violet)
-    chips: [ethereal, cinematic, intimate, vast, underwater, meditative, open]
+    chips:
+      - ethereal
+      - cinematic
+      - intimate
+      - vast
+      - underwater
+      - meditative
+      - open
   - cat: production
     label: LUSH
     hue: var(--hue-green)
     chips:
-      [
-        "wide stereo",
-        "analog warmth",
-        "reverb wash",
-        "tape saturation",
-        "soft compression",
-      ]
+      - "wide stereo"
+      - "analog warmth"
+      - "reverb wash"
+      - "tape saturation"
+      - "soft compression"
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
-    chips: [still, "slow build", floating, calm, hypnotic, sparse, dense]
+    chips:
+      - still
+      - "slow build"
+      - floating
+      - calm
+      - hypnotic
+      - sparse
+      - dense
 
 descriptor_defaults:
   - label: "granular pad"
@@ -199,9 +207,16 @@ descriptor_defaults:
     cat: production
     weight: 2
 
-lyric_themes: [stillness, memory, nature, solitude, dreams, distance]
+lyric_themes:
+  - stillness
+  - memory
+  - nature
+  - solitude
+  - dreams
+  - distance
 
 section_palette: [Emerge, Swell, Drift, Movement, Interlude, Fade]
+
 vocal_presets:
   - type: female_lead
     delivery_style: ethereal

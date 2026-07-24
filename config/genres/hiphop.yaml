@@ -853,47 +853,54 @@ descriptor_categories:
     label: SOUND
     hue: var(--hue-cyan)
     chips:
-      [
-        "808 bass",
-        keys,
-        "chopped vocal",
-        "brass stab",
-        "synth pad",
-        pluck,
-        organ,
-      ]
+      - "808 bass"
+      - keys
+      - "chopped vocal"
+      - "brass stab"
+      - "synth pad"
+      - pluck
+      - organ
   - cat: rhythm
     label: "RHYTHM & FLOW"
     hue: var(--hue-amber)
     chips:
-      [
-        "trap hi-hats",
-        "swing groove",
-        "slow roll",
-        "double-time",
-        "snare rolls",
-        "finger snaps",
-      ]
+      - "trap hi-hats"
+      - "swing groove"
+      - "slow roll"
+      - "double-time"
+      - "snare rolls"
+      - "finger snaps"
   - cat: atmosphere
     label: MOOD
     hue: var(--hue-violet)
-    chips: [dark, soulful, melancholic, hype, "laid back", gritty, smooth]
+    chips:
+      - dark
+      - soulful
+      - melancholic
+      - hype
+      - "laid back"
+      - gritty
+      - smooth
   - cat: production
     label: PRODUCTION
     hue: var(--hue-green)
     chips:
-      [
-        "lofi warmth",
-        "crisp mix",
-        "wide stereo",
-        "tape saturation",
-        sidechain,
-        "heavy 808s",
-      ]
+      - "lofi warmth"
+      - "crisp mix"
+      - "wide stereo"
+      - "tape saturation"
+      - sidechain
+      - "heavy 808s"
   - cat: energy
     label: ENERGY
     hue: var(--hue-red)
-    chips: [smooth, bouncy, aggressive, relaxed, "build-up", "hard hitting"]
+    chips:
+      - smooth
+      - bouncy
+      - aggressive
+      - relaxed
+      - "build-up"
+      - "hard hitting"
 
 descriptor_defaults:
   - label: "808 bass"
@@ -913,7 +920,12 @@ descriptor_defaults:
     weight: 2
 
 lyric_themes:
-  ["the come-up", "the city", loyalty, "late nights", ambition, reflection]
+  - "the come-up"
+  - "the city"
+  - loyalty
+  - "late nights"
+  - ambition
+  - reflection
 
 section_palette:
   [Intro, Build, Drop, Breakdown, Bridge, Verse, Chorus, Hook, Outro]
