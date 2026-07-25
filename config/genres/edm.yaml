@@ -277,12 +277,16 @@ presets:
       energy: 7
       complexity: 4
       lyricsMode: full_lyrics
+      narrativeArc: storytelling
       characteristics:
         - catchy
         - upbeat
         - radio-friendly
         - four-on-the-floor
         - accessible
+      tempoFeel: straight
+      perceivedBpm: 118
+      lineDensity: 0.5
   - id: nu_disco_funky
     name: Nu-Disco — Funky
     description: Funky, disco-inspired dance pop
@@ -294,12 +298,16 @@ presets:
       energy: 7
       complexity: 5
       lyricsMode: full_lyrics
+      narrativeArc: storytelling
       characteristics:
         - funky
         - disco-inspired
         - groovy bass
         - strings
         - four-on-the-floor
+      tempoFeel: straight
+      perceivedBpm: 118
+      lineDensity: 0.5
 song_structure:
   - section: intro
     fn: establish
@@ -465,13 +473,3 @@ vocal_presets:
   - type: wordless_textural
     delivery_style: ethereal
     default_energy: 2
-lyrics_guidance: |
-  EDM lyrics exist to be shouted back at a festival, not read on a page.
-  Prioritize hook economy over narrative: choruses/hooks should be 1-4 short,
-  repeatable phrases built around a single title-worthy line — favor broad,
-  universal emotion (release, euphoria, longing, defiance) over specific
-  storytelling detail. Verses can be sparser and more impressionistic; they
-  exist to set up the hook, not compete with it. Avoid dense internal rhyme
-  or rapid syllable runs — leave rhythmic space for the drop. Lyrics for
-  build/breakdown sections should be minimal or a single repeated phrase that
-  intensifies with the arrangement.

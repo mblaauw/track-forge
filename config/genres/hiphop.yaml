@@ -33,6 +33,9 @@ presets:
         - verse
         - outro
       vocalStyle: assertive, commanding delivery with precise phrasing
+      tempoFeel: half_time
+      perceivedBpm: 45
+      lineDensity: 1
   - id: boom_bap_jazz_rap
     name: Boom Bap — Jazz Rap
     description: Smooth jazz-infused boom bap with dusty samples
@@ -65,6 +68,9 @@ presets:
         - verse
         - outro
       vocalStyle: assertive, commanding delivery with precise phrasing
+      tempoFeel: half_time
+      perceivedBpm: 43
+      lineDensity: 1
   - id: boom_bap_hardcore
     name: Boom Bap — Hardcore
     description: Aggressive hardcore boom bap with rapid-fire delivery
@@ -97,6 +103,9 @@ presets:
         - verse
         - outro
       vocalStyle: assertive, commanding delivery with precise phrasing
+      tempoFeel: half_time
+      perceivedBpm: 47
+      lineDensity: 1
   - id: trap_banger
     name: Trap Banger
     description: Hard-hitting trap anthem with 808s and hi-hat rolls
@@ -129,6 +138,9 @@ presets:
         - hook
         - outro
       vocalStyle: rhythmic, triplet flows with ad-libs and melodic hooks
+      tempoFeel: half_time
+      perceivedBpm: 70
+      lineDensity: 1
   - id: trap_melodic
     name: Trap — Melodic
     description: Melodic trap with sung hooks and emotional chord progressions
@@ -161,6 +173,9 @@ presets:
         - hook
         - outro
       vocalStyle: rhythmic, triplet flows with ad-libs and melodic hooks
+      tempoFeel: half_time
+      perceivedBpm: 73
+      lineDensity: 1
   - id: trap_dark
     name: Trap — Dark
     description: Dark, atmospheric trap with ominous production
@@ -193,6 +208,9 @@ presets:
         - hook
         - outro
       vocalStyle: rhythmic, triplet flows with ad-libs and melodic hooks
+      tempoFeel: half_time
+      perceivedBpm: 69
+      lineDensity: 1
   - id: drill_uk
     name: Drill — UK
     description: Gritty UK drill with sliding 808s and sparse percussion
@@ -224,6 +242,9 @@ presets:
         - verse
         - outro
       vocalStyle: gritty, confrontational delivery with distinct cadence
+      tempoFeel: half_time
+      perceivedBpm: 70
+      lineDensity: 1
   - id: drill_chicago
     name: Drill — Chicago
     description: Raw Chicago drill with heavy bass and aggressive delivery
@@ -255,6 +276,9 @@ presets:
         - verse
         - outro
       vocalStyle: gritty, confrontational delivery with distinct cadence
+      tempoFeel: half_time
+      perceivedBpm: 75
+      lineDensity: 1
   - id: lo_fi_study
     name: Lo-fi — Study Beats
     description: Chilled lo-fi beats for focused study sessions
@@ -317,6 +341,9 @@ presets:
         - verse
         - outro
       vocalStyle: gentle, relaxed delivery with smooth flow
+      tempoFeel: half_time
+      perceivedBpm: 40
+      lineDensity: 1
   - id: lo_fi_jazzhop
     name: Lo-fi — Jazzhop
     description: Smooth jazzhop with live instrumentation and vinyl warmth
@@ -348,6 +375,9 @@ presets:
         - verse
         - outro
       vocalStyle: gentle, relaxed delivery with smooth flow
+      tempoFeel: half_time
+      perceivedBpm: 41
+      lineDensity: 1
   - id: grime_eskibeat
     name: Grime — Eskibeat
     description: Classic eskibeat grime with skippy percussion
@@ -380,6 +410,9 @@ presets:
         - hook
         - outro
       vocalStyle: rapid-fire, aggressive delivery with UK accent and energy
+      tempoFeel: half_time
+      perceivedBpm: 70
+      lineDensity: 1
   - id: grime_modern
     name: Grime — Modern
     description: Modern grime with evolved production and complex flows
@@ -412,6 +445,9 @@ presets:
         - hook
         - outro
       vocalStyle: rapid-fire, aggressive delivery with UK accent and energy
+      tempoFeel: half_time
+      perceivedBpm: 70
+      lineDensity: 1
   - id: cloud_rap_ethereal
     name: Cloud Rap — Ethereal
     description: Dreamy cloud rap with atmospheric production and distant vocals
@@ -443,6 +479,9 @@ presets:
         - verse
         - outro
       vocalStyle: ethereal, echoey delivery with atmospheric effects
+      tempoFeel: half_time
+      perceivedBpm: 35
+      lineDensity: 1
   - id: cloud_rap_spacey
     name: Cloud Rap — Spacey
     description: Spacey cloud rap with psychedelic beats and trippy lyrics
@@ -474,6 +513,9 @@ presets:
         - verse
         - outro
       vocalStyle: ethereal, echoey delivery with atmospheric effects
+      tempoFeel: half_time
+      perceivedBpm: 37
+      lineDensity: 1
   - id: crunk_classic
     name: Crunk Classic
     description: High-energy crunk with call-and-response hooks and heavy 808s
@@ -506,6 +548,9 @@ presets:
         - break
         - hook
       vocalStyle: loud, energetic shouting delivery with call-and-response
+      tempoFeel: half_time
+      perceivedBpm: 40
+      lineDensity: 1
   - id: crunk_southern
     name: Crunk — Southern
     description: Southern-style crunk with laid-back swing and heavy bass
@@ -538,6 +583,9 @@ presets:
         - break
         - hook
       vocalStyle: loud, energetic shouting delivery with call-and-response
+      tempoFeel: half_time
+      perceivedBpm: 38
+      lineDensity: 1
   - id: g_funk_classic
     name: G-Funk Classic
     description: West coast G-funk with funky synths and laid-back grooves
@@ -570,6 +618,9 @@ presets:
         - hook
         - outro
       vocalStyle: smooth, melodic delivery with sung hooks
+      tempoFeel: half_time
+      perceivedBpm: 46
+      lineDensity: 1
   - id: abstract_experimental
     name: Abstract — Experimental
     description: Experimental abstract hip-hop with unconventional structures
@@ -601,6 +652,9 @@ presets:
         - verse
         - outro
       vocalStyle: creative, unconventional delivery with artistic expression
+      tempoFeel: half_time
+      perceivedBpm: 50
+      lineDensity: 1
   - id: abstract_conscious
     name: Abstract — Conscious
     description: Conscious abstract hip-hop with deep lyrical themes
@@ -633,6 +687,9 @@ presets:
         - hook
         - outro
       vocalStyle: thoughtful, articulate delivery with emphasis on message
+      tempoFeel: half_time
+      perceivedBpm: 44
+      lineDensity: 1
   - id: g_funk_modern
     name: G-Funk — Modern
     description: Modern take on G-funk with contemporary production
@@ -665,6 +722,9 @@ presets:
         - hook
         - outro
       vocalStyle: smooth, melodic delivery with sung hooks
+      tempoFeel: half_time
+      perceivedBpm: 48
+      lineDensity: 1
   - id: storytelling_narrative
     name: Storytelling — Narrative
     description: Narrative-driven hip-hop with detailed storytelling
@@ -697,6 +757,9 @@ presets:
         - hook
         - outro
       vocalStyle: authoritative, narrative delivery with vivid imagery
+      tempoFeel: half_time
+      perceivedBpm: 43
+      lineDensity: 1
 song_structure:
   - section: intro
     fn: establish
@@ -846,14 +909,3 @@ vocal_presets:
   - type: wordless_textural
     delivery_style: ethereal
     default_energy: 2
-lyrics_guidance: |
-  Hip-hop lyrics are carried by flow and rhyme scheme as much as meaning.
-  Write to the bar, not just the syllable count: keep a consistent rhythmic
-  cadence per line so it scans as rapped, not spoken. Use multi-syllabic or
-  internal rhyme within verses when the preset's rhyme style calls for it;
-  keep hooks simpler and more repeatable than verses. Verses should carry
-  the narrative/braggadocio/conscious content specified by the brief and
-  themes; hooks should distill that content into one quotable line repeated
-  with minor variation. Match delivery energy to the section's vocal
-  delivery setting (laid back vs hype vs intense) — don't write a hype hook
-  over a laid-back delivery marker.

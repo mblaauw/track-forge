@@ -10,7 +10,11 @@ export type {
   LlmResponse,
   LlmProvider,
 } from "./llm/index.js";
-export { writeLyrics, buildLyricsPrompt } from "./llm/index.js";
+export {
+  writeLyrics,
+  buildLyricsPrompt,
+  writeLyricsTrace,
+} from "./llm/index.js";
 export type {
   LyricsLlm,
   LyricsWriterInput,

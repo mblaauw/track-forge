@@ -52,7 +52,7 @@ Review code changes for architecture regression, correctness, and completeness.
 
 ### Documentation
 
-- If new behavior changes a contract or invariant, the relevant skill (`track-forge-runtime`, `track-forge-genre-config`, `track-forge-suno`, `track-forge-ui-session`) is updated.
+- If new behavior changes a contract or invariant documented in `AGENTS.md`, update it.
 - `AGENTS.md` is not a complete architecture manual — no dumped UI dimensions, model recommendations, or old architecture history.
 
 ### Completion evidence
@@ -65,7 +65,7 @@ Review code changes for architecture regression, correctness, and completeness.
 
 ```bash
 # Find references to a symbol
-rg -n "symbolName" --include='*.ts' packages/core/src/
+rg -n "symbolName" -g '*.ts' packages/core/src/
 
 # Find all TypeScript tests for a changed area
 fd -g '*.test.ts' packages/core/src/pipeline/
@@ -74,9 +74,9 @@ fd -g '*.test.ts' packages/core/src/pipeline/
 rg -n "server\.(get|post|patch|delete|put)" apps/server/src/routes/
 
 # Verify no dead imports in a file
-rg "from "@track-forge/(core|contracts|genre-core)""
+rg 'from "@track-forge/(core|contracts|genre-core)"'
 ```
 
 ## MCP
 
-No MCP servers are loaded. All review uses bash (`rg`, `fd`) and built-in tools.
+CodeGraph MCP may be available in the parent session, but subagent MCP access is not guaranteed. All review commands use bash (`rg`, `fd`) and built-in tools for reliability. Use CodeGraph from the parent session for cross-file call-graph and blast-radius analysis before spawning the reviewer.

@@ -39,8 +39,19 @@ export function registerLyricsRoutes(
       lyricTopic: body.lyricTopic,
       lyricThemes: body.lyricThemes,
       lyricAngle: body.lyricAngle,
-      style: body.style ?? "",
       lyricsGuidance: mod.lyricsGuidance,
+      mood: body.mood,
+      energy: body.energy,
+      narrativeArc: body.narrativeArc,
+      rhymeStyle: body.rhymeStyle,
+      flowPattern: body.flowPattern,
+      vocalStyle: body.vocalStyle,
+      characteristics: body.characteristics,
+      tempoFeel: body.tempoFeel,
+      perceivedBpm: body.perceivedBpm,
+      lineDensity: body.lineDensity,
+      perspective: body.perspective,
+      imageAnchors: body.imageAnchors,
     });
 
     return reply.send(result);

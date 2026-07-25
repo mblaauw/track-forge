@@ -12,8 +12,8 @@ Example: `/edit-genre edm`
 
 ## Workflow
 
-1. Load the `track-forge-genre-config` skill
-2. Identify the YAML source file: `config/genres/<id>.yaml`
+1. Read the YAML config: `config/genres/<id>.yaml` + shared category pools in `config/shared.yaml`
+2. Locate the genre module: `packages/genre-<id>/src/` — `createGenreModule()` for input schema/defaults
 3. Validate YAML syntax before editing
 4. Make the change
 5. Run genre validation: `node scripts/validate-genres.mjs`

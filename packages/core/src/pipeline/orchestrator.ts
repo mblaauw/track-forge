@@ -294,6 +294,8 @@ async function handleLyricsWriting(
     fn: String(s.fn ?? "establish"),
     deltas: (s.deltas as string[]) ?? [],
     vocal: s.vocal as LyricsWriterSectionInput["vocal"],
+    purpose: (s as Record<string, unknown>).purpose as string | undefined,
+    pocket: (s as Record<string, unknown>).pocket as string | undefined,
   }));
 
   // Pre-generated lyrics from the "Generate lyrics" UI button — already
@@ -324,11 +326,6 @@ async function handleLyricsWriting(
     };
   }
 
-  const compiledStyle = state.compiledJson
-    ? (safeJsonParse<Record<string, string>>(state.compiledJson, {}).style ??
-      "")
-    : "";
-
   const writerInput = {
     genreName,
     presetLabels,
@@ -339,8 +336,32 @@ async function handleLyricsWriting(
     lyricTopic: String(inputs.lyricTopic ?? ""),
     lyricThemes: (inputs.lyricThemes as string[]) ?? [],
     lyricAngle: String(inputs.lyricAngle ?? ""),
-    style: compiledStyle,
     lyricsGuidance: state.module.lyricsGuidance,
+    mood: inputs.mood ? String(inputs.mood) : undefined,
+    energy:
+      inputs.energy !== undefined && inputs.energy !== null
+        ? Number(inputs.energy)
+        : undefined,
+    narrativeArc: String(inputs.narrativeArc ?? "") || undefined,
+    rhymeStyle: String(inputs.rhymeStyle ?? "") || undefined,
+    flowPattern: String(inputs.flowPattern ?? "") || undefined,
+    vocalStyle: String(inputs.vocalStyle ?? "") || undefined,
+    characteristics: Array.isArray(inputs.characteristics)
+      ? (inputs.characteristics as string[])
+      : undefined,
+    tempoFeel: inputs.tempoFeel ? String(inputs.tempoFeel) : undefined,
+    perceivedBpm:
+      inputs.perceivedBpm !== undefined && inputs.perceivedBpm !== null
+        ? Number(inputs.perceivedBpm)
+        : undefined,
+    lineDensity:
+      inputs.lineDensity !== undefined && inputs.lineDensity !== null
+        ? Number(inputs.lineDensity)
+        : undefined,
+    perspective: inputs.perspective ? String(inputs.perspective) : undefined,
+    imageAnchors: Array.isArray(inputs.imageAnchors)
+      ? (inputs.imageAnchors as string[])
+      : undefined,
   };
 
   trace("handleLyricsWriting.request", { input: writerInput });

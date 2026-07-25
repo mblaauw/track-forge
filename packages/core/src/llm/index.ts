@@ -7,6 +7,7 @@ export type {
 } from "./types.js";
 export { PROVIDER_DEFAULTS } from "./types.js";
 export { writeLyrics, buildLyricsPrompt } from "./lyrics-writer.js";
+export { writeLyricsTrace } from "./lyrics-trace.js";
 export type {
   LyricsLlm,
   LyricsWriterInput,

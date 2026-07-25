@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as yaml from "js-yaml";
@@ -8,6 +8,7 @@ import * as yaml from "js-yaml";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CONFIG_DIR = join(__dirname, "..", "config");
 const GENRE_DIR = join(CONFIG_DIR, "genres");
+const LYRIC_PROMPTS_DIR = join(CONFIG_DIR, "lyrics-prompts");
 const SHARED_PATH = join(CONFIG_DIR, "shared.yaml");
 
 // ── Known valid values ────────────────────────────────────────────────
@@ -252,6 +253,19 @@ for (const f of files) {
     validateGenre(f, id, cfg, validVocalTypeIds);
   } catch (err) {
     error(f, `YAML parse error: ${err.message}`);
+  }
+}
+
+// ── Lyrics prompt files ────────────────────────────────────────────────
+
+for (const f of files) {
+  const id = f.replace(/\.yaml$/, "");
+  const promptPath = join(LYRIC_PROMPTS_DIR, `${id}.md`);
+  if (!existsSync(promptPath)) {
+    error(
+      `lyrics-prompts/${id}.md`,
+      `missing lyrics prompt file for genre "${id}"`,
+    );
   }
 }
 

@@ -12,7 +12,7 @@ export interface GenreModule<
   /** Augmented at runtime with YAML config data */
   presets?: GenrePreset[];
   songStructure?: SongStructureSection[];
-  /** Genre-specific songwriting conventions fed into the lyrics-writing prompt. */
+  /** Genre-specific songwriting conventions fed into the lyrics-writing prompt. Augmented at runtime from config/lyrics-prompts/<id>.md. */
   lyricsGuidance?: string;
 }
 
@@ -44,6 +44,10 @@ export interface SongStructureSection {
   tags: string[];
   fn?: SectionFunction;
   deltas?: string[];
+  /** Optional lyrical-purpose override (e.g. "introduce the narrator and central conflict"). Derived if absent. */
+  purpose?: string;
+  /** Optional pocket description (e.g. "spacious half-time flow with short double-time bursts"). Derived if absent. */
+  pocket?: string;
 }
 
 export interface ArrangementSection {

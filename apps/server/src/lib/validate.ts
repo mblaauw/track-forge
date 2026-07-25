@@ -134,6 +134,19 @@ export const LyricsGenerateBody = z.object({
   lyricTopic: z.string().default(""),
   lyricThemes: z.array(z.string()).default([]),
   lyricAngle: z.string().default("first_person"),
+  /** Lyrical direction params (data-driven, not Suno-style). */
+  mood: z.string().optional(),
+  energy: z.number().int().min(1).max(10).optional(),
+  narrativeArc: z.string().optional(),
+  rhymeStyle: z.string().optional(),
+  flowPattern: z.string().optional(),
+  vocalStyle: z.string().optional(),
+  characteristics: z.array(z.string()).optional(),
+  tempoFeel: z.string().optional(),
+  perceivedBpm: z.number().int().positive().optional(),
+  lineDensity: z.number().min(0.25).max(2).optional(),
+  perspective: z.string().optional(),
+  imageAnchors: z.array(z.string()).optional(),
 });
 
 // ── Suno ───────────────────────────────────────────────────────────────

@@ -37,7 +37,6 @@ export interface GenreConfigYaml {
     delivery_style: string;
     default_energy: number;
   }[];
-  lyrics_guidance?: string;
 }
 
 const ROOT = join(
@@ -49,6 +48,7 @@ const ROOT = join(
   "config",
 );
 const GENRE_DIR = join(ROOT, "genres");
+const LYRIC_PROMPTS_DIR = join(ROOT, "lyrics-prompts");
 const SHARED_PATH = join(ROOT, "shared.yaml");
 
 interface VocalPresetTypeDef {
@@ -181,7 +181,12 @@ export function getSongStructure(id: string): SongStructureSection[] {
 }
 
 export function getLyricsGuidance(id: string): string | undefined {
-  return loadYaml(id).lyrics_guidance;
+  const filePath = join(LYRIC_PROMPTS_DIR, `${id}.md`);
+  try {
+    return readFileSync(filePath, "utf-8").trim();
+  } catch {
+    return undefined;
+  }
 }
 
 /** Force reload on next access. */
