@@ -105,6 +105,57 @@ export interface ReferenceIntent {
   text: string;
 }
 
+// ── Materialization ───────────────────────────────────────────────────
+
+export interface IntentSource {
+  kind: "default" | "preset" | "user" | "derived";
+  /** Preset id when `kind === "preset"`. */
+  id?: string;
+  value: unknown;
+}
+
+export interface MaterializationWarning {
+  message: string;
+  path?: string;
+  severity: "info" | "warning" | "error";
+}
+
+export interface MaterializedIntent {
+  intent: SongIntentV1;
+  /** Flat provenance per JSON path (e.g. `"/musical/energy"`). */
+  provenance: Record<string, IntentSource[]>;
+  warnings: MaterializationWarning[];
+}
+
+/**
+ * Draft intent: the user's selections before any defaults or preset values
+ * are applied. `userValues` are typed `Partial<SongIntentV1>` fields that
+ * should override preset-derived values. `userFlat` is an alternative for
+ * callers that carry flat Record<string,unknown> inputs (e.g. the create-job
+ * route); these are applied AFTER `userValues` with the same "user" kind.
+ */
+export interface SongIntentDraft {
+  selectedStyles: StyleInfluence[];
+  userValues: Partial<SongIntentV1>;
+  userFlat?: Record<string, unknown>;
+}
+
+/**
+ * Catalog of preset data used during materialization. The caller (server
+ * route) provides this from YAML config; the function stays pure.
+ */
+export interface PresetCatalog {
+  getPreset(
+    genreId: string,
+    presetId: string,
+  ):
+    | {
+        name: string;
+        values: Record<string, unknown>;
+      }
+    | undefined;
+}
+
 // ── Canonical SongIntentV1 ────────────────────────────────────────────
 
 export interface SongIntentV1 {

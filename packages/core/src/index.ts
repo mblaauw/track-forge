@@ -53,7 +53,11 @@ export type {
   GenerationRecord,
 } from "./suno/index.js";
 
-export { abortJob, compileStylePrompt } from "./pipeline/index.js";
+export {
+  abortJob,
+  compileStylePrompt,
+  materializedToCompileStyleInput,
+} from "./pipeline/index.js";
 export type {
   CompileStyleInput,
   CompileStyleResult,

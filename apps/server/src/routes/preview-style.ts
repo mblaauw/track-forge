@@ -1,7 +1,17 @@
 import type { FastifyInstance } from "fastify";
-import { compileStylePrompt, schema } from "@track-forge/core";
+import {
+  compileStylePrompt,
+  materializedToCompileStyleInput,
+  schema,
+} from "@track-forge/core";
+import {
+  materializeIntent,
+  type PresetCatalog,
+  type StyleInfluence,
+  type SongIntentDraft,
+} from "@track-forge/song-intent";
 import { eq } from "drizzle-orm";
-import type { CompileStyleInput, Db } from "@track-forge/core";
+import type { Db } from "@track-forge/core";
 import { getModuleOrThrow } from "../lib/modules.js";
 import { getPresets } from "../lib/genre-config.js";
 import { findRowOr404 } from "../lib/db-utils.js";
@@ -26,7 +36,6 @@ interface StyleCompileFields {
   vocalType?: string | null;
   characteristics?: string[];
   tempoFeel?: string;
-  /** HipHop-specific preset fields. */
   flowPattern?: string;
   rhymeStyle?: string;
   narrativeArc?: string;
@@ -36,85 +45,88 @@ interface StyleCompileFields {
   energy?: number;
 }
 
-function firstPresetValues(
-  genreId: string,
-  presetIds: string[],
-): Record<string, unknown> {
-  if (presetIds.length === 0) return {};
-  const presets = getPresets(genreId);
-  const match = presets.find((p) => presetIds.includes(p.id));
-  return (match?.values as Record<string, unknown>) ?? {};
+function buildCatalog(genreId: string): PresetCatalog {
+  const loaded = getPresets(genreId);
+  const map = new Map(loaded.map((p) => [p.id, p]));
+  return {
+    getPreset(_gid: string, pid: string) {
+      const p = map.get(pid);
+      return p
+        ? { name: p.name, values: p.values as Record<string, unknown> }
+        : undefined;
+    },
+  };
 }
 
-function toCompileStyleInput(
+/** Build a SongIntentDraft + catalog from the preview-style body fields. */
+function buildDraft(
   genreId: string,
   body: StyleCompileFields,
-): CompileStyleInput {
-  const mod = getModuleOrThrow(genreId);
+): { draft: SongIntentDraft; catalog: PresetCatalog } {
   const presetIds = body.presetIds ?? [];
-  // Merge first selected preset values so preview matches pipeline compile
-  // (frontend only sends common session fields).
-  const pv = firstPresetValues(genreId, presetIds);
-  const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-  const num = (v: unknown) =>
-    typeof v === "number" && Number.isFinite(v) ? v : undefined;
-  const strArr = (v: unknown) =>
-    Array.isArray(v) ? (v as unknown[]).map(String) : undefined;
-
-  return {
-    genreName: mod.name,
-    presetLabels:
-      mod.presets?.filter((p) => presetIds.includes(p.id)).map((p) => p.name) ??
-      [],
-    descriptors: body.descriptors ?? [],
+  const catalog = buildCatalog(genreId);
+  const selectedStyles: StyleInfluence[] = presetIds.map((pid, i) => ({
+    genreId,
+    presetId: pid,
+    role: i === 0 ? "primary" : "influence",
+    strength: 3,
+  }));
+  const userValues: Record<string, unknown> = {
     bpm: body.bpm,
-    sections: (body.sections ?? []).map((s) => ({
+    mood: body.mood,
+    energy: body.energy,
+    lyricsMode: body.lyricsMode,
+    vocalType: body.vocalType,
+    characteristics: body.characteristics,
+    tempoFeel: body.tempoFeel,
+    flowPattern: body.flowPattern,
+    rhymeStyle: body.rhymeStyle,
+    narrativeArc: body.narrativeArc,
+    vocalStyle: body.vocalStyle,
+    typicalSongStructure: body.typicalSongStructure,
+    descriptors: body.descriptors as unknown[] | undefined,
+    sections: body.sections?.map((s, i) => ({
+      id: `preview-${i}`,
       name: s.name,
+      bars: 0,
       fn: s.fn ?? "establish",
-    })),
-    lyricsMode: (body.lyricsMode ??
-      "strict_instrumental") as CompileStyleInput["lyricsMode"],
-    vocalType: body.vocalType ?? undefined,
-    characteristics: body.characteristics ?? strArr(pv.characteristics),
-    tempoFeel: body.tempoFeel ?? str(pv.tempoFeel),
-    flowPattern: body.flowPattern ?? str(pv.flowPattern),
-    presetMood: body.mood ?? str(pv.mood),
-    presetEnergy: body.energy ?? num(pv.energy),
-    hipHopFlowPattern: body.flowPattern ?? str(pv.flowPattern),
-    hipHopRhymeStyle: body.rhymeStyle ?? str(pv.rhymeStyle),
-    hipHopNarrativeArc: body.narrativeArc ?? str(pv.narrativeArc),
-    hipHopVocalStyle: body.vocalStyle ?? str(pv.vocalStyle),
-    hipHopTypicalSongStructure:
-      body.typicalSongStructure ?? strArr(pv.typicalSongStructure),
+      deltas: [],
+      tags: [],
+    })) as unknown[] | undefined,
   };
+  return { draft: { selectedStyles, userValues: userValues as any }, catalog };
+}
+
+function compilePreview(
+  genreId: string,
+  body: StyleCompileFields,
+): ReturnType<typeof compileStylePrompt> {
+  const { draft, catalog } = buildDraft(genreId, body);
+  const materialized = materializeIntent(draft, catalog);
+  const mod = getModuleOrThrow(genreId);
+  return compileStylePrompt(
+    materializedToCompileStyleInput(materialized, catalog, mod.name),
+  );
 }
 
 export function registerPreviewStyleRoutes(
   server: FastifyInstance,
   deps: PreviewStyleRouteDeps,
 ): void {
-  // ── Unsaved session ────────────────────────────────────────────────────
-
   server.post("/api/preview-style", async (req, reply) => {
     const body = validateBody(PreviewStyleBody, req);
-    const input = toCompileStyleInput(body.genreId, body);
-    return reply.send(compileStylePrompt(input));
+    return reply.send(compilePreview(body.genreId, body));
   });
-
-  // ── Saved session ──────────────────────────────────────────────────────
 
   server.post("/api/jobs/:id/preview-style", async (req, reply) => {
     const { id } = validateParams(IdParams, req);
     const body = validateBody(JobPreviewStyleBody, req);
-
     const job = await findRowOr404(
       deps.db,
       schema.jobs,
       eq(schema.jobs.id, id),
       "Job",
     );
-
-    const input = toCompileStyleInput(job.genreId, body);
-    return reply.send(compileStylePrompt(input));
+    return reply.send(compilePreview(job.genreId, body));
   });
 }

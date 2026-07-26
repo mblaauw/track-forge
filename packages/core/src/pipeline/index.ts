@@ -16,3 +16,4 @@ export type {
   CompileStyleInput,
   CompileStyleResult,
 } from "./style-compiler.js";
+export { materializedToCompileStyleInput } from "./intent-bridge.js";

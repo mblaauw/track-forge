@@ -13,6 +13,11 @@ import {
 } from "@track-forge/core";
 import type { PipelineDeps } from "@track-forge/core";
 import type { Config, JobId } from "@track-forge/contracts";
+import {
+  materializeIntent,
+  type PresetCatalog,
+  type StyleInfluence,
+} from "@track-forge/song-intent";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
 import { getPresets, getDescriptorDefaults } from "../lib/genre-config.js";
 import { findRowOr404, parsePagination } from "../lib/db-utils.js";
@@ -87,6 +92,34 @@ export function registerJobRoutes(
       return reply
         .code(400)
         .send({ error: "Invalid inputs", details: parsed.error.issues });
+    }
+
+    // Materialize intent for provenance tracking and conflict detection.
+    const catalog: PresetCatalog = (() => {
+      const loaded = getPresets(genreId);
+      const map = new Map(loaded.map((p) => [p.id, p]));
+      return {
+        getPreset(_gid: string, pid: string) {
+          const p = map.get(pid);
+          return p
+            ? { name: p.name, values: p.values as Record<string, unknown> }
+            : undefined;
+        },
+      };
+    })();
+    const materialized = materializeIntent(
+      {
+        selectedStyles: [{ genreId, presetId, role: "primary", strength: 3 }],
+        userValues: {},
+        userFlat: inputs as Record<string, unknown>,
+      },
+      catalog,
+    );
+    if (materialized.warnings.length > 0) {
+      req.log.warn(
+        { warnings: materialized.warnings, genreId, presetId },
+        "materialize warnings",
+      );
     }
 
     const job = await createJob(
