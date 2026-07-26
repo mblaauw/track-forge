@@ -63,6 +63,11 @@ export function LibraryPanel() {
     loadJobs();
   }, []);
 
+  // Refresh library when a forge completes
+  useEffect(() => {
+    if (s.lastForgeTimestamp) loadJobs();
+  }, [s.lastForgeTimestamp]);
+
   const filtered = useMemo(
     () =>
       jobs.filter(
@@ -116,8 +121,6 @@ export function LibraryPanel() {
       presetIds,
       presetLabels,
       bpm: (inputs.bpm as number) ?? 128,
-      key: (inputs.key as string) ?? "C",
-      scale: (inputs.scale as "major" | "minor") ?? "minor",
       status: job.status,
       reference: job.reference ?? "",
       lyricsMode:
@@ -145,6 +148,7 @@ export function LibraryPanel() {
     try {
       await deleteJob(id);
       setJobs((prev) => prev.filter((j) => j.id !== id));
+      if (s.jobId === id) s.resetSession();
     } catch {
       // ignore
     }

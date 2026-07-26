@@ -111,8 +111,6 @@ async function handleCompilation(
   const genreName = state.module.name;
 
   const bpm = Number(inputs.bpm ?? 128);
-  const key = String(inputs.key ?? "C");
-  const scale = (inputs.scale ?? "minor") as "major" | "minor";
   const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental") as
     "full_lyrics" | "strict_instrumental";
 
@@ -157,14 +155,14 @@ async function handleCompilation(
     presetLabels,
     descriptors,
     bpm,
-    key,
-    scale,
     sections,
     lyricsMode,
     vocalType: vocalType || undefined,
     presetMood,
     presetEnergy: Number.isFinite(presetEnergy) ? presetEnergy : undefined,
     characteristics,
+    tempoFeel: String(inputs.tempoFeel ?? "") || undefined,
+    flowPattern: String(inputs.flowPattern ?? "") || undefined,
     hipHopFlowPattern: hipHopFlowPattern || undefined,
     hipHopRhymeStyle: hipHopRhymeStyle || undefined,
     hipHopNarrativeArc: hipHopNarrativeArc || undefined,
@@ -202,7 +200,7 @@ async function handleCompilation(
     excludedStyles: negativeTags.join(", "),
     lyrics: "",
     bpm,
-    key,
+    key: String(inputs.key ?? "C"),
     vocalDescription: vocalType ?? "",
     vocalGender: deriveVocalGender(vocalType),
     negativeTags,

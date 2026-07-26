@@ -65,6 +65,7 @@ export interface GenrePreset {
   name: string;
   description: string;
   values: Record<string, unknown>;
+  songStructure?: SongStructureSection[];
 }
 
 export function fetchPresets(genreId: string): Promise<GenrePreset[]> {
@@ -121,8 +122,8 @@ export interface PreviewStyleBody {
   presetIds: string[];
   descriptors: { label: string; cat: string; weight: number }[];
   bpm: number;
-  key: string;
-  scale: string;
+  key?: string;
+  scale?: string;
   sections: { name: string; fn: string }[];
   lyricsMode: string;
   vocalType?: string | null;
@@ -196,8 +197,8 @@ export interface LyricsGenerateBody {
   presetIds: string[];
   descriptors: { label: string; cat: string; weight: number }[];
   bpm: number;
-  key: string;
-  scale: string;
+  key?: string;
+  scale?: string;
   style?: string;
   sections: {
     id: string;
@@ -247,6 +248,7 @@ export interface GenerationInfo {
   duration?: number;
   generatedTitle?: string;
   style?: string;
+  lyrics?: string;
   error?: string;
   isFavorite?: boolean;
   seed?: number;

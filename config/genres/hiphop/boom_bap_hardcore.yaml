@@ -1,0 +1,84 @@
+id: boom_bap_hardcore
+name: Boom Bap — Hardcore
+description: Aggressive hardcore boom bap with rapid-fire delivery
+values:
+  bpm: 94
+  key: E
+  scale: minor
+  mood: aggressive
+  narrativeArc: braggadocio
+  rhymeStyle: multi_syllabic
+  flowPattern: aggressive
+  energy: 9
+  complexity: 8
+  lyricsMode: full_lyrics
+  characteristics:
+    - hard drums
+    - sampled loops
+    - gritty
+    - raw
+    - head-nod groove
+    - intense delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - bridge
+    - verse
+    - outro
+  vocalStyle: assertive, commanding delivery with precise phrasing
+  tempoFeel: straight
+  perceivedBpm: 94
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - introspective
+      - strip drums
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

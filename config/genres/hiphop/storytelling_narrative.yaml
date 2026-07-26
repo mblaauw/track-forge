@@ -1,0 +1,85 @@
+id: storytelling_narrative
+name: Storytelling — Narrative
+description: Narrative-driven hip-hop with detailed storytelling
+values:
+  bpm: 85
+  key: A
+  scale: minor
+  mood: reflective
+  narrativeArc: storytelling
+  rhymeStyle: internal
+  flowPattern: laid_back
+  energy: 6
+  complexity: 7
+  lyricsMode: full_lyrics
+  characteristics:
+    - heavy bass
+    - cinematic samples
+    - storytelling
+    - raw
+    - street narratives
+    - conversational delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - hook
+    - outro
+  vocalStyle: authoritative, narrative delivery with vivid imagery
+  tempoFeel: straight
+  perceivedBpm: 85
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

@@ -1,0 +1,83 @@
+id: chillout_relaxed
+name: Chillout — Relaxed
+description: Warm, relaxed ambient downtempo
+values:
+  bpm: 90
+  key: C
+  scale: major
+  mood: relaxed and warm
+  energy: 3
+  complexity: 3
+  lyricsMode: strict_instrumental
+  characteristics:
+    - relaxed
+    - ambient
+    - smooth
+    - melodic
+    - warm
+    - laid-back
+  typicalSongStructure:
+    - intro
+    - verse
+    - chorus
+    - verse
+    - chorus
+    - bridge
+    - chorus
+    - outro
+song_structure:
+  - section: intro
+    fn: establish
+    bars:
+      base: 12
+      per_complexity: 0.5
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: build
+    fn: introduce
+    bars: 8
+    tags:
+      - add rhythm
+      - rising tension
+  - section: groove
+    fn: peak
+    bars:
+      base: 16
+      per_energy: 1.2
+    tags:
+      - full groove
+      - wide theme
+  - section: breakdown
+    fn: remove
+    bars:
+      base: 8
+      per_complexity: 0.8
+    tags:
+      - strip drums
+      - expose harmony
+  - section: build_2
+    fn: escalate
+    bars: 8
+    tags:
+      - rising tension
+  - section: groove_2
+    fn: peak
+    bars:
+      base: 16
+      per_energy: 1.2
+    tags:
+      - full groove
+      - expose harmony
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - introspective
+  - section: outro
+    fn: resolve
+    bars:
+      base: 8
+      per_complexity: 0.5
+    tags:
+      - reduce layers

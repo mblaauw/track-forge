@@ -50,8 +50,6 @@ function buildInputPack(
 ): Record<string, unknown> {
   return {
     bpm: s.bpm ?? 128,
-    key: s.key,
-    scale: s.scale,
     genreId: s.genreId,
     presetIds: s.presetIds,
     lyricsMode: s.lyricsMode,
@@ -74,7 +72,6 @@ export function ComposeShell() {
   const player = usePlayer();
   const { leftCollapsed, rightCollapsed, libraryCollapsed } = s;
   const cleanupRef = useRef<(() => void) | null>(null);
-  const draftRef = useRef(false);
   // Shared with the autosave effect below — flushed synchronously before a
   // forge starts so the pipeline never reads stale inputs from a debounce
   // window that hasn't fired yet.
@@ -106,8 +103,7 @@ export function ComposeShell() {
     try {
       let jobId = s.jobId;
 
-      // Create job if not yet saved (should be rare — draft auto-create
-      // usually fires on first meaningful input)
+      // Create job if not yet saved
       if (!jobId) {
         const job = await createJob({
           genreId: s.genreId,
@@ -140,6 +136,7 @@ export function ComposeShell() {
               forgeRunning: false,
               forgeStageIdx: 4,
               status: "completed",
+              lastForgeTimestamp: Date.now(),
             });
             // Refresh takes
             fetchVersions(jobId!)
@@ -219,8 +216,6 @@ export function ComposeShell() {
     s.presetIds,
     s.presetId,
     s.bpm,
-    s.key,
-    s.scale,
     s.lyricsMode,
     s.lyricTopic,
     s.lyricAngle,
@@ -240,36 +235,8 @@ export function ComposeShell() {
     };
   }, []);
 
-  // Debounced autosave to backend — auto-creates draft job on first meaningful input
+  // Debounced autosave to backend (only when a job exists)
   useEffect(() => {
-    const hasMeaningfulInput =
-      s.presetIds.length > 0 ||
-      s.sections.length > 0 ||
-      s.lyricTopic ||
-      s.tags.length > 0;
-
-    // Auto-create draft job on first meaningful change
-    if (
-      hasMeaningfulInput &&
-      !s.jobId &&
-      !s.forgeRunning &&
-      !draftRef.current
-    ) {
-      draftRef.current = true;
-      createJob({
-        genreId: s.genreId,
-        presetId: s.presetIds[0] || "",
-        inputs: buildInputPack(s),
-        name: s.name || undefined,
-      })
-        .then((job) => s.setSession({ jobId: job.id }))
-        .catch(() => {
-          draftRef.current = false;
-        });
-      return;
-    }
-
-    // Existing autosave (only when a job exists)
     if (!s.jobId) return;
     if (persistRef.current) clearTimeout(persistRef.current);
     persistRef.current = setTimeout(() => {
@@ -289,8 +256,6 @@ export function ComposeShell() {
     s.presetIds.join(","),
     s.presetId,
     s.bpm,
-    s.key,
-    s.scale,
     s.lyricsMode,
     s.lyricTopic,
     s.lyricAngle,

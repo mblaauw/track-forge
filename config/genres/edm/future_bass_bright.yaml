@@ -1,0 +1,26 @@
+id: future_bass_bright
+name: Future Bass — Bright
+description: Bright, melodic future bass with emotional chords
+values:
+  bpm: 145
+  key: C
+  scale: major
+  mood: bright and emotional
+  energy: 7
+  complexity: 6
+  lyricsMode: strict_instrumental
+  characteristics:
+    - bright
+    - synth-heavy
+    - chord stabs
+    - melodic
+    - emotional
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

@@ -69,6 +69,7 @@ export const generations = sqliteTable("generations", {
   duration: integer("duration"),
   generatedTitle: text("generated_title"),
   style: text("style"),
+  lyrics: text("lyrics"),
   error: text("error"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),

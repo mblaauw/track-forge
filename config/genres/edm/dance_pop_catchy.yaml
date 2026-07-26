@@ -1,0 +1,90 @@
+id: dance_pop_catchy
+name: Dance-Pop — Catchy
+description: Upbeat, radio-friendly dance-pop
+values:
+  bpm: 118
+  key: C
+  scale: major
+  mood: catchy and upbeat
+  energy: 7
+  complexity: 4
+  lyricsMode: full_lyrics
+  narrativeArc: storytelling
+  vocalStyle: bright, energetic pop vocals with layered harmonies and ad-libs
+  characteristics:
+    - catchy
+    - upbeat
+    - radio-friendly
+    - four-on-the-floor
+    - accessible
+  tempoFeel: straight
+  perceivedBpm: 118
+  lineDensity: 0.5
+  typicalSongStructure:
+    - intro
+    - verse
+    - pre-chorus
+    - chorus
+    - verse
+    - pre-chorus
+    - chorus
+    - bridge
+    - final-chorus
+    - outro
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 8
+    tags:
+      - atmospheric
+      - filtered
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+  - section: pre-chorus
+    fn: escalate
+    bars: 8
+    tags:
+      - rising tension
+  - section: chorus
+    fn: peak
+    bars: 8
+    tags:
+      - full arrangement
+      - catchy
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+  - section: pre-chorus
+    fn: escalate
+    bars: 8
+    tags:
+      - rising tension
+  - section: chorus
+    fn: peak
+    bars: 8
+    tags:
+      - full arrangement
+      - catchy
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - strip drums
+      - introspective
+  - section: final chorus
+    fn: peak
+    bars: 12
+    tags:
+      - full arrangement
+      - catchy
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 8
+    tags:
+      - reduce layers

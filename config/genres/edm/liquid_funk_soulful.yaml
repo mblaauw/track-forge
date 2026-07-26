@@ -1,0 +1,27 @@
+id: liquid_funk_soulful
+name: Liquid Funk — Soulful
+description: Melodic, soulful drum & bass
+values:
+  bpm: 174
+  key: D
+  scale: minor
+  mood: soulful and melodic
+  energy: 7
+  complexity: 7
+  lyricsMode: strict_instrumental
+  characteristics:
+    - melodic
+    - soulful
+    - rolling
+    - warm bass
+    - jazz-influenced
+    - smooth
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

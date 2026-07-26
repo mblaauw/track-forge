@@ -3,6 +3,7 @@ import { compileStylePrompt, schema } from "@track-forge/core";
 import { eq } from "drizzle-orm";
 import type { CompileStyleInput, Db } from "@track-forge/core";
 import { getModuleOrThrow } from "../lib/modules.js";
+import { getPresets } from "../lib/genre-config.js";
 import { findRowOr404 } from "../lib/db-utils.js";
 import {
   validateBody,
@@ -20,18 +21,29 @@ interface StyleCompileFields {
   presetIds?: string[];
   descriptors?: { label: string; cat: string; weight: number }[];
   bpm: number;
-  key?: string;
-  scale?: string;
   sections?: { name: string; fn?: string }[];
   lyricsMode?: string;
   vocalType?: string | null;
   characteristics?: string[];
+  tempoFeel?: string;
   /** HipHop-specific preset fields. */
   flowPattern?: string;
   rhymeStyle?: string;
   narrativeArc?: string;
   vocalStyle?: string;
   typicalSongStructure?: string[];
+  mood?: string;
+  energy?: number;
+}
+
+function firstPresetValues(
+  genreId: string,
+  presetIds: string[],
+): Record<string, unknown> {
+  if (presetIds.length === 0) return {};
+  const presets = getPresets(genreId);
+  const match = presets.find((p) => presetIds.includes(p.id));
+  return (match?.values as Record<string, unknown>) ?? {};
 }
 
 function toCompileStyleInput(
@@ -40,6 +52,15 @@ function toCompileStyleInput(
 ): CompileStyleInput {
   const mod = getModuleOrThrow(genreId);
   const presetIds = body.presetIds ?? [];
+  // Merge first selected preset values so preview matches pipeline compile
+  // (frontend only sends common session fields).
+  const pv = firstPresetValues(genreId, presetIds);
+  const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? v : undefined;
+  const strArr = (v: unknown) =>
+    Array.isArray(v) ? (v as unknown[]).map(String) : undefined;
+
   return {
     genreName: mod.name,
     presetLabels:
@@ -47,8 +68,6 @@ function toCompileStyleInput(
       [],
     descriptors: body.descriptors ?? [],
     bpm: body.bpm,
-    key: body.key ?? "",
-    scale: (body.scale ?? "minor") as "major" | "minor",
     sections: (body.sections ?? []).map((s) => ({
       name: s.name,
       fn: s.fn ?? "establish",
@@ -56,12 +75,17 @@ function toCompileStyleInput(
     lyricsMode: (body.lyricsMode ??
       "strict_instrumental") as CompileStyleInput["lyricsMode"],
     vocalType: body.vocalType ?? undefined,
-    characteristics: body.characteristics,
-    hipHopFlowPattern: body.flowPattern,
-    hipHopRhymeStyle: body.rhymeStyle,
-    hipHopNarrativeArc: body.narrativeArc,
-    hipHopVocalStyle: body.vocalStyle,
-    hipHopTypicalSongStructure: body.typicalSongStructure,
+    characteristics: body.characteristics ?? strArr(pv.characteristics),
+    tempoFeel: body.tempoFeel ?? str(pv.tempoFeel),
+    flowPattern: body.flowPattern ?? str(pv.flowPattern),
+    presetMood: body.mood ?? str(pv.mood),
+    presetEnergy: body.energy ?? num(pv.energy),
+    hipHopFlowPattern: body.flowPattern ?? str(pv.flowPattern),
+    hipHopRhymeStyle: body.rhymeStyle ?? str(pv.rhymeStyle),
+    hipHopNarrativeArc: body.narrativeArc ?? str(pv.narrativeArc),
+    hipHopVocalStyle: body.vocalStyle ?? str(pv.vocalStyle),
+    hipHopTypicalSongStructure:
+      body.typicalSongStructure ?? strArr(pv.typicalSongStructure),
   };
 }
 

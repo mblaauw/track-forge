@@ -7,6 +7,8 @@ import {
   Pause,
   Star,
   Plus,
+  Palette,
+  FileText,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { usePlayer } from "../../lib/player";
@@ -123,6 +125,24 @@ export function RendersPanel() {
                 : take.duration
                   ? `${Math.floor(take.duration / 60)}:${(take.duration % 60).toString().padStart(2, "0")}`
                   : "—"}
+            </span>
+            <span style="display:flex;gap:4px;margin-left:6px">
+              {(track.style || take.style) && (
+                <span
+                  title={track.style || take.style || ""}
+                  style="cursor:help;display:flex;align-items:center;color:var(--faint)"
+                >
+                  <Palette size={10} />
+                </span>
+              )}
+              {(track.lyrics || take.lyrics) && (
+                <span
+                  title={track.lyrics || take.lyrics || ""}
+                  style="cursor:help;display:flex;align-items:center;color:var(--faint)"
+                >
+                  <FileText size={10} />
+                </span>
+              )}
             </span>
           </div>
         </div>

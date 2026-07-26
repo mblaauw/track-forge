@@ -1,0 +1,26 @@
+id: melodic_techno_emotional
+name: Melodic Techno — Emotional
+description: Emotional, atmospheric melodic techno
+values:
+  bpm: 124
+  key: E
+  scale: minor
+  mood: emotional and atmospheric
+  energy: 6
+  complexity: 7
+  lyricsMode: strict_instrumental
+  characteristics:
+    - emotional
+    - atmospheric
+    - melodic leads
+    - rich pads
+    - driving
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

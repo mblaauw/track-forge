@@ -126,7 +126,38 @@ export function ArrangementEditor() {
         <span class="bundle-block-meta">
           {totalBars} bars · {time}
         </span>
-        <div style="margin-left:auto;display:flex;gap:6px">
+        <div
+          class="arr-header-bpm"
+          style="margin-left:auto;display:flex;align-items:center;gap:6px"
+        >
+          <input
+            type="number"
+            min={60}
+            max={200}
+            class="arr-bpm-input"
+            value={s.bpm ?? 128}
+            onInput={(e) => {
+              const v = parseInt((e.target as HTMLInputElement).value, 10);
+              if (!Number.isNaN(v))
+                s.setSession({ bpm: Math.min(200, Math.max(60, v)) });
+            }}
+          />
+          <span style="font-size:10px;color:var(--faint);text-transform:uppercase">
+            BPM
+          </span>
+          <input
+            type="range"
+            min={60}
+            max={200}
+            class="arr-bpm-slider"
+            value={s.bpm ?? 128}
+            onInput={(e) => {
+              const v = parseInt((e.target as HTMLInputElement).value, 10);
+              if (!Number.isNaN(v)) s.setSession({ bpm: v });
+            }}
+          />
+        </div>
+        <div style="display:flex;gap:6px">
           {s.arrangeSource === "custom" && (
             <button
               class="arr-action-btn"

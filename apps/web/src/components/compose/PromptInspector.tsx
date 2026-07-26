@@ -1,12 +1,6 @@
 import { useState } from "preact/hooks";
-import {
-  CaretDown,
-  CaretRight,
-  Terminal,
-  Waveform,
-} from "@phosphor-icons/react";
+import { CaretDown, CaretRight, Terminal } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
-import { sectionColor, sectionShowsVocal, vocalMeta } from "./arrangement";
 
 export function PromptInspector({
   style,
@@ -64,33 +58,6 @@ export function PromptInspector({
             <div class="style-preview-box">
               {style || "Add descriptors to compile your style prompt…"}
             </div>
-          </div>
-
-          <div class="prompt-inspector-section last">
-            <span class="tf-mono prompt-inspector-label">METATAGS</span>
-            {s.lyricsMode === "strict_instrumental" && (
-              <div class="lyrics-info-box" style="margin:0 0 10px">
-                <Waveform size={14} />
-                <span>
-                  Instrumental — the sections below use Suno metatags to
-                  describe movement. Suno reads these metatags directly.
-                </span>
-              </div>
-            )}
-            {s.sections.map((sec) => {
-              const hue = sectionColor(sec.name);
-              return (
-                <div class="metatag-row" key={sec.id}>
-                  <span style={{ color: hue, fontWeight: 700 }}>
-                    [{sec.name}
-                    {sec.deltas.length > 0 ? `: ${sec.deltas.join(", ")}` : ""}]
-                  </span>
-                  {sec.vocal && sectionShowsVocal(sec, s.lyricsMode) && (
-                    <span class="metatag-vocal">{vocalMeta(sec.vocal)}</span>
-                  )}
-                </div>
-              );
-            })}
           </div>
         </div>
       )}

@@ -1,0 +1,84 @@
+id: boom_bap_classic
+name: Boom Bap Classic
+description: Raw, gritty boom bap with hard drums and sampled loops
+values:
+  bpm: 90
+  key: D
+  scale: minor
+  mood: gritty
+  narrativeArc: braggadocio
+  rhymeStyle: multi_syllabic
+  flowPattern: laid_back
+  energy: 7
+  complexity: 7
+  lyricsMode: full_lyrics
+  characteristics:
+    - hard drums
+    - sampled loops
+    - gritty
+    - raw
+    - head-nod groove
+    - intense delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - bridge
+    - verse
+    - outro
+  vocalStyle: assertive, commanding delivery with precise phrasing
+  tempoFeel: straight
+  perceivedBpm: 90
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - introspective
+      - strip drums
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

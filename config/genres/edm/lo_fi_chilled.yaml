@@ -1,0 +1,83 @@
+id: lo_fi_chilled
+name: Lo-Fi — Chilled
+description: Warm, dusty lo-fi beats
+values:
+  bpm: 80
+  key: G
+  scale: major
+  mood: chilled and nostalgic
+  energy: 3
+  complexity: 3
+  lyricsMode: strict_instrumental
+  characteristics:
+    - warm
+    - dusty
+    - crackling
+    - sample-based
+    - chilled
+    - nostalgic
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - bridge
+    - hook
+    - outro
+song_structure:
+  - section: intro
+    fn: establish
+    bars:
+      base: 12
+      per_complexity: 0.5
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: build
+    fn: introduce
+    bars: 8
+    tags:
+      - add rhythm
+      - introspective
+  - section: groove
+    fn: peak
+    bars:
+      base: 16
+      per_energy: 1.2
+    tags:
+      - full groove
+      - expose harmony
+  - section: breakdown
+    fn: remove
+    bars:
+      base: 8
+      per_complexity: 0.8
+    tags:
+      - strip drums
+      - introspective
+  - section: build_2
+    fn: escalate
+    bars: 8
+    tags:
+      - add rhythm
+  - section: groove_2
+    fn: peak
+    bars:
+      base: 16
+      per_energy: 1.2
+    tags:
+      - full groove
+      - expose harmony
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - introspective
+  - section: outro
+    fn: resolve
+    bars:
+      base: 8
+      per_complexity: 0.5
+    tags:
+      - reduce layers

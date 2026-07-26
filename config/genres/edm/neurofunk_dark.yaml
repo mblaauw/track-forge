@@ -1,0 +1,26 @@
+id: neurofunk_dark
+name: Neurofunk — Dark
+description: Dark, techy neurofunk with complex bass
+values:
+  bpm: 174
+  key: F
+  scale: minor
+  mood: dark and techy
+  energy: 8
+  complexity: 9
+  lyricsMode: strict_instrumental
+  characteristics:
+    - techy
+    - complex bass
+    - dark
+    - sci-fi
+    - chopped
+    - intricate
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - outro

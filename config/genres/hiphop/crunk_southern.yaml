@@ -1,0 +1,87 @@
+id: crunk_southern
+name: Crunk — Southern
+description: Southern-style crunk with laid-back swing and heavy bass
+values:
+  bpm: 76
+  key: D
+  scale: minor
+  mood: hype
+  narrativeArc: party
+  rhymeStyle: internal
+  flowPattern: syncopated
+  energy: 9
+  complexity: 5
+  lyricsMode: full_lyrics
+  characteristics:
+    - high-energy
+    - party
+    - call-outs
+    - heavy bass
+    - repetitive hooks
+    - hype delivery
+    - 2000s era
+  typicalSongStructure:
+    - intro
+    - hook
+    - verse
+    - hook
+    - verse
+    - hook
+    - break
+    - hook
+  vocalStyle: loud, energetic shouting delivery with call-and-response
+  tempoFeel: straight
+  perceivedBpm: 76
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: break
+    fn: remove
+    bars: 4
+    tags:
+      - stripped back
+      - half-time feel
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic

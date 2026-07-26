@@ -1,0 +1,28 @@
+id: dubstep_heavy
+name: Dubstep — Heavy
+description: Massive dubstep with heavy wobble bass
+values:
+  bpm: 140
+  key: G
+  scale: minor
+  mood: dark and massive
+  energy: 9
+  complexity: 6
+  lyricsMode: strict_instrumental
+  tempoFeel: half_time
+  perceivedBpm: 70
+  characteristics:
+    - half-time
+    - heavy wobble bass
+    - dark
+    - sparse
+    - massive drops
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

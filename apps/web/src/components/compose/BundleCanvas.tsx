@@ -36,8 +36,6 @@ export function BundleCanvas() {
         presetIds: s.presetIds,
         descriptors: descriptorsPayload,
         bpm: s.bpm ?? 128,
-        key: s.key,
-        scale: s.scale,
         sections: s.sections.map((sec) => ({
           name: sec.name,
           fn: sec.fn,
@@ -63,8 +61,6 @@ export function BundleCanvas() {
     s.presetIds.join(","),
     descriptorsPayload.map((d) => `${d.label}:${d.weight}`).join(","),
     s.bpm,
-    s.key,
-    s.scale,
     s.lyricsMode,
   ]);
 

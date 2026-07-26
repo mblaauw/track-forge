@@ -1,0 +1,26 @@
+id: detroit_techno_deep
+name: Detroit Techno — Deep
+description: Hypnotic, deep Detroit techno
+values:
+  bpm: 128
+  key: D
+  scale: minor
+  mood: deep and hypnotic
+  energy: 7
+  complexity: 6
+  lyricsMode: strict_instrumental
+  characteristics:
+    - futuristic
+    - soulful
+    - analog
+    - minimal
+    - hypnotic
+    - deep
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - outro

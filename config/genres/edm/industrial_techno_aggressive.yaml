@@ -1,0 +1,26 @@
+id: industrial_techno_aggressive
+name: Industrial Techno — Aggressive
+description: Dark, aggressive industrial techno
+values:
+  bpm: 140
+  key: F
+  scale: minor
+  mood: dark and aggressive
+  energy: 9
+  complexity: 6
+  lyricsMode: strict_instrumental
+  characteristics:
+    - aggressive
+    - distorted
+    - harsh
+    - mechanical
+    - dark
+    - relentless
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - outro

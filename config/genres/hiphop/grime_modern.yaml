@@ -1,0 +1,85 @@
+id: grime_modern
+name: Grime — Modern
+description: Modern grime with evolved production and complex flows
+values:
+  bpm: 140
+  key: F
+  scale: minor
+  mood: dark
+  narrativeArc: abstract
+  rhymeStyle: free_form
+  flowPattern: double_time
+  energy: 9
+  complexity: 9
+  lyricsMode: full_lyrics
+  characteristics:
+    - breakneck
+    - synth stabs
+    - uk garage
+    - energetic
+    - rewinds
+    - hype delivery
+    - 2000s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - hook
+    - outro
+  vocalStyle: rapid-fire, aggressive delivery with UK accent and energy
+  tempoFeel: straight
+  perceivedBpm: 140
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

@@ -1,0 +1,27 @@
+id: deep_house_chill
+name: Deep House — Chill
+description: Warm, laid-back deep house with soulful chords
+values:
+  bpm: 118
+  key: C
+  scale: minor
+  mood: warm and soulful
+  energy: 5
+  complexity: 4
+  lyricsMode: strict_instrumental
+  characteristics:
+    - warm
+    - soulful
+    - groovy
+    - jazzy chords
+    - subby bass
+    - lush pads
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

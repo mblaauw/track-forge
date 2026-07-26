@@ -32,7 +32,7 @@ function loadPersistedSession(): SessionState | null {
 
 function persistSession(state: SessionState): void {
   try {
-    // Don't persist forge-in-progress state (too transient)
+    // Don't persist transient state
     const persistable = { ...state, forgeRunning: false, status: "idle" };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
   } catch {
@@ -57,8 +57,6 @@ export interface SessionState {
   presetIds: string[];
   presetLabels: string[];
   bpm: number | null;
-  key: string;
-  scale: "major" | "minor";
   // Preset's own 1-10 energy/complexity — drive the size of formula-based
   // arrangement sections (see buildSections in components/compose/arrangement.ts).
   energy: number;
@@ -86,6 +84,8 @@ export interface SessionState {
   forgeRunning: boolean;
   forgeStageIdx: number;
   forgeStageLabel: string;
+  /** Incremented after each forge completes — drives library panel refresh. */
+  lastForgeTimestamp?: number;
 }
 
 const DEFAULT: SessionState = {
@@ -97,8 +97,6 @@ const DEFAULT: SessionState = {
   presetIds: [],
   presetLabels: [],
   bpm: 128,
-  key: "C",
-  scale: "minor",
   energy: 5,
   complexity: 5,
   status: "idle",
@@ -128,6 +126,7 @@ const DEFAULT: SessionState = {
   forgeRunning: false,
   forgeStageIdx: 0,
   forgeStageLabel: "",
+  lastForgeTimestamp: undefined,
 };
 
 interface SessionCtx extends SessionState {

@@ -1,0 +1,84 @@
+id: rage_modern
+name: Rage — Modern
+description: Aggressive, distorted rage-rap with rapid hi-hats and minimalist melodies
+values:
+  bpm: 150
+  key: C#
+  scale: minor
+  mood: aggressive
+  narrativeArc: braggadocio
+  rhymeStyle: end_rhyme
+  flowPattern: aggressive
+  energy: 9
+  complexity: 4
+  lyricsMode: full_lyrics
+  tempoFeel: straight
+  perceivedBpm: 150
+  lineDensity: 1
+  characteristics:
+    - distorted 808s
+    - rapid hi-hats
+    - minimalist melodies
+    - aggressive delivery
+    - rage energy
+    - 2020s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - bridge
+    - hook
+    - outro
+  vocalStyle: aggressive, rapid-fire delivery with ad-libs and occasional pitched vocals
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - introspective
+      - strip drums
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

@@ -1,0 +1,90 @@
+id: nu_disco_funky
+name: Nu-Disco — Funky
+description: Funky, disco-inspired dance pop
+values:
+  bpm: 118
+  key: D
+  scale: major
+  mood: funky and uplifting
+  energy: 7
+  complexity: 5
+  lyricsMode: full_lyrics
+  narrativeArc: storytelling
+  vocalStyle: smooth, soulful female lead with funk-inflected phrasing and harmonies
+  characteristics:
+    - funky
+    - disco-inspired
+    - groovy bass
+    - strings
+    - four-on-the-floor
+  tempoFeel: straight
+  perceivedBpm: 118
+  lineDensity: 0.5
+  typicalSongStructure:
+    - intro
+    - verse
+    - pre-chorus
+    - chorus
+    - verse
+    - pre-chorus
+    - chorus
+    - bridge
+    - final-chorus
+    - outro
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 8
+    tags:
+      - atmospheric
+      - filtered
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+  - section: pre-chorus
+    fn: escalate
+    bars: 8
+    tags:
+      - rising tension
+  - section: chorus
+    fn: peak
+    bars: 8
+    tags:
+      - full groove
+      - catchy
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+  - section: pre-chorus
+    fn: escalate
+    bars: 8
+    tags:
+      - rising tension
+  - section: chorus
+    fn: peak
+    bars: 8
+    tags:
+      - full groove
+      - catchy
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - expose harmony
+      - introspective
+  - section: final chorus
+    fn: peak
+    bars: 12
+    tags:
+      - full arrangement
+      - catchy
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 8
+    tags:
+      - reduce layers

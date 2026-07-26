@@ -3,14 +3,13 @@ import {
   MusicNotes,
   Sparkle,
   ArrowClockwise,
-  MicrophoneStage,
   Copy,
   WarningCircle,
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { sectionColor, sectionIsVocal, vocalMeta } from "./arrangement";
-import { generateLyrics } from "../../api";
 import type { Section } from "./types";
+import { generateLyrics } from "../../api";
 
 function syl(text: string): number {
   if (!text.trim()) return 0;
@@ -60,8 +59,6 @@ export function LyricsBlock({ style }: { style: string }) {
             weight: t.weight,
           })),
         bpm: s.bpm as number,
-        key: s.key,
-        scale: s.scale,
         style,
         sections: sectionsPayload(),
         lyricsMode: s.lyricsMode,
@@ -104,8 +101,6 @@ export function LyricsBlock({ style }: { style: string }) {
             weight: t.weight,
           })),
         bpm: s.bpm as number,
-        key: s.key,
-        scale: s.scale,
         style,
         sections: [
           {
@@ -192,8 +187,9 @@ export function LyricsBlock({ style }: { style: string }) {
             <span>{error}</span>
           </div>
         )}
-        {vocalSections.map((sec) => {
+        {s.sections.map((sec) => {
           const hue = sectionColor(sec.name);
+          const isVocal = sectionIsVocal(sec);
           return (
             <div class="lyrics-section-block" key={sec.id}>
               <div
@@ -202,16 +198,11 @@ export function LyricsBlock({ style }: { style: string }) {
               >
                 <span style={{ color: hue, fontWeight: 700 }}>
                   [{sec.name}
-                  {sec.deltas.length > 0 ? `: ${sec.deltas.join(", ")}` : ""}]
+                  {sec.deltas.length > 0 ? `: ${sec.deltas.join(", ")}` : ""}
+                  {sec.vocal && isVocal ? `: ${vocalMeta(sec.vocal)}` : ""}]
                 </span>
               </div>
-              {sec.vocal && (
-                <div class="lyrics-delivery-pill">
-                  <MicrophoneStage size={12} style="color:var(--danger-text)" />
-                  <span>{vocalMeta(sec.vocal)}</span>
-                </div>
-              )}
-              {s.lyricsGenerated && (
+              {isVocal && s.lyricsGenerated && (
                 <div style="margin:4px 0 6px">
                   <button
                     class="arr-action-btn"
@@ -225,7 +216,9 @@ export function LyricsBlock({ style }: { style: string }) {
                   </button>
                 </div>
               )}
-              {s.lyricsGenerated && (s.lyricLines[sec.id] ?? []).length > 0 ? (
+              {isVocal &&
+              s.lyricsGenerated &&
+              (s.lyricLines[sec.id] ?? []).length > 0 ? (
                 (s.lyricLines[sec.id] ?? []).map((line, li) => (
                   <div class="lyrics-line-row" key={li}>
                     <span class="lyrics-syl">{syl(line)}</span>
@@ -242,7 +235,7 @@ export function LyricsBlock({ style }: { style: string }) {
                     />
                   </div>
                 ))
-              ) : !s.lyricsGenerated ? (
+              ) : !s.lyricsGenerated && isVocal ? (
                 <p class="lyrics-not-generated">
                   Lyrics not generated yet. Click Generate above.
                 </p>
@@ -272,10 +265,11 @@ function lyricsAsText(
 ): string {
   const blocks: string[] = [];
   for (const sec of sections) {
-    const head =
-      sec.deltas.length > 0
-        ? `[${sec.name}: ${sec.deltas.join(", ")}]`
-        : `[${sec.name}]`;
+    const isVocal = sectionIsVocal(sec);
+    const parts = [sec.name];
+    if (sec.deltas.length > 0) parts.push(sec.deltas.join(", "));
+    if (sec.vocal && isVocal) parts.push(vocalMeta(sec.vocal));
+    const head = `[${parts.join(": ")}]`;
     const secLines = lines[sec.id] ?? [];
     blocks.push(head);
     if (secLines.length > 0) blocks.push(secLines.join("\n"));

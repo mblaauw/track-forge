@@ -42,6 +42,7 @@ export const PROVIDER_DEFAULTS: Partial<
   Record<LlmProvider, { baseUrl: string }>
 > = {
   openai: { baseUrl: "https://api.openai.com/v1" },
+  "openai-compatible": { baseUrl: "https://api.openai.com/v1" },
   anthropic: { baseUrl: "https://api.anthropic.com/v1" },
   ollama: { baseUrl: "http://localhost:11434" },
 } as const;

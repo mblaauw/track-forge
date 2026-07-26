@@ -1,0 +1,85 @@
+id: conscious_rap
+name: Conscious Rap
+description: Socially aware, message-driven hip-hop with intellectual depth
+values:
+  bpm: 88
+  key: E
+  scale: minor
+  mood: introspective
+  narrativeArc: conscious
+  rhymeStyle: multi_syllabic
+  flowPattern: laid_back
+  energy: 5
+  complexity: 8
+  lyricsMode: full_lyrics
+  characteristics:
+    - socially aware
+    - political
+    - intellectual
+    - message-driven
+    - thought-provoking
+    - conversational delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - hook
+    - outro
+  vocalStyle: thoughtful, articulate delivery with emphasis on message
+  tempoFeel: straight
+  perceivedBpm: 88
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

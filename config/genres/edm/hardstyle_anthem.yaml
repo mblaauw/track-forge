@@ -1,0 +1,25 @@
+id: hardstyle_anthem
+name: Hardstyle — Anthem
+description: Hard-hitting euphoric hardstyle
+values:
+  bpm: 150
+  key: E
+  scale: minor
+  mood: hard and euphoric
+  energy: 10
+  complexity: 6
+  lyricsMode: strict_instrumental
+  characteristics:
+    - hard kick
+    - distorted bass
+    - anthemic leads
+    - euphoric
+    - climactic
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - outro

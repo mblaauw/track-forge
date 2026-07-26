@@ -1,0 +1,19 @@
+id: generative_evolving
+name: Generative — Evolving
+description: Evolving generative textures that shift over time
+values:
+  bpm: 70
+  key: E
+  scale: minor
+  mood: serene
+  complexity: 6
+  energy: 3
+  lyricsMode: strict_instrumental
+  characteristics:
+    - evolving
+    - serene
+    - shifting textures
+    - generative
+    - spacious
+  tempoFeel: straight
+  perceivedBpm: 70

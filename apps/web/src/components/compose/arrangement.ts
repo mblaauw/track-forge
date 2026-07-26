@@ -79,19 +79,26 @@ export const SEC_COLORS: Record<string, string> = {
   outro: "var(--hue-slate)",
   emerge: "var(--hue-slate)",
   fade: "var(--hue-slate)",
+  "spoken word": "var(--hue-slate)",
   build: "var(--hue-amber)",
   swell: "var(--hue-amber)",
   "pre-chorus": "var(--hue-amber)",
+  "post-chorus": "var(--hue-amber)",
+  crescendo: "var(--hue-amber)",
   drop: "var(--hue-green)",
   hook: "var(--hue-green)",
   chorus: "var(--hue-green)",
   drift: "var(--hue-green)",
+  "final chorus": "var(--hue-green)",
+  "final hook": "var(--hue-green)",
   breakdown: "var(--hue-violet)",
   bridge: "var(--hue-violet)",
   interlude: "var(--hue-violet)",
+  transition: "var(--hue-violet)",
   verse: "var(--hue-cyan)",
   groove: "var(--hue-cyan)",
   movement: "var(--hue-cyan)",
+  solo: "var(--hue-cyan)",
 };
 
 export function sectionColor(name: string): string {
@@ -180,6 +187,14 @@ export const SECTION_PALETTE = [
   "Verse",
   "Chorus",
   "Hook",
+  "Pre-Chorus",
+  "Post-Chorus",
+  "Final Chorus",
+  "Final Hook",
+  "Solo",
+  "Crescendo",
+  "Transition",
+  "Spoken Word",
   "Outro",
 ];
 
@@ -206,12 +221,12 @@ function resolveBars(
   return Math.max(4, Math.min(64, rounded));
 }
 
+// Normalizes underscores/repeated whitespace to a single space, then
+// capitalizes every word — including both sides of a hyphen, so
+// "pre-chorus" becomes "Pre-Chorus" (matching SECTION_PALETTE's own
+// spelling) rather than "Pre-chorus".
 function titleCase(base: string): string {
-  return base
-    .split(/[_\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+  return base.replace(/[_\s]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // "build_2" -> explicit "Build 2"; a bare "verse" repeated in the list -> "Verse", "Verse 2", ...

@@ -190,6 +190,7 @@ export function registerVersionRoutes(
         status: "completed",
         generatedTitle: title,
         style,
+        lyrics,
         duration: 30,
       });
       storeTracks(db, dryRunId, [
@@ -273,6 +274,7 @@ export function registerVersionRoutes(
             duration: item.duration,
             generatedTitle: item.title,
             style: item.style,
+            lyrics: item.lyrics,
           }).catch(() => {});
           // Store all tracks from the generation (typically 2 per Suno task)
           if (item.tracks && item.tracks.length > 0) {

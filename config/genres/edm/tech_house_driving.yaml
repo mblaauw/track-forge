@@ -1,0 +1,26 @@
+id: tech_house_driving
+name: Tech House — Driving
+description: Loopy, driving tech house for the dancefloor
+values:
+  bpm: 126
+  key: G
+  scale: minor
+  mood: driving and hypnotic
+  energy: 8
+  complexity: 5
+  lyricsMode: strict_instrumental
+  characteristics:
+    - driving
+    - minimal
+    - loopy
+    - punchy kick
+    - acid elements
+    - groove
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - outro

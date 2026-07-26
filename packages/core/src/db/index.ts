@@ -104,6 +104,7 @@ export function createDb(dbPath: string): Db {
     duration INTEGER,
     generated_title TEXT,
     style TEXT,
+    lyrics TEXT,
     error TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -117,6 +118,9 @@ export function createDb(dbPath: string): Db {
   } catch {}
   try {
     sqlite.exec(`ALTER TABLE generations ADD COLUMN seed INTEGER`);
+  } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE generations ADD COLUMN lyrics TEXT`);
   } catch {}
   sqlite.exec(`CREATE TABLE IF NOT EXISTS job_events (
     id TEXT PRIMARY KEY,

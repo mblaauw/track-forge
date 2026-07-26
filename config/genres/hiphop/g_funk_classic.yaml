@@ -1,0 +1,85 @@
+id: g_funk_classic
+name: G-Funk Classic
+description: West coast G-funk with funky synths and laid-back grooves
+values:
+  bpm: 92
+  key: E
+  scale: major
+  mood: laid back
+  narrativeArc: braggadocio
+  rhymeStyle: end_rhyme
+  flowPattern: laid_back
+  energy: 6
+  complexity: 6
+  lyricsMode: full_lyrics
+  characteristics:
+    - p-funk samples
+    - smooth grooves
+    - whiny synths
+    - laid-back
+    - melodic
+    - calm delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - hook
+    - outro
+  vocalStyle: smooth, melodic delivery with sung hooks
+  tempoFeel: straight
+  perceivedBpm: 92
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

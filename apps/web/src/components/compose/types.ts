@@ -56,6 +56,8 @@ export interface TakeTrack {
   videoUrl?: string;
   duration?: number;
   title?: string;
+  style?: string;
+  lyrics?: string;
 }
 
 export interface Take {
@@ -69,6 +71,7 @@ export interface Take {
   duration?: number;
   generatedTitle?: string;
   style?: string;
+  lyrics?: string;
   error?: string;
   isFavorite?: boolean;
   createdAt?: string;

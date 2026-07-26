@@ -21,25 +21,41 @@ vocal_preset_types:
     label: "Wordless·textural"
 
 delta_palette:
-  [
-    "sparse texture",
-    atmospheric,
-    filtered,
-    "add rhythm",
-    "rising tension",
-    "full groove",
-    "bass-led",
-    "wide theme",
-    "full arrangement",
-    catchy,
-    "strip drums",
-    "expose harmony",
-    "add countermelody",
-    "added impact",
-    climactic,
-    introspective,
-    "half-time feel",
-    "vocal focus",
-    instrumental,
-    "reduce layers",
-  ]
+  # ── Arrangement ──
+  - "sparse texture"
+  - atmospheric
+  - filtered
+  - "add rhythm"
+  - "rising tension"
+  - "full groove"
+  - "bass-led"
+  - "wide theme"
+  - "full arrangement"
+  - catchy
+  - "strip drums"
+  - "expose harmony"
+  - "add countermelody"
+  - "added impact"
+  - climactic
+  - introspective
+  - "half-time feel"
+  - "vocal focus"
+  - instrumental
+  - "reduce layers"
+  # ── Emotion & performance ──
+  - confident
+  - intimate
+  - euphoric
+  - playful
+  - dreamy
+  - urgent
+  - hypnotic
+  - vulnerable
+  - triumphant
+  - tender
+  - theatrical
+  - groovy
+  - ethereal
+  - warm
+  - gritty
+  - bright

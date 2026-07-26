@@ -205,7 +205,18 @@ export function registerJobRoutes(
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
 
-    if (inputs !== undefined) update.inputs = JSON.stringify(inputs);
+    // Merge with existing inputs so client autosave (common fields only)
+    // does not wipe preset-merged values like characteristics / tempoFeel /
+    // flowPattern that were populated on job create.
+    if (inputs !== undefined) {
+      let existing: Record<string, unknown> = {};
+      try {
+        existing = JSON.parse(job.inputs ?? "{}") as Record<string, unknown>;
+      } catch {
+        existing = {};
+      }
+      update.inputs = JSON.stringify({ ...existing, ...inputs });
+    }
     if (name !== undefined) update.name = name;
 
     await db

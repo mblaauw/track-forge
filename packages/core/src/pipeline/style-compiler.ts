@@ -15,11 +15,11 @@ export interface CompileStyleInput {
   presetLabels: string[];
   descriptors: { label: string; cat: string; weight: number }[];
   bpm: number;
-  key: string;
-  scale: "major" | "minor";
   sections: { name: string; fn: string }[];
   lyricsMode: "full_lyrics" | "strict_instrumental";
   vocalType?: string;
+  tempoFeel?: string;
+  flowPattern?: string;
   /** Preset/job mood text (e.g. "euphoric and building") folded into the mood arc when not already covered by descriptors. */
   presetMood?: string;
   /** Preset/job energy 1-10, folded into the mood arc when no energy-category descriptors are active. */
@@ -53,15 +53,20 @@ export function compileStylePrompt(
   const activeCount = active.length;
 
   // NOTE: even with zero active descriptors, a real style string is always
-  // produced (genre + preset + tempo/key at minimum). This function is the
+  // produced (genre + preset + BPM at minimum). This function is the
   // single source of truth for BOTH the live UI preview AND the string that
   // is actually persisted and sent to Suno — it must never return placeholder
   // text, since callers on the pipeline side cannot distinguish "nothing
   // compiled yet" from "this is the final style". UI-side empty-state nudges
   // belong in the caller, not here.
-  const keyLabel = keyLabelFn(input.key, input.scale);
   const core = compileCore(input.genreName, input.presetLabels);
-  const rhythmPart = compileRhythm(active, input.bpm, keyLabel);
+  const rhythmPart = compileRhythm(
+    active,
+    input.bpm,
+    input.tempoFeel,
+    input.flowPattern,
+    input.presetMood,
+  );
   const soundPart = compileSound(active);
   const identityPart = compileIdentity(input.lyricsMode, input.vocalType);
   const moodArc = compileMoodArc(
@@ -112,15 +117,42 @@ function compileCore(genreName: string, presetLabels: string[]): string {
 function compileRhythm(
   active: { label: string; cat: string }[],
   bpm: number,
-  keyLabel: string,
+  tempoFeel?: string,
+  flowPattern?: string,
+  presetMood?: string,
 ): string {
   const rhythm = active.filter((d) => d.cat === "rhythm").map((d) => d.label);
   const rhythmStr = rhythm.length > 0 ? rhythm.join(", ") : "";
+  const moodWord = presetMood?.toLowerCase().split(/[\s,;]+/)[0] ?? "";
+  const VALID_MOODS = [
+    "dark",
+    "warm",
+    "bright",
+    "cold",
+    "hype",
+    "tense",
+    "soulful",
+    "dreamy",
+    "deep",
+    "aggressive",
+    "catchy",
+    "funky",
+    "euphoric",
+    "gritty",
+    "smooth",
+    "gentle",
+    "intense",
+    "mellow",
+    "soft",
+    "hard",
+  ];
+  const moodPart = VALID_MOODS.includes(moodWord) ? `, ${moodWord}` : "";
+  const feel = tempoFeel
+    ? ` (${tempoFeel.replace(/_/g, "-")} feel${flowPattern ? `, ${flowPattern.replace(/_/g, "-")}` : ""}${moodPart})`
+    : "";
 
-  if (rhythmStr) {
-    return `${rhythmStr}, around ${bpm} BPM in ${keyLabel}`;
-  }
-  return `around ${bpm} BPM in ${keyLabel}`;
+  if (rhythmStr) return `${rhythmStr}, around ${bpm} BPM${feel}`;
+  return `around ${bpm} BPM${feel}`;
 }
 
 function compileSound(active: { label: string; cat: string }[]): string | null {
@@ -284,8 +316,3 @@ function compileTypedStructure(sections: string[]): string | null {
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────── */
-
-function keyLabelFn(key: string, scale: "major" | "minor"): string {
-  if (!key) return "—";
-  return key + (scale === "minor" ? "m" : "");
-}

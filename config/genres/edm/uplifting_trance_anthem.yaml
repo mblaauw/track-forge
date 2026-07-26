@@ -1,0 +1,27 @@
+id: uplifting_trance_anthem
+name: Uplifting Trance — Anthem
+description: Euphoric anthem trance with soaring leads
+values:
+  bpm: 140
+  key: F#
+  scale: minor
+  mood: euphoric and uplifting
+  energy: 9
+  complexity: 7
+  lyricsMode: strict_instrumental
+  characteristics:
+    - euphoric
+    - emotional
+    - soaring leads
+    - arpeggios
+    - build-ups
+    - anthemic
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

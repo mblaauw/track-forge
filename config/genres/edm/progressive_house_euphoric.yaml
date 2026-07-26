@@ -1,0 +1,26 @@
+id: progressive_house_euphoric
+name: Progressive House — Euphoric
+description: Building, euphoric progressive house with melodic peaks
+values:
+  bpm: 128
+  key: Ab
+  scale: minor
+  mood: euphoric and building
+  energy: 8
+  complexity: 7
+  lyricsMode: strict_instrumental
+  characteristics:
+    - building
+    - atmospheric
+    - melodic
+    - long transitions
+    - euphoric
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - bridge
+    - outro

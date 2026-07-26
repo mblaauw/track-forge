@@ -1,0 +1,20 @@
+id: drone_minimal
+name: Drone — Minimal
+description: Deep meditative drone with minimal harmonic movement
+values:
+  bpm: 62
+  key: C
+  scale: major
+  mood: meditative
+  complexity: 3
+  energy: 2
+  lyricsMode: strict_instrumental
+  characteristics:
+    - meditative
+    - minimal
+    - sustained
+    - deep drones
+    - slow-evolving
+    - spacious
+  tempoFeel: straight
+  perceivedBpm: 62

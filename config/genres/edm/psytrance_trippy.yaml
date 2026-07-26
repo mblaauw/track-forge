@@ -1,0 +1,26 @@
+id: psytrance_trippy
+name: Psytrance — Trippy
+description: Fast, psychedelic trance with rolling bass
+values:
+  bpm: 145
+  key: G
+  scale: minor
+  mood: psychedelic and intense
+  energy: 9
+  complexity: 8
+  lyricsMode: strict_instrumental
+  characteristics:
+    - psychedelic
+    - rolling bass
+    - trippy
+    - layered
+    - fast
+    - complex
+  typicalSongStructure:
+    - intro
+    - build
+    - drop
+    - breakdown
+    - build
+    - drop
+    - outro

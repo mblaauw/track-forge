@@ -2,11 +2,6 @@ import { Flame, CircleNotch, Shuffle } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { randomTitle } from "./arrangement";
 
-function keyLabel(key: string, scale: "major" | "minor"): string {
-  if (!key) return "—";
-  return key + (scale === "minor" ? "m" : "");
-}
-
 export function ContextBar({
   onForge,
   forgeDisabled,
@@ -58,8 +53,6 @@ export function ContextBar({
           <span>{presetLabel}</span>
           <span class="ctx-meta-sep">·</span>
           <span>{bpmLabel}</span>
-          <span class="ctx-meta-sep">·</span>
-          <span>{keyLabel(s.key, s.scale)}</span>
         </div>
       </div>
 

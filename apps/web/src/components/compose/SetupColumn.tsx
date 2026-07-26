@@ -26,29 +26,12 @@ import {
   type GenreDescriptorDefaults,
 } from "../../api";
 
-const NOTE_NAMES = [
-  "C",
-  "Db",
-  "D",
-  "Eb",
-  "E",
-  "F",
-  "F#",
-  "G",
-  "Ab",
-  "A",
-  "Bb",
-  "B",
-];
-
 // Selecting a preset is meaningless if it doesn't actually change the sound —
-// pull the preset's own bpm/key/scale/lyricsMode into the session so the
+// pull the preset's own bpm/lyricsMode into the session so the
 // preset is a real sonic starting point, not just a label.
 function presetSessionPatch(preset: GenrePreset): Partial<SessionState> {
   const v = preset.values as {
     bpm?: number;
-    key?: string;
-    scale?: "major" | "minor";
     lyricsMode?: "full_lyrics" | "strict_instrumental";
     energy?: number;
     complexity?: number;
@@ -59,8 +42,6 @@ function presetSessionPatch(preset: GenrePreset): Partial<SessionState> {
     presetLabels: [preset.name],
   };
   if (typeof v.bpm === "number") patch.bpm = v.bpm;
-  if (typeof v.key === "string") patch.key = v.key;
-  if (v.scale === "major" || v.scale === "minor") patch.scale = v.scale;
   if (
     v.lyricsMode === "full_lyrics" ||
     v.lyricsMode === "strict_instrumental"
@@ -177,8 +158,10 @@ export function SetupColumn() {
       seededRef.current = true;
       const themes = descDefaults.lyricThemes;
       const presetPatch = presetSessionPatch(presets[0]!);
+      const preset = presets[0];
+      const songStruct = preset?.songStructure ?? descDefaults.songStructure;
       const sections = buildSections(
-        descDefaults.songStructure,
+        songStruct,
         presetPatch.energy ?? s.energy,
         presetPatch.complexity ?? s.complexity,
       );
@@ -234,15 +217,6 @@ export function SetupColumn() {
           </div>
           <div class="setup-card-body">
             <LyricsCardContent descDefaults={descDefaults} s={s} />
-          </div>
-        </div>
-
-        <div class="setup-card static">
-          <div class="setup-card-header static">
-            <span class="setup-card-label">TEMPO & KEY</span>
-          </div>
-          <div class="setup-card-body">
-            <TempoCardContent s={s} />
           </div>
         </div>
 
@@ -424,8 +398,10 @@ function SoundCardContent({
                 // customized it, in which case switching presets shouldn't
                 // silently discard their edits.
                 if (s.arrangeSource !== "custom" && descDefaults) {
+                  const songStruct =
+                    p.songStructure ?? descDefaults.songStructure;
                   const sections = buildSections(
-                    descDefaults.songStructure,
+                    songStruct,
                     patch.energy ?? s.energy,
                     patch.complexity ?? s.complexity,
                   );
@@ -551,72 +527,6 @@ function LyricsCardContent({
           </div>
         </>
       )}
-    </>
-  );
-}
-
-/* ─── TEMPO & KEY ─── */
-
-function TempoCardContent({ s }: { s: ReturnType<typeof useSession> }) {
-  const bpm = s.bpm ?? 128;
-  const scale = s.scale ?? "major";
-
-  const setBpm = (v: number) => {
-    if (!Number.isNaN(v)) s.setSession({ bpm: Math.min(200, Math.max(60, v)) });
-  };
-
-  return (
-    <>
-      <div class="setup-eyebrow">TEMPO</div>
-      <div class="setup-tempo-row">
-        <input
-          type="number"
-          class="setup-tempo-input tf-mono"
-          min={60}
-          max={200}
-          value={bpm}
-          onInput={(e) => setBpm(Number((e.target as HTMLInputElement).value))}
-        />
-        <span class="setup-tempo-unit tf-mono">BPM</span>
-        <input
-          type="range"
-          class="setup-slider"
-          min={60}
-          max={200}
-          value={bpm}
-          onInput={(e) => setBpm(Number((e.target as HTMLInputElement).value))}
-        />
-      </div>
-
-      <div class="setup-eyebrow">KEY</div>
-      <div class="setup-key-grid">
-        {NOTE_NAMES.map((note) => (
-          <button
-            key={note}
-            type="button"
-            class={`setup-key-btn${s.key === note ? " on" : ""}`}
-            onClick={() => s.setSession({ key: note })}
-          >
-            {note}
-          </button>
-        ))}
-      </div>
-      <div class="setup-scale-toggle">
-        <button
-          type="button"
-          class={`setup-scale-btn${scale === "major" ? " on" : ""}`}
-          onClick={() => s.setSession({ scale: "major" })}
-        >
-          Major
-        </button>
-        <button
-          type="button"
-          class={`setup-scale-btn${scale === "minor" ? " on" : ""}`}
-          onClick={() => s.setSession({ scale: "minor" })}
-        >
-          Minor
-        </button>
-      </div>
     </>
   );
 }

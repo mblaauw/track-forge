@@ -1,0 +1,85 @@
+id: g_funk_modern
+name: G-Funk — Modern
+description: Modern take on G-funk with contemporary production
+values:
+  bpm: 95
+  key: E
+  scale: minor
+  mood: smooth
+  narrativeArc: storytelling
+  rhymeStyle: multi_syllabic
+  flowPattern: melodic
+  energy: 7
+  complexity: 7
+  lyricsMode: full_lyrics
+  characteristics:
+    - p-funk samples
+    - smooth grooves
+    - whiny synths
+    - laid-back
+    - melodic
+    - conversational delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - hook
+    - outro
+  vocalStyle: smooth, melodic delivery with sung hooks
+  tempoFeel: straight
+  perceivedBpm: 95
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

@@ -102,6 +102,7 @@ export function registerSunoRoutes(
         data.duration = Number(firstTrack.duration);
       if (firstTrack.title) data.generatedTitle = String(firstTrack.title);
       if (firstTrack.tags) data.style = String(firstTrack.tags);
+      if (firstTrack.prompt) data.lyrics = String(firstTrack.prompt);
     }
 
     try {

@@ -14,6 +14,7 @@ export interface GenerationRecord {
   duration?: number;
   generatedTitle?: string;
   style?: string;
+  lyrics?: string;
   error?: string;
 }
 
@@ -36,6 +37,7 @@ export async function storeGeneration(
     duration: gen.duration ?? null,
     generatedTitle: gen.generatedTitle ?? null,
     style: gen.style ?? null,
+    lyrics: gen.lyrics ?? null,
     error: gen.error ?? null,
     createdAt: now,
     updatedAt: now,
@@ -56,23 +58,30 @@ export async function updateGeneration(
     duration?: number;
     generatedTitle?: string;
     style?: string;
+    lyrics?: string;
     error?: string;
   },
 ): Promise<void> {
   const now = new Date().toISOString();
+  // Only patch fields the caller supplied — intermediate callbacks send
+  // `{ status: "processing" }` and must not null out style/lyrics/urls.
+  const patch: Record<string, unknown> = {
+    status: data.status,
+    updatedAt: now,
+  };
+  if (data.audioUrl !== undefined) patch.audioUrl = data.audioUrl;
+  if (data.imageUrl !== undefined) patch.imageUrl = data.imageUrl;
+  if (data.videoUrl !== undefined) patch.videoUrl = data.videoUrl;
+  if (data.duration !== undefined) patch.duration = data.duration;
+  if (data.generatedTitle !== undefined)
+    patch.generatedTitle = data.generatedTitle;
+  if (data.style !== undefined) patch.style = data.style;
+  if (data.lyrics !== undefined) patch.lyrics = data.lyrics;
+  if (data.error !== undefined) patch.error = data.error;
+
   await db
     .update(schema.generations)
-    .set({
-      status: data.status,
-      audioUrl: data.audioUrl ?? null,
-      imageUrl: data.imageUrl ?? null,
-      videoUrl: data.videoUrl ?? null,
-      duration: data.duration ?? null,
-      generatedTitle: data.generatedTitle ?? null,
-      style: data.style ?? null,
-      error: data.error ?? null,
-      updatedAt: now,
-    })
+    .set(patch)
     .where(eq(schema.generations.id, id));
 }
 
@@ -107,6 +116,7 @@ function mapGenerationRow(row: Record<string, unknown>): GenerationRecord {
     duration: (row.duration as number) ?? undefined,
     generatedTitle: (row.generatedTitle as string) ?? undefined,
     style: (row.style as string) ?? undefined,
+    lyrics: (row.lyrics as string) ?? undefined,
     error: (row.error as string) ?? undefined,
   };
 }

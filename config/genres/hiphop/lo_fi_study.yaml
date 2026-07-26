@@ -1,0 +1,74 @@
+id: lo_fi_study
+name: Lo-fi — Study Beats
+description: Chilled lo-fi beats for focused study sessions
+values:
+  bpm: 75
+  key: A
+  scale: major
+  mood: chill
+  narrativeArc: introspective
+  rhymeStyle: free_form
+  flowPattern: laid_back
+  energy: 3
+  complexity: 4
+  lyricsMode: strict_instrumental
+  characteristics:
+    - chill
+    - jazz samples
+    - vinyl crackle
+    - relaxed
+    - mellow
+    - calm delivery
+    - 2010s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - outro
+  vocalStyle: gentle, relaxed delivery with smooth flow
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

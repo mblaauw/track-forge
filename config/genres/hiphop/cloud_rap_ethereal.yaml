@@ -1,0 +1,77 @@
+id: cloud_rap_ethereal
+name: Cloud Rap — Ethereal
+description: Dreamy cloud rap with atmospheric production and distant vocals
+values:
+  bpm: 70
+  key: E
+  scale: major
+  mood: dreamy
+  narrativeArc: introspective
+  rhymeStyle: end_rhyme
+  flowPattern: melodic
+  energy: 4
+  complexity: 6
+  lyricsMode: full_lyrics
+  characteristics:
+    - ethereal
+    - dreamy
+    - atmospheric
+    - laid-back
+    - reverberant
+    - calm delivery
+    - 2010s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - hook
+    - verse
+    - outro
+  vocalStyle: ethereal, echoey delivery with atmospheric effects
+  tempoFeel: straight
+  perceivedBpm: 70
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+      - climactic
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

@@ -13,13 +13,16 @@ interface GenrePresetYaml {
   name: string;
   description: string;
   values: PresetValue;
+  /** Optional preset-specific arrangement structure — overrides genre base.yaml. */
+  song_structure?: SongStructureSection[];
+  /** CamelCase alias for API consumers (mapped at return time). */
+  songStructure?: SongStructureSection[];
 }
 
 export interface GenreConfigYaml {
   name: string;
   color: string;
 
-  presets: GenrePresetYaml[];
   song_structure?: SongStructureSection[];
   descriptor_categories?: {
     cat: string;
@@ -64,9 +67,6 @@ interface SharedConfigYaml {
 
 let sharedCache: { mtime: number; data: SharedConfigYaml } | null = null;
 
-// Vocabulary identical across every genre (section_functions, delta_palette)
-// lives in config/shared.yaml instead of being copy-pasted into each genre
-// file — a genre file can still define its own to override this.
 function loadShared(): SharedConfigYaml {
   if (sharedCache) {
     try {
@@ -86,6 +86,7 @@ function loadShared(): SharedConfigYaml {
   }
 }
 
+// ── Genre base config (base.yaml) cache ───────────────────────────
 interface CacheEntry {
   mtime: number;
   data: GenreConfigYaml;
@@ -93,8 +94,12 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 
+function basePath(id: string): string {
+  return join(GENRE_DIR, id, "base.yaml");
+}
+
 function loadYaml(id: string): GenreConfigYaml {
-  const filePath = join(GENRE_DIR, `${id}.yaml`);
+  const filePath = basePath(id);
 
   const cached = cache.get(id);
   if (cached) {
@@ -135,20 +140,98 @@ function loadYaml(id: string): GenreConfigYaml {
   }
 }
 
+// ── Presets cache ─────────────────────────────────────────────────
+interface PresetsCacheEntry {
+  mtimes: Map<string, number>;
+  data: GenrePresetYaml[];
+}
+
+const presetsCache = new Map<string, PresetsCacheEntry>();
+
+function presetsDir(id: string): string {
+  return join(GENRE_DIR, id);
+}
+
+function loadPresets(id: string): GenrePresetYaml[] {
+  const dir = presetsDir(id);
+  const cached = presetsCache.get(id);
+
+  try {
+    const presetFiles = readdirSync(dir)
+      .filter((f) => f.endsWith(".yaml") && f !== "base.yaml")
+      .sort();
+
+    // Check if cache is still fresh
+    if (cached) {
+      let fresh = true;
+      const currentMtimes = new Map<string, number>();
+      for (const f of presetFiles) {
+        try {
+          currentMtimes.set(f, statSync(join(dir, f)).mtimeMs);
+        } catch {
+          fresh = false;
+          break;
+        }
+      }
+      if (fresh) {
+        // Compare mtimes
+        for (const [f, m] of currentMtimes) {
+          if (cached.mtimes.get(f) !== m) {
+            fresh = false;
+            break;
+          }
+        }
+        if (fresh && cached.mtimes.size === currentMtimes.size) {
+          return cached.data;
+        }
+      }
+    }
+
+    // Reload
+    const presets: GenrePresetYaml[] = [];
+    const mtimes = new Map<string, number>();
+    for (const f of presetFiles) {
+      try {
+        const raw = readFileSync(join(dir, f), "utf-8");
+        const parsed = yaml.load(raw) as GenrePresetYaml;
+        presets.push(parsed);
+        mtimes.set(f, statSync(join(dir, f)).mtimeMs);
+      } catch {
+        // skip unreadable preset files
+      }
+    }
+
+    // Map snake_case YAML fields to camelCase for the API consumer
+    const mapped = presets.map((p) => ({
+      ...p,
+      songStructure: p.song_structure,
+    }));
+    presetsCache.set(id, { mtimes, data: mapped });
+    return mapped;
+  } catch {
+    return [];
+  }
+}
+
 let genreIdsCache: string[] | null = null;
 
 /**
- * Genre ids derived from config/genres/*.yaml, not hardcoded — adding a new
- * YAML file makes it show up here immediately. Registering a matching
- * TypeScript genre module (input schema) in apps/server/src/lib/modules.ts
- * is still required; that part can't be inferred from YAML alone.
+ * Genre ids derived from config/genres/* subdirectories — adding a new
+ * directory makes it show up here immediately. Each directory must contain
+ * a base.yaml. Registering a matching TypeScript genre module (input schema)
+ * in apps/server/src/lib/modules.ts is still required.
  */
 export function getAllGenreIds(): string[] {
   if (genreIdsCache) return genreIdsCache;
   try {
     genreIdsCache = readdirSync(GENRE_DIR)
-      .filter((f) => f.endsWith(".yaml"))
-      .map((f) => f.slice(0, -".yaml".length))
+      .filter((entry) => {
+        try {
+          return statSync(join(GENRE_DIR, entry)).isDirectory();
+        } catch {
+          return false;
+        }
+      })
       .sort();
   } catch {
     genreIdsCache = [];
@@ -173,7 +256,7 @@ export function listGenreConfigs(): {
 }
 
 export function getPresets(id: string): GenrePresetYaml[] {
-  return loadYaml(id).presets;
+  return loadPresets(id);
 }
 
 export function getSongStructure(id: string): SongStructureSection[] {
@@ -192,15 +275,16 @@ export function getLyricsGuidance(id: string): string | undefined {
 /** Force reload on next access. */
 export function clearCache(): void {
   cache.clear();
+  presetsCache.clear();
   genreIdsCache = null;
 }
 
 /** Number of cached entries (for diagnostics). */
 export function cacheSize(): number {
-  return cache.size;
+  return cache.size + presetsCache.size;
 }
 
-// ── Descriptor defaults (interim TS data; Subissue 7 → YAML) ─────────
+// ── Descriptor defaults ───────────────────────────────────────────
 
 export interface DescriptorCategoryPoolApi {
   cat: string;

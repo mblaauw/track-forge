@@ -10,12 +10,12 @@ test.describe("Ambient forge", () => {
     await expect(presetSection).toBeVisible();
   });
 
-  test("BPM and key controls are interactive", async ({ page }) => {
+  test("BPM controls are interactive", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // TEMPO & KEY section should be visible
-    const tempoKeySection = page.getByText("TEMPO & KEY", { exact: true });
-    await expect(tempoKeySection).toBeVisible();
+    // BPM input should be visible in the ARRANGEMENT STRUCTURE header
+    const bpmInput = page.locator(".arr-bpm-input");
+    await expect(bpmInput).toBeVisible();
   });
 });

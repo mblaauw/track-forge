@@ -1,0 +1,76 @@
+id: abstract_experimental
+name: Abstract — Experimental
+description: Experimental abstract hip-hop with unconventional structures
+values:
+  bpm: 100
+  key: A
+  scale: minor
+  mood: experimental
+  narrativeArc: abstract
+  rhymeStyle: free_form
+  flowPattern: experimental
+  energy: 6
+  complexity: 9
+  lyricsMode: full_lyrics
+  characteristics:
+    - eclectic
+    - experimental
+    - non-traditional
+    - genre-blending
+    - artistic
+    - conversational delivery
+    - 1990s era
+  typicalSongStructure:
+    - intro
+    - verse
+    - hook
+    - verse
+    - bridge
+    - verse
+    - outro
+  vocalStyle: creative, unconventional delivery with artistic expression
+  tempoFeel: straight
+  perceivedBpm: 100
+  lineDensity: 1
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 4
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+      - building
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - catchy
+      - full arrangement
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+      - intense
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - introspective
+      - strip drums
+  - section: verse
+    fn: escalate
+    bars: 16
+    tags:
+      - vocal focus
+      - climactic
+  - section: outro
+    fn: resolve
+    bars: 4
+    tags:
+      - reduce layers

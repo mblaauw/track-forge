@@ -1,0 +1,159 @@
+name: Hip-Hop
+color: amber
+song_structure:
+  - section: intro
+    fn: establish
+    bars: 8
+    tags:
+      - atmospheric
+      - sparse texture
+  - section: verse
+    fn: introduce
+    bars: 16
+    tags:
+      - vocal focus
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - full arrangement
+      - catchy
+  - section: verse
+    fn: contrast
+    bars: 16
+    tags:
+      - vocal focus
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - full arrangement
+      - catchy
+      - climactic
+  - section: bridge
+    fn: contrast
+    bars: 8
+    tags:
+      - strip drums
+      - introspective
+  - section: hook
+    fn: peak
+    bars: 8
+    tags:
+      - full arrangement
+      - catchy
+  - section: outro
+    fn: resolve
+    bars: 8
+    tags:
+      - reduce layers
+descriptor_categories:
+  - cat: sound
+    label: SOUND
+    hue: var(--hue-cyan)
+    chips:
+      - 808 bass
+      - keys
+      - chopped vocal
+      - brass stab
+      - synth pad
+      - pluck
+      - organ
+  - cat: rhythm
+    label: RHYTHM & FLOW
+    hue: var(--hue-amber)
+    chips:
+      - trap hi-hats
+      - swing groove
+      - slow roll
+      - double-time
+      - snare rolls
+      - finger snaps
+  - cat: atmosphere
+    label: MOOD
+    hue: var(--hue-violet)
+    chips:
+      - dark
+      - soulful
+      - melancholic
+      - hype
+      - laid back
+      - gritty
+      - smooth
+  - cat: production
+    label: PRODUCTION
+    hue: var(--hue-green)
+    chips:
+      - lofi warmth
+      - crisp mix
+      - wide stereo
+      - tape saturation
+      - sidechain
+      - heavy 808s
+  - cat: energy
+    label: ENERGY
+    hue: var(--hue-red)
+    chips:
+      - smooth
+      - bouncy
+      - aggressive
+      - relaxed
+      - build-up
+      - hard hitting
+descriptor_defaults:
+  - label: 808 bass
+    cat: sound
+    weight: 2
+  - label: trap hi-hats
+    cat: rhythm
+    weight: 2
+  - label: lofi warmth
+    cat: production
+    weight: 2
+  - label: dark
+    cat: atmosphere
+    weight: 2
+  - label: smooth
+    cat: energy
+    weight: 2
+lyric_themes:
+  - the come-up
+  - the city
+  - loyalty
+  - late nights
+  - ambition
+  - reflection
+section_palette:
+  - Intro
+  - Build
+  - Drop
+  - Breakdown
+  - Bridge
+  - Verse
+  - Chorus
+  - Hook
+  - Pre-Chorus
+  - Post-Chorus
+  - Final Chorus
+  - Final Hook
+  - Solo
+  - Crescendo
+  - Transition
+  - Spoken Word
+  - Outro
+vocal_presets:
+  - type: female_lead
+    delivery_style: laid back
+    default_energy: 3
+  - type: male_lead
+    delivery_style: laid back
+    default_energy: 3
+  - type: duet
+    delivery_style: laid back
+    default_energy: 3
+  - type: group_choir
+    delivery_style: powerful
+    default_energy: 4
+  - type: wordless_textural
+    delivery_style: ethereal
+    default_energy: 2
