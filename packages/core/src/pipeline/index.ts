@@ -11,14 +11,9 @@ export type { PipelineEvent } from "./events.js";
 
 export { abortJob } from "./job-abort-controller.js";
 export type { PipelineDeps, PipelineState, PipelineResult } from "./types.js";
-export { compileStylePrompt, renderSunoStyle } from "./style-compiler.js";
+export { renderSunoStyle } from "./style-compiler.js";
 export type {
   CompileStyleInput,
   CompileStyleResult,
 } from "./style-compiler.js";
-export {
-  materializedToCompileStyleInput,
-  enrichResolved,
-  resolveIntentFromJob,
-  buildLyricsBrief,
-} from "./intent-bridge.js";
+export { enrichResolved, buildLyricsBrief } from "./intent-bridge.js";

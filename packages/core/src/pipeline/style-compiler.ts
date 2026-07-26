@@ -36,66 +36,65 @@ export interface CompileStyleResult {
   activeCount: number;
 }
 
-/** @deprecated Use `renderSunoStyle(resolved: ResolvedSongIntent)` instead. */
 export function compileStylePrompt(
   input: CompileStyleInput,
 ): CompileStyleResult {
-  const active = input.descriptors
-    .filter((d) => d.weight > 0)
-    .sort((a, b) => b.weight - a.weight);
-
-  const activeCount = active.length;
-
-  // NOTE: even with zero active descriptors, a real style string is always
-  // produced (genre + preset + BPM at minimum). This function is the
-  // single source of truth for BOTH the live UI preview AND the string that
-  // is actually persisted and sent to Suno — it must never return placeholder
-  // text, since callers on the pipeline side cannot distinguish "nothing
-  // compiled yet" from "this is the final style". UI-side empty-state nudges
-  // belong in the caller, not here.
-  const core = compileCore(input.genreName, input.presetLabels);
-  const rhythmPart = compileRhythm(
-    active,
-    input.bpm,
-    input.tempoFeel,
-    input.flowPattern,
-    input.presetMood,
-  );
-  const soundPart = compileSound(active);
-  const identityPart = compileIdentity(input.lyricsMode, input.vocalType);
-  const moodArc = compileMoodArc(
-    active,
-    input.sections,
-    input.presetMood,
-    input.presetEnergy,
-  );
-  const prodPart = compileProduction(active);
-  const charPart = compileCharacter(input.characteristics);
-  // Hip-hop vocal character data is only available via the resolved-intent path.
-  const hipHopPart = null;
-  const structureNote = compileStructureNote(input.sections, input.lyricsMode);
-
-  const parts = [core, rhythmPart];
-
-  if (soundPart) parts.push(soundPart);
-  if (charPart) parts.push(charPart);
-  if (identityPart) parts.push(identityPart);
-  if (moodArc) parts.push(moodArc);
-  if (prodPart) parts.push(prodPart);
-  if (hipHopPart) parts.push(hipHopPart);
-  if (structureNote) parts.push(structureNote);
-
-  const style = parts
-    .filter(Boolean)
-    .join(". ")
-    .replace(/\.{2,}/g, ".")
-    .replace(/\.\s*\./g, ".")
-    .trim();
-
-  // Ensure trailing period
-  const final = style.endsWith(".") ? style : style + ".";
-
-  return { style: final, charCount: final.length, activeCount };
+  // Deprecated — delegates to renderSunoStyle for backwards compat.
+  // The resolved-intent path provides richer data (Hip-Hop vocals, mood arcs).
+  // Will be removed entirely in a future major version.
+  return renderSunoStyle({
+    schemaVersion: 1 as const,
+    identity: { title: "" },
+    styles: [],
+    genreName: input.genreName,
+    presetLabels: input.presetLabels,
+    bpm: input.bpm,
+    tempoFeel: input.tempoFeel,
+    perceivedBpm: undefined,
+    mood: input.presetMood,
+    energy: input.presetEnergy,
+    complexity: undefined,
+    characteristics: input.characteristics ?? [],
+    descriptors: input.descriptors as any,
+    key: undefined,
+    scale: undefined as any,
+    vocals: {
+      mode: input.lyricsMode as any,
+      hasLeadVocal: input.lyricsMode === "full_lyrics",
+      type: input.vocalType,
+      sectionOverrides: [],
+    },
+    lyrics: {
+      shouldWrite: input.lyricsMode === "full_lyrics",
+      topic: undefined,
+      themes: [],
+      angle: undefined,
+      narrativeArc: undefined,
+      rhymeStyle: undefined,
+      flowPattern: input.flowPattern,
+      vocalStyle: undefined,
+      lineDensity: undefined,
+      perspective: undefined,
+      imageAnchors: [],
+    },
+    arrangement: {
+      sections: input.sections.map((s) => ({
+        id: s.name,
+        name: s.name,
+        bars: 8,
+        fn: s.fn as any,
+        deltas: [],
+        tags: [],
+      })),
+      typicalSongStructure: undefined,
+      arcs: [],
+    },
+    traits: [],
+    conflicts: [],
+    decisions: [],
+    exclusions: [],
+    references: [],
+  });
 }
 
 /* ── Compile steps ─────────────────────────────────────────────────── */

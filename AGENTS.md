@@ -58,13 +58,13 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 | Intent resolver        | `packages/song-intent/src/resolve.ts` — `resolveSongIntent()` (4 derivation rules)                  |
 | Intent revision        | `packages/core/src/intent-revisions/index.ts` — `freezeIntentRevision()`, `createCompilation()`     |
 | Pipeline intent bridge | `packages/core/src/pipeline/intent-bridge.ts` — `resolveIntentFromJob()`, `buildLyricsBrief()`      |
-| E2E tests              | `e2e/` — 8 Playwright specs including `idempotency.spec.ts` and `explore-hiphop-trace.spec.ts`      |
+| E2E tests              | `e2e/` — 10 Playwright specs including `idempotency.spec.ts` and `explore-hiphop-trace.spec.ts`      |
 | Server entry           | `apps/server/src/index.ts` — Fastify, registers all routes, static GUI serving                      |
 | Web entry              | `apps/web/src/main.tsx` — Preact render                                                             |
 
 ## Architecture
 
-**Workspaces:** `apps/{server,web}` and `packages/{contracts,core,genre-core,genre-edm,genre-hiphop,genre-ambient,test-support}`. Build order via TypeScript project references: `contracts`/`genre-core` at the bottom, `apps/server` depends on `core` + genre packages, `apps/web` depends only on `contracts` + `genre-core`.
+**Workspaces:** `apps/{server,web}` and `packages/{contracts,core,genre-core,genre-edm,genre-hiphop,genre-ambient,genre-shoegaze,song-intent,test-support}`. Build order via TypeScript project references: `contracts`/`genre-core` at the bottom, `apps/server` depends on `core` + genre packages, `apps/web` depends only on `contracts` + `genre-core`.
 
 **Pipeline** (`packages/core/src/pipeline/orchestrator.ts`): exactly three stages — `compilation` (deterministic, no LLM) → `lyrics_writing` (the _only_ LLM call; skipped when `lyricsMode === "strict_instrumental"`) → `versioning` (persists artifacts, sets `currentStage: "completed"`). Before the stages run, `freezeIntentRevision()` captures an immutable snapshot of the song intent into the `intent_revisions` table. During versioning, `createCompilation()` links the revision to rendered artifacts in the `compilations` table. After versioning, the web UI triggers a take via `POST /api/versions/:id/takes`, which submits to Suno and streams render status over SSE. `PipelineDeps` deliberately excludes a `suno` field — the pipeline never calls Suno.
 
@@ -90,9 +90,7 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 - Web imports types from `@track-forge/contracts` and `@track-forge/genre-core` — never redefine locally.
 - Database-destructive actions require explicit user approval.
 - `SongIntentV1` (`packages/song-intent`) is the canonical typed intent contract. `SongIntentV1Schema` is `.strict()` — adding a field requires a schema bump. `migrateLegacyJob()` is the lossless bridge from existing `jobs.inputs` JSON.
-- `key`/`scale` are optional harmonic hints on `SongIntentV1.musical`, not required by any stage today; presets may still carry them but the validator will warn (Phase 6 enforcement).
-- `freezeIntentRevision()` is called before the pipeline starts; `createCompilation()` during the versioning stage. Both are required for reproducibility.
-- `ResolvedSongIntent` flows through all three pipeline stages — the compilation stage enriches it, lyrics_writing reads from it, and versioning persists it.
+- `key`/`scale` are optional harmonic hints on `SongIntentV1.musical`, not required by any stage today; presets may still carry them but the validator will warn.
 - `freezeIntentRevision()` is called before the pipeline starts; `createCompilation()` during the versioning stage. Both are required for reproducibility.
 - `ResolvedSongIntent` flows through all three pipeline stages — the compilation stage enriches it, lyrics_writing reads from it, and versioning persists it.
 
