@@ -358,6 +358,7 @@ function SoundCardContent({
                   lyricLines: {},
                 });
               }}
+              data-testid={`genre-chip-${g.id}`}
             >
               <span
                 class="setup-dot"
@@ -389,6 +390,7 @@ function SoundCardContent({
           return (
             <button
               key={p.id}
+              data-testid={`preset-${p.id}`}
               class={`setup-select-item${active ? " active" : ""}`}
               onClick={() => {
                 if (active) return;
@@ -478,6 +480,7 @@ function LyricsCardContent({
           <div class="setup-eyebrow">WHAT'S THE SONG ABOUT?</div>
           <textarea
             class="setup-textarea"
+            data-testid="lyric-topic-input"
             placeholder="e.g. a late-night drive after a breakup, chasing the last of the city lights…"
             value={s.lyricTopic}
             onInput={(e) =>

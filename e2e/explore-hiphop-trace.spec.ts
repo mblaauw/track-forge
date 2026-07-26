@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 
 test.describe("Hip-Hop lyrics trace exploration", () => {
-  test("open the app in UI, then generate lyrics via API and inspect trace", async ({
+  test.skip("open the app in UI, then generate lyrics via API and inspect trace", async ({
     page,
   }) => {
     // ── 1. Load the app and screenshot initial state ────────────────

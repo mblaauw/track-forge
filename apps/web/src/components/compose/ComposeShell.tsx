@@ -188,8 +188,11 @@ export function ComposeShell() {
                 }
               })
               .catch(() => {});
+          } else if (event.status === "error") {
+            // Stage failure — stop forge, don't hang forever
+            s.setSession({ forgeRunning: false, status: "failed" });
           } else {
-            // Normal stage progress
+            // Normal stage progress (started / completed)
             const { label, index } = stageToDisplay(event.stage);
             if (event.status === "started") {
               s.setSession({ forgeStageIdx: index, forgeStageLabel: label });

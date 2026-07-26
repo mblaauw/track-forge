@@ -47,3 +47,38 @@ export function mockGenreModule(overrides?: Partial<GenreModule>): GenreModule {
     ...overrides,
   };
 }
+
+// ── Test engine ────────────────────────────────────────────────────────────
+
+export {
+  TestLogger,
+  ApiClient,
+  TestEngine,
+  createTestConfig,
+  createMockLlm,
+  createMockSuno,
+} from "./engine/index.js";
+export type {
+  TestLoggerConfig,
+  InjectFn,
+  HealthResponse,
+  GenreEntry,
+  CreateJobRequest,
+  JobInputs,
+  JobResponse,
+  VersionResponse,
+  GenerationResponse,
+  TrackResponse,
+  StartPipelineResponse,
+  CancelResponse,
+  EventEntry,
+  CreateTakeResponse,
+  PreviewStyleRequest,
+  PreviewStyleResponse,
+  LyricGenerateRequest,
+  LyricGenerateResponse,
+  ExportBundleResponse,
+  ImportResultResponse,
+  TestEngineOptions,
+  TestEngineInstance,
+} from "./engine/index.js";

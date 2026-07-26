@@ -38,28 +38,35 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 
 ## Source of truth
 
-| Concern                | Location                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| Pipeline stages        | `packages/core/src/pipeline/orchestrator.ts` — `compilation → lyrics_writing → versioning` |
-| Genre vocabulary       | `config/genres/<id>.yaml` (presets, descriptors, structure, palette)                       |
-| Shared API types       | `packages/contracts/src/index.ts`                                                          |
-| Genre module types     | `packages/genre-core/src/index.ts` — `SectionFunction`, `Vocal`, `DescriptorCategory`      |
-| DB schema              | `packages/core/src/db/schema.ts`                                                           |
-| Web session            | `apps/web/src/lib/session.tsx` — `SessionProvider` + `useSession()`                        |
-| Suno provider contract | `packages/core/src/suno/client.ts` — `submit()`, `getGenerationStatus()`                   |
-| Pipeline deps          | `packages/core/src/pipeline/types.ts` — `PipelineDeps` (no `suno` field)                   |
-| Fake test providers    | `packages/test-support/src/providers/` — 10 scenarios                                      |
-| Song intent contract   | `packages/song-intent/src/types.ts` — `SongIntentV1`, `StyleInfluence`                     |
-| Legacy job → intent    | `packages/song-intent/src/migrate-legacy.ts` — `migrateLegacyJob()`                        |
-| E2E tests              | `e2e/` — 7 Playwright specs including `idempotency.spec.ts`                                |
-| Server entry           | `apps/server/src/index.ts` — Fastify, registers all routes, static GUI serving             |
-| Web entry              | `apps/web/src/main.tsx` — Preact render                                                    |
+| Concern                | Location                                                                                            |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| Pipeline stages        | `packages/core/src/pipeline/orchestrator.ts` — `compilation → lyrics_writing → versioning`          |
+| Genre vocabulary       | `config/genres/<id>.yaml` (presets, descriptors, structure, palette)                                |
+| Shared API types       | `packages/contracts/src/index.ts`                                                                   |
+| Genre module types     | `packages/genre-core/src/index.ts` — `SectionFunction`, `Vocal`, `DescriptorCategory`               |
+| DB schema              | `packages/core/src/db/schema.ts`                                                                    |
+| Web session            | `apps/web/src/lib/session.tsx` — `SessionProvider` + `useSession()`                                 |
+| Suno provider contract | `packages/core/src/suno/client.ts` — `submit()`, `getGenerationStatus()`                            |
+| Suno adapter           | `packages/core/src/suno/adapter.ts` — `SunoAdapter` interface + default instance                    |
+| Pipeline deps          | `packages/core/src/pipeline/types.ts` — `PipelineDeps` (no `suno` field)                            |
+| Pipeline state         | `packages/core/src/pipeline/types.ts` — `PipelineState` (resolved, intentRevisionId, compilationId) |
+| Fake test providers    | `packages/test-support/src/providers/` — 10 scenarios                                               |
+| Song intent contract   | `packages/song-intent/src/types.ts` — `SongIntentV1`, `ResolvedSongIntent`, `StyleInfluence`        |
+| Song intent schema     | `packages/song-intent/src/schema.ts` — `SongIntentV1Schema` (`.strict()`)                           |
+| Legacy job → intent    | `packages/song-intent/src/migrate-legacy.ts` — `migrateLegacyJob()`                                 |
+| Intent materializer    | `packages/song-intent/src/materialize.ts` — `materializeIntent()`, `flattenIntentToInputs()`        |
+| Intent resolver        | `packages/song-intent/src/resolve.ts` — `resolveSongIntent()` (4 derivation rules)                  |
+| Intent revision        | `packages/core/src/intent-revisions/index.ts` — `freezeIntentRevision()`, `createCompilation()`     |
+| Pipeline intent bridge | `packages/core/src/pipeline/intent-bridge.ts` — `resolveIntentFromJob()`, `buildLyricsBrief()`      |
+| E2E tests              | `e2e/` — 8 Playwright specs including `idempotency.spec.ts` and `explore-hiphop-trace.spec.ts`      |
+| Server entry           | `apps/server/src/index.ts` — Fastify, registers all routes, static GUI serving                      |
+| Web entry              | `apps/web/src/main.tsx` — Preact render                                                             |
 
 ## Architecture
 
 **Workspaces:** `apps/{server,web}` and `packages/{contracts,core,genre-core,genre-edm,genre-hiphop,genre-ambient,test-support}`. Build order via TypeScript project references: `contracts`/`genre-core` at the bottom, `apps/server` depends on `core` + genre packages, `apps/web` depends only on `contracts` + `genre-core`.
 
-**Pipeline** (`packages/core/src/pipeline/orchestrator.ts`): exactly three stages — `compilation` (deterministic, no LLM) → `lyrics_writing` (the _only_ LLM call; skipped when `lyricsMode === "strict_instrumental"`) → `versioning` (persists artifacts, sets `currentStage: "completed"`). After versioning, the web UI triggers a take via `POST /api/versions/:id/takes`, which submits to Suno and streams render status over SSE. `PipelineDeps` deliberately excludes a `suno` field — the pipeline never calls Suno.
+**Pipeline** (`packages/core/src/pipeline/orchestrator.ts`): exactly three stages — `compilation` (deterministic, no LLM) → `lyrics_writing` (the _only_ LLM call; skipped when `lyricsMode === "strict_instrumental"`) → `versioning` (persists artifacts, sets `currentStage: "completed"`). Before the stages run, `freezeIntentRevision()` captures an immutable snapshot of the song intent into the `intent_revisions` table. During versioning, `createCompilation()` links the revision to rendered artifacts in the `compilations` table. After versioning, the web UI triggers a take via `POST /api/versions/:id/takes`, which submits to Suno and streams render status over SSE. `PipelineDeps` deliberately excludes a `suno` field — the pipeline never calls Suno.
 
 **Genre config is data, not code:** `config/genres/<id>.yaml` holds presets, descriptor vocab/weights, arrangement defaults, and vocal presets. TypeScript genre modules (`packages/genre-*/src/*.ts`) are reduced to `createGenreModule({ id, name, inputSchema, defaults })` — schema/runtime only. Every YAML change needs `node scripts/validate-genres.mjs` to pass. There is a `config/shared.yaml` for cross-genre shared config.
 
@@ -84,6 +91,10 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 - Database-destructive actions require explicit user approval.
 - `SongIntentV1` (`packages/song-intent`) is the canonical typed intent contract. `SongIntentV1Schema` is `.strict()` — adding a field requires a schema bump. `migrateLegacyJob()` is the lossless bridge from existing `jobs.inputs` JSON.
 - `key`/`scale` are optional harmonic hints on `SongIntentV1.musical`, not required by any stage today; presets may still carry them but the validator will warn (Phase 6 enforcement).
+- `freezeIntentRevision()` is called before the pipeline starts; `createCompilation()` during the versioning stage. Both are required for reproducibility.
+- `ResolvedSongIntent` flows through all three pipeline stages — the compilation stage enriches it, lyrics_writing reads from it, and versioning persists it.
+- `freezeIntentRevision()` is called before the pipeline starts; `createCompilation()` during the versioning stage. Both are required for reproducibility.
+- `ResolvedSongIntent` flows through all three pipeline stages — the compilation stage enriches it, lyrics_writing reads from it, and versioning persists it.
 
 ## Commands (OpenCode built-in)
 

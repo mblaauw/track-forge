@@ -11,11 +11,17 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:5173",
     trace: "on-first-retry",
   },
-  webServer: process.env.CI
-    ? {
-        command: "npm run build && npm run -w apps/server start",
-        port: 3000,
-        reuseExistingServer: false,
-      }
-    : undefined,
+  webServer: [
+    {
+      // Fastify API server with dry-run (fake providers)
+      command: process.env.CI
+        ? "npm run build && npm run -w apps/server start"
+        : "npm run -w apps/server dev",
+      port: 3000,
+      reuseExistingServer: !process.env.CI,
+      env: {
+        SUNO_DRY_RUN: "true",
+      },
+    },
+  ],
 });

@@ -17,6 +17,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@track-forge/contracts": "*",
+    "@track-forge/core": "*",
+    "fastify": "^5.2.0",
     "vitest": "^3.0.0"
   },
   "devDependencies": {

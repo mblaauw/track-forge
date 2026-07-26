@@ -5,5 +5,9 @@
     "rootDir": "src"
   },
   "include": ["src"],
-  "references": [{ "path": "../genre-core" }, { "path": "../contracts" }]
+  "references": [
+    { "path": "../genre-core" },
+    { "path": "../contracts" },
+    { "path": "../core" }
+  ]
 }

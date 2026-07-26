@@ -22,7 +22,6 @@ Suno generation provider integration. The application adapter in `packages/core/
 5. **Update exact HTTP fixtures when the contract changes.** Fixtures live at `packages/test-support/src/providers/fake-suno-server.ts`.
 6. **Test strict instrumental and lyrical generation separately.**
 7. **Test provider errors and incomplete responses** (timeout, malformed, rejected).
-8. **Treat `apps/server/LLM_SUNO_IN.md` as operational evidence, not eternal architecture.**
 
 ## Provider fixture structure
 

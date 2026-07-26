@@ -15,22 +15,25 @@ Pipeline engine, jobs, versions, takes, SSE events, cancellation, import/export.
 ## Pipeline flow
 
 ```
-User inputs
+User inputs → resolveSongIntent() (derivation rules, enrich)
+  → freezeIntentRevision() (immutable snapshot → intent_revisions table)
   → compilation (deterministic, no LLM)
   → optional lyrics_writing (only LLM call, skipped if strict_instrumental)
-  → versioning (persists artifacts, completes job)
+  → versioning (persists artifacts, createCompilation() links to revision, completes job)
   → ComposeShell triggers take (POST /api/versions/:id/takes)
   → Suno submit
   → render events (SSE → Renders panel)
 ```
 
+All stages receive `ResolvedSongIntent` from the intent resolver. The intent revision is frozen before the pipeline starts, ensuring reproducibility.
+
 ## Stage contracts
 
-| Stage          | Input                                                    | Output                                                 | LLM call?                         |
-| -------------- | -------------------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
-| compilation    | parsed inputs, presets, descriptors, sections            | `compiledJson` (title, style, excludedStyles)          | No                                |
-| lyrics_writing | compiled style, arrangement, vocal delivery, lyric brief | `lyricsWriterResult` (document with sections/lines)    | Yes, unless `strict_instrumental` |
-| versioning     | compiledJson + lyricsWriterResult                        | DB version row (MAX+1 numbering), job set to completed | No                                |
+| Stage          | Input                                                     | Output                                                                  | LLM call?                         |
+| -------------- | --------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------- |
+| compilation    | `ResolvedSongIntent` (genre, preset, descriptors, vocal)  | `compiledJson` (title, style, excludedStyles)                           | No                                |
+| lyrics_writing | `ResolvedSongIntent` + compiled style + lyric brief       | `lyricsWriterResult` (document with sections/lines)                     | Yes, unless `strict_instrumental` |
+| versioning     | `ResolvedSongIntent` + compiledJson + lyricsWriterResult  | DB version row (MAX+1 numbering), `createCompilation()` links to revision, job set to completed | No |
 
 ## Invariants
 
@@ -42,6 +45,9 @@ User inputs
 - No take creation before version commit.
 - SSE events reflect persisted state (`publish()` in `events.ts`).
 - Cancellation uses `AbortController` via `job-abort-controller.ts` with `combineSignals()` cleanup.
+- **Reproducibility:** `freezeIntentRevision()` is called before the pipeline starts; `createCompilation()` runs during versioning. Both are required.
+- **ResolvedSongIntent** flows through all three pipeline stages — compilation enriches it, lyrics_writing reads from it, versioning persists it.
+- `SongIntentV1` (`packages/song-intent`) is the canonical typed intent contract with `.strict()` schema. `migrateLegacyJob()` bridges existing `jobs.inputs` JSON.
 
 ## Required tests
 

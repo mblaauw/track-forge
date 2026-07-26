@@ -13,7 +13,7 @@ export function ForgeStrip() {
   const pct = Math.round((forgeStageIdx / 4) * 100);
 
   return (
-    <div class="forge-strip">
+    <div class="forge-strip" data-testid="forge-strip">
       <Flame size={16} class="forge-strip-flame" />
       <span class="forge-strip-label">{label}</span>
       <div class="forge-strip-bars">

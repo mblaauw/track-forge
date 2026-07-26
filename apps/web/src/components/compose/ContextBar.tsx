@@ -65,6 +65,7 @@ export function ContextBar({
           class={`ctx-forge-btn${forging ? " running" : ""}`}
           disabled={forgeDisabled || forging}
           onClick={onForge}
+          data-testid="forge-btn"
         >
           {forging ? (
             <CircleNotch size={16} class="tf-spin" />

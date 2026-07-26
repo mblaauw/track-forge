@@ -108,6 +108,7 @@ export function RendersPanel() {
               )
             }
             title={`Play ${label}`}
+            data-testid={`play-btn-${take.id}`}
           >
             {isPlaying ? (
               <Pause size={12} weight="fill" />
@@ -183,7 +184,7 @@ export function RendersPanel() {
   }
 
   return (
-    <div class="renders-panel">
+    <div class="renders-panel" data-testid="renders-panel">
       <div class="col-header">
         <button
           class="col-collapse-btn"
@@ -225,6 +226,7 @@ export function RendersPanel() {
                   key={take.id}
                   class={`rende-card${take.isFavorite ? " fav" : ""}`}
                   style={hasTracks ? { padding: "6px" } : undefined}
+                  data-testid={`take-card-${take.id}`}
                 >
                   <div class="rende-card-top">
                     <div class="rende-card-info" style={{ flex: 1 }}>

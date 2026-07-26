@@ -184,7 +184,7 @@ export function LibraryPanel() {
   }
 
   return (
-    <div class="library-panel">
+    <div class="library-panel" data-testid="library-panel">
       <div class="col-header">
         <button
           class="col-collapse-btn"
@@ -244,6 +244,7 @@ export function LibraryPanel() {
                 class="library-row"
                 key={job.id}
                 onClick={() => loadSession(job)}
+                data-testid={`library-row-${job.id}`}
               >
                 <div class="library-row-top">
                   <span class="library-row-name">

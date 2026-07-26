@@ -26,8 +26,6 @@ Given a job ID, display in order:
 
 ## Data sources
 
-- `apps/server/LLM_TRACE.md` — captures pipeline trace output (Suno payload, job inputs)
-- `apps/server/LLM_SUNO_IN.md` — Suno submit payload snapshots
 - Server DB — `jobs`, `versions`, `generations` tables
 - For real-time trace during development: set `TRACE_LOG_LEVEL=debug` (pino-based, silent by default)
 
