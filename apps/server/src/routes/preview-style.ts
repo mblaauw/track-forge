@@ -1,14 +1,10 @@
 import type { FastifyInstance } from "fastify";
-import {
-  compileStylePrompt,
-  materializedToCompileStyleInput,
-  schema,
-} from "@track-forge/core";
+import { renderSunoStyle, schema } from "@track-forge/core";
 import {
   materializeIntent,
+  resolveSongIntent,
   type PresetCatalog,
   type StyleInfluence,
-  type SongIntentDraft,
 } from "@track-forge/song-intent";
 import { eq } from "drizzle-orm";
 import type { Db } from "@track-forge/core";
@@ -58,11 +54,10 @@ function buildCatalog(genreId: string): PresetCatalog {
   };
 }
 
-/** Build a SongIntentDraft + catalog from the preview-style body fields. */
-function buildDraft(
+function compilePreview(
   genreId: string,
   body: StyleCompileFields,
-): { draft: SongIntentDraft; catalog: PresetCatalog } {
+): ReturnType<typeof renderSunoStyle> {
   const presetIds = body.presetIds ?? [];
   const catalog = buildCatalog(genreId);
   const selectedStyles: StyleInfluence[] = presetIds.map((pid, i) => ({
@@ -94,19 +89,17 @@ function buildDraft(
       tags: [],
     })) as unknown[] | undefined,
   };
-  return { draft: { selectedStyles, userValues: userValues as any }, catalog };
-}
-
-function compilePreview(
-  genreId: string,
-  body: StyleCompileFields,
-): ReturnType<typeof compileStylePrompt> {
-  const { draft, catalog } = buildDraft(genreId, body);
-  const materialized = materializeIntent(draft, catalog);
-  const mod = getModuleOrThrow(genreId);
-  return compileStylePrompt(
-    materializedToCompileStyleInput(materialized, catalog, mod.name),
+  const materialized = materializeIntent(
+    { selectedStyles, userValues: userValues as any },
+    catalog,
   );
+  const resolved = resolveSongIntent(materialized);
+  const mod = getModuleOrThrow(genreId);
+  resolved.genreName = mod.name;
+  resolved.presetLabels = presetIds
+    .map((pid) => mod.presets?.find((p) => p.id === pid)?.name ?? "")
+    .filter(Boolean);
+  return renderSunoStyle(resolved);
 }
 
 export function registerPreviewStyleRoutes(

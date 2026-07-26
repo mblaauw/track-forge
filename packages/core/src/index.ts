@@ -57,6 +57,7 @@ export {
   abortJob,
   compileStylePrompt,
   materializedToCompileStyleInput,
+  renderSunoStyle,
 } from "./pipeline/index.js";
 export type {
   CompileStyleInput,

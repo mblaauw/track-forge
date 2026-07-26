@@ -10,6 +10,8 @@
  * Changing the order here changes what the UI preview shows AND what the pipeline sends to Suno.
  */
 
+import type { ResolvedSongIntent } from "@track-forge/song-intent";
+
 export interface CompileStyleInput {
   genreName: string;
   presetLabels: string[];
@@ -26,15 +28,6 @@ export interface CompileStyleInput {
   presetEnergy?: number;
   /** Genre characteristics from the preset (e.g. "hard drums", "1990s era", "intense delivery"). Merged into the character part. */
   characteristics?: string[];
-  /** HipHop-specific: flow/rhyme style description (e.g. "laid_back", "multi_syllabic"). */
-  hipHopFlowPattern?: string;
-  hipHopRhymeStyle?: string;
-  /** HipHop-specific: narrative arc (e.g. "braggadocio", "storytelling"). */
-  hipHopNarrativeArc?: string;
-  /** HipHop-specific: prose vocal style description (e.g. "assertive, commanding delivery with precise phrasing"). */
-  hipHopVocalStyle?: string;
-  /** HipHop-specific: ordered section structure (replaces generic structure note when present). */
-  hipHopTypicalSongStructure?: string[];
 }
 
 export interface CompileStyleResult {
@@ -77,10 +70,9 @@ export function compileStylePrompt(
   );
   const prodPart = compileProduction(active);
   const charPart = compileCharacter(input.characteristics);
-  const hipHopPart = compileHipHopVocalCharacter(input);
-  const structureNote = input.hipHopTypicalSongStructure
-    ? compileTypedStructure(input.hipHopTypicalSongStructure)
-    : compileStructureNote(input.sections, input.lyricsMode);
+  // Hip-hop vocal character data is only available via the resolved-intent path.
+  const hipHopPart = null;
+  const structureNote = compileStructureNote(input.sections, input.lyricsMode);
 
   const parts = [core, rhythmPart];
 
@@ -272,33 +264,42 @@ function compileCharacter(characteristics?: string[]): string | null {
   return characteristics.join(", ");
 }
 
+interface HipHopVocalCharacter {
+  flowPattern?: string;
+  rhymeStyle?: string;
+  narrativeArc?: string;
+  vocalStyle?: string;
+}
+
 /**
  * HipHop-specific vocal/flow character — flow pattern, rhyme style,
  * narrative arc, and prose vocal style. These are genre-specific
  * concepts that don't fit the generic descriptor categories.
  */
-function compileHipHopVocalCharacter(input: CompileStyleInput): string | null {
+function compileHipHopVocalCharacter(
+  hipHop: HipHopVocalCharacter,
+): string | null {
   const parts: string[] = [];
 
   // Flow + rhyme: "laid-back flow with multi-syllabic rhymes"
-  if (input.hipHopFlowPattern && input.hipHopRhymeStyle) {
-    const flow = input.hipHopFlowPattern.replace(/_/g, "-");
-    const rhyme = input.hipHopRhymeStyle.replace(/_/g, " ");
+  if (hipHop.flowPattern && hipHop.rhymeStyle) {
+    const flow = hipHop.flowPattern.replace(/_/g, "-");
+    const rhyme = hipHop.rhymeStyle.replace(/_/g, " ");
     parts.push(`${flow} flow with ${rhyme} rhymes`);
-  } else if (input.hipHopFlowPattern) {
-    parts.push(`${input.hipHopFlowPattern.replace(/_/g, "-")} flow`);
-  } else if (input.hipHopRhymeStyle) {
-    parts.push(`${input.hipHopRhymeStyle.replace(/_/g, " ")} rhymes`);
+  } else if (hipHop.flowPattern) {
+    parts.push(`${hipHop.flowPattern.replace(/_/g, "-")} flow`);
+  } else if (hipHop.rhymeStyle) {
+    parts.push(`${hipHop.rhymeStyle.replace(/_/g, " ")} rhymes`);
   }
 
   // Narrative arc: "braggadocio narrative"
-  if (input.hipHopNarrativeArc) {
-    parts.push(`${input.hipHopNarrativeArc.replace(/_/g, " ")} narrative`);
+  if (hipHop.narrativeArc) {
+    parts.push(`${hipHop.narrativeArc.replace(/_/g, " ")} narrative`);
   }
 
   // Prose vocal style: "assertive, commanding delivery with precise phrasing"
-  if (input.hipHopVocalStyle) {
-    parts.push(input.hipHopVocalStyle);
+  if (hipHop.vocalStyle) {
+    parts.push(hipHop.vocalStyle);
   }
 
   if (parts.length === 0) return null;
@@ -313,6 +314,76 @@ function compileTypedStructure(sections: string[]): string | null {
   if (sections.length === 0) return null;
   const note = `structure: ${sections.join(" → ")}`;
   return note.length > 220 ? null : note;
+}
+
+// ── renderSunoStyle — new entry point from ResolvedSongIntent ───────
+
+/**
+ * New-style style renderer that consumes `ResolvedSongIntent` instead of
+ * the flat `CompileStyleInput`. Shared helpers are identical; genre-specific
+ * fields are resolved through the intent's lyrics/arrangement sub-objects
+ * instead of being passed as top-level arguments.
+ */
+export function renderSunoStyle(
+  resolved: ResolvedSongIntent,
+): CompileStyleResult {
+  const active = resolved.descriptors
+    .filter((d) => d.weight > 0)
+    .sort((a, b) => b.weight - a.weight);
+  const activeCount = active.length;
+
+  const core = compileCore(resolved.genreName, resolved.presetLabels);
+  const rhythmPart = compileRhythm(
+    active,
+    resolved.bpm,
+    resolved.tempoFeel,
+    resolved.lyrics.flowPattern,
+    resolved.mood,
+  );
+  const soundPart = compileSound(active);
+  const identityPart = compileIdentity(
+    resolved.vocals.mode,
+    resolved.vocals.type,
+  );
+  const moodArc = compileMoodArc(
+    active,
+    resolved.arrangement.sections.map((s) => ({ name: s.name, fn: s.fn })),
+    resolved.mood,
+    resolved.energy,
+  );
+  const prodPart = compileProduction(active);
+  const charPart = compileCharacter(resolved.characteristics);
+  const hipHopPart = compileHipHopVocalCharacter({
+    flowPattern: resolved.lyrics.flowPattern,
+    rhymeStyle: resolved.lyrics.rhymeStyle,
+    narrativeArc: resolved.lyrics.narrativeArc,
+    vocalStyle: resolved.lyrics.vocalStyle,
+  });
+  const structureNote = resolved.arrangement.typicalSongStructure
+    ? compileTypedStructure(resolved.arrangement.typicalSongStructure)
+    : compileStructureNote(
+        resolved.arrangement.sections.map((s) => ({ name: s.name, fn: s.fn })),
+        resolved.vocals.mode,
+      );
+
+  const parts = [core, rhythmPart];
+  if (soundPart) parts.push(soundPart);
+  if (charPart) parts.push(charPart);
+  if (identityPart) parts.push(identityPart);
+  if (moodArc) parts.push(moodArc);
+  if (prodPart) parts.push(prodPart);
+  if (hipHopPart) parts.push(hipHopPart);
+  if (structureNote) parts.push(structureNote);
+
+  const style = parts
+    .filter(Boolean)
+    .join(". ")
+    .replace(/\.{2,}/g, ".")
+    .replace(/\.\s*\./g, ".")
+    .trim();
+  const final = style.endsWith(".") ? style : style + ".";
+
+  return { style: final, charCount: final.length, activeCount };
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────── */

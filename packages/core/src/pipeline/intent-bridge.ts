@@ -1,16 +1,23 @@
-import type { CompileStyleInput } from "./style-compiler.js";
+import {
+  migrateLegacyJob,
+  resolveSongIntent,
+  type ResolvedSongIntent,
+} from "@track-forge/song-intent";
+import type {
+  CompileStyleInput,
+  CompileStyleResult,
+} from "./style-compiler.js";
 import type {
   MaterializedIntent,
   PresetCatalog,
 } from "@track-forge/song-intent";
+import type { LyricsWriterInput } from "../llm/lyrics-writer.js";
 
 /**
  * Bridge: `MaterializedIntent → CompileStyleInput`
  *
- * Converts the canonical typed intent to what the current style compiler
- * expects. This is a transitional adapter — Phase 4 will replace
- * `compileStylePrompt(CompileStyleInput)` with `renderSunoStyle(ResolvedSongIntent)`
- * and this bridge disappears.
+ * Transitional adapter — Phase 4's `renderSunoStyle` replaces this.
+ * Only kept for backward compat during migration.
  */
 export function materializedToCompileStyleInput(
   m: MaterializedIntent,
@@ -19,7 +26,6 @@ export function materializedToCompileStyleInput(
 ): CompileStyleInput {
   const intent = m.intent;
   const presetLabels = resolvePresetLabels(intent.styles, catalog);
-
   return {
     genreName,
     presetLabels,
@@ -40,11 +46,6 @@ export function materializedToCompileStyleInput(
     presetMood: intent.musical.mood || undefined,
     presetEnergy:
       intent.musical.energy !== undefined ? intent.musical.energy : undefined,
-    hipHopFlowPattern: intent.lyrics.flowPattern || undefined,
-    hipHopRhymeStyle: intent.lyrics.rhymeStyle || undefined,
-    hipHopNarrativeArc: intent.lyrics.narrativeArc || undefined,
-    hipHopVocalStyle: intent.lyrics.vocalStyle || undefined,
-    hipHopTypicalSongStructure: intent.arrangement.typicalSongStructure,
   };
 }
 
@@ -58,4 +59,79 @@ function resolvePresetLabels(
     if (preset) labels.push(preset.name);
   }
   return labels;
+}
+
+/**
+ * Enrich a `ResolvedSongIntent` with genre/preset display info the pipeline
+ * caller owns (not available during pure resolve).
+ */
+export function enrichResolved(
+  resolved: ResolvedSongIntent,
+  genreName: string,
+  presetLabels: string[],
+): ResolvedSongIntent {
+  return { ...resolved, genreName, presetLabels };
+}
+
+/**
+ * Load a job's merged inputs and produce a `ResolvedSongIntent` for the
+ * pipeline stages. No catalog needed — inputs are already merged.
+ */
+export function resolveIntentFromJob(
+  job: { genreId: string; presetId: string; inputs: string | null },
+  genreName: string,
+  presetLabels: string[],
+): ResolvedSongIntent {
+  const migrated = migrateLegacyJob({
+    genreId: job.genreId,
+    presetId: job.presetId,
+    inputs: job.inputs,
+  });
+  const resolved = resolveSongIntent({
+    intent: migrated.intent,
+    provenance: {},
+    warnings: [],
+  });
+  return enrichResolved(resolved, genreName, presetLabels);
+}
+
+/**
+ * Build a `LyricsWriterInput` from a `ResolvedSongIntent`.
+ * Replaces the inline writerInput assembly in the orchestrator.
+ */
+export function buildLyricsBrief(
+  resolved: ResolvedSongIntent,
+  sections: LyricsWriterInput["sections"],
+  lyricsGuidance?: string,
+): LyricsWriterInput {
+  return {
+    genreName: resolved.genreName,
+    presetLabels: resolved.presetLabels,
+    bpm: resolved.bpm,
+    key: resolved.key ?? "C",
+    scale: resolved.scale ?? "minor",
+    sections,
+    lyricTopic: resolved.lyrics.topic,
+    lyricThemes: resolved.lyrics.themes,
+    lyricAngle: resolved.lyrics.angle,
+    lyricsGuidance,
+    mood: resolved.mood,
+    energy: resolved.energy,
+    narrativeArc: resolved.lyrics.narrativeArc,
+    rhymeStyle: resolved.lyrics.rhymeStyle,
+    flowPattern: resolved.lyrics.flowPattern,
+    vocalStyle: resolved.lyrics.vocalStyle,
+    characteristics:
+      resolved.characteristics.length > 0
+        ? resolved.characteristics
+        : undefined,
+    tempoFeel: resolved.tempoFeel,
+    perceivedBpm: resolved.perceivedBpm,
+    lineDensity: resolved.lyrics.lineDensity,
+    perspective: resolved.lyrics.perspective,
+    imageAnchors:
+      resolved.lyrics.imageAnchors.length > 0
+        ? resolved.lyrics.imageAnchors
+        : undefined,
+  };
 }

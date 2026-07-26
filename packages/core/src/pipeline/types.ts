@@ -6,6 +6,7 @@ import type {
   VersionId,
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
+import type { ResolvedSongIntent } from "@track-forge/song-intent";
 import type { Db } from "../db/index.js";
 import type { LlmRequest, LlmResponse } from "../llm/index.js";
 
@@ -34,6 +35,8 @@ export interface PipelineState {
 
   /** Parsed inputs (cached after first parse) */
   parsed?: ParsedInputs;
+  /** Resolved song intent (produced by compilation stage via resolveIntentFromJob) */
+  resolved?: ResolvedSongIntent;
   /** Compiled style JSON (produced by compilation stage) */
   compiledJson: string | null;
   /** Lyrics writer result (produced by lyrics_writing stage) */

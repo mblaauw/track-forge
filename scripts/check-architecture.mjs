@@ -32,6 +32,13 @@ const FORBIDDEN_PATTERNS = [
   "nl-adjustments",
   "style-tag-suggestions",
   "payload-preview",
+  // Hip-hop-specific fields removed from the generic style compiler
+  // (Phase 4: renderSunoStyle reads them from ResolvedSongIntent instead).
+  "hipHopFlowPattern",
+  "hipHopRhymeStyle",
+  "hipHopNarrativeArc",
+  "hipHopVocalStyle",
+  "hipHopTypicalSongStructure",
   // Dead service names
   "lock-service",
   "lockService",

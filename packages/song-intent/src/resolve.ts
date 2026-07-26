@@ -25,6 +25,9 @@ import type {
  *   3. intimate vocal + dense arrangement → flag as creative tension
  *   4. multiple primary styles → error
  *
+ * Callers MUST set `genreName` and `presetLabels` on the result before
+ * passing it to `renderSunoStyle()`.
+ *
  * Future rules are TODOs with failing tests, not unimplemented code.
  */
 export function resolveSongIntent(
@@ -56,6 +59,8 @@ export function resolveSongIntent(
     schemaVersion: 1,
     identity: intent.identity,
     styles: [...intent.styles],
+    genreName: "",
+    presetLabels: [],
 
     bpm,
     tempoFeel: intent.musical.tempoFeel,

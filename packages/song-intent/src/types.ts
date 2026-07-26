@@ -225,6 +225,10 @@ export interface ResolvedSongIntent {
   schemaVersion: 1;
   identity: { title: string };
   styles: StyleInfluence[];
+  /** Genre display name (e.g. "EDM") — set by the pipeline caller after resolve. */
+  genreName: string;
+  /** Preset display labels (e.g. ["Deep House — Chill"]) — set by the pipeline caller. */
+  presetLabels: string[];
 
   /** Resolved BPM (materialized or defaulted to 128). */
   bpm: number;

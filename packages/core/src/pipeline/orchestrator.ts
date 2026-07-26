@@ -28,7 +28,8 @@ import {
   createVersion,
 } from "./job-service.js";
 import type { StageData } from "./job-service.js";
-import { compileStylePrompt } from "./style-compiler.js";
+import { compileStylePrompt, renderSunoStyle } from "./style-compiler.js";
+import { resolveIntentFromJob, buildLyricsBrief } from "./intent-bridge.js";
 import { writeLyrics } from "../llm/lyrics-writer.js";
 import type { LyricsWriterSectionInput } from "../llm/lyrics-writer.js";
 import { publish } from "./events.js";
@@ -107,107 +108,51 @@ async function handleCompilation(
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const p = state.parsed!;
-  const { inputs, presetLabels, descriptors, rawSections } = p;
-  const genreName = state.module.name;
-
-  const bpm = Number(inputs.bpm ?? 128);
-  const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental") as
-    "full_lyrics" | "strict_instrumental";
-
-  const sections = rawSections.map((s) => ({
-    name: String(s.name ?? ""),
-    fn: String(s.fn ?? "establish"),
-  }));
-
-  const vocalSections = rawSections.filter((s: Record<string, unknown>) =>
-    isVocalSection({
-      name: String(s.name ?? ""),
-      deltas: (s.deltas as string[]) ?? [],
-    }),
+  const resolved = resolveIntentFromJob(
+    state.job,
+    state.module.name,
+    p.presetLabels,
   );
-  const vocalType =
-    vocalSections.length > 0
-      ? String((vocalSections[0]!.vocal as Record<string, unknown>)?.type ?? "")
-      : undefined;
 
-  const presetMood = inputs.mood ? String(inputs.mood) : undefined;
-  const presetEnergy =
-    inputs.energy !== undefined && inputs.energy !== null
-      ? Number(inputs.energy)
-      : undefined;
-
-  // Genre characteristics from preset values (all genres)
-  const characteristics = Array.isArray(inputs.characteristics)
-    ? (inputs.characteristics as string[])
-    : undefined;
-
-  // HipHop-specific fields from preset values
-  const hipHopFlowPattern = String(inputs.flowPattern ?? "");
-  const hipHopRhymeStyle = String(inputs.rhymeStyle ?? "");
-  const hipHopNarrativeArc = String(inputs.narrativeArc ?? "");
-  const hipHopVocalStyle = String(inputs.vocalStyle ?? "");
-  const hipHopTypicalSongStructure = Array.isArray(inputs.typicalSongStructure)
-    ? (inputs.typicalSongStructure as string[])
-    : undefined;
-
-  const compiled = compileStylePrompt({
-    genreName,
-    presetLabels,
-    descriptors,
-    bpm,
-    sections,
-    lyricsMode,
-    vocalType: vocalType || undefined,
-    presetMood,
-    presetEnergy: Number.isFinite(presetEnergy) ? presetEnergy : undefined,
-    characteristics,
-    tempoFeel: String(inputs.tempoFeel ?? "") || undefined,
-    flowPattern: String(inputs.flowPattern ?? "") || undefined,
-    hipHopFlowPattern: hipHopFlowPattern || undefined,
-    hipHopRhymeStyle: hipHopRhymeStyle || undefined,
-    hipHopNarrativeArc: hipHopNarrativeArc || undefined,
-    hipHopVocalStyle: hipHopVocalStyle || undefined,
-    hipHopTypicalSongStructure,
-  });
+  const compiled = renderSunoStyle(resolved);
 
   trace("handleCompilation", {
-    genreName,
-    presetLabels,
-    descriptorCount: descriptors.length,
-    descriptors,
+    genreName: resolved.genreName,
+    presetLabels: resolved.presetLabels,
+    descriptorCount: resolved.descriptors.length,
+    descriptors: resolved.descriptors,
     compiledActiveCount: compiled.activeCount,
     compiledStyle: compiled.style,
   });
 
-  const title = String(inputs.title ?? "Untitled");
+  const lyricsMode = resolved.vocals.mode;
   const negativeTags: string[] = [];
   if (lyricsMode !== "full_lyrics") {
     negativeTags.push("vocals", "singing", "lyrics", "voice");
   }
-  const userExcluded = String(inputs.excludedStyles ?? "")
-    .split(/[,\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  for (const tag of userExcluded) {
-    if (!negativeTags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+  for (const tag of resolved.exclusions) {
+    const lower = tag.toLowerCase();
+    if (!negativeTags.some((t) => t.toLowerCase() === lower)) {
       negativeTags.push(tag);
     }
   }
 
+  const title = resolved.identity.title || "Untitled";
+  const vocalDescription = resolved.vocals.type ?? "";
   const compiledJson = JSON.stringify({
     title,
     style: compiled.style,
     excludedStyles: negativeTags.join(", "),
     lyrics: "",
-    bpm,
-    key: String(inputs.key ?? "C"),
-    vocalDescription: vocalType ?? "",
-    vocalGender: deriveVocalGender(vocalType),
+    bpm: resolved.bpm,
+    key: resolved.key ?? "C",
+    vocalDescription,
+    vocalGender: deriveVocalGender(vocalDescription),
     negativeTags,
     titleCandidates: [title],
   });
 
-  return { ...state, compiledJson };
+  return { ...state, compiledJson, resolved };
 }
 
 function deriveVocalGender(
@@ -269,11 +214,12 @@ async function handleLyricsWriting(
   deps: PipelineDeps,
 ): Promise<PipelineState> {
   const p = state.parsed!;
-  const { inputs, presetLabels, rawSections } = p;
-  const lyricsMode = String(inputs.lyricsMode ?? "strict_instrumental");
-  const genreName = state.module.name;
+  const { rawSections } = p;
+  const resolved =
+    state.resolved ??
+    resolveIntentFromJob(state.job, state.module.name, p.presetLabels);
 
-  if (lyricsMode === "strict_instrumental") {
+  if (!resolved.vocals.hasLeadVocal) {
     return {
       ...state,
       lyricsWriterResult: {
@@ -298,8 +244,11 @@ async function handleLyricsWriting(
 
   // Pre-generated lyrics from the "Generate lyrics" UI button — already
   // keyed by section id, same contract the writer produces below.
-  const lyricLines = inputs.lyricLines as Record<string, string[]> | undefined;
-  const lyricsGenerated = inputs.lyricsGenerated === true;
+  const lyricLines =
+    resolved.lyrics.topic === "__pre_generated__"
+      ? undefined
+      : (p.inputs.lyricLines as Record<string, string[]> | undefined);
+  const lyricsGenerated = p.inputs.lyricsGenerated === true;
   if (lyricLines && lyricsGenerated) {
     const doc = sectionsToLyricsDocument(sections, lyricLines);
     if (doc.sections.length > 0) {
@@ -316,51 +265,17 @@ async function handleLyricsWriting(
   );
 
   if (vocalSections.length === 0) {
-    // full_lyrics mode but nothing in the arrangement is marked vocal —
-    // nothing for the writer to do.
     return {
       ...state,
       lyricsWriterResult: { document: { sections: [], metadata: {} } },
     };
   }
 
-  const writerInput = {
-    genreName,
-    presetLabels,
-    bpm: Number(inputs.bpm ?? 128),
-    key: String(inputs.key ?? "C"),
-    scale: (inputs.scale ?? "minor") as "major" | "minor",
-    sections: vocalSections,
-    lyricTopic: String(inputs.lyricTopic ?? ""),
-    lyricThemes: (inputs.lyricThemes as string[]) ?? [],
-    lyricAngle: String(inputs.lyricAngle ?? ""),
-    lyricsGuidance: state.module.lyricsGuidance,
-    mood: inputs.mood ? String(inputs.mood) : undefined,
-    energy:
-      inputs.energy !== undefined && inputs.energy !== null
-        ? Number(inputs.energy)
-        : undefined,
-    narrativeArc: String(inputs.narrativeArc ?? "") || undefined,
-    rhymeStyle: String(inputs.rhymeStyle ?? "") || undefined,
-    flowPattern: String(inputs.flowPattern ?? "") || undefined,
-    vocalStyle: String(inputs.vocalStyle ?? "") || undefined,
-    characteristics: Array.isArray(inputs.characteristics)
-      ? (inputs.characteristics as string[])
-      : undefined,
-    tempoFeel: inputs.tempoFeel ? String(inputs.tempoFeel) : undefined,
-    perceivedBpm:
-      inputs.perceivedBpm !== undefined && inputs.perceivedBpm !== null
-        ? Number(inputs.perceivedBpm)
-        : undefined,
-    lineDensity:
-      inputs.lineDensity !== undefined && inputs.lineDensity !== null
-        ? Number(inputs.lineDensity)
-        : undefined,
-    perspective: inputs.perspective ? String(inputs.perspective) : undefined,
-    imageAnchors: Array.isArray(inputs.imageAnchors)
-      ? (inputs.imageAnchors as string[])
-      : undefined,
-  };
+  const writerInput = buildLyricsBrief(
+    resolved,
+    vocalSections,
+    state.module.lyricsGuidance,
+  );
 
   trace("handleLyricsWriting.request", { input: writerInput });
 
@@ -415,9 +330,8 @@ async function handleVersioning(
     throw new Error("Pipeline state missing compiledJson before versioning");
 
   const compiled = safeJsonParse<Record<string, string>>(compiledJson, {});
-  const lyricsMode = String(
-    state.parsed?.inputs.lyricsMode ?? "strict_instrumental",
-  );
+  const resolved = state.resolved;
+  const lyricsMode = resolved?.vocals.mode ?? "strict_instrumental";
 
   // Build the lyrics artifact. For full_lyrics jobs this carries the FULL
   // arrangement as Suno bracket metatags — vocal sections get their lines,
@@ -434,11 +348,15 @@ async function handleVersioning(
       const id = (s as LyricsSection).id;
       if (id) linesById[id] = s.lines ?? [];
     }
+    const srcSections = resolved?.arrangement.sections ?? [];
     lyricsText = formatLyricsArtifact(
-      state.parsed.rawSections.map((s) => ({
+      (srcSections.length > 0
+        ? srcSections
+        : (state.parsed?.rawSections ?? [])
+      ).map((s) => ({
         id: String(s.id ?? ""),
         name: String(s.name ?? ""),
-        deltas: (s.deltas as string[]) ?? [],
+        deltas: Array.isArray(s.deltas) ? (s.deltas as string[]) : [],
       })),
       linesById,
     );
