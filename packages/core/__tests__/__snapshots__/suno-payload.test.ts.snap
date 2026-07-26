@@ -89,21 +89,21 @@ exports[`generateSunoPayload snapshots > with truncation warnings 1`] = `
   },
   "warnings": [
     {
-      "currentLength": 3000,
+      "currentLength": 1000,
       "field": "style",
       "maxLength": 1000,
       "message": "style truncated from 3000 to 1000 chars (character-sliced)",
       "priority": 3,
     },
     {
-      "currentLength": 1000,
+      "currentLength": 500,
       "field": "negativeTags",
       "maxLength": 500,
       "message": "negativeTags truncated from 1000 to 500 chars (character-sliced)",
       "priority": 1,
     },
     {
-      "currentLength": 6000,
+      "currentLength": 5000,
       "field": "lyrics",
       "maxLength": 5000,
       "message": "lyrics truncated from 6000 to 5000 chars (character-sliced)",

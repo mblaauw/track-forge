@@ -218,18 +218,32 @@ export function createVersion(
       .prepare("SELECT * FROM versions WHERE id = ?")
       .get(id) as Record<string, unknown> | undefined;
     if (!created) throw new Error(`Version ${id} not found after insert`);
+    // Parse artifacts JSON string into SunoArtifact[] so the Version type
+    // contract is honest — callers get typed objects, not raw JSON strings.
+    const parsedArtifacts = parseArtifacts(created.artifacts);
     return {
       id: created.id,
       jobId: created.job_id,
       status: created.status,
       number: created.number,
-      artifacts: created.artifacts,
+      artifacts: parsedArtifacts,
       stage: created.stage ?? null,
       parentVersionId: created.parent_version_id ?? null,
       finalizedAt: created.finalized_at ?? null,
       createdAt: created.created_at,
-    } as unknown as Version;
+    } as Version;
   })() as Version;
+}
+
+function parseArtifacts(raw: unknown): SunoArtifact[] {
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as SunoArtifact[];
+    } catch {
+      return [];
+    }
+  }
+  return (raw as SunoArtifact[]) ?? [];
 }
 
 async function loadVersionOrThrow(

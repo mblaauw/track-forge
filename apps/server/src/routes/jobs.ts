@@ -252,6 +252,19 @@ export function registerJobRoutes(
       "Job",
     );
 
+    // Don't allow modifying inputs while the pipeline is running or done —
+    // the frozen intent revision already captured the pre-run snapshot.
+    if (job.status === "in_progress") {
+      return reply
+        .code(409)
+        .send({ error: "Cannot modify inputs while pipeline is running" });
+    }
+    if (job.status === "completed") {
+      return reply
+        .code(409)
+        .send({ error: "Cannot modify inputs after pipeline completed" });
+    }
+
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
 

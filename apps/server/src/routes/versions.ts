@@ -137,22 +137,27 @@ export function registerVersionRoutes(
       : undefined;
 
     // Dominant vocal gender, derived by the compilation stage and stashed on
-    // the job row's compiledJson — Suno's vocalGender knob was previously
-    // wired end-to-end (SunoClient.submit already forwards it) but never set.
+    // Suno's vocalGender knob — the pipeline stores it in stageData
+    // (compiledJson within), falling back to the legacy compiled_json column
+    // for pre-migration jobs.
     const [jobRow] = await db
       .select()
       .from(schema.jobs)
       .where(eq(schema.jobs.id, version.jobId))
       .limit(1);
     let vocalGender: "m" | "f" | undefined;
-    if (jobRow?.compiledJson) {
-      try {
-        const compiled = JSON.parse(jobRow.compiledJson) as {
-          vocalGender?: "m" | "f";
-        };
-        vocalGender = compiled.vocalGender;
-      } catch {
-        // ignore malformed compiledJson
+    if (jobRow) {
+      // Try stageData first (new pipeline), then compiledJson (legacy)
+      const source = jobRow.stageData ?? jobRow.compiledJson;
+      if (source) {
+        try {
+          const parsed = JSON.parse(source) as {
+            vocalGender?: "m" | "f";
+          };
+          vocalGender = parsed.vocalGender;
+        } catch {
+          // ignore malformed JSON
+        }
       }
     }
 

@@ -188,7 +188,8 @@ function fragmentTruncate(
 
 /**
  * Blind character-slice truncation — last resort fallback.
- * Reports a warning when truncation occurs.
+ * Avoids cutting inside Suno bracket tags ([Verse], [Chorus], etc.)
+ * by breaking at the nearest preceding natural boundary.
  */
 function applySimpleTruncation(
   value: string,
@@ -197,14 +198,33 @@ function applySimpleTruncation(
   warnings: PayloadWarning[],
 ): string {
   if (value.length <= max) return value;
+
+  // Find last safe break point before max: prefer newline, then space,
+  // then before an unopened bracket tag.
+  let breakAt = Math.min(max, value.length);
+  const remainder = value.slice(0, breakAt);
+
+  // Don't cut inside [Tag] — find the opening bracket before breakAt
+  // and cut before it if there's no matching closing bracket.
+  const lastOpenBracket = remainder.lastIndexOf("[");
+  const lastCloseBracket = remainder.lastIndexOf("]");
+  if (lastOpenBracket > lastCloseBracket) {
+    // We're inside a bracket tag — cut before the opening bracket
+    breakAt = Math.max(lastOpenBracket, 0);
+  }
+
+  // If that puts us at 0, fall back to character boundary
+  if (breakAt === 0) breakAt = Math.min(max, value.length);
+
+  const result = value.slice(0, breakAt);
   warnings.push({
     field,
-    message: `${field} truncated from ${value.length} to ${max} chars (character-sliced)`,
-    currentLength: value.length,
+    message: `${field} truncated from ${value.length} to ${result.length} chars (character-sliced)`,
+    currentLength: result.length,
     maxLength: max,
     priority: PRIORITY[field],
   });
-  return value.slice(0, max);
+  return result;
 }
 
 // ── Utility ──────────────────────────────────────────────────────────

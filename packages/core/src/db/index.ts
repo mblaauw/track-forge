@@ -212,6 +212,15 @@ export function createDb(dbPath: string): Db {
   sqlite.exec(
     `CREATE INDEX IF NOT EXISTS idx_suno_tracks_generation_id ON suno_tracks(generation_id)`,
   );
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_intent_revisions_job_id ON intent_revisions(job_id)`,
+  );
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at)`,
+  );
+  sqlite.exec(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_versions_job_number ON versions(job_id, number)`,
+  );
 
   return db;
 }

@@ -58,7 +58,7 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 | Intent resolver        | `packages/song-intent/src/resolve.ts` — `resolveSongIntent()` (4 derivation rules)                  |
 | Intent revision        | `packages/core/src/intent-revisions/index.ts` — `freezeIntentRevision()`, `createCompilation()`     |
 | Pipeline intent bridge | `packages/core/src/pipeline/intent-bridge.ts` — `resolveIntentFromJob()`, `buildLyricsBrief()`      |
-| E2E tests              | `e2e/` — 10 Playwright specs including `idempotency.spec.ts` and `explore-hiphop-trace.spec.ts`      |
+| E2E tests              | `e2e/` — 10 Playwright specs including `idempotency.spec.ts` and `explore-hiphop-trace.spec.ts`     |
 | Server entry           | `apps/server/src/index.ts` — Fastify, registers all routes, static GUI serving                      |
 | Web entry              | `apps/web/src/main.tsx` — Preact render                                                             |
 
