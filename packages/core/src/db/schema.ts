@@ -37,11 +37,54 @@ export const jobs = sqliteTable("jobs", {
     .default(false),
 });
 
+export const intentRevisions = sqliteTable("intent_revisions", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id")
+    .notNull()
+    .references(() => jobs.id, { onDelete: "cascade" }),
+  revisionNumber: integer("revision_number").notNull(),
+  schemaVersion: integer("schema_version").notNull(),
+  /** JSON: SongIntentV1 */
+  intentJson: text("intent_json").notNull(),
+  /** JSON: provenance map */
+  provenanceJson: text("provenance_json"),
+  /** JSON: minimal catalog snapshot (preset values) */
+  catalogSnapshotJson: text("catalog_snapshot_json"),
+  intentHash: text("intent_hash").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
+export const compilations = sqliteTable("compilations", {
+  id: text("id").primaryKey(),
+  intentRevisionId: text("intent_revision_id")
+    .notNull()
+    .references(() => intentRevisions.id, { onDelete: "cascade" }),
+  compilerVersion: text("compiler_version").notNull(),
+  adapterVersion: text("adapter_version").notNull(),
+  modelVersion: text("model_version"),
+  /** JSON: ResolvedSongIntent */
+  resolvedIntentJson: text("resolved_intent_json"),
+  /** JSON: ResolutionDecision[] */
+  decisionsJson: text("decisions_json"),
+  /** JSON: IntentConflict[] */
+  warningsJson: text("warnings_json"),
+  /** JSON: PromptFragment[] (future) */
+  fragmentsJson: text("fragments_json"),
+  style: text("style"),
+  lyrics: text("lyrics"),
+  excludedStyles: text("excluded_styles"),
+  createdAt: text("created_at").notNull(),
+});
+
 export const versions = sqliteTable("versions", {
   id: text("id").primaryKey(),
   jobId: text("job_id")
     .notNull()
     .references(() => jobs.id, { onDelete: "cascade" }),
+  intentRevisionId: text("intent_revision_id").references(
+    () => intentRevisions.id,
+  ),
+  compilationId: text("compilation_id").references(() => compilations.id),
   status: text("status").notNull().default("draft"),
   number: integer("number").notNull(),
   /** JSON-encoded SunoArtifact[] */

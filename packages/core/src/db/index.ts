@@ -160,6 +160,45 @@ export function createDb(dbPath: string): Db {
     created_at TEXT NOT NULL
   )`);
 
+  // ── Intent revisions & compilations (Phase 7 — reproducibility) ─────
+
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS intent_revisions (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    revision_number INTEGER NOT NULL,
+    schema_version INTEGER NOT NULL,
+    intent_json TEXT NOT NULL,
+    provenance_json TEXT,
+    catalog_snapshot_json TEXT,
+    intent_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS compilations (
+    id TEXT PRIMARY KEY,
+    intent_revision_id TEXT NOT NULL REFERENCES intent_revisions(id) ON DELETE CASCADE,
+    compiler_version TEXT NOT NULL,
+    adapter_version TEXT NOT NULL,
+    model_version TEXT,
+    resolved_intent_json TEXT,
+    decisions_json TEXT,
+    warnings_json TEXT,
+    fragments_json TEXT,
+    style TEXT,
+    lyrics TEXT,
+    excluded_styles TEXT,
+    created_at TEXT NOT NULL
+  )`);
+  try {
+    sqlite.exec(
+      `ALTER TABLE versions ADD COLUMN intent_revision_id TEXT REFERENCES intent_revisions(id)`,
+    );
+  } catch {}
+  try {
+    sqlite.exec(
+      `ALTER TABLE versions ADD COLUMN compilation_id TEXT REFERENCES compilations(id)`,
+    );
+  } catch {}
+
   // ── Indexes ──────────────────────────────────────────────────────────
 
   sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_jobs_genre_id ON jobs(genre_id)`);

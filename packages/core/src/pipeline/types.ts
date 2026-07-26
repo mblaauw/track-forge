@@ -43,6 +43,10 @@ export interface PipelineState {
   lyricsWriterResult: LyricsWriterResult | null;
   /** Created version ID (produced by versioning stage) */
   versionId: VersionId | null;
+  /** Frozen intent revision ID (set before pipeline starts) */
+  intentRevisionId?: string;
+  /** Compilation record ID (set during versioning stage) */
+  compilationId?: string;
 }
 
 export interface PipelineResult {

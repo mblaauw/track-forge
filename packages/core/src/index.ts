@@ -1,4 +1,14 @@
 export { createDb, schema, getSqlite } from "./db/index.js";
+export {
+  freezeIntentRevision,
+  createCompilation,
+  loadIntentRevision,
+  parseRevisionIntent,
+} from "./intent-revisions/index.js";
+export type {
+  IntentRevision,
+  CompilationRecord,
+} from "./intent-revisions/index.js";
 export type { Db } from "./db/index.js";
 export { loadConfig } from "./config.js";
 

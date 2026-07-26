@@ -22,7 +22,6 @@ const FORBIDDEN_PATTERNS = [
   "planning",
   "style_writing",
   "review",
-  "revision",
   "verification",
   // Dead routes (not SSE history replay — that is still active)
   "retry",

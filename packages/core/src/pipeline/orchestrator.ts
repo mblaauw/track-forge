@@ -30,6 +30,10 @@ import {
 import type { StageData } from "./job-service.js";
 import { compileStylePrompt, renderSunoStyle } from "./style-compiler.js";
 import { resolveIntentFromJob, buildLyricsBrief } from "./intent-bridge.js";
+import {
+  freezeIntentRevision,
+  createCompilation,
+} from "../intent-revisions/index.js";
 import { writeLyrics } from "../llm/lyrics-writer.js";
 import type { LyricsWriterSectionInput } from "../llm/lyrics-writer.js";
 import { publish } from "./events.js";
@@ -392,9 +396,34 @@ async function handleVersioning(
   }
 
   const version = createVersion(deps.db, job.id as JobId, artifacts, "final");
+
+  // Create immutable compilation record linking intent revision → rendered artifacts.
+  const compilationId = state.intentRevisionId
+    ? await createCompilation(deps.db, state.intentRevisionId, {
+        style,
+        lyrics: lyricsText,
+        excludedStyles,
+        resolvedIntent: state.resolved,
+        decisions: state.resolved?.decisions,
+        warnings: state.resolved?.conflicts,
+      }).catch(() => undefined)
+    : undefined;
+
+  // Link the version to the intent revision and compilation.
+  if (compilationId || state.intentRevisionId) {
+    await deps.db
+      .update(schema.versions)
+      .set({
+        intentRevisionId: state.intentRevisionId ?? null,
+        compilationId: compilationId ?? null,
+      })
+      .where(eq(schema.versions.id, version.id))
+      .catch(() => {});
+  }
+
   await completeJob(deps.db, job.id as JobId);
 
-  return { ...state, versionId: version.id };
+  return { ...state, versionId: version.id, compilationId };
 }
 
 // ── Main orchestrator ─────────────────────────────────────────────────
@@ -462,6 +491,15 @@ export async function runPipeline(
       .where(eq(schema.jobs.id, state.job.id));
     state.job.status = "in_progress";
   }
+
+  // Freeze an immutable intent revision before the pipeline runs.
+  state.intentRevisionId = await freezeIntentRevision(
+    deps.db,
+    state.job.id,
+    state.job.genreId,
+    state.job.presetId,
+    state.job.inputs,
+  );
 
   const stageHandlers: Record<
     string,
