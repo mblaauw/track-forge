@@ -49,6 +49,8 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 | Suno provider contract | `packages/core/src/suno/client.ts` — `submit()`, `getGenerationStatus()`                   |
 | Pipeline deps          | `packages/core/src/pipeline/types.ts` — `PipelineDeps` (no `suno` field)                   |
 | Fake test providers    | `packages/test-support/src/providers/` — 10 scenarios                                      |
+| Song intent contract   | `packages/song-intent/src/types.ts` — `SongIntentV1`, `StyleInfluence`                     |
+| Legacy job → intent    | `packages/song-intent/src/migrate-legacy.ts` — `migrateLegacyJob()`                        |
 | E2E tests              | `e2e/` — 7 Playwright specs including `idempotency.spec.ts`                                |
 | Server entry           | `apps/server/src/index.ts` — Fastify, registers all routes, static GUI serving             |
 | Web entry              | `apps/web/src/main.tsx` — Preact render                                                    |
@@ -80,6 +82,8 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 - Every external-provider contract change needs a fixture update + contract test.
 - Web imports types from `@track-forge/contracts` and `@track-forge/genre-core` — never redefine locally.
 - Database-destructive actions require explicit user approval.
+- `SongIntentV1` (`packages/song-intent`) is the canonical typed intent contract. `SongIntentV1Schema` is `.strict()` — adding a field requires a schema bump. `migrateLegacyJob()` is the lossless bridge from existing `jobs.inputs` JSON.
+- `key`/`scale` are optional harmonic hints on `SongIntentV1.musical`, not required by any stage today; presets may still carry them but the validator will warn (Phase 6 enforcement).
 
 ## Commands (OpenCode built-in)
 
