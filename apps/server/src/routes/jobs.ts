@@ -19,7 +19,11 @@ import {
   type StyleInfluence,
 } from "@track-forge/song-intent";
 import { getModuleOrThrow, listGenres } from "../lib/modules.js";
-import { getPresets, getDescriptorDefaults } from "../lib/genre-config.js";
+import {
+  getPresets,
+  getDescriptorDefaults,
+  getAllGenreIds,
+} from "../lib/genre-config.js";
 import { findRowOr404, parsePagination } from "../lib/db-utils.js";
 import {
   validateBody,
@@ -95,15 +99,28 @@ export function registerJobRoutes(
     }
 
     // Materialize intent for provenance tracking and conflict detection.
+    // Catalog spans all genres so cross-genre style influences resolve correctly.
     const catalog: PresetCatalog = (() => {
-      const loaded = getPresets(genreId);
-      const map = new Map(loaded.map((p) => [p.id, p]));
+      const allPresets: {
+        gid: string;
+        id: string;
+        name: string;
+        values: Record<string, unknown>;
+      }[] = [];
+      for (const gid of getAllGenreIds()) {
+        for (const p of getPresets(gid)) {
+          allPresets.push({
+            gid,
+            id: p.id,
+            name: p.name,
+            values: p.values as Record<string, unknown>,
+          });
+        }
+      }
       return {
-        getPreset(_gid: string, pid: string) {
-          const p = map.get(pid);
-          return p
-            ? { name: p.name, values: p.values as Record<string, unknown> }
-            : undefined;
+        getPreset(gid: string, pid: string) {
+          const found = allPresets.find((p) => p.gid === gid && p.id === pid);
+          return found ? { name: found.name, values: found.values } : undefined;
         },
       };
     })();

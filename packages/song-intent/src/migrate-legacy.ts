@@ -281,18 +281,37 @@ function isSectionFunction(s: string): s is SectionFunction {
 }
 
 function applyExclusionsAndRefs(raw: LegacyInputs, intent: SongIntentV1): void {
-  // `excludedStyles` in web UI is a comma-joined string; `tags` is the
-  // negative list too. For migrate purposes prefer `excludedStyles` first,
-  // then fall back to `tags` as a list of strings.
+  // `excludedStyles` in web UI is a comma-joined string; `tags` may be
+  // descriptor objects (legacy jobs pre-descriptors field) or exclusion
+  // strings. Prefer `excludedStyles`, then detect tags shape.
   const es = asStr(raw.excludedStyles);
   if (es) {
     intent.exclusions = es
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
-  } else if (Array.isArray(raw.tags)) {
-    intent.exclusions = asStrArr(raw.tags);
+  } else if (Array.isArray(raw.tags) && raw.tags.length > 0) {
+    // Detect by examining first item
+    if (isDescriptorObj(raw.tags[0])) {
+      // Legacy: tags field holds descriptor objects — migrate to musical.descriptors
+      if (intent.musical.descriptors.length === 0) {
+        intent.musical.descriptors = asArr(raw.tags, (x) => mapDescriptor(x));
+      }
+    } else {
+      // Tags are plain exclusion strings
+      intent.exclusions = asStrArr(raw.tags);
+    }
   }
   const ref = asStr(raw.reference);
   if (ref) intent.references.push({ text: ref });
+}
+
+function isDescriptorObj(v: unknown): boolean {
+  if (!v || typeof v !== "object") return false;
+  const r = v as Record<string, unknown>;
+  return (
+    typeof r.label === "string" &&
+    typeof r.cat === "string" &&
+    typeof r.weight === "number"
+  );
 }

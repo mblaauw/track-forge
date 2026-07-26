@@ -19,6 +19,7 @@ jobs:
       - run: npx tsc --build
       - run: npx vitest run
       - run: npx prettier --check .
+      - run: node scripts/validate-genres.mjs
 
   lint:
     runs-on: ubuntu-latest

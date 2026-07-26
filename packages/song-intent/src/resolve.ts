@@ -30,6 +30,27 @@ import type {
  *
  * Future rules are TODOs with failing tests, not unimplemented code.
  */
+/**
+ * Build resolved exclusions from intent exclusions + resolved vocals.
+ * strict_instrumental mode adds vocal exclusions automatically (silent
+ * derivation — not a conflict, just a normalization step).
+ */
+function buildExclusions(
+  rawExclusions: string[],
+  vocals: ResolvedVocals,
+): string[] {
+  const result = [...rawExclusions];
+  if (vocals.mode === "strict_instrumental") {
+    const vocalTags = ["vocals", "singing", "lyrics", "voice"];
+    for (const tag of vocalTags) {
+      if (!result.some((e) => e.toLowerCase() === tag)) {
+        result.push(tag);
+      }
+    }
+  }
+  return result;
+}
+
 export function resolveSongIntent(
   materialized: MaterializedIntent,
 ): ResolvedSongIntent {
@@ -37,6 +58,15 @@ export function resolveSongIntent(
   const conflicts: IntentConflict[] = [];
   const decisions: ResolutionDecision[] = [];
   const traits: ResolvedTrait[] = [];
+
+  // Carry materialization warnings into resolved result as info-level conflicts
+  for (const w of materialized.warnings ?? []) {
+    conflicts.push({
+      message: w.message,
+      path: "",
+      severity: w.severity === "error" ? "error" : "warning",
+    });
+  }
 
   // ── Base resolution ──────────────────────────────────────────────────
 
@@ -53,7 +83,11 @@ export function resolveSongIntent(
   );
 
   resolvePrimaryStyleConflict(intent, conflicts);
-  resolveIntimateVocalDenseArrangement(vocals, sections, traits);
+  resolveIntimateVocalDenseArrangement(vocals, sections, traits, conflicts);
+
+  // RULE 1 (continued): strict_instrumental → add vocal exclusions to
+  // resolved exclusions so downstream stages don't have to derive them.
+  const exclusions = buildExclusions(intent.exclusions, vocals);
 
   return {
     schemaVersion: 1,
@@ -81,7 +115,7 @@ export function resolveSongIntent(
     conflicts,
     decisions,
 
-    exclusions: [...intent.exclusions],
+    exclusions,
     references: [...intent.references],
   };
 }
@@ -218,6 +252,7 @@ function resolveIntimateVocalDenseArrangement(
   vocals: ResolvedVocals,
   sections: ResolvedSection[],
   traits: ResolvedTrait[],
+  conflicts: IntentConflict[],
 ): void {
   if (!vocals.hasLeadVocal) return;
   const hasFullArrangement = sections.some(
@@ -238,6 +273,12 @@ function resolveIntimateVocalDenseArrangement(
         description:
           "Intimate vocal against dense arrangement — may need side-chain or frequency carving in production",
         category: "mix",
+      });
+      conflicts.push({
+        message:
+          "Intimate vocal delivery against a dense arrangement — may require mix adjustments (side-chain, frequency carving)",
+        path: "/arrangement/sections",
+        severity: "warning",
       });
     }
   }

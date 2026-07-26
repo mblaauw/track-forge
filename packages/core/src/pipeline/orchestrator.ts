@@ -10,30 +10,23 @@ import {
   type LyricsWriterResult,
 } from "@track-forge/contracts";
 import { isVocalSection, type GenreModule } from "@track-forge/genre-core";
-import type {
-  PipelineDeps,
-  PipelineState,
-  PipelineResult,
-  ParsedInputs,
-} from "./types.js";
+import type { PipelineDeps, PipelineState, PipelineResult } from "./types.js";
 import { eq } from "drizzle-orm";
-import { schema } from "../db/index.js";
+import { schema, getSqlite } from "../db/index.js";
 import {
   loadJob,
   advanceStage,
   failJob,
   failStage,
-  completeJob,
   savePipelineState,
   createVersion,
 } from "./job-service.js";
 import type { StageData } from "./job-service.js";
-import { compileStylePrompt, renderSunoStyle } from "./style-compiler.js";
-import { resolveIntentFromJob, buildLyricsBrief } from "./intent-bridge.js";
-import {
-  freezeIntentRevision,
-  createCompilation,
-} from "../intent-revisions/index.js";
+import { renderSunoStyle } from "./style-compiler.js";
+import { sunoAdapter } from "../suno/adapter.js";
+import { buildLyricsBrief, enrichResolved } from "./intent-bridge.js";
+import { resolveSongIntent } from "@track-forge/song-intent";
+import { freezeIntentRevision } from "../intent-revisions/index.js";
 import { writeLyrics } from "../llm/lyrics-writer.js";
 import type { LyricsWriterSectionInput } from "../llm/lyrics-writer.js";
 import { publish } from "./events.js";
@@ -70,55 +63,51 @@ function nextStage(current: GenerationStage): GenerationStage | undefined {
   return STAGE_ORDER[idx + 1];
 }
 
-// ── Shared input parsing ──────────────────────────────────────────────
-
-function parsePipelineInputs(
-  job: PipelineState["job"],
-  module: PipelineState["module"],
-): ParsedInputs {
-  const inputs = readJobInputs(job.inputs) ?? {};
-  const presetIds = (inputs.presetIds as string[]) ?? [];
-  const presetLabels = presetIds
-    .map((id) => {
-      const p = (module.presets ?? []).find((pr) => pr.id === id);
-      return p ? p.name : "";
-    })
-    .filter(Boolean);
-
-  const rawDescriptors = (inputs.tags as Array<Record<string, unknown>>) ?? [];
-  const descriptors = rawDescriptors
-    .filter((d) => !d.muted)
-    .map((d) => ({
-      label: String(d.label ?? ""),
-      cat: String(d.cat ?? ""),
-      weight: Number(d.weight ?? 0),
-    }));
-
-  const rawSections = (inputs.sections as Array<Record<string, unknown>>) ?? [];
-  trace("parsePipelineInputs", {
-    jobId: job.id,
-    descriptorCount: descriptors.length,
-    presetLabels,
-    hasTags: !!inputs.tags,
-    tagCount: (inputs.tags as any[])?.length,
-  });
-  return { inputs, presetIds, presetLabels, descriptors, rawSections };
-}
-
 // ── Stage: Compilation ────────────────────────────────────────────────
 
 async function handleCompilation(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const p = state.parsed!;
-  const resolved = resolveIntentFromJob(
-    state.job,
+  // Resolve from the frozen intent revision (not re-parsing job.inputs).
+  // Caller guarantees state.frozenIntent is set before stages run.
+  const frozen = state.frozenIntent!;
+
+  // Derive preset labels from the frozen intent's styles + module presets
+  const presetLabels = frozen.styles
+    .map((s) => {
+      const p = state.module.presets?.find((pr) => pr.id === s.presetId);
+      return p ? p.name : "";
+    })
+    .filter(Boolean);
+
+  const materialized = { intent: frozen, provenance: {}, warnings: [] };
+  const resolved = enrichResolved(
+    resolveSongIntent(materialized),
     state.module.name,
-    p.presetLabels,
+    presetLabels,
   );
 
+  // Conflict policy: error-severity conflicts block compilation.
+  const errorConflicts = (resolved.conflicts ?? []).filter(
+    (c: { severity?: string }) => c.severity === "error",
+  );
+  if (errorConflicts.length > 0) {
+    throw new Error(
+      `Compilation blocked by ${errorConflicts.length} error conflict(s): ${errorConflicts.map((c: { message: string }) => c.message).join("; ")}`,
+    );
+  }
+
   const compiled = renderSunoStyle(resolved);
+
+  // Produce prompt fragments via the adapter for fragment-aware truncation
+  // and compilation record persistence.
+  const compiledArtifacts = sunoAdapter.render(resolved);
+  const compiledFragments = {
+    style: compiledArtifacts.styleFragments,
+    lyrics: compiledArtifacts.lyricsFragments,
+    exclusions: compiledArtifacts.exclusionFragments,
+  };
 
   trace("handleCompilation", {
     genreName: resolved.genreName,
@@ -127,16 +116,22 @@ async function handleCompilation(
     descriptors: resolved.descriptors,
     compiledActiveCount: compiled.activeCount,
     compiledStyle: compiled.style,
+    fromFrozenIntent: true,
+    fragmentCount: {
+      style: compiledFragments.style.length,
+      lyrics: compiledFragments.lyrics.length,
+      exclusions: compiledFragments.exclusions.length,
+    },
   });
 
-  const lyricsMode = resolved.vocals.mode;
+  // Exclusions come from the resolver (which adds vocal exclusions for
+  // strict_instrumental mode automatically). Deduplicate by lowercase.
+  const seen = new Set<string>();
   const negativeTags: string[] = [];
-  if (lyricsMode !== "full_lyrics") {
-    negativeTags.push("vocals", "singing", "lyrics", "voice");
-  }
   for (const tag of resolved.exclusions) {
     const lower = tag.toLowerCase();
-    if (!negativeTags.some((t) => t.toLowerCase() === lower)) {
+    if (!seen.has(lower)) {
+      seen.add(lower);
       negativeTags.push(tag);
     }
   }
@@ -149,14 +144,14 @@ async function handleCompilation(
     excludedStyles: negativeTags.join(", "),
     lyrics: "",
     bpm: resolved.bpm,
-    key: resolved.key ?? "C",
+    key: resolved.key ?? undefined,
     vocalDescription,
     vocalGender: deriveVocalGender(vocalDescription),
     negativeTags,
     titleCandidates: [title],
   });
 
-  return { ...state, compiledJson, resolved };
+  return { ...state, compiledJson, resolved, compiledFragments };
 }
 
 function deriveVocalGender(
@@ -217,11 +212,10 @@ async function handleLyricsWriting(
   state: PipelineState,
   deps: PipelineDeps,
 ): Promise<PipelineState> {
-  const p = state.parsed!;
-  const { rawSections } = p;
-  const resolved =
-    state.resolved ??
-    resolveIntentFromJob(state.job, state.module.name, p.presetLabels);
+  // Always use the resolved intent from compilation stage
+  const resolved = state.resolved!;
+  if (!resolved)
+    throw new Error("Pipeline state missing resolved intent in lyrics_writing");
 
   if (!resolved.vocals.hasLeadVocal) {
     return {
@@ -235,25 +229,23 @@ async function handleLyricsWriting(
     };
   }
 
-  const sections: LyricsWriterSectionInput[] = rawSections.map((s) => ({
-    id: String(s.id ?? ""),
-    name: String(s.name ?? ""),
-    bars: Number(s.bars ?? 8),
-    fn: String(s.fn ?? "establish"),
-    deltas: (s.deltas as string[]) ?? [],
-    vocal: s.vocal as LyricsWriterSectionInput["vocal"],
-    purpose: (s as Record<string, unknown>).purpose as string | undefined,
-    pocket: (s as Record<string, unknown>).pocket as string | undefined,
-  }));
+  // Build section inputs from the resolved arrangement (frozen intent source)
+  const sections: LyricsWriterSectionInput[] =
+    resolved.arrangement.sections.map((s) => ({
+      id: s.id,
+      name: s.name,
+      bars: s.bars,
+      fn: s.fn ?? "establish",
+      deltas: s.deltas ?? [],
+      vocal: s.vocal as LyricsWriterSectionInput["vocal"] | undefined,
+      purpose: undefined,
+      pocket: undefined,
+    }));
 
-  // Pre-generated lyrics from the "Generate lyrics" UI button — already
-  // keyed by section id, same contract the writer produces below.
-  const lyricLines =
-    resolved.lyrics.topic === "__pre_generated__"
-      ? undefined
-      : (p.inputs.lyricLines as Record<string, string[]> | undefined);
-  const lyricsGenerated = p.inputs.lyricsGenerated === true;
-  if (lyricLines && lyricsGenerated) {
+  // Pre-generated lyrics from the "Generate lyrics" UI button — stored as
+  // a side-channel alongside the frozen intent. Falls back to empty.
+  const lyricLines = state.preGeneratedLyrics;
+  if (lyricLines && Object.keys(lyricLines).length > 0) {
     const doc = sectionsToLyricsDocument(sections, lyricLines);
     if (doc.sections.length > 0) {
       trace("handleLyricsWriting.preGenerated", {
@@ -346,18 +338,17 @@ async function handleVersioning(
   // deliberately-instrumental job to vocal. Instrumental structure is
   // instead carried in the style string (see compileStructureNote).
   let lyricsText = "";
-  if (lyricsMode === "full_lyrics" && state.parsed) {
+  if (lyricsMode === "full_lyrics") {
     const linesById: Record<string, string[]> = {};
     for (const s of state.lyricsWriterResult?.document?.sections ?? []) {
       const id = (s as LyricsSection).id;
       if (id) linesById[id] = s.lines ?? [];
     }
+    // Sections come from the resolved intent (frozen revision source), never
+    // from the legacy rawSections bag — the orchestrator no longer reads that.
     const srcSections = resolved?.arrangement.sections ?? [];
     lyricsText = formatLyricsArtifact(
-      (srcSections.length > 0
-        ? srcSections
-        : (state.parsed?.rawSections ?? [])
-      ).map((s) => ({
+      srcSections.map((s) => ({
         id: String(s.id ?? ""),
         name: String(s.name ?? ""),
         deltas: Array.isArray(s.deltas) ? (s.deltas as string[]) : [],
@@ -395,35 +386,63 @@ async function handleVersioning(
     });
   }
 
-  const version = createVersion(deps.db, job.id as JobId, artifacts, "final");
+  // All versioning operations (version creation, compilation record, version
+  // linking, job completion) run in a single SQLite transaction. Failure in
+  // any step fails the whole stage → retry loop kicks in. No error is swallowed.
+  const sqlite = getSqlite(deps.db);
+  const result = sqlite.transaction(() => {
+    const version = createVersion(deps.db, job.id as JobId, artifacts, "final");
+    const now = new Date().toISOString();
+    let compilationId: string | undefined;
 
-  // Create immutable compilation record linking intent revision → rendered artifacts.
-  const compilationId = state.intentRevisionId
-    ? await createCompilation(deps.db, state.intentRevisionId, {
-        style,
-        lyrics: lyricsText,
-        excludedStyles,
-        resolvedIntent: state.resolved,
-        decisions: state.resolved?.decisions,
-        warnings: state.resolved?.conflicts,
-      }).catch(() => undefined)
-    : undefined;
+    // Create immutable compilation record linking intent revision → rendered artifacts.
+    if (state.intentRevisionId) {
+      compilationId = `${state.intentRevisionId}-comp`;
+      sqlite
+        .prepare(
+          `INSERT INTO compilations (id, intent_revision_id, compiler_version, adapter_version, model_version, resolved_intent_json, decisions_json, warnings_json, fragments_json, style, lyrics, excluded_styles, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          compilationId,
+          state.intentRevisionId,
+          "1.0.0",
+          "1.0.0",
+          null,
+          state.resolved ? JSON.stringify(state.resolved) : null,
+          state.resolved?.decisions
+            ? JSON.stringify(state.resolved.decisions)
+            : null,
+          state.resolved?.conflicts
+            ? JSON.stringify(state.resolved.conflicts)
+            : null,
+          state.compiledFragments
+            ? JSON.stringify(state.compiledFragments)
+            : null,
+          style,
+          lyricsText,
+          excludedStyles,
+          now,
+        );
 
-  // Link the version to the intent revision and compilation.
-  if (compilationId || state.intentRevisionId) {
-    await deps.db
-      .update(schema.versions)
-      .set({
-        intentRevisionId: state.intentRevisionId ?? null,
-        compilationId: compilationId ?? null,
-      })
-      .where(eq(schema.versions.id, version.id))
-      .catch(() => {});
-  }
+      // Link the version to the intent revision and compilation.
+      sqlite
+        .prepare(
+          "UPDATE versions SET intent_revision_id = ?, compilation_id = ? WHERE id = ?",
+        )
+        .run(state.intentRevisionId, compilationId, version.id);
+    }
 
-  await completeJob(deps.db, job.id as JobId);
+    // Mark the job as completed — only after version + compilation are persisted.
+    sqlite
+      .prepare(
+        "UPDATE jobs SET status = 'completed', current_stage = 'completed', updated_at = ? WHERE id = ?",
+      )
+      .run(now, job.id);
 
-  return { ...state, versionId: version.id, compilationId };
+    return { versionId: version.id as VersionId, compilationId };
+  })();
+
+  return { ...state, ...result };
 }
 
 // ── Main orchestrator ─────────────────────────────────────────────────
@@ -462,25 +481,33 @@ export async function runPipeline(
     };
   }
 
+  // Extract pre-generated lyrics from legacy inputs (side-channel, not part of SongIntent)
+  const jobInputs = readJobInputs(job.inputs);
+  const preGeneratedLyrics: Record<string, string[]> | undefined =
+    jobInputs.lyricLines && jobInputs.lyricsGenerated === true
+      ? (jobInputs.lyricLines as Record<string, string[]>)
+      : undefined;
+
   const initialState: PipelineState = {
     job,
     module,
     compiledJson: null,
     lyricsWriterResult: null,
     versionId: null,
+    preGeneratedLyrics,
   };
 
   let state = initialState;
 
-  // Parse inputs once; cached in state.parsed for all stages
-  state = { ...state, parsed: parsePipelineInputs(state.job, state.module) };
+  // NOTE: parsePipelineInputs is no longer called — stages consume
+  // state.frozenIntent and state.resolved, not the legacy input bag.
 
   trace("runPipeline.start", {
     jobId: state.job.id,
     genreId: state.job.genreId,
     presetId: state.job.presetId,
     status: state.job.status,
-    inputs: readJobInputs(state.job.inputs),
+    hasPreGeneratedLyrics: !!preGeneratedLyrics,
   });
 
   if (state.job.status !== "in_progress") {
@@ -493,13 +520,18 @@ export async function runPipeline(
   }
 
   // Freeze an immutable intent revision before the pipeline runs.
-  state.intentRevisionId = await freezeIntentRevision(
+  // This also returns the migrated intent — stages consume this instead of
+  // re-parsing the legacy job.inputs blob.
+  const frozen = await freezeIntentRevision(
     deps.db,
     state.job.id,
     state.job.genreId,
     state.job.presetId,
     state.job.inputs,
+    { name: state.job.name, reference: state.job.reference },
   );
+  state.intentRevisionId = frozen.revisionId;
+  state.frozenIntent = frozen.intent;
 
   const stageHandlers: Record<
     string,

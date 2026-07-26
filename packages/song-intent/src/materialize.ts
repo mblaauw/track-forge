@@ -43,18 +43,33 @@ export function materializeIntent(
     provenance[path].push(source);
   };
 
-  // 1. Apply preset values for each selected style (in order)
-  for (const style of draft.selectedStyles) {
+  // 1. Sort styles by priority: primary (strength 3) → influence (strength 3)
+  //    → influence (strength 1) → accent (any strength).
+  const sortedStyles = [...draft.selectedStyles].sort(stylePriority);
+
+  // Track which scalar fields have been set by higher-priority styles.
+  // Lower-priority influences only add traits, not override scalars.
+  const scalarsSet = new Set<string>();
+
+  for (const style of sortedStyles) {
     const preset = catalog.getPreset(style.genreId, style.presetId);
-    if (!preset) {
-      // Check if this should be primary-based or section-scoped warning
-      continue;
-    }
+    if (!preset) continue;
+
+    const isScalarOverride =
+      (style.role === "primary" && style.strength === 3) ||
+      (style.role === "influence" && style.strength === 3);
+
+    const isTraitOnly =
+      (style.role === "influence" && (style.strength ?? 1) <= 2) ||
+      style.role === "accent";
+
     applyLegacyValues(
       intent,
       preset.values,
       { kind: "preset", id: style.presetId },
       record,
+      isScalarOverride ? undefined : scalarsSet,
+      isTraitOnly,
     );
   }
 
@@ -144,6 +159,21 @@ export function flattenIntentToInputs(
 
 // ── Internal helpers ──────────────────────────────────────────────────
 
+/** Sort styles by semantic priority (ascending). */
+function stylePriority(
+  a: { role: string; strength?: number },
+  b: { role: string; strength?: number },
+): number {
+  const rank = (s: { role: string; strength?: number }): number => {
+    if (s.role === "primary" && s.strength === 3) return 0;
+    if (s.role === "influence" && s.strength === 3) return 1;
+    if (s.role === "influence") return 2;
+    if (s.role === "accent") return 3;
+    return 4;
+  };
+  return rank(a) - rank(b);
+}
+
 function cleanEmpty(o: Record<string, unknown>): void {
   for (const k of Object.keys(o)) {
     if (o[k] === undefined || o[k] === null) delete o[k];
@@ -165,6 +195,11 @@ function applyLegacyValues(
   values: Record<string, unknown>,
   source: Omit<IntentSource, "value">,
   record: ProvenanceRecorder,
+  /** Set of field paths already set by higher-priority styles. When passed,
+   *  scalar fields already in this set are NOT overwritten (trait-only add). */
+  scalarsSet?: Set<string>,
+  /** When true, only add traits/characteristics — don't override scalar fields. */
+  traitOnly?: boolean,
 ): void {
   const v = values;
   const m = intent.musical;
@@ -172,191 +207,280 @@ function applyLegacyValues(
   const l = intent.lyrics;
   const a = intent.arrangement;
 
-  applyNum(v.bpm, (x) => {
+  // Scalar fields — mark in scalarsSet when set, skip when already set and traitOnly
+  const applyNumOnce = (
+    raw: unknown,
+    key: string,
+    fn: (x: number) => void,
+  ): void => {
+    if (scalarsSet?.has(key)) return;
+    if (traitOnly) {
+      scalarsSet?.add(key);
+      return;
+    }
+    applyNum(raw, (x) => {
+      fn(x);
+      record(`/musical/${key}`, withValue(source, x));
+      scalarsSet?.add(key);
+    });
+  };
+  const applyStrOnce = (
+    raw: unknown,
+    key: string,
+    fn: (x: string) => void,
+  ): void => {
+    if (scalarsSet?.has(key)) return;
+    if (traitOnly) {
+      scalarsSet?.add(key);
+      return;
+    }
+    applyStr(raw, (x) => {
+      fn(x);
+      record(`/musical/${key}`, withValue(source, x));
+      scalarsSet?.add(key);
+    });
+  };
+
+  applyNumOnce(v.bpm, "bpm", (x) => {
     m.bpm = x;
-    record("/musical/bpm", withValue(source, x));
   });
-  applyNum(v.energy, (x) => {
+  applyNumOnce(v.energy, "energy", (x) => {
     m.energy = x;
-    record("/musical/energy", withValue(source, x));
   });
-  applyNum(v.complexity, (x) => {
+  applyNumOnce(v.complexity, "complexity", (x) => {
     m.complexity = x;
-    record("/musical/complexity", withValue(source, x));
   });
-  applyNum(v.perceivedBpm, (x) => {
+  applyNumOnce(v.perceivedBpm, "perceivedBpm", (x) => {
     m.perceivedBpm = x;
-    record("/musical/perceivedBpm", withValue(source, x));
   });
-  applyNum(v.lineDensity, (x) => {
+  applyNumOnce(v.lineDensity, "lineDensity", (x) => {
     l.lineDensity = x;
-    record("/lyrics/lineDensity", withValue(source, x));
   });
-  applyStr(v.mood, (x) => {
+  applyStrOnce(v.mood, "mood", (x) => {
     m.mood = x;
-    record("/musical/mood", withValue(source, x));
   });
-  applyStr(v.tempoFeel, (x) => {
+  applyStrOnce(v.tempoFeel, "tempoFeel", (x) => {
     m.tempoFeel = x;
-    record("/musical/tempoFeel", withValue(source, x));
   });
-  applyStr(v.key, (x) => {
+  applyStrOnce(v.key, "key", (x) => {
     m.key = x;
-    record("/musical/key", withValue(source, x));
   });
-  applyStr(v.lyricTopic, (x) => {
+  applyStrOnce(v.lyricTopic, "lyricTopic", (x) => {
     l.topic = x;
-    record("/lyrics/topic", withValue(source, x));
   });
-  applyStr(v.lyricAngle, (x) => {
+  applyStrOnce(v.lyricAngle, "lyricAngle", (x) => {
     l.angle = x as any;
-    record("/lyrics/angle", withValue(source, x));
   });
-  applyStr(v.narrativeArc, (x) => {
+  applyStrOnce(v.narrativeArc, "narrativeArc", (x) => {
     l.narrativeArc = x;
-    record("/lyrics/narrativeArc", withValue(source, x));
   });
-  applyStr(v.rhymeStyle, (x) => {
+  applyStrOnce(v.rhymeStyle, "rhymeStyle", (x) => {
     l.rhymeStyle = x;
-    record("/lyrics/rhymeStyle", withValue(source, x));
   });
-  applyStr(v.flowPattern, (x) => {
+  applyStrOnce(v.flowPattern, "flowPattern", (x) => {
     l.flowPattern = x;
-    record("/lyrics/flowPattern", withValue(source, x));
   });
-  applyStr(v.vocalStyle, (x) => {
+  applyStrOnce(v.vocalStyle, "vocalStyle", (x) => {
     l.vocalStyle = x;
-    record("/lyrics/vocalStyle", withValue(source, x));
   });
-  applyStr(v.perspective, (x) => {
+  applyStrOnce(v.perspective, "perspective", (x) => {
     l.perspective = x;
-    record("/lyrics/perspective", withValue(source, x));
-  });
-  applyStr(v.reference, (x) => {
-    intent.references = [{ text: x }];
-    record("/references/0/text", withValue(source, x));
   });
 
-  if (v.scale === "major" || v.scale === "minor") {
-    m.scale = v.scale;
-    record("/musical/scale", withValue(source, v.scale));
-  }
-  if (
-    v.lyricsMode === "full_lyrics" ||
-    v.lyricsMode === "strict_instrumental"
-  ) {
-    voc.mode = v.lyricsMode;
-    record("/vocals/mode", withValue(source, v.lyricsMode));
+  if (!traitOnly) {
+    applyStr(v.reference, (x) => {
+      intent.references = [{ text: x }];
+      record("/references/0/text", withValue(source, x));
+    });
   }
 
-  applyStr(v.vocalType, (x) => {
-    voc.type = x;
-    record("/vocals/type", withValue(source, x));
-  });
+  if (!traitOnly) {
+    if (v.scale === "major" || v.scale === "minor") {
+      m.scale = v.scale;
+      record("/musical/scale", withValue(source, v.scale));
+    }
+    if (
+      v.lyricsMode === "full_lyrics" ||
+      v.lyricsMode === "strict_instrumental"
+    ) {
+      voc.mode = v.lyricsMode;
+      record("/vocals/mode", withValue(source, v.lyricsMode));
+    }
+    applyStr(v.vocalType, (x) => {
+      voc.type = x;
+      record("/vocals/type", withValue(source, x));
+    });
+  }
 
+  // Array fields — trait-only styles can still add characteristics/descriptors
   if (Array.isArray(v.characteristics)) {
-    m.characteristics = v.characteristics.map(String);
+    if (traitOnly) {
+      // Append (don't replace)
+      for (const c of v.characteristics) {
+        const s = String(c);
+        if (!m.characteristics.includes(s)) m.characteristics.push(s);
+      }
+    } else {
+      m.characteristics = v.characteristics.map(String);
+    }
     record("/musical/characteristics", withValue(source, m.characteristics));
   }
+
   if (Array.isArray(v.lyricThemes)) {
-    l.themes = v.lyricThemes.map(String);
+    if (traitOnly) {
+      for (const t of v.lyricThemes) {
+        const s = String(t);
+        if (!l.themes.includes(s)) l.themes.push(s);
+      }
+    } else {
+      l.themes = v.lyricThemes.map(String);
+    }
     record("/lyrics/themes", withValue(source, l.themes));
   }
+
   if (Array.isArray(v.imageAnchors)) {
-    l.imageAnchors = v.imageAnchors.map(String);
+    if (traitOnly) {
+      for (const a of v.imageAnchors) {
+        const s = String(a);
+        if (!l.imageAnchors.includes(s)) l.imageAnchors.push(s);
+      }
+    } else {
+      l.imageAnchors = v.imageAnchors.map(String);
+    }
     record("/lyrics/imageAnchors", withValue(source, l.imageAnchors));
   }
-  if (Array.isArray(v.typicalSongStructure)) {
+
+  if (Array.isArray(v.typicalSongStructure) && !traitOnly) {
     a.typicalSongStructure = v.typicalSongStructure.map(String);
     record(
       "/arrangement/typicalSongStructure",
       withValue(source, a.typicalSongStructure),
     );
   }
+
   if (Array.isArray(v.descriptors)) {
-    const descs: IntentDescriptor[] = [];
-    for (const d of v.descriptors) {
-      if (d && typeof d === "object") {
-        const r = d as Record<string, unknown>;
-        if (
-          typeof r.label === "string" &&
-          typeof r.cat === "string" &&
-          typeof r.weight === "number"
-        ) {
-          descs.push({
-            label: r.label,
-            cat: r.cat as any,
-            weight: r.weight as any,
-          });
+    if (traitOnly && m.descriptors.length > 0) {
+      // Append non-duplicate descriptors
+      const existing = new Set(m.descriptors.map((d) => `${d.label}:${d.cat}`));
+      for (const d of v.descriptors) {
+        if (d && typeof d === "object") {
+          const r = d as Record<string, unknown>;
+          const key = `${r.label}:${r.cat}`;
+          if (
+            typeof r.label === "string" &&
+            typeof r.cat === "string" &&
+            !existing.has(key)
+          ) {
+            m.descriptors.push({
+              label: r.label,
+              cat: r.cat as any,
+              weight: typeof r.weight === "number" ? r.weight : 1,
+            } as IntentDescriptor);
+            existing.add(key);
+          }
         }
       }
-    }
-    m.descriptors = descs;
-    record("/musical/descriptors", withValue(source, descs));
-  }
-  if (Array.isArray(v.sections)) {
-    const secs: ArrangementSectionIntent[] = [];
-    const overrides: VocalSectionOverride[] = [];
-    for (const s of v.sections) {
-      if (!s || typeof s !== "object") continue;
-      const r = s as Record<string, unknown>;
-      const id = typeof r.id === "string" ? r.id : undefined;
-      const name = typeof r.name === "string" ? r.name : undefined;
-      if (!id || !name) continue;
-      const fn = (typeof r.fn === "string" ? r.fn : "establish") as any;
-      const sec: ArrangementSectionIntent = {
-        id,
-        name,
-        bars: typeof r.bars === "number" ? r.bars : 0,
-        fn,
-        deltas: Array.isArray(r.deltas) ? r.deltas.map(String) : [],
-        tags: Array.isArray(r.tags) ? r.tags.map(String) : [],
-      };
-      if (r.vocal && typeof r.vocal === "object") {
-        const vr = r.vocal as Record<string, unknown>;
-        if (typeof vr.type === "string") {
-          sec.vocal = {
-            type: vr.type,
-            delivery: String(vr.delivery ?? ""),
-            energy: typeof vr.energy === "number" ? vr.energy : 0,
-            adlibs: vr.adlibs === true,
-            harmonies: vr.harmonies === true,
-          };
-          overrides.push({ sectionId: id, vocal: sec.vocal });
+    } else {
+      const descs: IntentDescriptor[] = [];
+      for (const d of v.descriptors) {
+        if (d && typeof d === "object") {
+          const r = d as Record<string, unknown>;
+          if (
+            typeof r.label === "string" &&
+            typeof r.cat === "string" &&
+            typeof r.weight === "number"
+          ) {
+            descs.push({
+              label: r.label,
+              cat: r.cat as any,
+              weight: r.weight as any,
+            });
+          }
         }
       }
-      secs.push(sec);
+      m.descriptors = descs;
     }
-    a.sections = secs;
-    voc.sections = overrides;
-    record("/arrangement/sections", withValue(source, secs));
+    record("/musical/descriptors", withValue(source, m.descriptors));
   }
-  // excludedStyles as comma-joined string or array.
-  const exc = v.excludedStyles;
-  if (typeof exc === "string") {
-    intent.exclusions = exc
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-    record("/exclusions", withValue(source, intent.exclusions));
-  } else if (Array.isArray(exc)) {
-    intent.exclusions = exc.map(String);
-    record("/exclusions", withValue(source, intent.exclusions));
-  }
-  // tags (used as a negative-list fallback in legacy).
-  if (typeof exc !== "string" && Array.isArray(v.tags)) {
-    // Only apply if excludedStyles wasn't already set.
-    if (intent.exclusions.length === 0) {
-      intent.exclusions = v.tags.map(String);
+
+  // Sections and exclusions are only applied by primary / scalar-override styles
+  if (!traitOnly) {
+    if (Array.isArray(v.sections)) {
+      const secs: ArrangementSectionIntent[] = [];
+      const overrides: VocalSectionOverride[] = [];
+      for (const s of v.sections) {
+        if (!s || typeof s !== "object") continue;
+        const r = s as Record<string, unknown>;
+        const id = typeof r.id === "string" ? r.id : undefined;
+        const name = typeof r.name === "string" ? r.name : undefined;
+        if (!id || !name) continue;
+        const fn = (typeof r.fn === "string" ? r.fn : "establish") as any;
+        const sec: ArrangementSectionIntent = {
+          id,
+          name,
+          bars: typeof r.bars === "number" ? r.bars : 0,
+          fn,
+          deltas: Array.isArray(r.deltas) ? r.deltas.map(String) : [],
+          tags: Array.isArray(r.tags) ? r.tags.map(String) : [],
+        };
+        if (r.vocal && typeof r.vocal === "object") {
+          const vr = r.vocal as Record<string, unknown>;
+          if (typeof vr.type === "string") {
+            sec.vocal = {
+              type: vr.type,
+              delivery: String(vr.delivery ?? ""),
+              energy: typeof vr.energy === "number" ? vr.energy : 0,
+              adlibs: vr.adlibs === true,
+              harmonies: vr.harmonies === true,
+            };
+            overrides.push({ sectionId: id, vocal: sec.vocal });
+          }
+        }
+        secs.push(sec);
+      }
+      a.sections = secs;
+      voc.sections = overrides;
+      record("/arrangement/sections", withValue(source, secs));
+    }
+
+    // excludedStyles as comma-joined string or array.
+    const exc = v.excludedStyles;
+    if (typeof exc === "string") {
+      intent.exclusions = exc
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+      record("/exclusions", withValue(source, intent.exclusions));
+    } else if (Array.isArray(exc)) {
+      intent.exclusions = exc.map(String);
       record("/exclusions", withValue(source, intent.exclusions));
     }
+
+    // tags can be descriptor objects (legacy) or exclusion strings.
+    if (
+      typeof exc !== "string" &&
+      Array.isArray(v.tags) &&
+      intent.exclusions.length === 0
+    ) {
+      if (v.tags.length > 0 && isDescriptorObj(v.tags[0])) {
+        if (m.descriptors.length === 0) {
+          applyDescriptorArray(v.tags, m, record, source);
+        }
+      } else {
+        intent.exclusions = v.tags.map(String);
+        record("/exclusions", withValue(source, intent.exclusions));
+      }
+    }
   }
-  if (typeof v.name === "string" && v.name) {
-    intent.identity.title = v.name;
-    record("/identity/title", withValue(source, v.name));
-  } else if (typeof v.title === "string" && v.title) {
-    intent.identity.title = v.title;
-    record("/identity/title", withValue(source, v.title));
+
+  if (!traitOnly) {
+    if (typeof v.name === "string" && v.name) {
+      intent.identity.title = v.name;
+      record("/identity/title", withValue(source, v.name));
+    } else if (typeof v.title === "string" && v.title) {
+      intent.identity.title = v.title;
+      record("/identity/title", withValue(source, v.title));
+    }
   }
 }
 
@@ -536,4 +660,41 @@ function applyNum(raw: unknown, fn: (v: number) => void): void {
 }
 function applyStr(raw: unknown, fn: (v: string) => void): void {
   if (typeof raw === "string" && raw.length > 0) fn(raw);
+}
+
+function isDescriptorObj(v: unknown): boolean {
+  if (!v || typeof v !== "object") return false;
+  const r = v as Record<string, unknown>;
+  return (
+    typeof r.label === "string" &&
+    typeof r.cat === "string" &&
+    typeof r.weight === "number"
+  );
+}
+
+function applyDescriptorArray(
+  items: unknown[],
+  m: MusicalIntent,
+  record: ProvenanceRecorder,
+  source: Omit<IntentSource, "value">,
+): void {
+  const descs: IntentDescriptor[] = [];
+  for (const d of items) {
+    if (d && typeof d === "object") {
+      const r = d as Record<string, unknown>;
+      if (
+        typeof r.label === "string" &&
+        typeof r.cat === "string" &&
+        typeof r.weight === "number"
+      ) {
+        descs.push({
+          label: r.label,
+          cat: r.cat as any,
+          weight: r.weight as any,
+        });
+      }
+    }
+  }
+  m.descriptors = descs;
+  record("/musical/descriptors", withValue(source, descs));
 }

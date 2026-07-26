@@ -6,7 +6,11 @@ import type {
   VersionId,
 } from "@track-forge/contracts";
 import type { GenreModule } from "@track-forge/genre-core";
-import type { ResolvedSongIntent } from "@track-forge/song-intent";
+import type {
+  ResolvedSongIntent,
+  SongIntentV1,
+} from "@track-forge/song-intent";
+import type { PromptFragment } from "../suno/types.js";
 import type { Db } from "../db/index.js";
 import type { LlmRequest, LlmResponse } from "../llm/index.js";
 
@@ -19,23 +23,12 @@ export interface PipelineDeps {
   signal?: AbortSignal;
 }
 
-/** Parsed inputs shared across pipeline stages */
-export interface ParsedInputs {
-  inputs: Record<string, unknown>;
-  presetIds: string[];
-  presetLabels: string[];
-  descriptors: { label: string; cat: string; weight: number }[];
-  rawSections: Record<string, unknown>[];
-}
-
 /** Mutable state built up across pipeline stages (in-memory, not persisted) */
 export interface PipelineState {
   job: Job;
   module: GenreModule;
 
-  /** Parsed inputs (cached after first parse) */
-  parsed?: ParsedInputs;
-  /** Resolved song intent (produced by compilation stage via resolveIntentFromJob) */
+  /** Resolved song intent (produced by compilation stage from frozen intent revision) */
   resolved?: ResolvedSongIntent;
   /** Compiled style JSON (produced by compilation stage) */
   compiledJson: string | null;
@@ -45,6 +38,16 @@ export interface PipelineState {
   versionId: VersionId | null;
   /** Frozen intent revision ID (set before pipeline starts) */
   intentRevisionId?: string;
+  /** The SongIntentV1 that was frozen (stages use this instead of re-parsing job.inputs) */
+  frozenIntent?: SongIntentV1;
+  /** Pre-generated lyrics from UI (side-channel, not part of intent) */
+  preGeneratedLyrics?: Record<string, string[]>;
+  /** Compiled prompt fragments (produced by compilation stage via sunoAdapter.render()) */
+  compiledFragments?: {
+    style: PromptFragment[];
+    lyrics: PromptFragment[];
+    exclusions: PromptFragment[];
+  };
   /** Compilation record ID (set during versioning stage) */
   compilationId?: string;
 }

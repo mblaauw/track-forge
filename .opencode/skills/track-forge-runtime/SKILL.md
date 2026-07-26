@@ -29,11 +29,11 @@ All stages receive `ResolvedSongIntent` from the intent resolver. The intent rev
 
 ## Stage contracts
 
-| Stage          | Input                                                     | Output                                                                  | LLM call?                         |
-| -------------- | --------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------- |
-| compilation    | `ResolvedSongIntent` (genre, preset, descriptors, vocal)  | `compiledJson` (title, style, excludedStyles)                           | No                                |
-| lyrics_writing | `ResolvedSongIntent` + compiled style + lyric brief       | `lyricsWriterResult` (document with sections/lines)                     | Yes, unless `strict_instrumental` |
-| versioning     | `ResolvedSongIntent` + compiledJson + lyricsWriterResult  | DB version row (MAX+1 numbering), `createCompilation()` links to revision, job set to completed | No |
+| Stage          | Input                                                    | Output                                                                                          | LLM call?                         |
+| -------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------- |
+| compilation    | `ResolvedSongIntent` (genre, preset, descriptors, vocal) | `compiledJson` (title, style, excludedStyles)                                                   | No                                |
+| lyrics_writing | `ResolvedSongIntent` + compiled style + lyric brief      | `lyricsWriterResult` (document with sections/lines)                                             | Yes, unless `strict_instrumental` |
+| versioning     | `ResolvedSongIntent` + compiledJson + lyricsWriterResult | DB version row (MAX+1 numbering), `createCompilation()` links to revision, job set to completed | No                                |
 
 ## Invariants
 

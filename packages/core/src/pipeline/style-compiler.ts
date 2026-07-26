@@ -36,6 +36,7 @@ export interface CompileStyleResult {
   activeCount: number;
 }
 
+/** @deprecated Use `renderSunoStyle(resolved: ResolvedSongIntent)` instead. */
 export function compileStylePrompt(
   input: CompileStyleInput,
 ): CompileStyleResult {

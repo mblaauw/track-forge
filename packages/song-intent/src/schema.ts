@@ -24,27 +24,33 @@ const DescriptorWeightEnum = z.union([
   z.literal(3),
 ]);
 
-const VocalSchema = z.object({
-  type: z.string(),
-  delivery: z.string(),
-  energy: z.number(),
-  adlibs: z.boolean(),
-  harmonies: z.boolean(),
-});
+const VocalSchema = z
+  .object({
+    type: z.string(),
+    delivery: z.string(),
+    energy: z.number(),
+    adlibs: z.boolean(),
+    harmonies: z.boolean(),
+  })
+  .strict();
 
-const StyleInfluenceSchema = z.object({
-  genreId: z.string().min(1),
-  presetId: z.string().min(1),
-  role: z.enum(["primary", "influence", "accent"]),
-  strength: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  sectionIds: z.array(z.string()).optional(),
-});
+const StyleInfluenceSchema = z
+  .object({
+    genreId: z.string().min(1),
+    presetId: z.string().min(1),
+    role: z.enum(["primary", "influence", "accent"]),
+    strength: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    sectionIds: z.array(z.string()).optional(),
+  })
+  .strict();
 
-const IntentDescriptorSchema = z.object({
-  label: z.string().min(1),
-  cat: DescriptorCategoryEnum,
-  weight: DescriptorWeightEnum,
-});
+const IntentDescriptorSchema = z
+  .object({
+    label: z.string().min(1),
+    cat: DescriptorCategoryEnum,
+    weight: DescriptorWeightEnum,
+  })
+  .strict();
 
 const MusicalIntentSchema = z
   .object({
@@ -61,10 +67,12 @@ const MusicalIntentSchema = z
   })
   .strict();
 
-const VocalSectionOverrideSchema = z.object({
-  sectionId: z.string().min(1),
-  vocal: VocalSchema,
-});
+const VocalSectionOverrideSchema = z
+  .object({
+    sectionId: z.string().min(1),
+    vocal: VocalSchema,
+  })
+  .strict();
 
 const VocalIntentSchema = z
   .object({
@@ -116,9 +124,11 @@ const ArrangementIntentSchema = z
   })
   .strict();
 
-const ReferenceIntentSchema = z.object({
-  text: z.string(),
-});
+const ReferenceIntentSchema = z
+  .object({
+    text: z.string(),
+  })
+  .strict();
 
 // .strict() on the top-level object catches unknown fields so we don't
 // silently miss new intent fields in migration.

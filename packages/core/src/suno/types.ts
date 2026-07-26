@@ -101,3 +101,46 @@ export interface SunoClientConfig {
   /** Max poll time in ms (default 300000 = 5 min) */
   pollTimeoutMs: number;
 }
+
+// ── Fragment model for prompt construction ────────────────────────────
+
+/**
+ * A single atomic prompt fragment — the indivisible unit of prompt content.
+ * Fragment-aware truncation drops low-priority fragments entirely instead
+ * of character-slicing through the middle of meaningful content.
+ */
+export interface PromptFragment {
+  id: string;
+  source:
+    | "descriptor"
+    | "characteristic"
+    | "mood"
+    | "structure"
+    | "vocal_type"
+    | "bpm"
+    | "key"
+    | "genre"
+    | "preset"
+    | "exclusion";
+  text: string;
+  /** Lower priority → dropped first under truncation. 0 = drops first, 100 = never drops. */
+  priority: number;
+  /** Byte length of `text` — pre-computed for fast truncation decisions. */
+  byteLength: number;
+}
+
+/**
+ * Structured compilation result containing fragments for each Suno prompt
+ * component. Enables fragment-aware truncation before payload building.
+ */
+export interface CompiledArtifacts {
+  styleFragments: PromptFragment[];
+  lyricsFragments: PromptFragment[];
+  exclusionFragments: PromptFragment[];
+  /** The flat concatenated style string (for backwards compat / preview) */
+  style: string;
+  /** The flat concatenated lyrics string */
+  lyrics: string;
+  /** The flat concatenated excluded styles string */
+  excludedStyles: string;
+}

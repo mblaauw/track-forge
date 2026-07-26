@@ -101,9 +101,9 @@ describe("freezeIntentRevision", () => {
         characteristics: ["warm", "groovy"],
       }),
     );
-    expect(revId).toBe("job-1-rev-1");
+    expect(revId.revisionId).toBe("job-1-rev-1");
 
-    const loaded = await loadIntentRevision(db, revId);
+    const loaded = await loadIntentRevision(db, revId.revisionId);
     expect(loaded).not.toBeNull();
     expect(loaded!.revisionNumber).toBe(1);
     expect(loaded!.schemaVersion).toBe(1);
@@ -118,7 +118,7 @@ describe("freezeIntentRevision", () => {
       "deep_house_chill",
       JSON.stringify({ bpm: 128 }),
     );
-    expect(rev1Id).toBe("job-2-rev-1");
+    expect(rev1Id.revisionId).toBe("job-2-rev-1");
 
     const rev2Id = await freezeIntentRevision(
       db,
@@ -127,7 +127,7 @@ describe("freezeIntentRevision", () => {
       "deep_house_chill",
       JSON.stringify({ bpm: 130 }),
     );
-    expect(rev2Id).toBe("job-2-rev-2");
+    expect(rev2Id.revisionId).toBe("job-2-rev-2");
   });
 
   it("produces stable hashes for identical inputs", async () => {
@@ -153,8 +153,8 @@ describe("freezeIntentRevision", () => {
     );
 
     // Different revision numbers but can verify intent hash match via load
-    const rev1 = await loadIntentRevision(db, id1);
-    const rev2 = await loadIntentRevision(db, id2);
+    const rev1 = await loadIntentRevision(db, id1.revisionId);
+    const rev2 = await loadIntentRevision(db, id2.revisionId);
     expect(rev1!.intentHash).toBe(rev2!.intentHash);
   });
 });
@@ -174,12 +174,12 @@ describe("createCompilation", () => {
         energy: 7,
       }),
     );
-    const compId = await createCompilation(db, revId, {
+    const compId = await createCompilation(db, revId.revisionId, {
       style: "HipHop — Boom Bap Classic. around 90 BPM (laid-back feel). ...",
       lyrics: "[Verse]\nlines here\n\n[Hook]\ncatchy",
       excludedStyles: "vocals, singing",
     });
-    expect(compId).toBe(`${revId}-comp`);
+    expect(compId).toBe(`${revId.revisionId}-comp`);
 
     // Verify the compilation exists
     const [row] = await db
@@ -229,7 +229,7 @@ describe("reproducibility", () => {
       target.id,
       inputsStr,
     );
-    const loaded = await loadIntentRevision(db, revId);
+    const loaded = await loadIntentRevision(db, revId.revisionId);
     expect(loaded).not.toBeNull();
 
     // Parse from JSON
@@ -244,13 +244,13 @@ describe("reproducibility", () => {
     const rendered = renderSunoStyle(resolved);
 
     // Create a compilation from the render
-    const compId = await createCompilation(db, revId, {
+    const compId = await createCompilation(db, revId.revisionId, {
       style: rendered.style,
       lyrics: "",
       excludedStyles: "",
       resolvedIntent: resolved,
     });
-    expect(compId).toBe(`${revId}-comp`);
+    expect(compId).toBe(`${revId.revisionId}-comp`);
 
     // Verify compilation stored the style
     const [comp] = await db

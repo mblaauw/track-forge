@@ -42,7 +42,8 @@ export interface CompilationRecord {
  * time, so even if the job is later edited, the frozen revision remains
  * reproducible.
  *
- * Returns the revision id. Call this BEFORE the pipeline starts.
+ * Returns an object with `revisionId` and the migrated `MigrateLegacyResult`.
+ * Call this BEFORE the pipeline starts.
  */
 export async function freezeIntentRevision(
   db: Db,
@@ -50,9 +51,26 @@ export async function freezeIntentRevision(
   genreId: string,
   presetId: string,
   inputs: string | null,
-  provenance?: Record<string, unknown>,
-): Promise<string> {
+  opts?: {
+    name?: string | null;
+    reference?: string | null;
+    provenance?: Record<string, unknown>;
+  },
+): Promise<
+  {
+    revisionId: string;
+  } & import("@track-forge/song-intent").MigrateLegacyResult
+> {
   const migrated = migrateLegacyJob({ genreId, presetId, inputs });
+
+  // Override title from job name if no intent title was present
+  if (!migrated.intent.identity.title && opts?.name) {
+    migrated.intent.identity.title = opts.name;
+  }
+  // Add job reference if present
+  if (opts?.reference) {
+    migrated.intent.references.push({ text: opts.reference });
+  }
   const intentHash = hashIntent(migrated.intent);
 
   // Determine revision number: next sequential for this job
@@ -74,13 +92,13 @@ export async function freezeIntentRevision(
     revisionNumber,
     schemaVersion: 1,
     intentJson: JSON.stringify(migrated.intent),
-    provenanceJson: provenance ? JSON.stringify(provenance) : null,
+    provenanceJson: opts?.provenance ? JSON.stringify(opts.provenance) : null,
     catalogSnapshotJson: null,
     intentHash,
     createdAt: now,
   });
 
-  return id;
+  return { revisionId: id, intent: migrated.intent, hash: migrated.hash };
 }
 
 // ── Create a compilation record ───────────────────────────────────────
