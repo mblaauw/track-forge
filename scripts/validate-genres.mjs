@@ -166,6 +166,12 @@ function validatePresetYaml(file, id, cfg) {
   if (scale && !VALID_SCALES.includes(scale)) {
     error(file, `preset "${cfg.id}" invalid scale: ${scale}`);
   }
+  if (vals.key !== undefined) {
+    warn(file, `preset "${cfg.id}" has deprecated 'key' in values — omit it`);
+  }
+  if (vals.scale !== undefined) {
+    warn(file, `preset "${cfg.id}" has deprecated 'scale' in values — omit it`);
+  }
 }
 
 // ── Main ────────────────────────────────────────────────────────────────

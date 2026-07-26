@@ -132,8 +132,10 @@ export function createBaseInputSchema(opts?: {
       .int()
       .min(opts?.bpmMin ?? 40)
       .max(opts?.bpmMax ?? 220),
-    key: z.string(),
-    scale: z.enum(["major", "minor"]),
+    /** @deprecated — optional harmonic hint; no stage requires it */
+    key: z.string().optional(),
+    /** @deprecated — optional harmonic hint; no stage requires it */
+    scale: z.enum(["major", "minor"]).optional(),
     mood: z.string(),
     complexity: z.number().int().min(1).max(10),
     lyricsMode:

@@ -70,7 +70,7 @@ export function writeLyricsTrace(
     `Genre: ${input.genreName}`,
     `Presets: ${input.presetLabels.join(", ") || "(none)"}`,
     `BPM: ${input.bpm}`,
-    `Key: ${input.key} ${input.scale}`,
+    input.key ? `Key: ${input.key} ${input.scale ?? ""}` : "Key: (not set)",
     `Lyric topic: ${input.lyricTopic || "(not set)"}`,
     `Lyric angle: ${input.lyricAngle || "(not set)"}`,
     input.lyricThemes?.length

@@ -10,8 +10,8 @@ export type AmbientInputs = z.infer<typeof AmbientInputSchema>;
 
 export const AMBIENT_DEFAULTS: AmbientInputs = {
   bpm: 65,
-  key: "C",
-  scale: "major",
+  key: undefined,
+  scale: undefined,
   mood: "ethereal",
   complexity: 5,
   lyricsMode: "strict_instrumental",

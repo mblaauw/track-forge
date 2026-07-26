@@ -32,8 +32,8 @@ export interface LyricsWriterInput {
   genreName: string;
   presetLabels: string[];
   bpm: number;
-  key: string;
-  scale: "major" | "minor";
+  key?: string;
+  scale?: "major" | "minor";
   sections: LyricsWriterSectionInput[];
   lyricTopic?: string;
   lyricThemes?: string[];

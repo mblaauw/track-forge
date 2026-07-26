@@ -2,8 +2,10 @@ import { z } from "zod";
 
 export const HipHopInputSchema = z.object({
   bpm: z.number().int().min(50).max(200),
-  key: z.string().default("C"),
-  scale: z.enum(["major", "minor"] as const).default("minor"),
+  /** @deprecated — optional harmonic hint; no stage requires it */
+  key: z.string().optional(),
+  /** @deprecated — optional harmonic hint; no stage requires it */
+  scale: z.enum(["major", "minor"] as const).optional(),
   mood: z.string().default(""),
   narrativeArc: z
     .enum([
@@ -49,8 +51,8 @@ export type HipHopInputs = z.infer<typeof HipHopInputSchema>;
 
 export const HIP_HOP_DEFAULTS: HipHopInputs = {
   bpm: 95,
-  key: "C",
-  scale: "minor",
+  key: undefined,
+  scale: undefined,
   mood: "",
   narrativeArc: "braggadocio",
   rhymeStyle: "end_rhyme",

@@ -111,9 +111,13 @@ export interface Job {
   reference: string | null;
   sourceHash: SourceHash | null;
   inputs: string | null;
+  /** @deprecated dead column — no longer read or written. Will be removed in a future schema migration. */
   nlAdjustments: string | null;
+  /** @deprecated dead column — no longer read or written. Will be removed in a future schema migration. */
   findings: string | null;
+  /** @deprecated compiledJson moving to versions.artifacts — no longer written on new jobs. */
   compiledJson: string | null;
+  /** @deprecated dead column — no longer read or written. Will be removed in a future schema migration. */
   stageData: string | null;
   stageAttempt: number;
   error: string | null;
