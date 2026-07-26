@@ -16,8 +16,8 @@ import type { LyricsWriterInput } from "../llm/lyrics-writer.js";
 /**
  * Bridge: `MaterializedIntent → CompileStyleInput`
  *
- * Transitional adapter — Phase 4's `renderSunoStyle` replaces this.
- * Only kept for backward compat during migration.
+ * @deprecated Use `renderSunoStyle(resolved: ResolvedSongIntent)` instead.
+ * The orchestrator now compiles from the frozen intent revision directly.
  */
 export function materializedToCompileStyleInput(
   m: MaterializedIntent,
@@ -76,6 +76,10 @@ export function enrichResolved(
 /**
  * Load a job's merged inputs and produce a `ResolvedSongIntent` for the
  * pipeline stages. No catalog needed — inputs are already merged.
+ *
+ * @deprecated The orchestrator now resolves from the frozen intent revision
+ *   directly (`freezeIntentRevision` -> `resolveSongIntent`), not from
+ *   `job.inputs`. This function is kept for external API compatibility.
  */
 export function resolveIntentFromJob(
   job: { genreId: string; presetId: string; inputs: string | null },

@@ -24,7 +24,8 @@ const FORBIDDEN_PATTERNS = [
   "review",
   "verification",
   // Dead routes (not SSE history replay — that is still active)
-  "retry",
+  // Note: "retry" is deliberately omitted — it's too generic and matches
+  // legitimate uses like the pipeline's stage retry loop.
   "replay.route",
   "ReplayRoute",
   "/replay",
