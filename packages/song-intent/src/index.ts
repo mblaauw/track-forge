@@ -4,3 +4,4 @@ export * from "./defaults.js";
 export * from "./hash.js";
 export * from "./migrate-legacy.js";
 export * from "./materialize.js";
+export * from "./resolve.js";

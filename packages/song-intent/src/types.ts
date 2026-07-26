@@ -156,6 +156,100 @@ export interface PresetCatalog {
     | undefined;
 }
 
+// ── Resolved intent (post-resolver) ──────────────────────────────────
+
+export interface ResolvedVocals {
+  mode: LyricsFormat;
+  hasLeadVocal: boolean;
+  type?: string;
+  sectionOverrides: VocalSectionOverride[];
+}
+
+export interface ResolvedLyrics {
+  /** Whether the lyrics writer should actually write lyrics. */
+  shouldWrite: boolean;
+  topic?: string;
+  themes: string[];
+  angle?: LyricAngle;
+  narrativeArc?: string;
+  rhymeStyle?: string;
+  flowPattern?: string;
+  vocalStyle?: string;
+  lineDensity?: number;
+  perspective?: string;
+  imageAnchors: string[];
+}
+
+export interface ResolvedSection {
+  id: string;
+  name: string;
+  bars: number;
+  fn: SectionFunction;
+  deltas: string[];
+  tags: string[];
+  vocal?: Vocal;
+}
+
+export interface MoodArc {
+  label: string;
+  sections: string[];
+  energy: number;
+}
+
+export interface ResolvedArrangement {
+  sections: ResolvedSection[];
+  typicalSongStructure?: string[];
+  arcs: MoodArc[];
+}
+
+export interface ResolvedTrait {
+  name: string;
+  description: string;
+  category: string;
+}
+
+export type ConflictSeverity = "warning" | "error";
+
+export interface IntentConflict {
+  message: string;
+  path?: string;
+  severity: ConflictSeverity;
+}
+
+export interface ResolutionDecision {
+  message: string;
+  path?: string;
+}
+
+export interface ResolvedSongIntent {
+  schemaVersion: 1;
+  identity: { title: string };
+  styles: StyleInfluence[];
+
+  /** Resolved BPM (materialized or defaulted to 128). */
+  bpm: number;
+  tempoFeel?: string;
+  perceivedBpm?: number;
+  mood?: string;
+  energy?: number;
+  complexity?: number;
+  characteristics: string[];
+  descriptors: IntentDescriptor[];
+  key?: string;
+  scale?: "major" | "minor";
+
+  vocals: ResolvedVocals;
+  lyrics: ResolvedLyrics;
+  arrangement: ResolvedArrangement;
+
+  traits: ResolvedTrait[];
+  conflicts: IntentConflict[];
+  decisions: ResolutionDecision[];
+
+  exclusions: string[];
+  references: ReferenceIntent[];
+}
+
 // ── Canonical SongIntentV1 ────────────────────────────────────────────
 
 export interface SongIntentV1 {
