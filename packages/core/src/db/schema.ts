@@ -77,6 +77,8 @@ export const generations = sqliteTable("generations", {
     .notNull()
     .default(false),
   seed: integer("seed"),
+  /** JSON-encoded PayloadWarning[] from sumo payload construction. */
+  payloadWarnings: text("payload_warnings"),
 });
 
 // ── Job events (persisted event history for replay) ──────────────────

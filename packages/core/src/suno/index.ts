@@ -1,13 +1,11 @@
 export { SunoClient, createSunoClientConfig } from "./client.js";
+export { sunoAdapter } from "./adapter.js";
+export type { SunoAdapter } from "./adapter.js";
 export { resolveCallbackUrl } from "./callbacks.js";
 export { getCapabilities } from "./capabilities.js";
 export type { SunoCapabilities } from "./capabilities.js";
 export { generateSunoPayload, payloadToLog } from "./payload.js";
-export type {
-  SunoPayloadInput,
-  SunoGenreTransform,
-  PayloadWarning,
-} from "./payload.js";
+export type { SunoPayloadInput, PayloadWarning } from "./payload.js";
 export {
   storeGeneration,
   updateGeneration,

@@ -48,7 +48,6 @@ export type {
   SunoGenerationStatus,
   SunoModelVersion,
   SunoPayloadInput,
-  SunoGenreTransform,
   PayloadWarning,
   GenerationRecord,
 } from "./suno/index.js";

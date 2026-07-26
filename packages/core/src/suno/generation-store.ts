@@ -16,6 +16,8 @@ export interface GenerationRecord {
   style?: string;
   lyrics?: string;
   error?: string;
+  /** JSON-encoded PayloadWarning[] from payload construction. */
+  payloadWarnings?: string;
 }
 
 /**
@@ -39,6 +41,7 @@ export async function storeGeneration(
     style: gen.style ?? null,
     lyrics: gen.lyrics ?? null,
     error: gen.error ?? null,
+    payloadWarnings: gen.payloadWarnings ?? null,
     createdAt: now,
     updatedAt: now,
   });
@@ -78,6 +81,8 @@ export async function updateGeneration(
   if (data.style !== undefined) patch.style = data.style;
   if (data.lyrics !== undefined) patch.lyrics = data.lyrics;
   if (data.error !== undefined) patch.error = data.error;
+  if ((data as any).payloadWarnings !== undefined)
+    patch.payloadWarnings = (data as any).payloadWarnings;
 
   await db
     .update(schema.generations)
@@ -118,6 +123,7 @@ function mapGenerationRow(row: Record<string, unknown>): GenerationRecord {
     style: (row.style as string) ?? undefined,
     lyrics: (row.lyrics as string) ?? undefined,
     error: (row.error as string) ?? undefined,
+    payloadWarnings: (row.payloadWarnings as string) ?? undefined,
   };
 }
 

@@ -122,6 +122,9 @@ export function createDb(dbPath: string): Db {
   try {
     sqlite.exec(`ALTER TABLE generations ADD COLUMN lyrics TEXT`);
   } catch {}
+  try {
+    sqlite.exec(`ALTER TABLE generations ADD COLUMN payload_warnings TEXT`);
+  } catch {}
   sqlite.exec(`CREATE TABLE IF NOT EXISTS job_events (
     id TEXT PRIMARY KEY,
     job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,

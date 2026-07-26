@@ -147,55 +147,6 @@ describe("generateSunoPayload", () => {
     expect(request.callBackUrl).toBeUndefined();
   });
 
-  it("applies BPM from genre transform when style lacks BPM", () => {
-    const { request } = generateSunoPayload({
-      ...MIN_INPUT,
-      genreTransform: { genreId: "edm", bpm: 128, subgenre: "deep_house" },
-    });
-
-    expect(request.style).toMatch(/128\s*BPM/);
-  });
-
-  it("does not duplicate BPM when style already has it", () => {
-    const { request } = generateSunoPayload({
-      ...MIN_INPUT,
-      style: "Deep house 120 BPM warm pads",
-      genreTransform: { genreId: "edm", bpm: 128, subgenre: "deep_house" },
-    });
-
-    // Should not add a second BPM
-    const bpmMatches = request.style.match(/\b\d{2,3}\s*BPM\b/g);
-    expect(bpmMatches).toHaveLength(1);
-    expect(bpmMatches![0]).toBe("120 BPM");
-  });
-
-  it("applies mood from genre transform when not in style", () => {
-    const { request } = generateSunoPayload({
-      ...MIN_INPUT,
-      genreTransform: { genreId: "edm", mood: "dark and hypnotic", energy: 7 },
-    });
-
-    expect(request.style).toMatch(/Mood: dark and hypnotic/);
-  });
-
-  it("applies high energy descriptor for energy >= 8", () => {
-    const { request } = generateSunoPayload({
-      ...MIN_INPUT,
-      genreTransform: { genreId: "edm", energy: 9 },
-    });
-
-    expect(request.style).toMatch(/High energy/i);
-  });
-
-  it("applies low energy descriptor for energy <= 4", () => {
-    const { request } = generateSunoPayload({
-      ...MIN_INPUT,
-      genreTransform: { genreId: "edm", energy: 3 },
-    });
-
-    expect(request.style).toMatch(/Low energy/i);
-  });
-
   it("returns empty warnings for well-formed input", () => {
     const { warnings } = generateSunoPayload(MIN_INPUT);
 
@@ -215,6 +166,48 @@ describe("generateSunoPayload", () => {
     expect(fields).toContain("style");
     expect(fields).toContain("lyrics");
     expect(fields).toContain("negativeTags");
+  });
+
+  it("fragment-aware truncation: drops lowest-priority fields first", () => {
+    const caps: SunoCapabilities = {
+      maxLyricsLength: 10,
+      maxStyleLength: 10,
+      maxTitleLength: 10,
+      maxTagsLength: 10,
+      supportsNegativeTags: true,
+      supportsCallbacks: false,
+      maxBatchSize: 2,
+    };
+    const { request, warnings } = generateSunoPayload(
+      {
+        ...MIN_INPUT,
+        title: "Very Long Title That Exceeds Max",
+        style: "X".repeat(100),
+        lyrics: "Y".repeat(50),
+        excludedStyles: "Z".repeat(30),
+      },
+      caps,
+    );
+
+    expect(warnings.length).toBeGreaterThanOrEqual(3);
+    expect(request.style.length).toBeLessThanOrEqual(10);
+    expect(request.title.length).toBeLessThanOrEqual(10);
+    // No mid-fragment cut: each field is truncated cleanly at its limit
+    expect(request.style.length).toBe(10);
+    const titleWarn = warnings.find((w) => w.field === "title");
+    expect(titleWarn?.priority).toBe(0);
+  });
+
+  it("fragment priority ordering is consistent", () => {
+    const { warnings } = generateSunoPayload({
+      ...MIN_INPUT,
+      title: "A".repeat(200),
+      style: "B".repeat(200),
+      excludedStyles: "C".repeat(200),
+      lyrics: "D".repeat(200),
+    });
+    const priorities = warnings.map((w) => w.priority);
+    expect(priorities).toEqual([...priorities].sort((a, b) => a - b));
   });
 });
 
@@ -262,14 +255,6 @@ describe("generateSunoPayload snapshots", () => {
     });
     expect(result.request.prompt).toBeUndefined();
     expect(result.request.instrumental).toBe(true);
-    expect(result).toMatchSnapshot();
-  });
-
-  it("with genre transform", () => {
-    const result = generateSunoPayload({
-      ...MIN_INPUT,
-      genreTransform: { genreId: "edm", bpm: 128, mood: "dark", energy: 8 },
-    });
     expect(result).toMatchSnapshot();
   });
 

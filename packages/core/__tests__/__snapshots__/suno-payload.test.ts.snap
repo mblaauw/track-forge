@@ -75,26 +75,6 @@ exports[`generateSunoPayload snapshots > with explicit model version 1`] = `
 }
 `;
 
-exports[`generateSunoPayload snapshots > with genre transform 1`] = `
-{
-  "request": {
-    "callBackUrl": undefined,
-    "customMode": true,
-    "instrumental": false,
-    "model": "V4_5ALL",
-    "negativeTags": "slow, ballad",
-    "prompt": "[Intro]
-(atmospheric pads)
-
-[Drop]
-(groovy beat)",
-    "style": "Deep house with warm pads and groovy bassline 128 BPM. Mood: dark. High energy.",
-    "title": "My Track",
-  },
-  "warnings": [],
-}
-`;
-
 exports[`generateSunoPayload snapshots > with truncation warnings 1`] = `
 {
   "request": {
@@ -112,19 +92,22 @@ exports[`generateSunoPayload snapshots > with truncation warnings 1`] = `
       "currentLength": 3000,
       "field": "style",
       "maxLength": 1000,
-      "message": "Style truncated from 3000 to 1000 chars",
+      "message": "style truncated from 3000 to 1000 chars",
+      "priority": 3,
     },
     {
       "currentLength": 1000,
       "field": "negativeTags",
       "maxLength": 500,
       "message": "Negative tags truncated from 1000 to 500 chars",
+      "priority": 1,
     },
     {
       "currentLength": 6000,
       "field": "lyrics",
       "maxLength": 5000,
-      "message": "Lyrics truncated from 6000 to 5000 chars",
+      "message": "lyrics truncated from 6000 to 5000 chars",
+      "priority": 2,
     },
   ],
 }
