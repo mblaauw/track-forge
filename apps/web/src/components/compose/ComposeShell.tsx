@@ -264,6 +264,7 @@ export function ComposeShell() {
     s.lyricAngle,
     s.lyricThemes.join(","),
     s.lyricsGenerated,
+    s.lyricLines,
     s.tags.map((t) => `${t.label}:${t.weight}`).join(","),
     s.sections.map((sec) => `${sec.name}:${sec.fn}:${sec.bars}`).join(","),
     s.reference,
