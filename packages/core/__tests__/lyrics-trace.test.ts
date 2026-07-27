@@ -199,56 +199,63 @@ describe("Lyrics prompt and trace", () => {
 
   // ── Hip-hop prompt structure ──────────────────────────────────────
 
-  it("builds hip-hop system prompt with lyrical direction blocks", () => {
+  it("builds hip-hop prompt with lyrical direction blocks in SONG SPECIFICATION", () => {
     const input = hipHopInput({
       lyricTopic: "street life",
       lyricAngle: "story",
       lyricThemes: ["struggle"],
       characteristics: ["808 bass", "dark"],
     });
-    const { system } = buildLyricsPrompt(input);
+    const { system, user } = buildLyricsPrompt(input);
 
+    // System only has genre intro + guidance + output format
     expect(system).toContain("Hip-hop genre (Trap, Dark Trap)");
     expect(system).toContain("Hip-hop lyrics must work as performed music");
-    expect(system).toContain("NARRATIVE ARC: braggadocio narrative");
-    expect(system).toContain(
+    expect(system).toContain("OUTPUT FORMAT:");
+    expect(system).toContain("specified lyric-line count");
+
+    // Lyrical direction blocks moved to user prompt's SONG SPECIFICATION
+    expect(user).toContain("NARRATIVE ARC: braggadocio narrative");
+    expect(user).toContain(
       "FLOW & RHYME: Use a aggressive flow with multi syllabic rhyme patterns",
     );
-    expect(system).toContain("MOOD & ENERGY: dark, 9/10 — explosive energy");
-    expect(system).toContain(
+    expect(user).toContain("MOOD & ENERGY: dark, 9/10 — explosive energy");
+    expect(user).toContain(
       "VOCAL STYLE: rhythmic, triplet flows with ad-libs.",
     );
-    expect(system).toContain("CHARACTER: 808 bass, dark.");
-    expect(system).toContain("PERSPECTIVE: first person.");
-    expect(system).toContain(
+    expect(user).toContain("Sonic context: 808 bass, dark");
+    expect(user).toContain("Perspective: first person.");
+    expect(user).toContain(
       "Tempo: 140 BPM, performed with a half-time pulse felt around 70 BPM.",
     );
-    expect(system).toContain("OUTPUT FORMAT:");
 
     // When narrativeArc is set, the "story" angle instruction is suppressed
-    expect(system).not.toContain("Write as a narrative");
+    expect(user).not.toContain("Write as a narrative");
     // No key/scale in lyrical prompt
-    expect(system).not.toContain("BPM in C# minor");
+    expect(user).not.toContain("BPM in C# minor");
     // No STYLE block
-    expect(system).not.toMatch(/^STYLE:/m);
+    expect(user).not.toMatch(/^STYLE:/m);
   });
 
-  it("builds hip-hop user prompt with correct 1:1 line ratio", () => {
+  it("builds hip-hop user prompt with correct 1:1 line ratio and braggadocio purposes", () => {
     const input = hipHopInput();
     const { user } = buildLyricsPrompt(input);
 
-    expect(user).toContain("target ~16 lyric lines"); // 16 bars × 1.0 density
-    expect(user).toContain("target ~8 lyric lines"); // 8 bars × 1.0
+    expect(user).toContain("target exactly 16 lyric lines"); // 16 bars × 1.0 density
+    expect(user).toContain("target exactly 8 lyric lines"); // 8 bars × 1.0
     // Instrumental section has no target line count
     const introPart = user.split("sec-intro")[1]?.split("sec-v1")[0] ?? "";
     expect(introPart).toContain("instrumental");
     expect(introPart).not.toContain("target");
 
+    // Braggadocio-specific purposes instead of romance defaults
     expect(user).toContain(
-      "purpose: introduce the narrator, the encounter, and the initial attraction",
+      "establish the narrator's position, recent wins, and the reaction from the block",
     );
     // Verse 2 has a different purpose
-    expect(user).toContain("advance the story, deepen emotional stakes");
+    expect(user).toContain(
+      "introduce the cost, loyalty test, opposition, or consequence",
+    );
     // Hook structure
     expect(user).toContain("four-line core with one repeat");
     expect(user).toContain("vocal: Rapper, rhythmic, powerful, ad-libs");
@@ -256,47 +263,53 @@ describe("Lyrics prompt and trace", () => {
     // No old format
     expect(user).not.toContain('id="');
     expect(user).not.toContain("function=");
-    expect(user).not.toContain("STYLE:");
   });
 
   // ── EDM prompt structure ─────────────────────────────────────────
 
-  it("builds EDM system prompt without rap-specific blocks", () => {
+  it("builds EDM prompt with specs in user prompt, not system", () => {
     const input = edmInput();
-    const { system } = buildLyricsPrompt(input);
+    const { system, user } = buildLyricsPrompt(input);
 
+    // System has only genre intro + guidance + output contract
     expect(system).toContain("EDM genre (Dance-Pop — Catchy)");
     expect(system).toContain("EDM lyrics are written for repetition");
-    expect(system).toContain("NARRATIVE ARC: storytelling narrative");
-    expect(system).toContain(
+    expect(system).not.toContain("NARRATIVE ARC:");
+    expect(system).not.toContain("MOOD & ENERGY:");
+    expect(system).not.toContain("PERSPECTIVE:");
+    expect(system).not.toContain("Tempo:");
+
+    // All descriptors are in the user prompt's SONG SPECIFICATION
+    expect(user).toContain("NARRATIVE ARC: storytelling narrative");
+    expect(user).toContain(
       "MOOD & ENERGY: catchy and upbeat, 7/10 — high energy",
     );
-    expect(system).toContain("PERSPECTIVE: first person.");
-    expect(system).toContain(
+    expect(user).toContain("Perspective: first person.");
+    expect(user).toContain(
       "Tempo: 118 BPM, performed with a straight pulse felt around 118 BPM.",
     );
 
-    // No rap blocks
-    expect(system).not.toContain("FLOW & RHYME:");
-    expect(system).not.toContain("VOCAL STYLE:");
+    // No rap blocks anywhere
+    expect(user).not.toContain("FLOW & RHYME:");
+    expect(user).not.toContain("VOCAL STYLE:");
     // No duplicate story narrative
-    expect(system).not.toContain("Write as a narrative");
-    expect(system).not.toContain("BPM in C major");
+    expect(user).not.toContain("Write as a narrative");
+    expect(user).not.toContain("BPM in C major");
   });
 
-  it("builds EDM user prompt with 0.5 line density", () => {
+  it("builds EDM user prompt with 0.5 line density and storytelling purposes", () => {
     const input = edmInput();
     const { user } = buildLyricsPrompt(input);
 
     // 16 bars × 0.5 = 8 lines
-    expect(user).toContain("target ~8 lyric lines");
+    expect(user).toContain("target exactly 8 lyric lines");
     // 8 bars × 0.5 = 4 lines
-    expect(user).not.toContain("target ~16 lyric lines");
-    expect(user).not.toContain("target ~4 lyric lines");
+    expect(user).not.toContain("target exactly 16 lyric lines");
+    expect(user).not.toContain("target exactly 4 lyric lines");
 
-    // Verse 1 vs Verse 2 different purposes
+    // Verse 1 vs Verse 2 different purposes (storytelling arc)
     expect(user).toContain(
-      "introduce the narrator, the encounter, and the initial attraction",
+      "introduce the narrator, the encounter, and the initial situation",
     );
     expect(user).toContain(
       "advance the story, deepen emotional stakes, or introduce a turn",
@@ -321,10 +334,10 @@ describe("Lyrics prompt and trace", () => {
     expect(user).toContain("Verse 1: introduce the narrator");
     expect(user).toContain("Verse 2: advance the story");
 
-    // Brief and themes
-    expect(user).toContain("BRIEF: summer love");
-    expect(user).toContain("THEMES: joy, freedom");
-    expect(user).toContain("PERSPECTIVE: first person.");
+    // Brief and themes (new labels)
+    expect(user).toContain("CENTRAL BRIEF: summer love");
+    expect(user).toContain("Themes: joy, freedom");
+    expect(user).toContain("Perspective: first person.");
   });
 
   // ── Shared behavior ──────────────────────────────────────────────
@@ -335,17 +348,17 @@ describe("Lyrics prompt and trace", () => {
       lyricThemes: ["urban"],
     });
     const { user } = buildLyricsPrompt(input);
-    expect(user).toContain("BRIEF: city nights");
-    expect(user).toContain("THEMES: urban");
+    expect(user).toContain("CENTRAL BRIEF: city nights");
+    expect(user).toContain("Themes: urban");
   });
 
   it("includes image anchors when provided", () => {
     const input = edmInput({ imageAnchors: ["warm pavement", "salt on skin"] });
     const { user } = buildLyricsPrompt(input);
-    expect(user).toContain("IMAGES: warm pavement, salt on skin");
+    expect(user).toContain("Grounding: warm pavement; salt on skin");
   });
 
-  it("omits all lyrical direction blocks when params not set", () => {
+  it("omits lyrical direction blocks when params not set", () => {
     const input = hipHopInput({
       narrativeArc: undefined,
       rhymeStyle: undefined,
@@ -354,19 +367,20 @@ describe("Lyrics prompt and trace", () => {
       energy: undefined,
       vocalStyle: undefined,
       characteristics: undefined,
+      bpm: undefined,
       tempoFeel: undefined,
       perceivedBpm: undefined,
       perspective: undefined,
       lineDensity: undefined,
     });
-    const { system } = buildLyricsPrompt(input);
-    expect(system).not.toContain("NARRATIVE ARC:");
-    expect(system).not.toContain("FLOW & RHYME:");
-    expect(system).not.toContain("MOOD & ENERGY:");
-    expect(system).not.toContain("VOCAL STYLE:");
-    expect(system).not.toContain("CHARACTER:");
-    expect(system).not.toContain("Tempo:");
-    expect(system).not.toContain("PERSPECTIVE:");
+    const { user } = buildLyricsPrompt(input);
+    expect(user).not.toContain("NARRATIVE ARC:");
+    expect(user).not.toContain("FLOW & RHYME:");
+    expect(user).not.toContain("MOOD & ENERGY:");
+    expect(user).not.toContain("VOCAL STYLE:");
+    expect(user).not.toContain("SONIC CONTEXT:");
+    expect(user).not.toContain("Tempo:");
+    expect(user).not.toContain("Perspective:");
   });
 
   // ── Trace file tests ─────────────────────────────────────────────

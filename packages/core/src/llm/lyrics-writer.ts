@@ -177,7 +177,7 @@ function vocalStyleLine(style?: string): string | null {
 
 function characteristicsLine(chars?: string[]): string | null {
   if (!chars || chars.length === 0) return null;
-  return `CHARACTER: ${chars.join(", ")}.`;
+  return `SONIC CONTEXT: ${chars.join(", ")} — leave space in the arrangement for these elements.`;
 }
 
 function tempoFeelLine(
@@ -211,29 +211,57 @@ function deriveSectionPurpose(
   fn: string,
   index: number,
   allSections: { name: string }[],
+  narrativeArc?: string,
   explicit?: string,
 ): string {
   if (explicit) return explicit;
   const key = firstWord(name);
   const count = precedingCount(name, allSections, index);
 
+  // ── Narrative-arc-aware purposes ────────────────────────────────
   if (key === "verse") {
+    if (narrativeArc === "braggadocio") {
+      if (count === 0)
+        return "establish the narrator's position, recent wins, and the reaction from the block; show concrete evidence of progress";
+      if (count === 1)
+        return "introduce the cost, loyalty test, opposition, or consequence created by the narrator's position";
+      return "develop the situation toward a decision or confrontation";
+    }
+    if (narrativeArc === "conscious") {
+      if (count === 0)
+        return "establish the narrator's perspective and the social or emotional terrain they navigate";
+      if (count === 1)
+        return "deepen the observation, introduce tension between ideals and reality";
+      return "move toward a resolution, acceptance, or call to awareness";
+    }
+    if (narrativeArc === "abstract") {
+      if (count === 0)
+        return "establish the central image or sensory impression";
+      if (count === 1)
+        return "shift or distort the initial image, introduce a counter-impression";
+      return "resolve the imagery or let it dissolve";
+    }
+    // Default: storytelling
     if (count === 0)
-      return "introduce the narrator, the encounter, and the initial attraction";
+      return "introduce the narrator, the encounter, and the initial situation";
     if (count === 1)
       return "advance the story, deepen emotional stakes, or introduce a turn";
     return "develop toward resolution or climax";
   }
   if (key === "chorus" || key === "hook") {
+    if (narrativeArc === "braggadocio")
+      return "crystallize the central boast or title phrase into one immediate, repeatable line";
     if (fn === "peak")
       return "express the song's central emotional release through one title-worthy phrase";
     return "reinforce the central hook with repetition and variation";
   }
+  if (key === "bridge") {
+    if (narrativeArc === "braggadocio")
+      return "expose what the success costs, whom the narrator still protects, or what feels uncertain despite the wins";
+    return "provide contrast and emotional reflection before the final section";
+  }
   if (key === "pre-chorus" || key === "prechorus") {
     return "build anticipation, moving from the verse toward the chorus or drop";
-  }
-  if (key === "bridge") {
-    return "provide contrast and emotional reflection before the final section";
   }
   if (key === "breakdown")
     return "create a momentary release before rebuilding energy";
@@ -303,8 +331,9 @@ function deriveSectionStructure(name: string, bars: number): string | null {
 
 function deriveSectionLanguage(
   name: string,
+  index: number,
+  allSections: { name: string }[],
   energy?: number,
-  fn?: string,
   deltas?: string[],
 ): string | null {
   const key = firstWord(name);
@@ -315,23 +344,32 @@ function deriveSectionLanguage(
   }
   if (key === "pre-chorus" || key === "prechorus")
     return "increasingly short and direct phrases, leading into the chorus";
-  if (key === "verse" && energy && energy >= 7)
-    return "slightly more urgent than the previous verse, shorter phrases";
-  if (key === "verse")
-    return "simple narrative details with one or two recurring images";
+  if (key === "verse") {
+    const count = precedingCount(name, allSections, index);
+    if (count === 0)
+      return "controlled but increasingly urgent; establish the pocket before tightening phrases";
+    return "more urgent than the previous verse, with shorter phrases and harder stops";
+  }
   if (key === "bridge")
-    return "more vulnerable, intimate language with space between phrases";
+    return "vulnerable and intimate, with space between phrases and fewer but more deliberate words";
   return null;
 }
 
 function narrativeProgressionBlock(
   sections: { name: string; fn: string }[],
   allSections: { name: string; fn: string }[],
+  narrativeArc?: string,
 ): string | null {
   const lines: string[] = [];
   for (let i = 0; i < sections.length; i++) {
     const s = sections[i]!;
-    const fullDesc = deriveSectionPurpose(s.name, s.fn, i, allSections);
+    const fullDesc = deriveSectionPurpose(
+      s.name,
+      s.fn,
+      i,
+      allSections,
+      narrativeArc,
+    );
     const short = fullDesc.split(".")[0]!;
     lines.push(`  ${s.name}: ${short}`);
   }
@@ -355,6 +393,7 @@ function formatSectionBlock(
     s.fn,
     index,
     allSections,
+    input.narrativeArc,
     s.purpose,
   );
   const pocket = deriveSectionPocket(
@@ -364,7 +403,13 @@ function formatSectionBlock(
     s.pocket,
   );
   const rhyme = deriveSectionRhyme(input.rhymeStyle, input.energy, s.fn);
-  const language = deriveSectionLanguage(s.name, input.energy, s.fn, s.deltas);
+  const language = deriveSectionLanguage(
+    s.name,
+    index,
+    allSections,
+    input.energy,
+    s.deltas,
+  );
   const structure = deriveSectionStructure(s.name, s.bars);
   const vocal = isInstrumental ? null : vocalDescription(s.vocal);
 
@@ -372,7 +417,7 @@ function formatSectionBlock(
   const namePart = `${s.name}${s.deltas.filter((d) => d.toLowerCase() !== "instrumental").length > 0 ? `, ${s.deltas.filter((d) => d.toLowerCase() !== "instrumental").join(", ")}` : ""}`;
   lines.push(`  ${s.id} — ${namePart}`);
   lines.push(
-    `         ${s.bars} bars; ${isInstrumental ? "instrumental" : `target ~${lineCount} lyric lines`}`,
+    `         ${s.bars} bars; ${isInstrumental ? "instrumental" : `target exactly ${lineCount} lyric lines`}`,
   );
   lines.push(`         purpose: ${purpose}`);
   if (structure) lines.push(`         structure: ${structure}`);
@@ -388,13 +433,9 @@ export function buildLyricsPrompt(input: LyricsWriterInput): {
   system: string;
   user: string;
 } {
-  // ── System prompt ─────────────────────────────────────────────────
-  // Deduplicate: when narrativeArc is set, don't emit the "story" angle
-  // instruction (it's already covered by NARRATIVE ARC).
-  const emitAngle =
-    input.lyricAngle && input.lyricAngle !== "story"
-      ? (ANGLE_INSTRUCTIONS[input.lyricAngle] ?? "")
-      : "";
+  // ═══════════════════════════════════════════════════════════════════
+  // SYSTEM PROMPT — stable songwriting craft rules
+  // ═══════════════════════════════════════════════════════════════════
 
   const systemParts: string[] = [
     `You are a professional songwriter working in the ${input.genreName} genre${
@@ -405,21 +446,7 @@ export function buildLyricsPrompt(input: LyricsWriterInput): {
 
   if (input.lyricsGuidance) systemParts.push(input.lyricsGuidance);
 
-  const lyricalBlocks = [
-    perspectiveLine(input.perspective),
-    narrativeArcLine(input.narrativeArc),
-    flowRhymeLine(input.flowPattern, input.rhymeStyle),
-    moodEnergyLine(input.mood, input.energy),
-    vocalStyleLine(input.vocalStyle),
-    characteristicsLine(input.characteristics),
-    tempoFeelLine(input.tempoFeel, input.bpm, input.perceivedBpm),
-    emitAngle || null,
-  ].filter(Boolean) as string[];
-
-  systemParts.push(...lyricalBlocks);
-
   systemParts.push(
-    "Write only sung/rapped lyric lines — no stage directions, no section headers inside `lines`.",
     "",
     "OUTPUT FORMAT:",
     "Return ONLY valid JSON — no prose, no markdown fences, no commentary.",
@@ -429,34 +456,94 @@ export function buildLyricsPrompt(input: LyricsWriterInput): {
     '- Set "id" to the exact id shown for each section.',
     '- "lines" must be an array of individual strings, NOT a single string with newlines.',
     '- For instrumental sections, return "lines": [].',
-    "- Stay within ±1 line of the target per section.",
+    "- Each section must contain exactly its specified lyric-line count.",
   );
 
-  // ── User prompt ───────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════
+  // USER PROMPT — this song's normalized specification
+  // ═══════════════════════════════════════════════════════════════════
+
+  const userParts: string[] = [];
+
+  // ── 1. Song specification (normalized) ──────────────────────────
+  const specLines: string[] = ["SONG SPECIFICATION", ""];
+  specLines.push(`Genre: ${input.genreName}`);
+  if (input.presetLabels.length)
+    specLines.push(`Preset: ${input.presetLabels.join(" / ")}`);
+  if (input.bpm) {
+    if (input.tempoFeel && input.perceivedBpm) {
+      specLines.push(
+        `Tempo: ${input.bpm} BPM, performed with a ${feelLabel(input.tempoFeel)} pulse felt around ${input.perceivedBpm} BPM.`,
+      );
+    } else {
+      specLines.push(`Tempo: ${input.bpm} BPM`);
+    }
+  }
+  if (input.characteristics?.length)
+    specLines.push(
+      `Sonic context: ${input.characteristics.join(", ")} — leave space in the arrangement for these elements.`,
+    );
+  if (input.perspective)
+    specLines.push(`Perspective: ${input.perspective.replace(/_/g, " ")}.`);
+  if (input.narrativeArc) {
+    const arcLine = narrativeArcLine(input.narrativeArc);
+    if (arcLine) specLines.push(arcLine);
+  }
+  if (input.mood || input.energy !== undefined) {
+    const moodLine = moodEnergyLine(input.mood, input.energy);
+    if (moodLine) specLines.push(moodLine);
+  }
+  if (input.flowPattern || input.rhymeStyle) {
+    const flowLine = flowRhymeLine(input.flowPattern, input.rhymeStyle);
+    if (flowLine) specLines.push(flowLine);
+  }
+  if (input.vocalStyle) {
+    const vocalStyle = vocalStyleLine(input.vocalStyle);
+    if (vocalStyle) specLines.push(vocalStyle);
+  }
+  // Angle instruction — only when arc is NOT set (narrative arc instruction
+  // already covers it for story/braggadocio arcs).
+  if (
+    input.lyricAngle &&
+    input.narrativeArc !== "story" &&
+    input.narrativeArc !== "braggadocio" &&
+    input.narrativeArc !== "storytelling"
+  ) {
+    const angle = ANGLE_INSTRUCTIONS[input.lyricAngle];
+    if (angle) specLines.push(angle);
+  }
+
+  userParts.push(specLines.join("\n"), "");
+
+  // ── 2. Central brief ────────────────────────────────────────────
+  userParts.push(
+    `CENTRAL BRIEF: ${input.lyricTopic?.trim() || "(no brief — infer a fitting theme from the genre and presets)"}`,
+  );
+  if (input.lyricThemes && input.lyricThemes.length > 0) {
+    userParts.push(`Themes: ${input.lyricThemes.join(", ")}`);
+  }
+  if (input.imageAnchors && input.imageAnchors.length > 0) {
+    userParts.push(
+      `Grounding: ${input.imageAnchors.join("; ")}. Use or build on these concrete details.`,
+    );
+  }
+  userParts.push("");
+
+  // ── 3. Narrative progression ────────────────────────────────────
+  if (input.narrativeArc) {
+    const prog = narrativeProgressionBlock(
+      input.sections,
+      input.sections,
+      input.narrativeArc,
+    );
+    if (prog) userParts.push(prog, "");
+  }
+
+  // ── 4. Sections ─────────────────────────────────────────────────
   const sectionBlocks = input.sections.map((s, i) =>
     formatSectionBlock(s, input, i, input.sections),
   );
-
-  const userParts: string[] = ["SECTIONS:", ...sectionBlocks, ""];
-
-  userParts.push(
-    `BRIEF: ${input.lyricTopic?.trim() || "(no brief — infer a fitting theme from the genre and presets)"}`,
-  );
-  if (input.lyricThemes && input.lyricThemes.length > 0) {
-    userParts.push(`THEMES: ${input.lyricThemes.join(", ")}`);
-  }
-  if (input.imageAnchors && input.imageAnchors.length > 0) {
-    userParts.push(`IMAGES: ${input.imageAnchors.join(", ")}`);
-  }
-  if (input.perspective) {
-    userParts.push(`PERSPECTIVE: ${input.perspective.replace(/_/g, " ")}.`);
-  }
-
-  // Narrative progression block (only when arc is set)
-  if (input.narrativeArc) {
-    const prog = narrativeProgressionBlock(input.sections, input.sections);
-    if (prog) userParts.push("", prog);
-  }
+  userParts.push("SECTION SPECIFICATIONS", ...sectionBlocks);
 
   return { system: systemParts.join("\n\n"), user: userParts.join("\n") };
 }
