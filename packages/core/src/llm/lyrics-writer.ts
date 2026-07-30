@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { LlmRequest, LlmResponse } from "./types.js";
 import { writeLyricsTrace } from "./lyrics-trace.js";
@@ -65,6 +66,121 @@ export interface LyricsWriterOutput {
   sections: LyricsWriterSectionResult[];
 }
 
+export type LyricsWriterErrorType =
+  | "parse_error"
+  | "schema_error"
+  | "semantic_error"
+  | "provider_error"
+  | "provider_refusal"
+  | "prompt_lint_error";
+
+export interface PromptDiagnostic {
+  severity: "error" | "warning";
+  code:
+    | "STRUCTURE_CONFLICT"
+    | "INSTRUMENTAL_VOCAL_CONFLICT"
+    | "MISSING_GROUNDING"
+    | "RULE_PRECEDENCE_CONFLICT"
+    | "INVALID_SECTION_REFERENCE"
+    | "SCHEMA_PROMPT_MISMATCH";
+  path?: string;
+  message: string;
+  involvedRuleIds?: string[];
+}
+
+export interface ValidationIssue {
+  code:
+    | "SECTION_ID_MISMATCH"
+    | "SECTION_ORDER_MISMATCH"
+    | "SECTION_COUNT_MISMATCH"
+    | "LINE_COUNT_MISMATCH"
+    | "INSTRUMENTAL_NOT_EMPTY"
+    | "BLANK_LYRIC_LINE"
+    | "EMBEDDED_SECTION_MARKER"
+    | "STAGE_DIRECTION_LINE";
+  path?: string;
+  message: string;
+}
+
+export interface PromptAttemptTelemetry {
+  attempt: number;
+  startedAt: string;
+  latencyMs: number;
+  status: "success" | "failure";
+  errorType?: LyricsWriterErrorType;
+  errorMessage?: string;
+  validationIssues?: ValidationIssue[];
+  model?: string;
+  usage?: LlmResponse["usage"];
+}
+
+export interface PromptManifest {
+  traceId: string;
+  createdAt: string;
+  provider: string;
+  model: string;
+  modelParameters: {
+    temperature?: number;
+    maxTokens?: number;
+    seed?: number;
+  };
+  promptId: string;
+  promptVersion: string;
+  promptSourcePath: string;
+  promptSourceHash: string;
+  systemPromptHash: string;
+  userPromptHash: string;
+  responseSchemaVersion: string;
+  genre: string;
+  preset?: string;
+  pipelineVersion: string;
+  gitCommit?: string;
+  selectedRuleIds?: string[];
+  retryCount: number;
+  parsingFailures: number;
+  validationFailures: number;
+  repairAttempts: number;
+  latencyMs: number;
+  tokenUsage?: LlmResponse["usage"];
+  status: "success" | "failure";
+  failureType?: LyricsWriterErrorType;
+  failureMessage?: string;
+  attempts: PromptAttemptTelemetry[];
+  diagnostics?: PromptDiagnostic[];
+  systemPrompt?: string;
+  userPrompt?: string;
+}
+
+export interface LyricsWriterTraceOptions {
+  traceId?: string;
+  provider?: string;
+  model?: string;
+  promptId?: string;
+  promptVersion?: string;
+  promptSourcePath?: string;
+  promptSourceHash?: string;
+  genre?: string;
+  preset?: string;
+  pipelineVersion?: string;
+  gitCommit?: string;
+  selectedRuleIds?: string[];
+  seed?: number;
+  capturePromptText?: boolean;
+  onManifest?: (manifest: PromptManifest) => void | Promise<void>;
+}
+
+export class LyricsWriterError extends Error {
+  constructor(
+    message: string,
+    public readonly type: LyricsWriterErrorType,
+    public readonly validationIssues: ValidationIssue[] = [],
+    public readonly promptDiagnostics: PromptDiagnostic[] = [],
+  ) {
+    super(message);
+    this.name = "LyricsWriterError";
+  }
+}
+
 const ResponseSchema = z.object({
   sections: z.array(
     z.object({
@@ -109,6 +225,17 @@ function stripFences(text: string): string {
   return (match ? match[1]! : text).trim();
 }
 
+function sha256(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
+
+function sanitizeMessage(message: string): string {
+  return message
+    .replace(/sk-[A-Za-z0-9_-]+/g, "[redacted]")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
+    .slice(0, 800);
+}
+
 function feelLabel(feel?: string): string {
   return (feel ?? "straight").replace(/_/g, "-");
 }
@@ -116,6 +243,298 @@ function feelLabel(feel?: string): string {
 /** Lines per section — respects lineDensity (lines per bar ratio). */
 function targetLinesForBars(bars: number, density = 0.5): number {
   return Math.max(2, Math.min(32, Math.round(bars * density)));
+}
+
+function isInstrumentalSection(s: LyricsWriterSectionInput): boolean {
+  return !s.vocal || s.deltas.some((d) => d.toLowerCase() === "instrumental");
+}
+
+function isEmbeddedSectionMarker(line: string): boolean {
+  return /^\s*\[[^\]]+\]\s*$/.test(line);
+}
+
+function isStageDirectionLine(line: string): boolean {
+  return /^\s*\([^)]*\)\s*$/.test(line);
+}
+
+function looksLikeProviderRefusal(content: string): boolean {
+  const lower = content.toLowerCase();
+  return (
+    lower.includes("i can't comply") ||
+    lower.includes("i cannot comply") ||
+    lower.includes("i can't help") ||
+    lower.includes("i cannot help") ||
+    lower.includes("i'm unable to") ||
+    lower.includes("i am unable to")
+  );
+}
+
+export function expectedLineCountForSection(
+  section: LyricsWriterSectionInput,
+  input: LyricsWriterInput,
+): number {
+  return targetLinesForBars(section.bars, input.lineDensity);
+}
+
+export function validateLyricsSemantics(
+  result: LyricsWriterOutput,
+  specification: LyricsWriterInput,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const expected = specification.sections;
+
+  if (result.sections.length !== expected.length) {
+    issues.push({
+      code: "SECTION_COUNT_MISMATCH",
+      path: "/sections",
+      message: `Expected ${expected.length} section(s), received ${result.sections.length}.`,
+    });
+  }
+
+  const expectedIds = new Set(expected.map((s) => s.id));
+  const seenIds = new Set<string>();
+
+  result.sections.forEach((actual, index) => {
+    const sectionPath = `/sections/${index}`;
+    const expectedSection = expected[index];
+    seenIds.add(actual.id);
+
+    if (!expectedIds.has(actual.id)) {
+      issues.push({
+        code: "SECTION_ID_MISMATCH",
+        path: `${sectionPath}/id`,
+        message: `Unexpected section id "${actual.id}".`,
+      });
+    }
+
+    if (expectedSection && actual.id !== expectedSection.id) {
+      issues.push({
+        code: "SECTION_ORDER_MISMATCH",
+        path: `${sectionPath}/id`,
+        message: `Expected section id "${expectedSection.id}" at position ${index}, received "${actual.id}".`,
+      });
+    }
+
+    const spec = expected.find((s) => s.id === actual.id);
+    if (!spec) return;
+
+    if (isInstrumentalSection(spec)) {
+      if (actual.lines.length !== 0) {
+        issues.push({
+          code: "INSTRUMENTAL_NOT_EMPTY",
+          path: `${sectionPath}/lines`,
+          message: `Instrumental section "${actual.id}" must contain zero lyric lines.`,
+        });
+      }
+    } else {
+      const expectedLines = expectedLineCountForSection(spec, specification);
+      if (actual.lines.length !== expectedLines) {
+        issues.push({
+          code: "LINE_COUNT_MISMATCH",
+          path: `${sectionPath}/lines`,
+          message: `Section "${actual.id}" expected exactly ${expectedLines} lyric line(s), received ${actual.lines.length}.`,
+        });
+      }
+    }
+
+    actual.lines.forEach((line, lineIndex) => {
+      const linePath = `${sectionPath}/lines/${lineIndex}`;
+      if (line.trim().length === 0 || line.includes("\n")) {
+        issues.push({
+          code: "BLANK_LYRIC_LINE",
+          path: linePath,
+          message: `Section "${actual.id}" contains a blank or multi-line lyric string.`,
+        });
+      }
+      if (isEmbeddedSectionMarker(line)) {
+        issues.push({
+          code: "EMBEDDED_SECTION_MARKER",
+          path: linePath,
+          message: `Section "${actual.id}" embeds a section heading inside lyric lines.`,
+        });
+      }
+      if (isStageDirectionLine(line)) {
+        issues.push({
+          code: "STAGE_DIRECTION_LINE",
+          path: linePath,
+          message: `Section "${actual.id}" contains a pure stage direction instead of a lyric line.`,
+        });
+      }
+    });
+  });
+
+  for (const s of expected) {
+    if (!seenIds.has(s.id)) {
+      issues.push({
+        code: "SECTION_ID_MISMATCH",
+        path: "/sections",
+        message: `Missing expected section id "${s.id}".`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+function hasCentralBrief(input: LyricsWriterInput): boolean {
+  return !!(
+    input.lyricTopic?.trim() ||
+    input.lyricThemes?.length ||
+    input.imageAnchors?.length
+  );
+}
+
+function getRenderedSectionBlock(
+  userPrompt: string,
+  section: LyricsWriterSectionInput,
+  next?: LyricsWriterSectionInput,
+): string {
+  const start = userPrompt.indexOf(`  ${section.id} —`);
+  if (start === -1) return "";
+  const end = next ? userPrompt.indexOf(`  ${next.id} —`, start + 1) : -1;
+  return end === -1 ? userPrompt.slice(start) : userPrompt.slice(start, end);
+}
+
+export function lintRenderedLyricsRequest(
+  input: LyricsWriterInput,
+  rendered: { system: string; user: string },
+): PromptDiagnostic[] {
+  const diagnostics: PromptDiagnostic[] = [];
+  const seen = new Map<string, number>();
+
+  if (input.sections.length === 0) {
+    diagnostics.push({
+      severity: "error",
+      code: "STRUCTURE_CONFLICT",
+      path: "/sections",
+      message: "Lyrics request has no section specifications.",
+    });
+  }
+
+  input.sections.forEach((section, index) => {
+    const path = `/sections/${index}`;
+    const previous = seen.get(section.id);
+    if (previous !== undefined) {
+      diagnostics.push({
+        severity: "error",
+        code: "INVALID_SECTION_REFERENCE",
+        path: `${path}/id`,
+        message: `Duplicate section id "${section.id}" also appears at /sections/${previous}.`,
+      });
+    }
+    seen.set(section.id, index);
+
+    if (!Number.isFinite(section.bars) || section.bars <= 0) {
+      diagnostics.push({
+        severity: "error",
+        code: "STRUCTURE_CONFLICT",
+        path: `${path}/bars`,
+        message: `Section "${section.id}" has invalid bar count ${section.bars}.`,
+      });
+    }
+
+    const instrumentalDelta = section.deltas.some(
+      (d) => d.toLowerCase() === "instrumental",
+    );
+    if (instrumentalDelta && section.vocal) {
+      diagnostics.push({
+        severity: "error",
+        code: "INSTRUMENTAL_VOCAL_CONFLICT",
+        path,
+        message: `Section "${section.id}" is tagged instrumental but also has a vocal preset.`,
+      });
+    }
+
+    const lowerDeltas = section.deltas.map((d) => d.toLowerCase());
+    if (
+      firstWord(section.name) === "bridge" &&
+      lowerDeltas.some(
+        (d) => d.includes("minimal") || d.includes("stripped"),
+      ) &&
+      lowerDeltas.some(
+        (d) =>
+          d.includes("full") ||
+          d.includes("intense") ||
+          d.includes("climactic"),
+      )
+    ) {
+      diagnostics.push({
+        severity: "warning",
+        code: "STRUCTURE_CONFLICT",
+        path: `${path}/deltas`,
+        message: `Bridge "${section.id}" mixes stripped/minimal and full/intense arrangement cues.`,
+      });
+    }
+
+    if (firstWord(section.name) === "verse") {
+      const priorVerses = input.sections
+        .slice(0, index)
+        .filter((s) => firstWord(s.name) === "verse");
+      if (priorVerses.length === 0) {
+        const block = getRenderedSectionBlock(
+          rendered.user,
+          section,
+          input.sections[index + 1],
+        ).toLowerCase();
+        if (block.includes("previous verse")) {
+          diagnostics.push({
+            severity: "error",
+            code: "INVALID_SECTION_REFERENCE",
+            path,
+            message: `First verse section "${section.id}" refers to a previous verse.`,
+          });
+        }
+      }
+    }
+  });
+
+  if (input.lineDensity !== undefined && input.lineDensity <= 0) {
+    diagnostics.push({
+      severity: "error",
+      code: "STRUCTURE_CONFLICT",
+      path: "/lineDensity",
+      message: `Line density must be positive, received ${input.lineDensity}.`,
+    });
+  }
+
+  if (!hasCentralBrief(input)) {
+    diagnostics.push({
+      severity: "warning",
+      code: "MISSING_GROUNDING",
+      path: "/lyricTopic",
+      message:
+        "Lyrics request has no topic, themes, or image anchors; output will rely entirely on genre defaults.",
+    });
+  } else if (
+    !input.imageAnchors?.length &&
+    ((input.lyricTopic?.length ?? 0) > 80 ||
+      (input.lyricThemes?.length ?? 0) > 3)
+  ) {
+    diagnostics.push({
+      severity: "warning",
+      code: "MISSING_GROUNDING",
+      path: "/imageAnchors",
+      message:
+        "Specificity-heavy lyric request has no concrete image anchors for grounding.",
+    });
+  }
+
+  const system = rendered.system;
+  if (
+    !system.includes("Return ONLY valid JSON") ||
+    !system.includes('"lines" must be an array') ||
+    !system.includes("specified lyric-line count")
+  ) {
+    diagnostics.push({
+      severity: "error",
+      code: "SCHEMA_PROMPT_MISMATCH",
+      path: "/system",
+      message:
+        "System prompt is missing JSON, lines-array, or exact-line-count response contract.",
+    });
+  }
+
+  return diagnostics;
 }
 
 function vocalDescription(vocal?: LyricsWriterVocal): string {
@@ -562,14 +981,98 @@ export interface LyricsLlm {
 export async function writeLyrics(
   llm: LyricsLlm,
   input: LyricsWriterInput,
-  opts?: { signal?: AbortSignal; maxAttempts?: number; traceDir?: string },
+  opts?: {
+    signal?: AbortSignal;
+    maxAttempts?: number;
+    traceDir?: string;
+    trace?: LyricsWriterTraceOptions;
+  },
 ): Promise<LyricsWriterOutput> {
   const { system, user } = buildLyricsPrompt(input);
+  const promptDiagnostics = lintRenderedLyricsRequest(input, { system, user });
   writeLyricsTrace(input, system, user, opts?.traceDir);
   const maxAttempts = opts?.maxAttempts ?? 2;
+  const temperature = 0.8;
+  const maxTokens = 16384;
+  const traceStarted = Date.now();
+  const traceId = opts?.trace?.traceId ?? randomUUID();
+  const attempts: PromptAttemptTelemetry[] = [];
 
   let lastError = "unknown error";
+  let failureType: LyricsWriterErrorType | undefined;
+  let lastIssues: ValidationIssue[] = [];
+
+  const buildManifest = (
+    status: PromptManifest["status"],
+    response?: LlmResponse,
+  ): PromptManifest => {
+    const trace = opts?.trace;
+    const parsingFailures = attempts.filter(
+      (a) => a.errorType === "parse_error",
+    ).length;
+    const validationFailures = attempts.filter(
+      (a) => a.errorType === "schema_error" || a.errorType === "semantic_error",
+    ).length;
+    return {
+      traceId,
+      createdAt: new Date(traceStarted).toISOString(),
+      provider: trace?.provider ?? "unknown",
+      model: response?.model ?? trace?.model ?? "unknown",
+      modelParameters: { temperature, maxTokens, seed: trace?.seed },
+      promptId: trace?.promptId ?? `lyrics-${input.genreName.toLowerCase()}`,
+      promptVersion: trace?.promptVersion ?? "lyrics-writer-v1",
+      promptSourcePath: trace?.promptSourcePath ?? "inline",
+      promptSourceHash:
+        trace?.promptSourceHash ?? sha256(input.lyricsGuidance ?? ""),
+      systemPromptHash: sha256(system),
+      userPromptHash: sha256(user),
+      responseSchemaVersion: "lyrics-writer-response-v1",
+      genre: trace?.genre ?? input.genreName,
+      preset: trace?.preset ?? (input.presetLabels.join(" / ") || undefined),
+      pipelineVersion: trace?.pipelineVersion ?? "1.0.0",
+      gitCommit: trace?.gitCommit,
+      selectedRuleIds: trace?.selectedRuleIds,
+      retryCount: Math.max(0, attempts.length - 1),
+      parsingFailures,
+      validationFailures,
+      repairAttempts: Math.max(0, attempts.length - 1),
+      latencyMs: Date.now() - traceStarted,
+      tokenUsage: response?.usage ?? attempts.at(-1)?.usage,
+      status,
+      failureType: status === "failure" ? failureType : undefined,
+      failureMessage:
+        status === "failure" ? sanitizeMessage(lastError) : undefined,
+      attempts,
+      diagnostics: promptDiagnostics.length > 0 ? promptDiagnostics : undefined,
+      systemPrompt: trace?.capturePromptText ? system : undefined,
+      userPrompt: trace?.capturePromptText ? user : undefined,
+    };
+  };
+
+  const emitManifest = async (
+    status: PromptManifest["status"],
+    response?: LlmResponse,
+  ) => {
+    if (!opts?.trace?.onManifest) return;
+    await opts.trace.onManifest(buildManifest(status, response));
+  };
+
+  const promptErrors = promptDiagnostics.filter((d) => d.severity === "error");
+  if (promptErrors.length > 0) {
+    failureType = "prompt_lint_error";
+    lastError = `prompt lint failed: ${promptErrors.map((d) => d.message).join("; ")}`;
+    await emitManifest("failure");
+    throw new LyricsWriterError(
+      `LyricsWriter: ${sanitizeMessage(lastError)}`,
+      failureType,
+      [],
+      promptDiagnostics,
+    );
+  }
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const startedAt = new Date().toISOString();
+    const startedMs = Date.now();
     const messages: LlmRequest["messages"] = [
       { role: "system", content: system },
       { role: "user", content: user },
@@ -581,25 +1084,104 @@ export async function writeLyrics(
       });
     }
 
-    const response = await llm.complete({
-      messages,
-      temperature: 0.8,
-      maxTokens: 16384,
-      responseFormat: "json_object",
-      signal: opts?.signal,
-    });
+    let response: LlmResponse;
+    try {
+      response = await llm.complete({
+        messages,
+        temperature,
+        maxTokens,
+        responseFormat: "json_object",
+        signal: opts?.signal,
+      });
+    } catch (err) {
+      failureType = "provider_error";
+      lastError = err instanceof Error ? err.message : String(err);
+      attempts.push({
+        attempt: attempt + 1,
+        startedAt,
+        latencyMs: Date.now() - startedMs,
+        status: "failure",
+        errorType: failureType,
+        errorMessage: sanitizeMessage(lastError),
+      });
+      await emitManifest("failure");
+      throw new LyricsWriterError(
+        `LyricsWriter: provider error: ${sanitizeMessage(lastError)}`,
+        failureType,
+      );
+    }
 
     try {
+      if (looksLikeProviderRefusal(response.content)) {
+        failureType = "provider_refusal";
+        lastError = "provider refusal";
+        attempts.push({
+          attempt: attempt + 1,
+          startedAt,
+          latencyMs: Date.now() - startedMs,
+          status: "failure",
+          errorType: failureType,
+          errorMessage: lastError,
+          model: response.model,
+          usage: response.usage,
+        });
+        await emitManifest("failure", response);
+        throw new LyricsWriterError(
+          "LyricsWriter: provider refusal",
+          failureType,
+        );
+      }
       const raw = stripFences(response.content);
       const parsed = JSON.parse(raw);
       const validated = ResponseSchema.parse(parsed);
-      return { sections: validated.sections };
+      const result = { sections: validated.sections };
+      const issues = validateLyricsSemantics(result, input);
+      if (issues.length > 0) {
+        throw new LyricsWriterError(
+          `semantic validation failed: ${issues.map((i) => i.message).join("; ")}`,
+          "semantic_error",
+          issues,
+        );
+      }
+      attempts.push({
+        attempt: attempt + 1,
+        startedAt,
+        latencyMs: Date.now() - startedMs,
+        status: "success",
+        model: response.model,
+        usage: response.usage,
+      });
+      await emitManifest("success", response);
+      return result;
     } catch (err) {
+      if (err instanceof LyricsWriterError && err.type === "provider_refusal") {
+        throw err;
+      }
+      if (err instanceof SyntaxError) failureType = "parse_error";
+      else if (err instanceof z.ZodError) failureType = "schema_error";
+      else if (err instanceof LyricsWriterError) failureType = err.type;
+      else failureType = "parse_error";
+
+      lastIssues = err instanceof LyricsWriterError ? err.validationIssues : [];
       lastError = err instanceof Error ? err.message : String(err);
+      attempts.push({
+        attempt: attempt + 1,
+        startedAt,
+        latencyMs: Date.now() - startedMs,
+        status: "failure",
+        errorType: failureType,
+        errorMessage: sanitizeMessage(lastError),
+        validationIssues: lastIssues.length > 0 ? lastIssues : undefined,
+        model: response.model,
+        usage: response.usage,
+      });
     }
   }
 
-  throw new Error(
-    `LyricsWriter: model did not return valid JSON after ${maxAttempts} attempt(s): ${lastError}`,
+  await emitManifest("failure");
+  throw new LyricsWriterError(
+    `LyricsWriter: model did not return valid lyrics JSON after ${maxAttempts} attempt(s): ${sanitizeMessage(lastError)}`,
+    failureType ?? "parse_error",
+    lastIssues,
   );
 }

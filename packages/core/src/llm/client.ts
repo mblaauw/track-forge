@@ -4,6 +4,7 @@ import type {
   LlmResponse,
   LlmProvider,
   ProviderConfig,
+  ProviderCapabilities,
 } from "./types.js";
 import { PROVIDER_DEFAULTS } from "./types.js";
 
@@ -14,6 +15,177 @@ export interface LlmLogger {
   info(obj: Record<string, unknown>, msg?: string): void;
   warn(obj: Record<string, unknown>, msg?: string): void;
   error(obj: Record<string, unknown>, msg?: string): void;
+}
+
+export interface ProviderRequest {
+  url: string;
+  headers: Record<string, string>;
+  body: Record<string, unknown>;
+  providerLabel: string;
+}
+
+const PROVIDER_CAPABILITIES: Record<LlmProvider, ProviderCapabilities> = {
+  openai: {
+    supportsSystemRole: true,
+    supportsDeveloperRole: true,
+    supportsJsonSchema: true,
+    supportsJsonMode: true,
+    supportsSeed: true,
+    supportsStopSequences: true,
+  },
+  "openai-compatible": {
+    supportsSystemRole: true,
+    supportsDeveloperRole: false,
+    supportsJsonSchema: false,
+    supportsJsonMode: true,
+    supportsSeed: true,
+    supportsStopSequences: true,
+  },
+  anthropic: {
+    supportsSystemRole: true,
+    supportsDeveloperRole: false,
+    supportsJsonSchema: false,
+    supportsJsonMode: false,
+    supportsSeed: false,
+    supportsStopSequences: true,
+  },
+  ollama: {
+    supportsSystemRole: true,
+    supportsDeveloperRole: false,
+    supportsJsonSchema: false,
+    supportsJsonMode: true,
+    supportsSeed: true,
+    supportsStopSequences: true,
+  },
+};
+
+function modelFamily(model: string): string {
+  return model.toLowerCase().split(/[/:@\s-]+/)[0] ?? "";
+}
+
+export function getProviderCapabilities(
+  provider: LlmProvider,
+  model: string,
+): ProviderCapabilities {
+  const base = PROVIDER_CAPABILITIES[provider];
+  const family = modelFamily(model);
+
+  // Some chat wrappers for Gemma-style models ignore or reject separate system
+  // roles. Keep prompt authoring neutral and fold instructions into user text.
+  if (provider === "ollama" && family === "gemma") {
+    return { ...base, supportsSystemRole: false };
+  }
+
+  return { ...base };
+}
+
+function withSystemInstructionInUser(
+  messages: LlmRequest["messages"],
+  systemText: string,
+): LlmRequest["messages"] {
+  const nonSystem = messages.filter((m) => m.role !== "system");
+  const instructionBlock = [
+    "<<<SYSTEM INSTRUCTIONS>>>",
+    systemText,
+    "<<<END SYSTEM INSTRUCTIONS>>>",
+    "",
+  ].join("\n");
+
+  if (nonSystem.length === 0) {
+    return [{ role: "user", content: instructionBlock }];
+  }
+
+  const [first, ...rest] = nonSystem;
+  return [
+    { ...first!, content: `${instructionBlock}${first!.content}` },
+    ...rest,
+  ];
+}
+
+export function buildProviderRequest(
+  cfg: ProviderConfig,
+  req: LlmRequest,
+): ProviderRequest {
+  const { baseUrl, apiKey, model } = cfg;
+  const provider = cfg.provider;
+  const capabilities = getProviderCapabilities(provider, model);
+  const isAnthropic = provider === "anthropic";
+  const isOpenAI = provider === "openai" || provider === "openai-compatible";
+  const isOllama = provider === "ollama";
+
+  const systemMsg = req.messages.filter((m) => m.role === "system");
+  const systemText = systemMsg.map((m) => m.content).join("\n");
+  const normalizedMessages = capabilities.supportsSystemRole
+    ? req.messages
+    : withSystemInstructionInUser(req.messages, systemText);
+  const nonSystem = normalizedMessages.filter((m) => m.role !== "system");
+
+  const url = isOllama
+    ? `${baseUrl}/api/chat`
+    : isAnthropic
+      ? `${baseUrl}/messages`
+      : `${baseUrl}/chat/completions`;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (isOpenAI) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  } else if (isAnthropic) {
+    headers["x-api-key"] = apiKey ?? "";
+    headers["anthropic-version"] = "2023-06-01";
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: normalizedMessages,
+    temperature: req.temperature ?? 0.7,
+    max_tokens: req.maxTokens ?? 2048,
+  };
+
+  if (req.seed !== undefined && capabilities.supportsSeed) {
+    body.seed = req.seed;
+  }
+
+  if (isAnthropic) {
+    if (capabilities.supportsSystemRole && systemText) body.system = systemText;
+    body.messages = nonSystem.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+  }
+
+  if (isOllama) {
+    body.stream = false;
+    if (req.responseFormat === "json_object" && capabilities.supportsJsonMode) {
+      body.format = "json";
+    }
+  }
+
+  if (isOpenAI) {
+    if (req.responseSchema && capabilities.supportsJsonSchema) {
+      body.response_format = {
+        type: "json_schema",
+        json_schema: {
+          name: "track_forge_response",
+          strict: true,
+          schema: req.responseSchema,
+        },
+      };
+    } else if (
+      req.responseFormat === "json_object" &&
+      capabilities.supportsJsonMode
+    ) {
+      body.response_format = { type: "json_object" };
+    }
+  }
+
+  const providerLabel = isOpenAI
+    ? "OpenAI"
+    : isAnthropic
+      ? "Anthropic"
+      : "Ollama";
+  return { url, headers, body, providerLabel };
 }
 
 export function createLlmClient(
@@ -82,53 +254,15 @@ export class LlmClient {
    * response parser — the timeout/signal/error plumbing is shared.
    */
   private async request(req: LlmRequest): Promise<LlmResponse> {
-    const { baseUrl, apiKey, model } = this.cfg;
-
-    // ── Build provider-specific request ───────────────────────────
-    const systemMsg = req.messages.filter((m) => m.role === "system");
-    const nonSystem = req.messages.filter((m) => m.role !== "system");
-
     const provider = this.cfg.provider;
     const isAnthropic = provider === "anthropic";
     const isOpenAI = provider === "openai" || provider === "openai-compatible";
-    const isOllama = provider === "ollama";
-
-    const url = isOllama
-      ? `${baseUrl}/api/chat`
-      : isAnthropic
-        ? `${baseUrl}/messages`
-        : `${baseUrl}/chat/completions`;
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (isOpenAI) {
-      headers.Authorization = `Bearer ${apiKey}`;
-    } else if (isAnthropic) {
-      headers["x-api-key"] = apiKey ?? "";
-      headers["anthropic-version"] = "2023-06-01";
-    }
-
-    const bodyObj: Record<string, unknown> = {
-      model,
-      messages: req.messages,
-      temperature: req.temperature ?? 0.7,
-      max_tokens: req.maxTokens ?? 2048,
-    };
-    if (isAnthropic) {
-      bodyObj.system = systemMsg.map((m) => m.content).join("\n");
-      bodyObj.messages = nonSystem.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-    }
-    if (isOllama) {
-      bodyObj.stream = false;
-      if (req.responseFormat === "json_object") bodyObj.format = "json";
-    }
-    if (isOpenAI && req.responseFormat === "json_object") {
-      bodyObj.response_format = { type: "json_object" };
-    }
+    const {
+      url,
+      headers,
+      body: bodyObj,
+      providerLabel,
+    } = buildProviderRequest(this.cfg, req);
 
     // ── Fire with timeout + combined abort ─────────────────────────
     const timeoutController = new AbortController();
@@ -153,8 +287,11 @@ export class LlmClient {
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      const label = isOpenAI ? "OpenAI" : isAnthropic ? "Anthropic" : "Ollama";
-      throw new LlmError(`${label} API error ${res.status}`, res.status, body);
+      throw new LlmError(
+        `${providerLabel} API error ${res.status}`,
+        res.status,
+        body,
+      );
     }
 
     const json = (await res.json()) as Record<string, unknown>;
@@ -169,7 +306,7 @@ export class LlmClient {
       const msg = choices?.[0]?.message;
       return {
         content: msg?.content ?? "",
-        model: (json.model as string) ?? model,
+        model: (json.model as string) ?? this.cfg.model,
         reasoningContent: msg?.reasoning_content,
         usage: json.usage
           ? {
@@ -185,7 +322,7 @@ export class LlmClient {
       const contentArr = json.content as Array<{ text: string }> | undefined;
       return {
         content: contentArr?.map((c) => c.text).join("") ?? "",
-        model: (json.model as string) ?? model,
+        model: (json.model as string) ?? this.cfg.model,
         usage: json.usage
           ? {
               promptTokens: (json.usage as any).input_tokens,
@@ -202,7 +339,7 @@ export class LlmClient {
     const msg = json.message as { content: string } | undefined;
     return {
       content: msg?.content ?? "",
-      model: (json.model as string) ?? model,
+      model: (json.model as string) ?? this.cfg.model,
     };
   }
 }

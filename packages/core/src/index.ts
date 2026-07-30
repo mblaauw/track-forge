@@ -13,17 +13,32 @@ export type { Db } from "./db/index.js";
 export { loadConfig } from "./config.js";
 
 // LLM client
-export { LlmClient, LlmError, createLlmClient } from "./llm/index.js";
+export {
+  LlmClient,
+  LlmError,
+  createLlmClient,
+  getProviderCapabilities,
+  buildProviderRequest,
+} from "./llm/index.js";
+export type { ProviderRequest } from "./llm/index.js";
 export type {
   LlmMessage,
   LlmRequest,
   LlmResponse,
   LlmProvider,
+  LogicalLlmRequest,
+  ProviderCapabilities,
+  ProviderConfig,
 } from "./llm/index.js";
 export {
   writeLyrics,
   buildLyricsPrompt,
   writeLyricsTrace,
+  validateLyricsSemantics,
+  lintRenderedLyricsRequest,
+  expectedLineCountForSection,
+  LyricsWriterError,
+  recordPromptManifest,
 } from "./llm/index.js";
 export type {
   LyricsLlm,
@@ -32,6 +47,12 @@ export type {
   LyricsWriterSectionInput,
   LyricsWriterSectionResult,
   LyricsWriterVocal,
+  ValidationIssue,
+  PromptDiagnostic,
+  LyricsWriterErrorType,
+  PromptManifest,
+  PromptAttemptTelemetry,
+  PromptTraceLink,
 } from "./llm/index.js";
 
 // Suno integration

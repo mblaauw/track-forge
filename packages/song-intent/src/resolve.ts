@@ -180,7 +180,7 @@ function resolveLyrics(
 ): ResolvedLyrics {
   const l = intent.lyrics;
   return {
-    shouldWrite: vocals.hasLeadVocal,
+    shouldWrite: vocals.mode === "full_lyrics" && vocals.hasLeadVocal,
     topic: l.topic,
     themes: [...l.themes],
     angle: l.angle,

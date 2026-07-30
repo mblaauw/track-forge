@@ -1,0 +1,323 @@
+[
+  {
+    "id": "hiphop.technical_dark_trap",
+    "description": "Technical dark trap with dense internal rhyme and concrete grounding.",
+    "input": {
+      "genreName": "Hip-hop",
+      "presetLabels": ["Trap", "Dark Trap"],
+      "bpm": 140,
+      "mood": "dark, tense",
+      "energy": 9,
+      "narrativeArc": "braggadocio",
+      "rhymeStyle": "multi_syllabic",
+      "flowPattern": "aggressive",
+      "vocalStyle": "rhythmic, triplet flows with ad-libs",
+      "tempoFeel": "half_time",
+      "perceivedBpm": 70,
+      "lineDensity": 1,
+      "perspective": "first_person",
+      "lyricTopic": "late-night ascent from overlooked block to undeniable status",
+      "lyricThemes": ["ambition", "loyalty", "pressure"],
+      "imageAnchors": [
+        "rain on blacktop",
+        "corner-store neon",
+        "bass shaking the trunk"
+      ],
+      "sections": [
+        {
+          "id": "intro",
+          "name": "Intro",
+          "bars": 4,
+          "fn": "establish",
+          "deltas": ["minimal", "instrumental"]
+        },
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 16,
+          "fn": "introduce",
+          "deltas": ["building"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "rhythmic",
+            "energy": 4,
+            "adlibs": true,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "hook",
+          "name": "Hook",
+          "bars": 8,
+          "fn": "peak",
+          "deltas": ["catchy", "intense"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "chant",
+            "energy": 5,
+            "adlibs": true,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "v2",
+          "name": "Verse 2",
+          "bars": 16,
+          "fn": "escalate",
+          "deltas": ["intense"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "rhythmic",
+            "energy": 5,
+            "adlibs": true,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "outro",
+          "name": "Outro",
+          "bars": 4,
+          "fn": "resolve",
+          "deltas": ["minimal", "instrumental"]
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "hiphop.sparse_melodic_trap",
+    "description": "Sparse melodic trap with restrained line density.",
+    "input": {
+      "genreName": "Hip-hop",
+      "presetLabels": ["Trap", "Melodic Trap"],
+      "bpm": 132,
+      "mood": "melancholic",
+      "energy": 5,
+      "narrativeArc": "conscious",
+      "rhymeStyle": "slant",
+      "flowPattern": "laid_back",
+      "vocalStyle": "melodic rap, spacious phrasing",
+      "lineDensity": 0.5,
+      "perspective": "first_person",
+      "lyricTopic": "checking old messages after a long night drive",
+      "lyricThemes": ["regret", "distance"],
+      "imageAnchors": [
+        "phone glow",
+        "empty passenger seat",
+        "gas station coffee"
+      ],
+      "sections": [
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 12,
+          "fn": "introduce",
+          "deltas": ["minimal"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "melodic",
+            "energy": 2,
+            "adlibs": false,
+            "harmonies": true
+          }
+        },
+        {
+          "id": "hook",
+          "name": "Hook",
+          "bars": 8,
+          "fn": "peak",
+          "deltas": ["catchy"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "melodic",
+            "energy": 3,
+            "adlibs": true,
+            "harmonies": true
+          }
+        },
+        {
+          "id": "bridge",
+          "name": "Bridge",
+          "bars": 4,
+          "fn": "contrast",
+          "deltas": ["stripped back"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "soft",
+            "energy": 1,
+            "adlibs": false,
+            "harmonies": true
+          }
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "hiphop.boom_bap_storytelling",
+    "description": "Boom-bap storytelling with clear narrative progression.",
+    "input": {
+      "genreName": "Hip-hop",
+      "presetLabels": ["Boom Bap", "Storytelling"],
+      "bpm": 92,
+      "mood": "reflective",
+      "energy": 6,
+      "narrativeArc": "storytelling",
+      "rhymeStyle": "internal",
+      "flowPattern": "straight",
+      "lineDensity": 1,
+      "perspective": "third_person",
+      "lyricTopic": "a kid choosing between the train platform and the corner crowd",
+      "lyricThemes": ["choice", "family", "risk"],
+      "imageAnchors": [
+        "creased transfer ticket",
+        "stoop light",
+        "backpack zipper"
+      ],
+      "sections": [
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 16,
+          "fn": "introduce",
+          "deltas": ["dusty", "building"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "rhythmic",
+            "energy": 3,
+            "adlibs": false,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "hook",
+          "name": "Hook",
+          "bars": 8,
+          "fn": "peak",
+          "deltas": ["catchy"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "chant",
+            "energy": 4,
+            "adlibs": false,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "v2",
+          "name": "Verse 2",
+          "bars": 16,
+          "fn": "develop",
+          "deltas": ["intense"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "rhythmic",
+            "energy": 4,
+            "adlibs": false,
+            "harmonies": false
+          }
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "hiphop.playful_party_rap",
+    "description": "Playful party rap with broad hook and no adversarial conflicts.",
+    "input": {
+      "genreName": "Hip-hop",
+      "presetLabels": ["Party Rap"],
+      "bpm": 104,
+      "mood": "playful, bright",
+      "energy": 8,
+      "narrativeArc": "braggadocio",
+      "rhymeStyle": "simple",
+      "flowPattern": "bouncy",
+      "lineDensity": 0.75,
+      "perspective": "first_person",
+      "lyricTopic": "turning a rooftop gathering into a citywide party",
+      "lyricThemes": ["celebration", "confidence"],
+      "imageAnchors": [
+        "plastic cups",
+        "skyline flash",
+        "sneakers on tar paper"
+      ],
+      "sections": [
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 8,
+          "fn": "introduce",
+          "deltas": ["bouncy"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "playful",
+            "energy": 4,
+            "adlibs": true,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "hook",
+          "name": "Hook",
+          "bars": 8,
+          "fn": "peak",
+          "deltas": ["catchy", "climactic"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "chant",
+            "energy": 5,
+            "adlibs": true,
+            "harmonies": true
+          }
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "hiphop.adversarial_duplicate_id",
+    "description": "Invalid fixture: duplicate section IDs must fail rendered lint.",
+    "input": {
+      "genreName": "Hip-hop",
+      "presetLabels": ["Trap"],
+      "bpm": 140,
+      "lineDensity": 0.5,
+      "lyricTopic": "duplicate section check",
+      "sections": [
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 4,
+          "fn": "introduce",
+          "deltas": ["building"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "rhythmic",
+            "energy": 4,
+            "adlibs": false,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "v1",
+          "name": "Verse 2",
+          "bars": 4,
+          "fn": "develop",
+          "deltas": ["building"],
+          "vocal": {
+            "type": "Rapper",
+            "delivery": "rhythmic",
+            "energy": 4,
+            "adlibs": false,
+            "harmonies": false
+          }
+        }
+      ]
+    },
+    "expectations": {
+      "errorCodes": ["INVALID_SECTION_REFERENCE"],
+      "warningCodes": []
+    }
+  }
+]

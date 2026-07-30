@@ -29,6 +29,24 @@ function fakeLlm(response?: string): LyricsLlm {
   };
 }
 
+function validResponseFor(input: LyricsWriterInput): string {
+  const sections = input.sections.map((s) => {
+    const instrumental =
+      !s.vocal || s.deltas.some((d) => d.toLowerCase() === "instrumental");
+    const count = Math.max(
+      2,
+      Math.min(32, Math.round(s.bars * (input.lineDensity ?? 0.5))),
+    );
+    return {
+      id: s.id,
+      lines: instrumental
+        ? []
+        : Array.from({ length: count }, (_, i) => `${s.name} lyric ${i + 1}`),
+    };
+  });
+  return JSON.stringify({ sections });
+}
+
 const COMMON_VOCAL = {
   type: "Rapper",
   delivery: "rhythmic",
@@ -391,7 +409,9 @@ describe("Lyrics prompt and trace", () => {
       lyricAngle: "story",
       lyricThemes: ["struggle", "ambition"],
     });
-    await writeLyrics(fakeLlm(), input, { traceDir: tmpDir });
+    await writeLyrics(fakeLlm(validResponseFor(input)), input, {
+      traceDir: tmpDir,
+    });
 
     const files = readdirSync(tmpDir);
     expect(files).toHaveLength(1);
@@ -410,7 +430,9 @@ describe("Lyrics prompt and trace", () => {
 
   it("writes EDM trace file", async () => {
     const input = edmInput({ lyricTopic: "summer love" });
-    await writeLyrics(fakeLlm(), input, { traceDir: tmpDir });
+    await writeLyrics(fakeLlm(validResponseFor(input)), input, {
+      traceDir: tmpDir,
+    });
 
     const files = readdirSync(tmpDir);
     expect(files).toHaveLength(1);
@@ -426,7 +448,9 @@ describe("Lyrics prompt and trace", () => {
 
   it("filename contains genre and preset slug", async () => {
     const input = hipHopInput({ presetLabels: ["Trap", "Dark Trap"] });
-    await writeLyrics(fakeLlm(), input, { traceDir: tmpDir });
+    await writeLyrics(fakeLlm(validResponseFor(input)), input, {
+      traceDir: tmpDir,
+    });
     const files = readdirSync(tmpDir);
     expect(files[0]!).toMatch(/^hip-hop_trap-dark-trap_.+\.log$/);
   });

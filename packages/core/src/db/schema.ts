@@ -76,6 +76,43 @@ export const compilations = sqliteTable("compilations", {
   createdAt: text("created_at").notNull(),
 });
 
+export const promptTraces = sqliteTable("prompt_traces", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id").references(() => jobs.id, { onDelete: "cascade" }),
+  intentRevisionId: text("intent_revision_id").references(
+    () => intentRevisions.id,
+    { onDelete: "cascade" },
+  ),
+  compilationId: text("compilation_id").references(() => compilations.id, {
+    onDelete: "set null",
+  }),
+  provider: text("provider").notNull(),
+  model: text("model").notNull(),
+  promptId: text("prompt_id").notNull(),
+  promptVersion: text("prompt_version").notNull(),
+  promptSourcePath: text("prompt_source_path").notNull(),
+  promptSourceHash: text("prompt_source_hash").notNull(),
+  systemPromptHash: text("system_prompt_hash").notNull(),
+  userPromptHash: text("user_prompt_hash").notNull(),
+  responseSchemaVersion: text("response_schema_version").notNull(),
+  genre: text("genre").notNull(),
+  preset: text("preset"),
+  pipelineVersion: text("pipeline_version").notNull(),
+  gitCommit: text("git_commit"),
+  status: text("status").notNull(),
+  failureType: text("failure_type"),
+  failureMessage: text("failure_message"),
+  retryCount: integer("retry_count").notNull().default(0),
+  parsingFailures: integer("parsing_failures").notNull().default(0),
+  validationFailures: integer("validation_failures").notNull().default(0),
+  repairAttempts: integer("repair_attempts").notNull().default(0),
+  latencyMs: integer("latency_ms").notNull().default(0),
+  tokenUsageJson: text("token_usage_json"),
+  attemptsJson: text("attempts_json").notNull(),
+  manifestJson: text("manifest_json").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
 export const versions = sqliteTable("versions", {
   id: text("id").primaryKey(),
   jobId: text("job_id")

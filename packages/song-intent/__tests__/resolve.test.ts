@@ -133,6 +133,35 @@ describe("resolveSongIntent: derivation rules", () => {
     expect(result.traits.some((t) => t.name === "instrumental")).toBe(true);
   });
 
+  it("rule 1: strict_instrumental skips lyric writing even with vocal overrides", () => {
+    const draft: SongIntentDraft = {
+      selectedStyles: [],
+      userValues: {
+        vocals: {
+          mode: "strict_instrumental",
+          sections: [
+            {
+              sectionId: "section-1",
+              vocal: {
+                type: "Rapper",
+                delivery: "spoken",
+                energy: 2,
+                adlibs: false,
+                harmonies: false,
+              },
+            },
+          ],
+        },
+        musical: { characteristics: [], descriptors: [] },
+        lyrics: { themes: [], imageAnchors: [] },
+      },
+    };
+    const result = resolve(draft, noopCatalog);
+    expect(result.vocals.hasLeadVocal).toBe(true);
+    expect(result.lyrics.shouldWrite).toBe(false);
+    expect(result.conflicts.some((c) => c.path === "/vocals/mode")).toBe(true);
+  });
+
   it("rule 1: full_lyrics → has lead vocal", () => {
     const draft: SongIntentDraft = {
       selectedStyles: [],

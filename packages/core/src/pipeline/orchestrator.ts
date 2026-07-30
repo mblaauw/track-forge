@@ -28,6 +28,7 @@ import { buildLyricsBrief, enrichResolved } from "./intent-bridge.js";
 import { resolveSongIntent } from "@track-forge/song-intent";
 import { freezeIntentRevision } from "../intent-revisions/index.js";
 import { writeLyrics } from "../llm/lyrics-writer.js";
+import { recordPromptManifest } from "../llm/prompt-manifest.js";
 import type { LyricsWriterSectionInput } from "../llm/lyrics-writer.js";
 import { publish } from "./events.js";
 import { createAbortController, cleanupJob } from "./job-abort-controller.js";
@@ -217,7 +218,10 @@ async function handleLyricsWriting(
   if (!resolved)
     throw new Error("Pipeline state missing resolved intent in lyrics_writing");
 
-  if (!resolved.vocals.hasLeadVocal) {
+  if (
+    resolved.vocals.mode === "strict_instrumental" ||
+    !resolved.lyrics.shouldWrite
+  ) {
     return {
       ...state,
       lyricsWriterResult: {
@@ -277,6 +281,23 @@ async function handleLyricsWriting(
 
   const writerResult = await writeLyrics(deps.llm, writerInput, {
     signal: deps.signal,
+    trace: {
+      provider: deps.config.llmProvider,
+      model: deps.config.llmModel,
+      promptId: `lyrics-${state.job.genreId}`,
+      promptVersion: "lyrics-writer-v1",
+      promptSourcePath: `config/lyrics-prompts/${state.job.genreId}.md`,
+      genre: state.job.genreId,
+      preset: state.job.presetId,
+      pipelineVersion: "1.0.0",
+      gitCommit: process.env.GIT_COMMIT,
+      capturePromptText: process.env.TRACK_FORGE_CAPTURE_PROMPT_TEXT === "1",
+      onManifest: (manifest) =>
+        recordPromptManifest(deps.db, manifest, {
+          jobId: state.job.id,
+          intentRevisionId: state.intentRevisionId,
+        }),
+    },
   });
 
   trace("handleLyricsWriting.response", {
@@ -424,12 +445,17 @@ async function handleVersioning(
           now,
         );
 
-      // Link the version to the intent revision and compilation.
+      // Link the version and any successful prompt trace to the compilation.
       sqlite
         .prepare(
           "UPDATE versions SET intent_revision_id = ?, compilation_id = ? WHERE id = ?",
         )
         .run(state.intentRevisionId, compilationId, version.id);
+      sqlite
+        .prepare(
+          "UPDATE prompt_traces SET compilation_id = ? WHERE job_id = ? AND intent_revision_id = ? AND status = 'success'",
+        )
+        .run(compilationId, job.id, state.intentRevisionId);
     }
 
     // Mark the job as completed — only after version + compilation are persisted.

@@ -11,9 +11,32 @@ export interface LlmRequest {
   messages: LlmMessage[];
   temperature?: number;
   maxTokens?: number;
+  seed?: number;
   signal?: AbortSignal;
   /** Request strict JSON output from providers that support it (OpenAI-compatible, Ollama). */
   responseFormat?: "json_object";
+  /** Optional JSON Schema for providers that support native structured output. */
+  responseSchema?: Record<string, unknown>;
+}
+
+export interface LogicalLlmRequest<T = unknown> {
+  systemInstruction: string;
+  userContent: string;
+  responseSchema?: Record<string, unknown>;
+  temperature?: number;
+  maxTokens?: number;
+  seed?: number;
+  signal?: AbortSignal;
+  _responseType?: T;
+}
+
+export interface ProviderCapabilities {
+  supportsSystemRole: boolean;
+  supportsDeveloperRole: boolean;
+  supportsJsonSchema: boolean;
+  supportsJsonMode: boolean;
+  supportsSeed: boolean;
+  supportsStopSequences: boolean;
 }
 
 export interface LlmResponse {

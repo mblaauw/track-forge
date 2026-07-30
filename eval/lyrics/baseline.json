@@ -1,0 +1,613 @@
+{
+  "createdAt": "2026-07-29T20:55:47.329Z",
+  "mode": "dry-structural",
+  "promptVersion": "lyrics-writer-v1",
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "edm.festival_house_anthem",
+      "file": "edm.json",
+      "description": "Festival house anthem with broad singable chorus.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "EDM",
+      "presets": [
+        "Festival House",
+        "Anthem"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 5,
+        "vocalSectionCount": 3,
+        "instrumentalSectionCount": 2,
+        "totalExpectedLyricLines": 20,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "intro",
+            "name": "Intro",
+            "bars": 8,
+            "instrumental": true,
+            "expectedLineCount": 0
+          },
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 8
+          },
+          {
+            "id": "pre",
+            "name": "Pre-Chorus",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 4
+          },
+          {
+            "id": "chorus",
+            "name": "Chorus",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 8
+          },
+          {
+            "id": "drop",
+            "name": "Drop",
+            "bars": 16,
+            "instrumental": true,
+            "expectedLineCount": 0
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "961072b823bbbd478ba12fd8f00224064d4ae8bc6c777ae939f3e1ef1e6aafd1",
+        "userPromptHash": "6dc9bc0a2fa23be8f789e73fb853e21bd38db41c936d0426b4276a0840cd539d",
+        "systemLength": 639,
+        "userLength": 2505
+      }
+    },
+    {
+      "id": "edm.minimal_tech_house_vocal_loop",
+      "file": "edm.json",
+      "description": "Minimal tech-house with concise vocal loop.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "EDM",
+      "presets": [
+        "Tech House",
+        "Minimal"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 3,
+        "vocalSectionCount": 2,
+        "instrumentalSectionCount": 1,
+        "totalExpectedLyricLines": 4,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "loop",
+            "name": "Hook",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 2
+          },
+          {
+            "id": "break",
+            "name": "Breakdown",
+            "bars": 8,
+            "instrumental": true,
+            "expectedLineCount": 0
+          },
+          {
+            "id": "loop2",
+            "name": "Hook 2",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 2
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "4f2458680ab23b8b987496618daf1cce55c617aef8b017162787732cd49faeae",
+        "userPromptHash": "0ebe87d89847a5af423aa0f9c9d94c62a3b09b9f4c5a88818a8ca42035458bce",
+        "systemLength": 636,
+        "userLength": 1587
+      }
+    },
+    {
+      "id": "edm.melodic_house_narrative",
+      "file": "edm.json",
+      "description": "Melodic house with verse/chorus narrative lift.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "EDM",
+      "presets": [
+        "Melodic House"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 3,
+        "vocalSectionCount": 3,
+        "instrumentalSectionCount": 0,
+        "totalExpectedLyricLines": 20,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 8
+          },
+          {
+            "id": "chorus",
+            "name": "Chorus",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 8
+          },
+          {
+            "id": "bridge",
+            "name": "Bridge",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 4
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "bf729c6219e99e6c3eb37d68e6aa73c7cc43ae1ca709bdd87a38988c2f79602c",
+        "userPromptHash": "28f06d62d421fd2858c4d7bde194baeeeb0aaa697ce863c9c64d942a9895eb76",
+        "systemLength": 630,
+        "userLength": 2097
+      }
+    },
+    {
+      "id": "edm.fully_instrumental",
+      "file": "edm.json",
+      "description": "Instrumental arrangement should produce only instrumental section targets.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "EDM",
+      "presets": [
+        "Progressive House",
+        "Instrumental"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 4,
+        "vocalSectionCount": 0,
+        "instrumentalSectionCount": 4,
+        "totalExpectedLyricLines": 0,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "intro",
+            "name": "Intro",
+            "bars": 8,
+            "instrumental": true,
+            "expectedLineCount": 0
+          },
+          {
+            "id": "build",
+            "name": "Build",
+            "bars": 16,
+            "instrumental": true,
+            "expectedLineCount": 0
+          },
+          {
+            "id": "drop",
+            "name": "Drop",
+            "bars": 16,
+            "instrumental": true,
+            "expectedLineCount": 0
+          },
+          {
+            "id": "outro",
+            "name": "Outro",
+            "bars": 8,
+            "instrumental": true,
+            "expectedLineCount": 0
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "33f1bf35dce56090d19b7d702c189dbb6cffc2e76440b35c720da974cffd2f19",
+        "userPromptHash": "6e2965f4c6d675682cedf14bc81e0ad1c1d1f92b4a341c201fdd81eff8b1af4b",
+        "systemLength": 648,
+        "userLength": 849
+      }
+    },
+    {
+      "id": "edm.adversarial_instrumental_vocal_conflict",
+      "file": "edm.json",
+      "description": "Invalid fixture: instrumental tag with vocal preset must block.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "EDM",
+      "presets": [
+        "Dance Pop"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 1,
+        "vocalSectionCount": 0,
+        "instrumentalSectionCount": 1,
+        "totalExpectedLyricLines": 0,
+        "errorCounts": {
+          "INSTRUMENTAL_VOCAL_CONFLICT": 1
+        },
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "intro",
+            "name": "Intro",
+            "bars": 8,
+            "instrumental": true,
+            "expectedLineCount": 0
+          }
+        ]
+      },
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "INSTRUMENTAL_VOCAL_CONFLICT",
+          "path": "/sections/0",
+          "message": "Section \"intro\" is tagged instrumental but also has a vocal preset."
+        }
+      ],
+      "prompt": {
+        "systemPromptHash": "c7168fa3192a52eb2a339bc43b386ac2f35cc84a2eea12280847a7e2373eca00",
+        "userPromptHash": "5d0a7c1505c35f9a6cd3ca25fba83ba14866d731792150125847bb80c9d35af6",
+        "systemLength": 626,
+        "userLength": 287
+      }
+    },
+    {
+      "id": "hiphop.technical_dark_trap",
+      "file": "hiphop.json",
+      "description": "Technical dark trap with dense internal rhyme and concrete grounding.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "Hip-hop",
+      "presets": [
+        "Trap",
+        "Dark Trap"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 5,
+        "vocalSectionCount": 3,
+        "instrumentalSectionCount": 2,
+        "totalExpectedLyricLines": 40,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "intro",
+            "name": "Intro",
+            "bars": 4,
+            "instrumental": true,
+            "expectedLineCount": 0
+          },
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 16
+          },
+          {
+            "id": "hook",
+            "name": "Hook",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 8
+          },
+          {
+            "id": "v2",
+            "name": "Verse 2",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 16
+          },
+          {
+            "id": "outro",
+            "name": "Outro",
+            "bars": 4,
+            "instrumental": true,
+            "expectedLineCount": 0
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "a42116e763a367e1ac7ad84db3a62410b2a92a4a7eba9245ba353124add8ca02",
+        "userPromptHash": "4609857b98cc1319de291b571754a2f1efc06bd7f5223a26d027bb6acbc155ec",
+        "systemLength": 636,
+        "userLength": 3019
+      }
+    },
+    {
+      "id": "hiphop.sparse_melodic_trap",
+      "file": "hiphop.json",
+      "description": "Sparse melodic trap with restrained line density.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "Hip-hop",
+      "presets": [
+        "Trap",
+        "Melodic Trap"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 3,
+        "vocalSectionCount": 3,
+        "instrumentalSectionCount": 0,
+        "totalExpectedLyricLines": 12,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 12,
+            "instrumental": false,
+            "expectedLineCount": 6
+          },
+          {
+            "id": "hook",
+            "name": "Hook",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 4
+          },
+          {
+            "id": "bridge",
+            "name": "Bridge",
+            "bars": 4,
+            "instrumental": false,
+            "expectedLineCount": 2
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "5fa3fe6d0d24d3fcc9dd2536ab3df20fe1097c8a96b373f431fceb130687c117",
+        "userPromptHash": "340a447b0c7d06f2f0e5154d2f8d872dc7536e2e0ffb05aa5ae18775feff718b",
+        "systemLength": 639,
+        "userLength": 2255
+      }
+    },
+    {
+      "id": "hiphop.boom_bap_storytelling",
+      "file": "hiphop.json",
+      "description": "Boom-bap storytelling with clear narrative progression.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "Hip-hop",
+      "presets": [
+        "Boom Bap",
+        "Storytelling"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 3,
+        "vocalSectionCount": 3,
+        "instrumentalSectionCount": 0,
+        "totalExpectedLyricLines": 40,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 16
+          },
+          {
+            "id": "hook",
+            "name": "Hook",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 8
+          },
+          {
+            "id": "v2",
+            "name": "Verse 2",
+            "bars": 16,
+            "instrumental": false,
+            "expectedLineCount": 16
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "e266c26a7d80a41df67c36026dd0d4cab1e8c24492f814164de7d11ca3f99d9d",
+        "userPromptHash": "b457eb8387717626f6a9dcac71d0bef51a622c813a5ed1f2017eeef815047b61",
+        "systemLength": 643,
+        "userLength": 2176
+      }
+    },
+    {
+      "id": "hiphop.playful_party_rap",
+      "file": "hiphop.json",
+      "description": "Playful party rap with broad hook and no adversarial conflicts.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "Hip-hop",
+      "presets": [
+        "Party Rap"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 2,
+        "vocalSectionCount": 2,
+        "instrumentalSectionCount": 0,
+        "totalExpectedLyricLines": 12,
+        "errorCounts": {},
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 6
+          },
+          {
+            "id": "hook",
+            "name": "Hook",
+            "bars": 8,
+            "instrumental": false,
+            "expectedLineCount": 6
+          }
+        ]
+      },
+      "diagnostics": [],
+      "prompt": {
+        "systemPromptHash": "33e8060e465dea2f8c9cbc1348b96174f1d7ca428968120014b185844df663a1",
+        "userPromptHash": "7bc03b313c347ae08abe4fa82605a9757ca7d34f7c25bc7e9368d8ac76f40a96",
+        "systemLength": 630,
+        "userLength": 1766
+      }
+    },
+    {
+      "id": "hiphop.adversarial_duplicate_id",
+      "file": "hiphop.json",
+      "description": "Invalid fixture: duplicate section IDs must fail rendered lint.",
+      "mode": "dry-structural",
+      "promptVersion": "lyrics-writer-v1",
+      "genre": "Hip-hop",
+      "presets": [
+        "Trap"
+      ],
+      "status": "pass",
+      "checks": {
+        "promptBuilds": true,
+        "errorCodesMatch": true,
+        "warningCodesMatch": true,
+        "hasResponseContract": true,
+        "hasSectionSpecifications": true
+      },
+      "metrics": {
+        "sectionCount": 2,
+        "vocalSectionCount": 2,
+        "instrumentalSectionCount": 0,
+        "totalExpectedLyricLines": 4,
+        "errorCounts": {
+          "INVALID_SECTION_REFERENCE": 1
+        },
+        "warningCounts": {},
+        "sections": [
+          {
+            "id": "v1",
+            "name": "Verse 1",
+            "bars": 4,
+            "instrumental": false,
+            "expectedLineCount": 2
+          },
+          {
+            "id": "v1",
+            "name": "Verse 2",
+            "bars": 4,
+            "instrumental": false,
+            "expectedLineCount": 2
+          }
+        ]
+      },
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "INVALID_SECTION_REFERENCE",
+          "path": "/sections/1/id",
+          "message": "Duplicate section id \"v1\" also appears at /sections/0."
+        }
+      ],
+      "prompt": {
+        "systemPromptHash": "3cfb547395523a7ebd228d2c3fb657119d3b158989c369d5dc979ed7ca362182",
+        "userPromptHash": "ae18053003bbaf2524c330534134d8382e5fc2f5989786216b65eb9b58adafb0",
+        "systemLength": 625,
+        "userLength": 961
+      }
+    }
+  ]
+}

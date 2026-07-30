@@ -188,6 +188,37 @@ export function createDb(dbPath: string): Db {
     excluded_styles TEXT,
     created_at TEXT NOT NULL
   )`);
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS prompt_traces (
+    id TEXT PRIMARY KEY,
+    job_id TEXT REFERENCES jobs(id) ON DELETE CASCADE,
+    intent_revision_id TEXT REFERENCES intent_revisions(id) ON DELETE CASCADE,
+    compilation_id TEXT REFERENCES compilations(id) ON DELETE SET NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    prompt_id TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    prompt_source_path TEXT NOT NULL,
+    prompt_source_hash TEXT NOT NULL,
+    system_prompt_hash TEXT NOT NULL,
+    user_prompt_hash TEXT NOT NULL,
+    response_schema_version TEXT NOT NULL,
+    genre TEXT NOT NULL,
+    preset TEXT,
+    pipeline_version TEXT NOT NULL,
+    git_commit TEXT,
+    status TEXT NOT NULL,
+    failure_type TEXT,
+    failure_message TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    parsing_failures INTEGER NOT NULL DEFAULT 0,
+    validation_failures INTEGER NOT NULL DEFAULT 0,
+    repair_attempts INTEGER NOT NULL DEFAULT 0,
+    latency_ms INTEGER NOT NULL DEFAULT 0,
+    token_usage_json TEXT,
+    attempts_json TEXT NOT NULL,
+    manifest_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`);
   try {
     sqlite.exec(
       `ALTER TABLE versions ADD COLUMN intent_revision_id TEXT REFERENCES intent_revisions(id)`,
@@ -214,6 +245,12 @@ export function createDb(dbPath: string): Db {
   );
   sqlite.exec(
     `CREATE INDEX IF NOT EXISTS idx_intent_revisions_job_id ON intent_revisions(job_id)`,
+  );
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_prompt_traces_job_id ON prompt_traces(job_id)`,
+  );
+  sqlite.exec(
+    `CREATE INDEX IF NOT EXISTS idx_prompt_traces_status ON prompt_traces(status)`,
   );
   sqlite.exec(
     `CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at)`,

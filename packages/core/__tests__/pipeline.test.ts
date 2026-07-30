@@ -70,6 +70,155 @@ describe("Pipeline orchestrator", () => {
     expect(result.error).toBeNull();
   });
 
+  it("does not persist a successful version when lyrics writing fails", async () => {
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      JSON.stringify({
+        lyricsMode: "full_lyrics",
+        lyricTopic: "test failure path",
+        lineDensity: 0.5,
+        sections: [
+          {
+            id: "v1",
+            name: "Verse 1",
+            bars: 4,
+            fn: "introduce",
+            deltas: ["building"],
+            vocal: {
+              type: "Rapper",
+              delivery: "rhythmic",
+              energy: 4,
+              adlibs: false,
+              harmonies: false,
+            },
+          },
+        ],
+      }),
+      "some reference",
+    );
+    const deps: PipelineDeps = {
+      db,
+      llm: mockLlm("not json"),
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
+    };
+
+    const result = await runPipeline(job.id, deps, mockModule);
+    expect(result.success).toBe(false);
+    expect(result.versionId).toBeNull();
+
+    const versions = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.jobId, job.id));
+    expect(versions).toHaveLength(0);
+
+    const traces = await db
+      .select()
+      .from(schema.promptTraces)
+      .where(eq(schema.promptTraces.jobId, job.id));
+    expect(traces.length).toBeGreaterThan(0);
+    expect(traces.every((t) => t.status === "failure")).toBe(true);
+    const manifest = JSON.parse(traces[0]!.manifestJson) as { status: string };
+    expect(manifest.status).toBe("failure");
+  });
+
+  it("links successful prompt traces to the created compilation", async () => {
+    const job = await createJob(
+      db,
+      "test-genre" as GenreId,
+      "test-preset" as PresetId,
+      JSON.stringify({
+        lyricsMode: "full_lyrics",
+        lineDensity: 1,
+        sections: [
+          {
+            id: "section-1",
+            name: "Verse",
+            bars: 16,
+            fn: "introduce",
+            deltas: ["vocal focus"],
+            vocal: {
+              type: "Rapper",
+              delivery: "rhythmic",
+              energy: 4,
+              adlibs: false,
+              harmonies: false,
+            },
+          },
+          {
+            id: "section-2",
+            name: "Hook",
+            bars: 8,
+            fn: "peak",
+            deltas: ["catchy"],
+            vocal: {
+              type: "Rapper",
+              delivery: "chant",
+              energy: 5,
+              adlibs: true,
+              harmonies: false,
+            },
+          },
+        ],
+      }),
+      "some reference",
+    );
+    const deps: PipelineDeps = {
+      db,
+      llm: mockLlm(
+        JSON.stringify({
+          sections: [
+            {
+              id: "section-1",
+              lines: Array.from(
+                { length: 16 },
+                (_, i) => `Verse line ${i + 1}`,
+              ),
+            },
+            {
+              id: "section-2",
+              lines: Array.from({ length: 8 }, (_, i) => `Hook line ${i + 1}`),
+            },
+          ],
+        }),
+      ),
+      config: {
+        sunoBaseUrl: "https://api.sunomusic.com/v1",
+        logLevel: "fatal" as any,
+        port: 0,
+        llmProvider: "openai",
+        llmModel: "gpt-4o",
+        dbPath: ":memory:",
+      } as any,
+    };
+
+    const result = await runPipeline(job.id, deps, mockModule);
+    expect(result.success).toBe(true);
+
+    const [version] = await db
+      .select()
+      .from(schema.versions)
+      .where(eq(schema.versions.id, result.versionId!));
+    expect(version!.compilationId).toBeTruthy();
+
+    const traces = await db
+      .select()
+      .from(schema.promptTraces)
+      .where(eq(schema.promptTraces.jobId, job.id));
+    expect(traces).toHaveLength(1);
+    expect(traces[0]!.status).toBe("success");
+    expect(traces[0]!.compilationId).toBe(version!.compilationId);
+  });
+
   it("returns error for nonexistent job", async () => {
     const deps: PipelineDeps = {
       db,
@@ -396,7 +545,26 @@ describe("Pipeline orchestrator", () => {
         db,
         "test-genre" as GenreId,
         "test-preset" as PresetId,
-        JSON.stringify({ mood: "test", lyricsMode: "strict_instrumental" }),
+        JSON.stringify({
+          mood: "test",
+          lyricsMode: "strict_instrumental",
+          sections: [
+            {
+              id: "section-1",
+              name: "Verse",
+              bars: 8,
+              fn: "introduce",
+              deltas: ["vocal focus"],
+              vocal: {
+                type: "Rapper",
+                delivery: "spoken",
+                energy: 2,
+                adlibs: false,
+                harmonies: false,
+              },
+            },
+          ],
+        }),
         null,
       );
       const deps: PipelineDeps = {

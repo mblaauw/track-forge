@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts",
     "test:watch": "vitest",
+    "eval:lyrics": "npx tsc -b packages/contracts packages/genre-core packages/song-intent packages/core && node scripts/eval-lyrics.mjs",
     "lint": "tsc --noEmit",
     "clean": "rm -rf apps/*/dist packages/*/dist && find . -name '*.tsbuildinfo' -delete && rm -f vitest.config.{js,d.ts,d.ts.map,js.map} apps/web/vite.config.d.ts && find apps packages -name '*.test.d.ts' -o -name '*.test.d.ts.map' -o -name '*.test.js' -o -name '*.test.js.map' | grep -v node_modules | xargs rm -f"
   },

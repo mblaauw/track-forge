@@ -49,8 +49,20 @@ export function createMockLlm(options?: { content?: string; model?: string }) {
     options?.content ??
     JSON.stringify({
       sections: [
-        { id: "section-1", lines: ["Test line one", "Test line two"] },
-        { id: "section-2", lines: ["Chorus hook line", "Chorus repeat line"] },
+        {
+          id: "section-1",
+          lines: Array.from(
+            { length: 16 },
+            (_, i) => `Test verse line ${i + 1}`,
+          ),
+        },
+        {
+          id: "section-2",
+          lines: Array.from(
+            { length: 8 },
+            (_, i) => `Chorus hook line ${i + 1}`,
+          ),
+        },
       ],
     });
   return {

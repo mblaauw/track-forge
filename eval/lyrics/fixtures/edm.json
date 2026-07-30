@@ -1,0 +1,281 @@
+[
+  {
+    "id": "edm.festival_house_anthem",
+    "description": "Festival house anthem with broad singable chorus.",
+    "input": {
+      "genreName": "EDM",
+      "presetLabels": ["Festival House", "Anthem"],
+      "bpm": 128,
+      "mood": "euphoric",
+      "energy": 9,
+      "narrativeArc": "storytelling",
+      "tempoFeel": "straight",
+      "perceivedBpm": 128,
+      "lineDensity": 0.5,
+      "perspective": "first_person",
+      "lyricTopic": "finding someone in the crowd as the lights open up",
+      "lyricThemes": ["release", "connection", "arrival"],
+      "imageAnchors": [
+        "laser haze",
+        "hands above the rail",
+        "confetti stuck to skin"
+      ],
+      "sections": [
+        {
+          "id": "intro",
+          "name": "Intro",
+          "bars": 8,
+          "fn": "establish",
+          "deltas": ["atmospheric", "instrumental"]
+        },
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 16,
+          "fn": "introduce",
+          "deltas": ["building"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "smooth",
+            "energy": 3,
+            "adlibs": false,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "pre",
+          "name": "Pre-Chorus",
+          "bars": 8,
+          "fn": "build",
+          "deltas": ["rising"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "urgent",
+            "energy": 4,
+            "adlibs": false,
+            "harmonies": true
+          }
+        },
+        {
+          "id": "chorus",
+          "name": "Chorus",
+          "bars": 16,
+          "fn": "peak",
+          "deltas": ["catchy", "climactic"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "powerful",
+            "energy": 5,
+            "adlibs": true,
+            "harmonies": true
+          }
+        },
+        {
+          "id": "drop",
+          "name": "Drop",
+          "bars": 16,
+          "fn": "peak",
+          "deltas": ["climactic", "instrumental"]
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "edm.minimal_tech_house_vocal_loop",
+    "description": "Minimal tech-house with concise vocal loop.",
+    "input": {
+      "genreName": "EDM",
+      "presetLabels": ["Tech House", "Minimal"],
+      "bpm": 124,
+      "mood": "hypnotic",
+      "energy": 6,
+      "tempoFeel": "straight",
+      "perceivedBpm": 124,
+      "lineDensity": 0.25,
+      "perspective": "second_person",
+      "lyricTopic": "a late-room mantra about staying in motion",
+      "lyricThemes": ["movement", "tension"],
+      "imageAnchors": [
+        "red booth light",
+        "sweat on glass",
+        "kick drum underfoot"
+      ],
+      "sections": [
+        {
+          "id": "loop",
+          "name": "Hook",
+          "bars": 8,
+          "fn": "establish",
+          "deltas": ["minimal", "hypnotic"],
+          "vocal": {
+            "type": "Spoken loop",
+            "delivery": "dry",
+            "energy": 2,
+            "adlibs": false,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "break",
+          "name": "Breakdown",
+          "bars": 8,
+          "fn": "contrast",
+          "deltas": ["stripped back", "instrumental"]
+        },
+        {
+          "id": "loop2",
+          "name": "Hook 2",
+          "bars": 8,
+          "fn": "peak",
+          "deltas": ["catchy"],
+          "vocal": {
+            "type": "Spoken loop",
+            "delivery": "dry",
+            "energy": 3,
+            "adlibs": false,
+            "harmonies": false
+          }
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "edm.melodic_house_narrative",
+    "description": "Melodic house with verse/chorus narrative lift.",
+    "input": {
+      "genreName": "EDM",
+      "presetLabels": ["Melodic House"],
+      "bpm": 122,
+      "mood": "warm, emotional",
+      "energy": 7,
+      "narrativeArc": "storytelling",
+      "lineDensity": 0.5,
+      "perspective": "first_person",
+      "lyricTopic": "walking back toward trust after a long winter",
+      "lyricThemes": ["renewal", "trust"],
+      "imageAnchors": ["thawing river", "apartment window", "blue dawn"],
+      "sections": [
+        {
+          "id": "v1",
+          "name": "Verse 1",
+          "bars": 16,
+          "fn": "introduce",
+          "deltas": ["building"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "smooth",
+            "energy": 3,
+            "adlibs": false,
+            "harmonies": false
+          }
+        },
+        {
+          "id": "chorus",
+          "name": "Chorus",
+          "bars": 16,
+          "fn": "peak",
+          "deltas": ["full", "catchy"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "powerful",
+            "energy": 5,
+            "adlibs": false,
+            "harmonies": true
+          }
+        },
+        {
+          "id": "bridge",
+          "name": "Bridge",
+          "bars": 8,
+          "fn": "contrast",
+          "deltas": ["stripped back"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "intimate",
+            "energy": 2,
+            "adlibs": false,
+            "harmonies": true
+          }
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "edm.fully_instrumental",
+    "description": "Instrumental arrangement should produce only instrumental section targets.",
+    "input": {
+      "genreName": "EDM",
+      "presetLabels": ["Progressive House", "Instrumental"],
+      "bpm": 126,
+      "mood": "expansive",
+      "energy": 8,
+      "lineDensity": 0.5,
+      "lyricTopic": "instrumental melodic lift",
+      "sections": [
+        {
+          "id": "intro",
+          "name": "Intro",
+          "bars": 8,
+          "fn": "establish",
+          "deltas": ["atmospheric", "instrumental"]
+        },
+        {
+          "id": "build",
+          "name": "Build",
+          "bars": 16,
+          "fn": "build",
+          "deltas": ["rising", "instrumental"]
+        },
+        {
+          "id": "drop",
+          "name": "Drop",
+          "bars": 16,
+          "fn": "peak",
+          "deltas": ["climactic", "instrumental"]
+        },
+        {
+          "id": "outro",
+          "name": "Outro",
+          "bars": 8,
+          "fn": "resolve",
+          "deltas": ["stripped back", "instrumental"]
+        }
+      ]
+    },
+    "expectations": { "errorCodes": [], "warningCodes": [] }
+  },
+  {
+    "id": "edm.adversarial_instrumental_vocal_conflict",
+    "description": "Invalid fixture: instrumental tag with vocal preset must block.",
+    "input": {
+      "genreName": "EDM",
+      "presetLabels": ["Dance Pop"],
+      "bpm": 118,
+      "lineDensity": 0.5,
+      "lyricTopic": "conflicting vocal section",
+      "sections": [
+        {
+          "id": "intro",
+          "name": "Intro",
+          "bars": 8,
+          "fn": "establish",
+          "deltas": ["instrumental"],
+          "vocal": {
+            "type": "Female lead",
+            "delivery": "smooth",
+            "energy": 3,
+            "adlibs": false,
+            "harmonies": false
+          }
+        }
+      ]
+    },
+    "expectations": {
+      "errorCodes": ["INSTRUMENTAL_VOCAL_CONFLICT"],
+      "warningCodes": []
+    }
+  }
+]

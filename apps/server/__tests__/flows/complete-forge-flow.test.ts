@@ -207,6 +207,13 @@ describe("Complete Forge → Take → Render flow (vocal lyrics)", () => {
                 fn: "introduce",
                 bars: 16,
                 deltas: ["vocal focus", "building"],
+                vocal: {
+                  type: "Rapper",
+                  delivery: "conversational",
+                  energy: 3,
+                  adlibs: false,
+                  harmonies: false,
+                },
               },
               {
                 id: "section-2",
@@ -214,6 +221,13 @@ describe("Complete Forge → Take → Render flow (vocal lyrics)", () => {
                 fn: "peak",
                 bars: 8,
                 deltas: ["catchy", "full arrangement", "climactic"],
+                vocal: {
+                  type: "Rapper",
+                  delivery: "chant",
+                  energy: 4,
+                  adlibs: true,
+                  harmonies: false,
+                },
               },
             ],
           },
