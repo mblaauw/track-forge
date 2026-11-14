@@ -12,7 +12,9 @@ import {
 } from "@phosphor-icons/react";
 import { useSession } from "../../lib/session";
 import { usePlayer } from "../../lib/player";
+import type { SunoRenderSettings } from "@track-forge/contracts";
 import { createTake, fetchVersions, fetchTakes, favoriteTake } from "../../api";
+import { renderSummary } from "./RenderCard";
 import type { Take, TakeTrack } from "./types";
 
 function wave(seed: string, n: number): number[] {
@@ -23,6 +25,27 @@ function wave(seed: string, n: number): number[] {
     bars.push(3 + (h % 26));
   }
   return bars;
+}
+
+/** Adjustments made to fit Suno's limits when the take was sent. */
+function takeNotes(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as { message?: string }[];
+    return parsed.map((w) => w.message ?? "").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/** "v6 wild · High · " — which model and variety a take was rendered with. */
+function takeSettings(raw: string | null | undefined): string {
+  if (!raw) return "";
+  try {
+    return `${renderSummary(JSON.parse(raw) as SunoRenderSettings)} · `;
+  } catch {
+    return "";
+  }
 }
 
 export function RendersPanel() {
@@ -37,8 +60,9 @@ export function RendersPanel() {
     try {
       const versions = await fetchVersions(jobId);
       if (versions.length === 0) return;
-      const latest = versions[versions.length - 1]!;
-      await createTake(latest.id);
+      // fetchVersions returns newest-first — index 0 is the latest version.
+      const latest = versions[0]!;
+      await createTake(latest.id, s.render);
       // Refresh takes
       const refreshed = await fetchTakes(latest.id);
       s.setSession({ takes: refreshed });
@@ -234,8 +258,8 @@ export function RendersPanel() {
                         {take.generatedTitle ?? "Untitled"}
                       </span>
                       <span class="rende-card-meta">
-                        v{take.versionId?.slice(0, 4) ?? "?"} ·{" "}
-                        {take.id.slice(0, 8)} ·{" "}
+                        {takeSettings(take.renderSettings)}v
+                        {take.versionId?.slice(0, 4) ?? "?"} ·{" "}
                         {hasTracks
                           ? `${tracks!.length} tracks`
                           : take.duration
@@ -258,6 +282,16 @@ export function RendersPanel() {
                       />
                     </button>
                   </div>
+                  {take.status === "error" && (
+                    <p class="rende-card-note error" role="status">
+                      {take.error ?? "Suno could not render this take."}
+                    </p>
+                  )}
+                  {takeNotes(take.payloadWarnings).map((note) => (
+                    <p class="rende-card-note" key={note}>
+                      {note}
+                    </p>
+                  ))}
                   {hasTracks
                     ? tracks!.map((t) =>
                         renderTrack(t, take, tracks!.length === 1),

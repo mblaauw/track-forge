@@ -28,6 +28,7 @@ function findConfigPath(start: string): string | null {
  * Env vars take precedence:
  *   TRACK_FORGE_SUNO_BASE_URL
  *   TRACK_FORGE_SUNO_AUTH_TOKEN
+ *   TRACK_FORGE_SUNO_MODEL        (V6 | V6_WILD | V6_MINI)
  *   TRACK_FORGE_PUBLIC_BASE_URL
  *   TRACK_FORGE_DB_PATH
  *   TRACK_FORGE_LOG_LEVEL
@@ -52,6 +53,7 @@ export function loadConfig(cwd = process.cwd()): Config {
     sunoBaseUrl: envStr("TRACK_FORGE_SUNO_BASE_URL") ?? fileConfig.sunoBaseUrl,
     sunoAuthToken:
       envStr("TRACK_FORGE_SUNO_AUTH_TOKEN") ?? fileConfig.sunoAuthToken,
+    sunoModel: envStr("TRACK_FORGE_SUNO_MODEL") ?? fileConfig.sunoModel,
     publicBaseUrl:
       envStr("TRACK_FORGE_PUBLIC_BASE_URL") ?? fileConfig.publicBaseUrl,
     dbPath: envStr("TRACK_FORGE_DB_PATH") ?? fileConfig.dbPath,

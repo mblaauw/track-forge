@@ -1,5 +1,6 @@
 import pino from "pino";
 import {
+  DEFAULT_SUNO_MODEL,
   GenerationStage,
   SectionType,
   SunoArtifactType,
@@ -24,6 +25,7 @@ import {
 import type { StageData } from "./job-service.js";
 import { renderSunoStyle } from "./style-compiler.js";
 import { sunoAdapter } from "../suno/adapter.js";
+import { deriveRenderHints, summarizeVocals } from "../suno/render-hints.js";
 import { buildLyricsBrief, enrichResolved } from "./intent-bridge.js";
 import { resolveSongIntent } from "@track-forge/song-intent";
 import { freezeIntentRevision } from "../intent-revisions/index.js";
@@ -49,6 +51,13 @@ export function trace(section: string, data: unknown): void {
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+/**
+ * Bumped when the compiled artifacts change shape or meaning.
+ * 2.0.0 — Suno v6: real-arrangement structure note, vocal identity in the
+ * style prompt, duration + vocal gender derived for every take.
+ */
+const COMPILER_VERSION = "2.0.0";
 
 // ── Stage order ───────────────────────────────────────────────────────
 
@@ -138,7 +147,9 @@ async function handleCompilation(
   }
 
   const title = resolved.identity.title || "Untitled";
-  const vocalDescription = resolved.vocals.type ?? "";
+  const voice = summarizeVocals(resolved);
+  const hints = deriveRenderHints(resolved);
+  const vocalDescription = voice.label ?? resolved.vocals.type ?? "";
   const compiledJson = JSON.stringify({
     title,
     style: compiled.style,
@@ -147,22 +158,13 @@ async function handleCompilation(
     bpm: resolved.bpm,
     key: resolved.key ?? undefined,
     vocalDescription,
-    vocalGender: deriveVocalGender(vocalDescription),
+    vocalGender: hints.vocalGender,
+    durationSec: hints.durationSec,
     negativeTags,
     titleCandidates: [title],
   });
 
   return { ...state, compiledJson, resolved, compiledFragments };
-}
-
-function deriveVocalGender(
-  vocalType: string | undefined,
-): "m" | "f" | undefined {
-  if (!vocalType) return undefined;
-  const lower = vocalType.toLowerCase();
-  if (lower.includes("female")) return "f";
-  if (lower.includes("male")) return "m";
-  return undefined;
 }
 
 // ── Stage: Lyrics Writing ─────────────────────────────────────────────
@@ -289,7 +291,7 @@ async function handleLyricsWriting(
       promptSourcePath: `config/lyrics-prompts/${state.job.genreId}.md`,
       genre: state.job.genreId,
       preset: state.job.presetId,
-      pipelineVersion: "1.0.0",
+      pipelineVersion: COMPILER_VERSION,
       gitCommit: process.env.GIT_COMMIT,
       capturePromptText: process.env.TRACK_FORGE_CAPTURE_PROMPT_TEXT === "1",
       onManifest: (manifest) =>
@@ -426,9 +428,9 @@ async function handleVersioning(
         .run(
           compilationId,
           state.intentRevisionId,
-          "1.0.0",
-          "1.0.0",
-          null,
+          COMPILER_VERSION,
+          sunoAdapter.adapterVersion,
+          deps.config.sunoModel ?? DEFAULT_SUNO_MODEL,
           state.resolved ? JSON.stringify(state.resolved) : null,
           state.resolved?.decisions
             ? JSON.stringify(state.resolved.decisions)

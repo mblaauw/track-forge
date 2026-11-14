@@ -12,6 +12,7 @@ import {
 } from "../src/pipeline/job-service.js";
 import { runPipeline } from "../src/pipeline/orchestrator.js";
 import { generateSunoPayload } from "../src/suno/payload.js";
+import { deriveRenderHints } from "../src/suno/render-hints.js";
 import { schema } from "../src/db/index.js";
 import { eq } from "drizzle-orm";
 import type { PipelineDeps } from "../src/pipeline/types.js";
@@ -416,18 +417,39 @@ describe("Pipeline orchestrator", () => {
         artifacts.find((a) => a.type === "excluded_styles")?.value ?? "";
       const lyrics = artifacts.find((a) => a.type === "lyrics")?.value ?? "";
 
+      // The compilation record carries what a take needs beyond the
+      // artifacts: the model it was compiled for and the resolved intent
+      // the duration is derived from.
+      const [compilation] = await db
+        .select()
+        .from(schema.compilations)
+        .where(eq(schema.compilations.id, version!.compilationId!));
+      expect(compilation!.modelVersion).toBe("V6");
+      expect(compilation!.adapterVersion).toBe("2.0.0");
+      const hints = deriveRenderHints(
+        JSON.parse(compilation!.resolvedIntentJson!),
+      );
+
       // Generate Suno payload from artifacts
       const { request: payload, warnings } = generateSunoPayload({
         title,
         style,
         excludedStyles,
         lyrics,
+        durationSec: hints.durationSec,
+        vocalGender: hints.vocalGender,
       });
 
       expect(payload.customMode).toBe(true);
       expect(payload.title).toBeTruthy();
       expect(payload.style).toBeTruthy();
-      expect(payload.model).toBe("V4_5ALL");
+      expect(payload.model).toBe("V6");
+      expect(payload.variety).toBe(0);
+      // This fixture job has no arrangement, so there is no duration to
+      // send — the payload says so instead of silently rendering 20s.
+      expect(hints.durationSec).toBe(0);
+      expect(payload.duration).toBeUndefined();
+      expect(warnings.map((w) => w.field)).toContain("duration");
       expect(Array.isArray(warnings)).toBe(true);
     });
 

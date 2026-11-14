@@ -1,5 +1,10 @@
 import { useState } from "preact/hooks";
 import { CaretDown, CaretRight, Terminal } from "@phosphor-icons/react";
+import {
+  DEFAULT_SUNO_MODEL,
+  SUNO_LIMITS,
+  SUNO_MODEL_INFO,
+} from "@track-forge/contracts";
 import { useSession } from "../../lib/session";
 
 export function PromptInspector({
@@ -14,6 +19,9 @@ export function PromptInspector({
   const s = useSession();
   const [copied, setCopied] = useState(false);
   const open = s.promptInspectorOpen;
+  const overLimit = charCount > SUNO_LIMITS.style;
+  const modelLabel =
+    SUNO_MODEL_INFO[s.render.model ?? DEFAULT_SUNO_MODEL].label;
 
   const handleCopy = async () => {
     try {
@@ -34,8 +42,12 @@ export function PromptInspector({
         <Terminal size={16} style="color:var(--icon-style)" />
         <span class="bundle-block-title">SUNO PROMPT</span>
         {activeCount > 0 && (
-          <span class="bundle-block-meta">
-            {activeCount} active · {charCount} chars
+          <span
+            class={`bundle-block-meta${overLimit ? " over" : ""}`}
+            data-testid="style-char-count"
+          >
+            {modelLabel} · {activeCount} active · {charCount}/
+            {SUNO_LIMITS.style} chars
           </span>
         )}
         {open ? (
@@ -58,6 +70,13 @@ export function PromptInspector({
             <div class="style-preview-box">
               {style || "Add descriptors to compile your style prompt…"}
             </div>
+            {overLimit && (
+              <p class="limit-note" role="status">
+                Suno {modelLabel} reads {SUNO_LIMITS.style} characters of style.
+                Mute a few descriptors, or the lowest-weight ones are dropped
+                when the take is sent.
+              </p>
+            )}
           </div>
         </div>
       )}

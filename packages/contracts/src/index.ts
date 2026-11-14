@@ -51,6 +51,82 @@ export interface SunoArtifact {
   versionId: VersionId;
 }
 
+// ── Suno v6 provider contract ────────────────────────────────────────
+//
+// Suno retired every pre-v6 model on 2026-09-09; the v6 family is the only
+// generation target. Values below mirror the provider contract at
+// https://docs.sunoapi.org/suno-api/generate-music — change them only
+// against that document, never from memory.
+
+export const SUNO_MODELS = ["V6", "V6_WILD", "V6_MINI"] as const;
+export type SunoModel = (typeof SUNO_MODELS)[number];
+export const DEFAULT_SUNO_MODEL: SunoModel = "V6";
+
+export const SUNO_MODEL_INFO: Record<
+  SunoModel,
+  { label: string; hint: string }
+> = {
+  V6: { label: "v6", hint: "Most natural vocals and detail" },
+  V6_WILD: { label: "v6 wild", hint: "Bolder, less predictable" },
+  V6_MINI: { label: "v6 mini", hint: "Faster, lighter" },
+};
+
+/** Hard limits for custom-mode generation on the v6 family. */
+export const SUNO_LIMITS = {
+  style: 1000,
+  lyrics: 5000,
+  negativeTags: 1000,
+  title: 80,
+  minDurationSec: 10,
+  maxDurationSec: 360,
+} as const;
+
+/**
+ * Variety 0–4. At 1 and above Suno rewrites the style prompt before
+ * generating; 0 sends it through untouched. Track Forge compiles a
+ * deliberate style prompt, so 0 is the default here (Suno's own is 1).
+ */
+export const SUNO_VARIETY_LEVELS = [
+  { value: 0, label: "Exact", hint: "Style prompt used as written" },
+  { value: 1, label: "Normal", hint: "Suno may reword the style" },
+  { value: 2, label: "High", hint: "Clearly different takes" },
+  { value: 3, label: "Extra", hint: "Bold exploration" },
+  { value: 4, label: "Max", hint: "Takes may leave the style" },
+] as const;
+export const DEFAULT_SUNO_VARIETY = 0;
+
+/**
+ * Per-take render settings — chosen when a take is rendered, not part of
+ * the song intent, so one version can be re-rendered with different ones.
+ * `weirdness` / `styleInfluence` are 0–1; omitted means Suno's own default.
+ */
+export const SunoRenderSettingsSchema = z
+  .object({
+    model: z.enum(SUNO_MODELS).optional(),
+    variety: z.number().int().min(0).max(4).optional(),
+    weirdness: z.number().min(0).max(1).optional(),
+    styleInfluence: z.number().min(0).max(1).optional(),
+  })
+  .strict();
+export type SunoRenderSettings = z.infer<typeof SunoRenderSettingsSchema>;
+
+/**
+ * Length of an arrangement in seconds, assuming 4/4. Suno v6 takes an
+ * explicit `duration` and falls back to 20 seconds without one, so every
+ * take sends this.
+ */
+export function estimateDurationSec(
+  bpm: number,
+  sections: readonly { bars: number }[],
+): number {
+  if (!Number.isFinite(bpm) || bpm <= 0) return 0;
+  const bars = sections.reduce(
+    (sum, s) => sum + (Number.isFinite(s.bars) && s.bars > 0 ? s.bars : 0),
+    0,
+  );
+  return Math.round((bars * 4 * 60) / bpm);
+}
+
 // ── Lyrics & Structure Document Model ─────────────────────────────────
 
 export const SectionType = {
@@ -242,6 +318,7 @@ export const ImportBundleSchema = z.object({
 export const ConfigSchema = z.object({
   sunoBaseUrl: z.string().url().default("https://api.sunomusic.com"),
   sunoAuthToken: z.string().optional(),
+  sunoModel: z.enum(SUNO_MODELS).default(DEFAULT_SUNO_MODEL),
   publicBaseUrl: z.string().url().optional(),
   dbPath: z.string().default("./data/track-forge.db"),
   logLevel: z

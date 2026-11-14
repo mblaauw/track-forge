@@ -5,6 +5,7 @@ export {
   publish,
   unsubscribeAll,
   getJobEvents,
+  getLastEventSequence,
   formatSseEvent,
 } from "./events.js";
 export type { PipelineEvent } from "./events.js";

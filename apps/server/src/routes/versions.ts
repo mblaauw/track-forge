@@ -1,11 +1,18 @@
 import type { FastifyInstance } from "fastify";
 import { eq, desc, sql } from "drizzle-orm";
-import type { Db, SunoClient } from "@track-forge/core";
+import type { Db, SunoClient, RenderHints } from "@track-forge/core";
 import type { Config } from "@track-forge/contracts";
+import {
+  SunoRenderSettingsSchema,
+  estimateDurationSec,
+} from "@track-forge/contracts";
 import {
   schema,
   publish,
+  SunoApiError,
+  deriveRenderHints,
   generateSunoPayload,
+  payloadToLog,
   storeGeneration,
   updateGeneration,
   getGeneration,
@@ -113,13 +120,6 @@ export function registerVersionRoutes(
       "Version",
     );
 
-    // Emit suno_render start
-    await publish(db, version.jobId, {
-      stage: "suno_render",
-      status: "started",
-      message: "Queued for Suno generation",
-    }).catch(() => {});
-
     // Parse version artifacts
     const artifacts: SunoArtifact[] = (() => {
       try {
@@ -136,39 +136,63 @@ export function registerVersionRoutes(
       ? new URL("/api/suno/callback", deps.config.publicBaseUrl).toString()
       : undefined;
 
-    // Dominant vocal gender, derived by the compilation stage and stashed on
-    // Suno's vocalGender knob — the pipeline stores it in stageData
-    // (compiledJson within), falling back to the legacy compiled_json column
-    // for pre-migration jobs.
-    const [jobRow] = await db
-      .select()
-      .from(schema.jobs)
-      .where(eq(schema.jobs.id, version.jobId))
-      .limit(1);
-    let vocalGender: "m" | "f" | undefined;
-    if (jobRow) {
-      // Try stageData first (new pipeline), then compiledJson (legacy)
-      const source = jobRow.stageData ?? jobRow.compiledJson;
-      if (source) {
-        try {
-          const parsed = JSON.parse(source) as {
-            vocalGender?: "m" | "f";
-          };
-          vocalGender = parsed.vocalGender;
-        } catch {
-          // ignore malformed JSON
-        }
-      }
+    // Per-take settings (model variant, variety, sliders). An empty body
+    // is valid and means "render with the defaults".
+    const parsedSettings = SunoRenderSettingsSchema.safeParse(req.body ?? {});
+    if (!parsedSettings.success) {
+      return reply.code(400).send({
+        error: `Invalid render settings: ${parsedSettings.error.message}`,
+      });
     }
+    const settings = parsedSettings.data;
 
-    const { request } = generateSunoPayload({
-      title: getValue("title"),
-      style: getValue("style"),
-      excludedStyles: getValue("excluded_styles"),
-      lyrics: getValue("lyrics"),
-      callbackUrl,
-      vocalGender,
+    // Emit suno_render start
+    await publish(db, version.jobId, {
+      stage: "suno_render",
+      status: "started",
+      message: "Queued for Suno generation",
+    }).catch(() => {});
+
+    // Duration and vocal gender come from the song itself, not the take.
+    const hints = await loadRenderHints(db, version);
+
+    let built: ReturnType<typeof generateSunoPayload>;
+    try {
+      built = generateSunoPayload({
+        title: getValue("title"),
+        style: getValue("style"),
+        excludedStyles: getValue("excluded_styles"),
+        lyrics: getValue("lyrics"),
+        callbackUrl,
+        modelVersion: settings.model ?? deps.config.sunoModel,
+        vocalGender: hints.vocalGender,
+        durationSec: hints.durationSec,
+        settings,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await publish(db, version.jobId, {
+        stage: "suno_render_error",
+        status: "error",
+        error: message,
+      }).catch(() => {});
+      return reply.code(422).send({ error: message });
+    }
+    const { request, warnings } = built;
+    const payloadWarnings =
+      warnings.length > 0 ? JSON.stringify(warnings) : undefined;
+    // What this take was actually rendered with — shown on the take card
+    // so v6 / wild / mini takes of one version can be told apart.
+    const renderSettings = JSON.stringify({
+      model: request.model,
+      variety: request.variety,
+      weirdness: request.weirdnessConstraint,
+      styleInfluence: request.styleWeight,
+      duration: request.duration,
     });
+    if (warnings.length > 0) {
+      req.log.warn({ versionId: id, warnings }, "suno payload adjusted");
+    }
 
     trace("sunoPayload", {
       versionId: id,
@@ -181,7 +205,10 @@ export function registerVersionRoutes(
     req.log.info({ SUNO_DRY_RUN: dryRunVal }, "dry run check");
     const skipSuno = dryRunVal === "true";
     if (skipSuno) {
-      req.log.info("SUNO_DRY_RUN=true — storing dry-run generation");
+      req.log.info(
+        { request: payloadToLog(request) },
+        "SUNO_DRY_RUN=true — storing dry-run generation",
+      );
       // Suffixed with a random id — a version can be taken more than once
       // (re-render), and "dry-" + versionId alone collides on the second take.
       const dryRunId = `dry-${id}-${crypto.randomUUID().slice(0, 8)}`;
@@ -196,14 +223,16 @@ export function registerVersionRoutes(
         generatedTitle: title,
         style,
         lyrics,
-        duration: 30,
+        duration: request.duration ?? 30,
+        payloadWarnings,
+        renderSettings,
       });
       storeTracks(db, dryRunId, [
         {
           id: dryRunId + "-t0",
           index: 0,
           title,
-          duration: 30,
+          duration: request.duration ?? 30,
         },
       ]);
       await publish(db, version.jobId, {
@@ -227,12 +256,16 @@ export function registerVersionRoutes(
         { versionId: id, jobId: version.jobId, err },
         "suno submit failed",
       );
+      // SunoApiError carries a plain reason (out of credits, rate limited,
+      // maintenance…) that is safe to show; anything else stays generic.
+      const reason =
+        err instanceof SunoApiError ? err.reason : "Failed to submit to Suno";
       await publish(db, version.jobId, {
         stage: "suno_render_error",
         status: "error",
-        error: "Failed to submit to Suno",
+        error: reason,
       }).catch(() => {});
-      return reply.code(502).send({ error: "Failed to submit to Suno" });
+      return reply.code(502).send({ error: reason });
     }
 
     // Store generation record with Suno's taskId
@@ -241,6 +274,8 @@ export function registerVersionRoutes(
       jobId: version.jobId,
       versionId: id,
       status: "queued",
+      payloadWarnings,
+      renderSettings,
     });
 
     // Return the created generation immediately
@@ -273,6 +308,7 @@ export function registerVersionRoutes(
 
           await updateGeneration(db, result.taskId, {
             status: item.status,
+            error: item.status === "error" ? item.error : undefined,
             audioUrl: item.audioUrl,
             imageUrl: item.imageUrl,
             videoUrl: item.videoUrl,
@@ -284,6 +320,14 @@ export function registerVersionRoutes(
           // Store all tracks from the generation (typically 2 per Suno task)
           if (item.tracks && item.tracks.length > 0) {
             storeTracks(db, result.taskId, item.tracks);
+          }
+          if (item.status === "error") {
+            await publish(db, version.jobId, {
+              stage: "suno_render_error",
+              status: "error",
+              error: item.error ?? "Suno generation failed",
+            }).catch(() => {});
+            return;
           }
           await publish(db, version.jobId, {
             stage: "suno_render_complete",
@@ -330,4 +374,74 @@ export function registerVersionRoutes(
 
     return reply.code(200).send(updated);
   });
+}
+
+/**
+ * Duration + vocal gender for a version. Read from the immutable
+ * compilation record (the resolved intent the artifacts were rendered
+ * from); versions forged before compilations existed fall back to the
+ * compiled JSON the pipeline left on the job.
+ */
+async function loadRenderHints(
+  db: Db,
+  version: { jobId: string; compilationId: string | null },
+): Promise<Partial<RenderHints>> {
+  if (version.compilationId) {
+    const [compilation] = await db
+      .select()
+      .from(schema.compilations)
+      .where(eq(schema.compilations.id, version.compilationId))
+      .limit(1);
+    if (compilation?.resolvedIntentJson) {
+      try {
+        return deriveRenderHints(JSON.parse(compilation.resolvedIntentJson));
+      } catch {
+        // fall through to the job-level record
+      }
+    }
+  }
+
+  const [job] = await db
+    .select()
+    .from(schema.jobs)
+    .where(eq(schema.jobs.id, version.jobId))
+    .limit(1);
+  let hints: Partial<RenderHints> = {};
+  try {
+    // stageData is `{ compiledJson: "<json string>", … }`; the legacy
+    // compiled_json column holds that inner JSON directly.
+    const stage = job?.stageData ? JSON.parse(job.stageData) : null;
+    const inner: unknown = stage?.compiledJson ?? job?.compiledJson;
+    const compiled = (typeof inner === "string" ? JSON.parse(inner) : inner) as
+      { vocalGender?: "m" | "f"; durationSec?: number } | null | undefined;
+    hints = {
+      vocalGender: compiled?.vocalGender,
+      durationSec: compiled?.durationSec,
+    };
+  } catch {
+    // fall through to the job inputs
+  }
+
+  // Jobs compiled before durations were recorded: the arrangement is still
+  // in the job inputs, so the length can be worked out from there.
+  if (!hints.durationSec && job?.inputs) {
+    try {
+      const inputs = JSON.parse(job.inputs) as {
+        bpm?: unknown;
+        sections?: unknown;
+      };
+      if (typeof inputs.bpm === "number" && Array.isArray(inputs.sections)) {
+        const duration = estimateDurationSec(
+          inputs.bpm,
+          inputs.sections.map((sec) => ({
+            bars: Number((sec as { bars?: unknown })?.bars) || 0,
+          })),
+        );
+        if (duration > 0) hints.durationSec = duration;
+      }
+    } catch {
+      // inputs unreadable — the payload builder warns about the gap
+    }
+  }
+  return hints;
 }

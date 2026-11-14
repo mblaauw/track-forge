@@ -11,6 +11,7 @@ const MIN_INPUT: SunoPayloadInput = {
   style: "Deep house with warm pads and groovy bassline",
   excludedStyles: "slow, ballad",
   lyrics: "[Intro]\n(atmospheric pads)\n\n[Drop]\n(groovy beat)",
+  durationSec: 180,
 };
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -21,11 +22,15 @@ describe("generateSunoPayload", () => {
 
     expect(request.title).toBe("My Track");
     expect(request.style).toContain("Deep house");
-    expect(request.prompt).toContain("[Intro]");
+    expect(request.lyrics).toContain("[Intro]");
+    // v6 reads the dedicated lyrics field; the legacy prompt field is gone.
+    expect(request).not.toHaveProperty("prompt");
+    expect(request.duration).toBe(180);
+    expect(request.variety).toBe(0);
     expect(request.negativeTags).toBe("slow, ballad");
     expect(request.instrumental).toBe(false);
     expect(request.customMode).toBe(true);
-    expect(request.model).toBe("V4_5ALL");
+    expect(request.model).toBe("V6");
     expect(warnings).toHaveLength(0);
   });
 
@@ -36,7 +41,7 @@ describe("generateSunoPayload", () => {
     });
 
     expect(request.instrumental).toBe(true);
-    expect(request.prompt).toBeUndefined();
+    expect(request.lyrics).toBeUndefined();
   });
 
   it("sets instrumental=true when lyrics are whitespace only", () => {
@@ -58,7 +63,7 @@ describe("generateSunoPayload", () => {
   });
 
   it("includes negativeTags (all models support them)", () => {
-    const caps = getCapabilities("V4");
+    const caps = getCapabilities("V6_MINI");
     const { request } = generateSunoPayload(MIN_INPUT, caps);
 
     expect(request.negativeTags).toBe("slow, ballad");
@@ -83,19 +88,19 @@ describe("generateSunoPayload", () => {
     };
     const { request, warnings } = generateSunoPayload(input);
 
-    expect(request.prompt!.length).toBe(5000);
+    expect(request.lyrics!.length).toBe(5000);
     expect(warnings.some((w) => w.field === "lyrics")).toBe(true);
   });
 
   it("truncates negativeTags when exceeding max length", () => {
     const input: SunoPayloadInput = {
       ...MIN_INPUT,
-      excludedStyles: "X".repeat(1000),
+      excludedStyles: "X".repeat(1500),
     };
-    const caps = getCapabilities("V4_5ALL");
+    const caps = getCapabilities("V6");
     const { request, warnings } = generateSunoPayload(input, caps);
 
-    expect(request.negativeTags?.length).toBe(500);
+    expect(request.negativeTags?.length).toBe(1000);
     expect(warnings.some((w) => w.field === "negativeTags")).toBe(true);
   });
 
@@ -111,10 +116,10 @@ describe("generateSunoPayload", () => {
   it("honours explicit model version", () => {
     const { request } = generateSunoPayload({
       ...MIN_INPUT,
-      modelVersion: "V4",
+      modelVersion: "V6_WILD",
     });
 
-    expect(request.model).toBe("V4");
+    expect(request.model).toBe("V6_WILD");
   });
 
   it("passes through callbackUrl when capabilities support it", () => {
@@ -130,8 +135,10 @@ describe("generateSunoPayload", () => {
     const caps: SunoCapabilities = {
       maxLyricsLength: 5000,
       maxStyleLength: 1000,
-      maxTitleLength: 100,
-      maxTagsLength: 500,
+      maxTitleLength: 80,
+      maxNegativeTagsLength: 1000,
+      minDurationSec: 10,
+      maxDurationSec: 360,
       supportsNegativeTags: true,
       supportsCallbacks: false,
       maxBatchSize: 1,
@@ -158,7 +165,7 @@ describe("generateSunoPayload", () => {
       ...MIN_INPUT,
       style: "X".repeat(3000),
       lyrics: "Y".repeat(5001),
-      excludedStyles: "Z".repeat(1000),
+      excludedStyles: "Z".repeat(1500),
     };
     const { warnings } = generateSunoPayload(input);
 
@@ -173,7 +180,9 @@ describe("generateSunoPayload", () => {
       maxLyricsLength: 10,
       maxStyleLength: 10,
       maxTitleLength: 10,
-      maxTagsLength: 10,
+      maxNegativeTagsLength: 10,
+      minDurationSec: 10,
+      maxDurationSec: 360,
       supportsNegativeTags: true,
       supportsCallbacks: false,
       maxBatchSize: 2,
@@ -218,9 +227,10 @@ describe("payloadToLog", () => {
 
     expect(log.title).toBe("My Track");
     expect(log.style).toBeDefined();
-    expect(log.prompt).toBeDefined();
+    expect(log.lyrics).toBeDefined();
     expect(log.instrumental).toBe(false);
-    expect(log.model).toBe("V4_5ALL");
+    expect(log.model).toBe("V6");
+    expect(log.duration).toBe(180);
   });
 });
 
@@ -235,7 +245,7 @@ describe("generateSunoPayload snapshots", () => {
   it("with explicit model version", () => {
     const result = generateSunoPayload({
       ...MIN_INPUT,
-      modelVersion: "V4",
+      modelVersion: "V6_MINI",
     });
     expect(result).toMatchSnapshot();
   });
@@ -253,19 +263,134 @@ describe("generateSunoPayload snapshots", () => {
       ...MIN_INPUT,
       lyrics: "",
     });
-    expect(result.request.prompt).toBeUndefined();
+    expect(result.request.lyrics).toBeUndefined();
     expect(result.request.instrumental).toBe(true);
     expect(result).toMatchSnapshot();
   });
 
-  it("with truncation warnings", () => {
+  it("with per-take settings", () => {
+    const result = generateSunoPayload({
+      ...MIN_INPUT,
+      modelVersion: "V6_WILD",
+      vocalGender: "f",
+      settings: { variety: 2, weirdness: 0.35, styleInfluence: 0.8 },
+    });
+    expect(result).toMatchSnapshot();
+  });
+});
+
+// ── Suno v6 contract ───────────────────────────────────────────
+
+describe("generateSunoPayload — v6 contract", () => {
+  it("enforces the v6 character limits", () => {
+    const caps = getCapabilities();
+    expect(caps).toMatchObject({
+      maxStyleLength: 1000,
+      maxLyricsLength: 5000,
+      maxNegativeTagsLength: 1000,
+      maxTitleLength: 80,
+      minDurationSec: 10,
+      maxDurationSec: 360,
+    });
+  });
+
+  it("truncates the title to 80 characters", () => {
+    const { request, warnings } = generateSunoPayload({
+      ...MIN_INPUT,
+      title: "T".repeat(120),
+    });
+    expect(request.title.length).toBe(80);
+    expect(warnings.map((w) => w.field)).toContain("title");
+  });
+
+  it("defaults variety to 0 so Suno leaves the style prompt untouched", () => {
+    expect(generateSunoPayload(MIN_INPUT).request.variety).toBe(0);
+  });
+
+  it("clamps variety into 0–4", () => {
+    const hi = generateSunoPayload({ ...MIN_INPUT, settings: { variety: 9 } });
+    const lo = generateSunoPayload({ ...MIN_INPUT, settings: { variety: -3 } });
+    expect(hi.request.variety).toBe(4);
+    expect(lo.request.variety).toBe(0);
+  });
+
+  it("sends sliders only when set, rounded to two decimals in 0–1", () => {
+    const unset = generateSunoPayload(MIN_INPUT).request;
+    expect(unset.styleWeight).toBeUndefined();
+    expect(unset.weirdnessConstraint).toBeUndefined();
+
+    const set = generateSunoPayload({
+      ...MIN_INPUT,
+      settings: { weirdness: 0.3333, styleInfluence: 1.7 },
+    }).request;
+    expect(set.weirdnessConstraint).toBe(0.33);
+    expect(set.styleWeight).toBe(1);
+  });
+
+  it("clamps a too-long arrangement to 360 seconds and says so", () => {
+    const { request, warnings } = generateSunoPayload({
+      ...MIN_INPUT,
+      durationSec: 512,
+    });
+    expect(request.duration).toBe(360);
+    const warn = warnings.find((w) => w.field === "duration");
+    expect(warn?.message).toContain("at most 360s");
+  });
+
+  it("raises a too-short arrangement to 10 seconds", () => {
+    const { request, warnings } = generateSunoPayload({
+      ...MIN_INPUT,
+      durationSec: 4,
+    });
+    expect(request.duration).toBe(10);
+    expect(warnings.map((w) => w.field)).toContain("duration");
+  });
+
+  it("warns when no duration is known (Suno would render 20 seconds)", () => {
+    const { durationSec: _omit, ...noDuration } = MIN_INPUT;
+    const { request, warnings } = generateSunoPayload(noDuration);
+    expect(request.duration).toBeUndefined();
+    expect(warnings.find((w) => w.field === "duration")?.message).toContain(
+      "20 seconds",
+    );
+  });
+
+  it("omits vocalGender and lyrics on instrumental takes", () => {
+    const { request } = generateSunoPayload({
+      ...MIN_INPUT,
+      lyrics: "",
+      vocalGender: "f",
+    });
+    expect(request.instrumental).toBe(true);
+    expect(request.vocalGender).toBeUndefined();
+    expect(request.lyrics).toBeUndefined();
+  });
+
+  it("refuses a request with nothing for Suno to go on", () => {
+    expect(() =>
+      generateSunoPayload({
+        title: "Empty",
+        style: "",
+        excludedStyles: "",
+        lyrics: "",
+      }),
+    ).toThrow(/Nothing to send/);
+  });
+
+  it("reports every field that was truncated", () => {
     const result = generateSunoPayload({
       ...MIN_INPUT,
       style: "X".repeat(3000),
       lyrics: "Y".repeat(6000),
-      excludedStyles: "Z".repeat(1000),
+      excludedStyles: "Z".repeat(1500),
     });
-    expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result).toMatchSnapshot();
+    expect(result.request.style.length).toBe(1000);
+    expect(result.request.lyrics!.length).toBe(5000);
+    expect(result.request.negativeTags!.length).toBe(1000);
+    expect(result.warnings.map((w) => w.field).sort()).toEqual([
+      "lyrics",
+      "negativeTags",
+      "style",
+    ]);
   });
 });

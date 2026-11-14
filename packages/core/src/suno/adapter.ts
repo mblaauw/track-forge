@@ -75,7 +75,7 @@ function fragment(
 
 export const sunoAdapter: SunoAdapter = {
   id: "suno",
-  adapterVersion: "1.0.0",
+  adapterVersion: "2.0.0",
 
   capabilities(model?: SunoModelVersion): SunoCapabilities {
     return getCapabilities(model);

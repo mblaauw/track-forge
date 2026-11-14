@@ -159,6 +159,8 @@ export const generations = sqliteTable("generations", {
   seed: integer("seed"),
   /** JSON-encoded PayloadWarning[] from sumo payload construction. */
   payloadWarnings: text("payload_warnings"),
+  /** JSON: the model + per-take settings this take was rendered with. */
+  renderSettings: text("render_settings"),
 });
 
 // ── Job events (persisted event history for replay) ──────────────────

@@ -4,7 +4,7 @@ Suno generation provider integration. The application adapter in `packages/core/
 
 ## Use for
 
-- provider payloads (submit shape, fields: `customMode`, `instrumental`, `model`, `title`, `style`, `prompt`, `negativeTags`, `callBackUrl`, `vocalGender`, etc.)
+- provider payloads (submit shape, fields: `customMode`, `instrumental`, `model`, `title`, `style`, `lyrics`, `negativeTags`, `duration`, `variety`, `callBackUrl`, `vocalGender`, `styleWeight`, `weirdnessConstraint`)
 - callbacks (webhook at `POST /api/suno/callback`)
 - polling (`getGenerationStatus()` via `/api/v1/generate/record-info`)
 - render status transitions (queued → processing → completed/error)
@@ -12,6 +12,30 @@ Suno generation provider integration. The application adapter in `packages/core/
 - model capabilities (model name, style persona, etc.)
 - style and lyrics limits
 - provider errors (status codes, error messages, sensitive word errors)
+
+## Suno v6 contract (the only live model family)
+
+Source: <https://docs.sunoapi.org/suno-api/generate-music> (append `.md` for the OpenAPI spec). Constants live in `packages/contracts/src/index.ts`.
+
+| Item           | v6 value                                                                  |
+| -------------- | ------------------------------------------------------------------------- |
+| `model`        | `V6` (default), `V6_WILD`, `V6_MINI` — every older id is discontinued     |
+| `style`        | max 1000 chars                                                            |
+| `lyrics`       | max 5000 chars; replaces `prompt` for lyrics in custom mode               |
+| `negativeTags` | max 1000 chars                                                            |
+| `title`        | max 80 chars                                                              |
+| `duration`     | 10–360 s, provider default 20 — always send it                            |
+| `variety`      | integer 0–4, provider default 1; this app defaults to 0 (style untouched) |
+| sliders        | `styleWeight`, `weirdnessConstraint`: 0–1, two decimals                   |
+| `audioWeight`  | rejected on takes without vocals                                          |
+| record-info    | track fields documented in snake_case; client accepts both spellings      |
+| error codes    | 413 too long, 429 no credits, 430 rate, 455 maintenance → `SunoApiError`  |
+
+Prompting behaviour (community-sourced unless noted — re-check before relying on it):
+
+- Variety above 0 rewrites the style prompt (Suno FAQ: 0 keeps "full control of your style tags").
+- Negatives belong in `negativeTags`; "no drums" in the style can add drums.
+- Section tags in lyrics are hints; a voice described in the style prompt is followed more reliably.
 
 ## Mandatory rules
 

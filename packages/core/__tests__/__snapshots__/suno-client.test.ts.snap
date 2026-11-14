@@ -5,8 +5,8 @@ exports[`SunoClient.submit > includes callBackUrl when publicBaseUrl is configur
   "callBackUrl": "https://myapp.example.com/api/suno/callback",
   "customMode": true,
   "instrumental": false,
-  "model": "V4_5ALL",
-  "prompt": "Lyrics",
+  "lyrics": "Lyrics",
+  "model": "V6",
   "style": "Style",
   "title": "Callback Track",
 }
@@ -18,9 +18,9 @@ exports[`SunoClient.submit > includes optional fields when provided 1`] = `
   "callBackUrl": "https://hook.example.com/callback",
   "customMode": true,
   "instrumental": false,
-  "model": "V4_5ALL",
+  "lyrics": "Lyrics",
+  "model": "V6",
   "negativeTags": "slow, ballad",
-  "prompt": "Lyrics",
   "style": "Style",
   "styleWeight": 0.5,
   "title": "Track",
@@ -33,10 +33,10 @@ exports[`SunoClient.submit > includes persona fields when personaId provided 1`]
 {
   "customMode": true,
   "instrumental": false,
-  "model": "V4_5ALL",
+  "lyrics": "Lyrics",
+  "model": "V6",
   "personaId": "pers-001",
   "personaModel": "style_persona",
-  "prompt": "Lyrics",
   "style": "Style",
   "title": "Persona Track",
 }
@@ -45,12 +45,14 @@ exports[`SunoClient.submit > includes persona fields when personaId provided 1`]
 exports[`SunoClient.submit > sends POST /api/v1/generate with expected body 1`] = `
 {
   "customMode": true,
+  "duration": 184,
   "instrumental": false,
-  "model": "V4_5ALL",
-  "prompt": "[Verse]
+  "lyrics": "[Verse]
 Hello world",
+  "model": "V6",
   "style": "Deep house, warm pads",
   "title": "Test Track",
+  "variety": 0,
 }
 `;
 
@@ -75,14 +77,14 @@ exports[`normalizeTaskResponse > PENDING status 1`] = `
 exports[`normalizeTaskResponse > SUCCESS status with one song 1`] = `
 {
   "audioUrl": "https://cdn.example.com/audio.mp3",
-  "createdAt": "2025-01-01T00:00:00Z",
+  "createdAt": "2026-10-01T00:00:00Z",
   "duration": 180,
   "error": undefined,
   "id": "song-001",
   "imageUrl": "https://cdn.example.com/image.png",
   "lyrics": "[Verse]
 Hello",
-  "modelVersion": "V4_5",
+  "modelVersion": "chirp-v6",
   "status": "completed",
   "style": "deep house, warm",
   "tags": "deep house, warm",

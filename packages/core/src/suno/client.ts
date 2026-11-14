@@ -20,7 +20,7 @@ export function createSunoClientConfig(config: Config): SunoClientConfig {
   return {
     baseUrl: config.sunoBaseUrl.replace(/\/+$/, ""),
     authToken: config.sunoAuthToken,
-    defaultModelVersion: "V4_5ALL",
+    defaultModelVersion: config.sunoModel,
     pollIntervalMs: DEFAULT_POLL_INTERVAL,
     pollTimeoutMs: DEFAULT_POLL_TIMEOUT,
   };
@@ -49,27 +49,32 @@ export class SunoClient {
     const callBackUrl =
       request.callBackUrl ?? resolveCallbackUrl(this.appConfig);
 
+    // v6 custom-mode body. Lyrics travel in the dedicated `lyrics` field;
+    // the legacy `prompt` field is never sent.
     const body: Record<string, unknown> = {
       customMode: true,
       instrumental: request.instrumental,
-      model: request.model,
+      model: request.model ?? this.cfg.defaultModelVersion,
       title: request.title,
       style: request.style,
     };
 
-    if (request.prompt) {
-      body.prompt = request.prompt;
+    if (!request.instrumental && request.lyrics) {
+      body.lyrics = request.lyrics;
     }
-
     if (request.negativeTags) {
       body.negativeTags = request.negativeTags;
     }
-
     if (callBackUrl) {
       body.callBackUrl = callBackUrl;
     }
-
-    if (request.vocalGender) {
+    if (request.duration !== undefined) {
+      body.duration = request.duration;
+    }
+    if (request.variety !== undefined) {
+      body.variety = request.variety;
+    }
+    if (!request.instrumental && request.vocalGender) {
       body.vocalGender = request.vocalGender;
     }
     if (request.styleWeight !== undefined) {
@@ -78,7 +83,8 @@ export class SunoClient {
     if (request.weirdnessConstraint !== undefined) {
       body.weirdnessConstraint = request.weirdnessConstraint;
     }
-    if (request.audioWeight !== undefined) {
+    // The provider rejects audioWeight on takes without vocals.
+    if (!request.instrumental && request.audioWeight !== undefined) {
       body.audioWeight = request.audioWeight;
     }
     if (request.personaId) {
@@ -87,8 +93,13 @@ export class SunoClient {
     }
 
     this.log.info(
-      { title: request.title, model: request.model },
-      "submitting generation to Suno API v1",
+      {
+        title: request.title,
+        model: body.model,
+        duration: body.duration,
+        variety: body.variety,
+      },
+      "submitting generation to Suno",
     );
 
     const res = await this.fetch("/api/v1/generate", {
@@ -103,9 +114,7 @@ export class SunoClient {
     };
 
     if (json.code !== 200 || !json.data?.taskId) {
-      throw new Error(
-        `Suno API error: ${json.msg ?? "unknown"} (code ${json.code})`,
-      );
+      throw new SunoApiError(json.code, json.msg);
     }
 
     return {
@@ -126,7 +135,7 @@ export class SunoClient {
       data?: {
         taskId: string;
         status: string;
-        errorCode?: string | null;
+        errorCode?: string | number | null;
         errorMessage?: string | null;
         response?: {
           sunoData?: Array<Record<string, unknown>>;
@@ -135,9 +144,7 @@ export class SunoClient {
     };
 
     if (json.code !== 200 || !json.data) {
-      throw new Error(
-        `Suno API error fetching status: ${json.msg ?? "unknown"}`,
-      );
+      throw new SunoApiError(json.code, json.msg);
     }
 
     return normalizeTaskResponse(taskId, json.data);
@@ -188,11 +195,48 @@ export class SunoClient {
     const res = await fetch(url, { ...options, headers });
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "unknown");
-      throw new Error(`Suno API error ${res.status}: ${text}`);
+      const text = await res.text().catch(() => "");
+      throw new SunoApiError(res.status, text);
     }
 
     return res;
+  }
+}
+
+// ── Errors ────────────────────────────────────────────────────────
+
+/** What each provider status code means for the person waiting on a take. */
+const PROVIDER_ERROR_REASONS: Record<number, string> = {
+  400: "Suno rejected the request parameters",
+  401: "The Suno API key is missing or invalid",
+  405: "Suno rate limit reached; try again shortly",
+  413: "The style or lyrics are too long for Suno",
+  429: "The Suno account is out of credits",
+  430: "Too many Suno requests at once; try again shortly",
+  455: "Suno is down for maintenance",
+  500: "Suno had a server error",
+};
+
+/** Task-level failure statuses reported by record-info. */
+const TASK_ERROR_REASONS: Record<string, string> = {
+  CREATE_TASK_FAILED: "Suno could not start the generation",
+  GENERATE_AUDIO_FAILED: "Suno failed while generating the audio",
+  CALLBACK_EXCEPTION: "Suno could not deliver the result",
+  SENSITIVE_WORD_ERROR: "Suno blocked the lyrics or style for prohibited words",
+};
+
+/** A provider failure carrying a plain reason that is safe to show in the UI. */
+export class SunoApiError extends Error {
+  readonly code: number;
+  readonly reason: string;
+
+  constructor(code: number, detail?: string) {
+    const reason = PROVIDER_ERROR_REASONS[code] ?? "Suno returned an error";
+    const tail = detail ? `: ${detail.slice(0, 300)}` : "";
+    super(`${reason} (code ${code})${tail}`);
+    this.name = "SunoApiError";
+    this.code = code;
+    this.reason = reason;
   }
 }
 
@@ -209,12 +253,30 @@ const TASK_STATUS_MAP: Record<string, SunoGenerationStatus> = {
   SENSITIVE_WORD_ERROR: "error",
 };
 
+/**
+ * Read a track field that the provider spells either way: record-info is
+ * documented in snake_case (`audio_url`) but has also returned camelCase
+ * (`audioUrl`), so both are accepted.
+ */
+function pick<T>(
+  song: Record<string, unknown>,
+  ...keys: string[]
+): T | undefined {
+  for (const key of keys) {
+    const value = song[key];
+    if (value !== undefined && value !== null && value !== "") {
+      return value as T;
+    }
+  }
+  return undefined;
+}
+
 export function normalizeTaskResponse(
   taskId: string,
   data: {
     taskId: string;
     status: string;
-    errorCode?: string | null;
+    errorCode?: string | number | null;
     errorMessage?: string | null;
     response?: {
       sunoData?: Array<Record<string, unknown>>;
@@ -224,41 +286,49 @@ export function normalizeTaskResponse(
   const status = TASK_STATUS_MAP[data.status] ?? "processing";
   const allSongs = data.response?.sunoData ?? [];
   const firstSong = allSongs[0];
+  const error =
+    status === "error"
+      ? (data.errorMessage ??
+        TASK_ERROR_REASONS[data.status] ??
+        (data.errorCode != null ? String(data.errorCode) : "Suno failed"))
+      : (data.errorMessage ?? undefined);
 
   if (!firstSong) {
-    return {
-      id: taskId,
-      taskId,
-      status,
-      error: data.errorMessage ?? data.errorCode ?? undefined,
-    };
+    return { id: taskId, taskId, status, error };
   }
 
   const mapSong = (s: Record<string, unknown>, idx: number) => ({
     id: String(s.id ?? `${taskId}-${idx}`),
     index: idx,
-    audioUrl: s.audioUrl as string | undefined,
-    imageUrl: s.imageUrl as string | undefined,
-    videoUrl: s.videoUrl as string | undefined,
-    duration: s.duration as number | undefined,
-    title: s.title as string | undefined,
+    audioUrl: pick<string>(
+      s,
+      "audio_url",
+      "audioUrl",
+      "stream_audio_url",
+      "streamAudioUrl",
+    ),
+    imageUrl: pick<string>(s, "image_url", "imageUrl"),
+    videoUrl: pick<string>(s, "video_url", "videoUrl"),
+    duration: pick<number>(s, "duration"),
+    title: pick<string>(s, "title"),
   });
+  const first = mapSong(firstSong, 0);
 
   return {
-    id: String(firstSong.id ?? taskId),
+    id: first.id === `${taskId}-0` ? taskId : first.id,
     taskId,
     status,
-    title: firstSong.title as string | undefined,
-    audioUrl: firstSong.audioUrl as string | undefined,
-    imageUrl: firstSong.imageUrl as string | undefined,
-    videoUrl: firstSong.videoUrl as string | undefined,
-    duration: firstSong.duration as number | undefined,
-    error: data.errorMessage ?? data.errorCode ?? undefined,
-    style: firstSong.tags as string | undefined,
-    lyrics: firstSong.prompt as string | undefined,
-    tags: firstSong.tags as string | undefined,
-    modelVersion: firstSong.modelName as string | undefined,
-    createdAt: firstSong.createTime as string | undefined,
+    title: first.title,
+    audioUrl: first.audioUrl,
+    imageUrl: first.imageUrl,
+    videoUrl: first.videoUrl,
+    duration: first.duration,
+    error,
+    style: pick<string>(firstSong, "tags"),
+    lyrics: pick<string>(firstSong, "prompt", "lyrics"),
+    tags: pick<string>(firstSong, "tags"),
+    modelVersion: pick<string>(firstSong, "model_name", "modelName"),
+    createdAt: pick<string>(firstSong, "createTime", "create_time"),
     tracks: allSongs.map(mapSong),
   };
 }

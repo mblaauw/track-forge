@@ -1,4 +1,9 @@
-import type { Job, Version, SunoArtifact } from "@track-forge/contracts";
+import type {
+  Job,
+  Version,
+  SunoArtifact,
+  SunoRenderSettings,
+} from "@track-forge/contracts";
 import type { SongStructureSection } from "@track-forge/genre-core";
 
 const API_BASE =
@@ -124,7 +129,19 @@ export interface PreviewStyleBody {
   bpm: number;
   key?: string;
   scale?: string;
-  sections: { name: string; fn: string }[];
+  sections: {
+    name: string;
+    fn: string;
+    bars?: number;
+    deltas?: string[];
+    vocal?: {
+      type: string;
+      delivery: string;
+      energy: number;
+      adlibs: boolean;
+      harmonies: boolean;
+    };
+  }[];
   lyricsMode: string;
   vocalType?: string | null;
 }
@@ -156,7 +173,12 @@ export function deleteJob(id: string): Promise<void> {
 
 export function updateJobInputs(
   id: string,
-  patch: { inputs?: Record<string, unknown>; name?: string },
+  patch: {
+    inputs?: Record<string, unknown>;
+    name?: string;
+    genreId?: string;
+    presetId?: string;
+  },
 ): Promise<JobInfo> {
   return api(`/api/jobs/${encodeURIComponent(id)}/inputs`, {
     method: "PATCH",
@@ -170,7 +192,7 @@ export function fetchJobs(limit = 20, offset = 0): Promise<JobInfo[]> {
 
 export function startJob(
   id: string,
-): Promise<{ status: string; jobId: string }> {
+): Promise<{ status: string; jobId: string; eventCursor?: number }> {
   return api(`/api/jobs/${encodeURIComponent(id)}/start`, { method: "POST" });
 }
 
@@ -235,6 +257,25 @@ export function generateLyrics(
   });
 }
 
+/**
+ * The human-readable part of a failed `api()` call. Errors are thrown as
+ * `"<status> <text>: <body>"`; when the body is the server's
+ * `{ "error": "…" }` shape, that message is what the user should see.
+ */
+export function errorMessage(err: unknown, fallback: string): string {
+  const raw = err instanceof Error ? err.message : "";
+  const bodyStart = raw.indexOf("{");
+  if (bodyStart >= 0) {
+    try {
+      const body = JSON.parse(raw.slice(bodyStart)) as { error?: unknown };
+      if (typeof body.error === "string" && body.error) return body.error;
+    } catch {
+      // not JSON — fall through
+    }
+  }
+  return fallback;
+}
+
 // ── Suno status & generations ───────────────────────────────────────
 
 export interface GenerationInfo {
@@ -250,6 +291,8 @@ export interface GenerationInfo {
   style?: string;
   lyrics?: string;
   error?: string;
+  payloadWarnings?: string | null;
+  renderSettings?: string | null;
   isFavorite?: boolean;
   seed?: number;
 }
@@ -258,9 +301,13 @@ export function fetchTakes(versionId: string): Promise<GenerationInfo[]> {
   return api(`/api/versions/${encodeURIComponent(versionId)}/takes`);
 }
 
-export function createTake(versionId: string): Promise<GenerationInfo> {
+export function createTake(
+  versionId: string,
+  settings: SunoRenderSettings = {},
+): Promise<GenerationInfo> {
   return api(`/api/versions/${encodeURIComponent(versionId)}/takes`, {
     method: "POST",
+    body: JSON.stringify(settings),
   });
 }
 
@@ -287,13 +334,19 @@ export interface JobEventHandlers {
   onError?: (err: Event) => void;
 }
 
+/**
+ * Subscribe to a job's progress events. `after` is the `eventCursor` from
+ * `startJob()`: the server then delivers only events from that run, not a
+ * replay of the job's earlier runs.
+ */
 export function connectJobEvents(
   jobId: string,
   handlers: JobEventHandlers,
+  after = 0,
 ): () => void {
   let closed = false;
   const es = new EventSource(
-    `${API_BASE}/api/jobs/${encodeURIComponent(jobId)}/events`,
+    `${API_BASE}/api/jobs/${encodeURIComponent(jobId)}/events?after=${after}`,
   );
 
   es.addEventListener("connected", () => {

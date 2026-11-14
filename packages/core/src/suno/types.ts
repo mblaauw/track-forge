@@ -1,38 +1,54 @@
 // ── Suno API types ────────────────────────────────────────────────
 
-/** Model versions supported by sunoapi.org (V4 to V5_5) */
-export type SunoModelVersion =
-  "V4" | "V4_5" | "V4_5PLUS" | "V4_5ALL" | "V5" | "V5_5";
+import type { SunoModel } from "@track-forge/contracts";
 
-/** Request body for Suno API /api/v1/generate (custom mode) */
+/**
+ * Model identifiers accepted by the provider. The v6 family is the only
+ * live generation target — the canonical list is `SUNO_MODELS` in
+ * `@track-forge/contracts`.
+ */
+export type SunoModelVersion = SunoModel;
+
+/**
+ * Request body for POST /api/v1/generate in custom mode.
+ * Contract: https://docs.sunoapi.org/suno-api/generate-music
+ */
 export interface SunoGenerateRequest {
   /** Must be true for custom mode */
   customMode: true;
-  /** Whether to generate instrumental (no lyrics) */
+  /** Whether to generate instrumental (no vocals) */
   instrumental: boolean;
   /** Model version */
   model: SunoModelVersion;
-  /** Lyrics text (required when instrumental=false) */
-  prompt?: string;
-  /** Style/genre description */
+  /**
+   * Lyrics with section metatags. v6 reads the dedicated `lyrics` field
+   * and prefers it over the legacy `prompt` field, which this app no
+   * longer sends.
+   */
+  lyrics?: string;
+  /** Style description (max 1000 chars) */
   style: string;
-  /** Track title */
+  /** Track title (max 80 chars) */
   title: string;
-  /** Styles/traits to exclude */
+  /** Styles/traits to exclude (max 1000 chars) */
   negativeTags?: string;
+  /** Target length in seconds (10–360). The provider default is 20. */
+  duration?: number;
+  /** 0–4. 0 keeps the style prompt exactly as written. */
+  variety?: number;
   /** Optional callback URL */
   callBackUrl?: string;
   /** Persona ID (from Generate Persona or Suno Voice) */
   personaId?: string;
   /** Persona model type */
   personaModel?: "style_persona" | "voice_persona";
-  /** Preferred vocal gender */
+  /** Preferred vocal gender — raises the probability, not a guarantee */
   vocalGender?: "m" | "f";
   /** Style guidance weight (0.00–1.00) */
   styleWeight?: number;
-  /** Creative deviation constraint (0.00–1.00) */
+  /** Creative deviation (0.00–1.00) */
   weirdnessConstraint?: number;
-  /** Input audio influence weight (0.00–1.00) */
+  /** Input audio influence weight (0.00–1.00). Vocal takes only. */
   audioWeight?: number;
 }
 
