@@ -17,6 +17,7 @@ import type {
   DescriptorWeight,
 } from "./types";
 import { buildSections, randomTitle } from "./arrangement";
+import { RenderCardContent, renderSummary } from "./RenderCard";
 import {
   fetchGenres,
   fetchPresets,
@@ -104,6 +105,7 @@ const CARDS: { id: SetupCardId; label: string }[] = [
   { id: "sound", label: "SOUND" },
   { id: "descriptors", label: "DESCRIPTORS" },
   { id: "reference", label: "REFERENCE" },
+  { id: "render", label: "RENDER" },
 ];
 
 export function SetupColumn() {
@@ -234,6 +236,13 @@ export function SetupColumn() {
           presetSearch,
           setPresetSearch,
         })}
+        {renderCard("render", s, cards, toggleCard, {
+          genres,
+          presets,
+          descDefaults,
+          presetSearch,
+          setPresetSearch,
+        })}
       </div>
     </div>
   );
@@ -285,6 +294,8 @@ function cardSummary(
     }
     case "reference":
       return s.reference ? "Added" : "None";
+    case "render":
+      return renderSummary(s.render);
   }
 }
 
@@ -308,6 +319,8 @@ function renderCardBody(
       return <DescriptorsCardContent {...ctx} s={s} />;
     case "reference":
       return <ReferenceCardContent s={s} />;
+    case "render":
+      return <RenderCardContent s={s} />;
   }
 }
 
@@ -468,8 +481,8 @@ function LyricsCardContent({
       </div>
       {!lyricsOn ? (
         <p class="setup-hint">
-          Instrumental only. No lyrics or vocals will be generated. Suno
-          metatags will use instrumental markers.
+          Instrumental only. No lyrics or vocals will be generated; the
+          arrangement is described to Suno in the style prompt.
         </p>
       ) : (
         <>

@@ -40,12 +40,13 @@ export type LyricAngle = "first_person" | "story" | "abstract" | "anthemic";
 
 export type ArrangeSource = "default" | "custom";
 
-export type SetupCardId = "sound" | "descriptors" | "reference";
+export type SetupCardId = "sound" | "descriptors" | "reference" | "render";
 
 export interface SetupCardsOpen {
   sound: boolean;
   descriptors: boolean;
   reference: boolean;
+  render: boolean;
 }
 
 export interface TakeTrack {
@@ -73,6 +74,10 @@ export interface Take {
   style?: string;
   lyrics?: string;
   error?: string;
+  /** JSON-encoded payload warnings (e.g. duration clamped to Suno's cap). */
+  payloadWarnings?: string | null;
+  /** JSON: model + per-take settings this take was rendered with. */
+  renderSettings?: string | null;
   isFavorite?: boolean;
   createdAt?: string;
   updatedAt?: string;

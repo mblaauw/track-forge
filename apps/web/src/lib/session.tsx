@@ -1,4 +1,9 @@
 import { createContext } from "preact";
+import {
+  DEFAULT_SUNO_MODEL,
+  DEFAULT_SUNO_VARIETY,
+  type SunoRenderSettings,
+} from "@track-forge/contracts";
 import { randomTitle } from "../components/compose/arrangement";
 import {
   useContext,
@@ -24,7 +29,15 @@ function loadPersistedSession(): SessionState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SessionState;
+    // Merge over the defaults so sessions saved before a field existed
+    // (e.g. `render`) still load with a complete state.
+    const saved = JSON.parse(raw) as Partial<SessionState>;
+    return {
+      ...DEFAULT,
+      ...saved,
+      cards: { ...DEFAULT.cards, ...saved.cards },
+      render: { ...DEFAULT.render, ...saved.render },
+    };
   } catch {
     return null;
   }
@@ -33,7 +46,12 @@ function loadPersistedSession(): SessionState | null {
 function persistSession(state: SessionState): void {
   try {
     // Don't persist transient state
-    const persistable = { ...state, forgeRunning: false, status: "idle" };
+    const persistable = {
+      ...state,
+      forgeRunning: false,
+      status: "idle",
+      forgeError: "",
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
   } catch {
     // localStorage full or unavailable
@@ -76,6 +94,8 @@ export interface SessionState {
   selSectionId: string | null;
   arrangeSource: ArrangeSource;
   takes: Take[];
+  /** Suno v6 settings for the next take (model, variety, sliders). */
+  render: SunoRenderSettings;
   cards: SetupCardsOpen;
   promptInspectorOpen: boolean;
   leftCollapsed: boolean;
@@ -84,6 +104,8 @@ export interface SessionState {
   forgeRunning: boolean;
   forgeStageIdx: number;
   forgeStageLabel: string;
+  /** Why the last forge failed — shown in the header while status is "failed". */
+  forgeError: string;
   /** Incremented after each forge completes — drives library panel refresh. */
   lastForgeTimestamp?: number;
 }
@@ -114,10 +136,12 @@ const DEFAULT: SessionState = {
   selSectionId: null,
   arrangeSource: "default",
   takes: [],
+  render: { model: DEFAULT_SUNO_MODEL, variety: DEFAULT_SUNO_VARIETY },
   cards: {
     sound: true,
     descriptors: false,
     reference: false,
+    render: false,
   },
   promptInspectorOpen: false,
   leftCollapsed: false,
@@ -126,6 +150,7 @@ const DEFAULT: SessionState = {
   forgeRunning: false,
   forgeStageIdx: 0,
   forgeStageLabel: "",
+  forgeError: "",
   lastForgeTimestamp: undefined,
 };
 

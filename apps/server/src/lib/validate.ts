@@ -57,6 +57,9 @@ export const UpdateJobNameBody = z.object({
 export const UpdateJobInputsBody = z.object({
   inputs: z.record(z.unknown()).optional(),
   name: z.string().optional(),
+  // A session can switch genre or preset between forges; the job follows.
+  genreId: z.string().min(1).optional(),
+  presetId: z.string().min(1).optional(),
 });
 export const BulkExportBody = z.object({
   ids: z.array(z.string()).optional(),
@@ -69,9 +72,22 @@ export const DescriptorInput = z.object({
   cat: z.string(),
   weight: z.number().int().min(0).max(3),
 });
+const VocalInput = z.object({
+  type: z.string(),
+  delivery: z.string(),
+  energy: z.number(),
+  adlibs: z.boolean(),
+  harmonies: z.boolean(),
+});
+// bars / deltas / vocal are optional so older clients keep working, but the
+// preview only matches what the pipeline sends to Suno when they are sent:
+// the style prompt names the dominant voice from the per-section vocals.
 const StyleSectionInput = z.object({
   name: z.string(),
   fn: z.string().default("establish"),
+  bars: z.number().optional(),
+  deltas: z.array(z.string()).optional(),
+  vocal: VocalInput.optional(),
 });
 const StyleCompileFields = z.object({
   presetIds: z.array(z.string()).default([]),

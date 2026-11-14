@@ -106,6 +106,20 @@ export async function publish(
   return fullEvent;
 }
 
+/**
+ * Highest event sequence recorded for a job (0 when it has none). A run
+ * started now only produces events above this, so it marks where one run's
+ * events end and the next begin.
+ */
+export function getLastEventSequence(db: Db, jobId: string): number {
+  const row = getSqlite(db)
+    .prepare(
+      "SELECT COALESCE(MAX(sequence), 0) AS max_seq FROM job_events WHERE job_id = ?",
+    )
+    .get(jobId) as { max_seq: number } | undefined;
+  return row?.max_seq ?? 0;
+}
+
 /** Get recent events for a job (for replay), always in chronological order. */
 export async function getJobEvents(
   db: Db,

@@ -8,6 +8,7 @@ import {
   CaretLeft,
   CaretRight,
 } from "@phosphor-icons/react";
+import { SUNO_LIMITS, estimateDurationSec } from "@track-forge/contracts";
 import { useSession } from "../../lib/session";
 import { fetchDescriptorDefaults } from "../../api";
 import {
@@ -22,17 +23,25 @@ import {
 } from "./arrangement";
 import type { Section, SectionFunction, SongStructureSection } from "./types";
 
-function estTime(totalBars: number, bpm: number): string {
-  const sec = (totalBars * 4 * 60) / Math.max(bpm, 1);
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
+function fmtTime(totalSec: number): string {
+  const m = Math.floor(totalSec / 60);
+  const s = Math.round(totalSec % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+function estTime(totalBars: number, bpm: number): string {
+  return fmtTime((totalBars * 4 * 60) / Math.max(bpm, 1));
+}
+
+const MAX_TAKE_TIME = fmtTime(SUNO_LIMITS.maxDurationSec);
 
 export function ArrangementEditor() {
   const s = useSession();
   const totalBars = s.sections.reduce((acc, sec) => acc + sec.bars, 0);
   const time = estTime(totalBars, s.bpm ?? 128);
+  const durationSec = estimateDurationSec(s.bpm ?? 128, s.sections);
+  const tooLong = durationSec > SUNO_LIMITS.maxDurationSec;
+  const tooShort = durationSec > 0 && durationSec < SUNO_LIMITS.minDurationSec;
   const sel = s.sections.find((sec) => sec.id === s.selSectionId);
 
   const [vocab, setVocab] = useState<{
@@ -123,8 +132,18 @@ export function ArrangementEditor() {
       <div class="bundle-block-header">
         <Rows size={16} style="color:var(--icon-arr)" />
         <span class="bundle-block-title">ARRANGEMENT STRUCTURE</span>
-        <span class="bundle-block-meta">
+        <span
+          class={`bundle-block-meta${tooLong || tooShort ? " over" : ""}`}
+          data-testid="arrangement-duration"
+          title={
+            tooLong
+              ? `Suno v6 renders at most ${MAX_TAKE_TIME} per take; a longer arrangement is cut short`
+              : undefined
+          }
+        >
           {totalBars} bars · {time}
+          {tooLong && ` · max ${MAX_TAKE_TIME}`}
+          {tooShort && ` · under ${SUNO_LIMITS.minDurationSec}s`}
         </span>
         <div
           class="arr-header-bpm"

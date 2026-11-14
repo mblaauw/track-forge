@@ -9,10 +9,11 @@ import {
   cancelJob,
   abortJob,
   publish,
-  resetJobStage,
+  getSqlite,
+  getLastEventSequence,
 } from "@track-forge/core";
 import type { PipelineDeps } from "@track-forge/core";
-import type { Config, JobId } from "@track-forge/contracts";
+import type { Config } from "@track-forge/contracts";
 import {
   materializeIntent,
   type PresetCatalog,
@@ -243,7 +244,10 @@ export function registerJobRoutes(
 
   server.patch("/api/jobs/:id/inputs", async (req, reply) => {
     const { id } = validateParams(IdParams, req);
-    const { inputs, name } = validateBody(UpdateJobInputsBody, req);
+    const { inputs, name, genreId, presetId } = validateBody(
+      UpdateJobInputsBody,
+      req,
+    );
 
     const job = await findRowOr404(
       db,
@@ -252,33 +256,54 @@ export function registerJobRoutes(
       "Job",
     );
 
-    // Don't allow modifying inputs while the pipeline is running or done —
-    // the frozen intent revision already captured the pre-run snapshot.
+    // Inputs are locked only while a run is in flight — that run froze its
+    // own intent revision at the start and must not see a half-applied edit.
+    // A finished job stays editable: its versions point at their own frozen
+    // revision, so edits only shape the next forge.
     if (job.status === "in_progress") {
       return reply
         .code(409)
         .send({ error: "Cannot modify inputs while pipeline is running" });
     }
-    if (job.status === "completed") {
-      return reply
-        .code(409)
-        .send({ error: "Cannot modify inputs after pipeline completed" });
-    }
 
     const now = new Date().toISOString();
     const update: Record<string, unknown> = { updatedAt: now };
 
-    // Merge with existing inputs so client autosave (common fields only)
-    // does not wipe preset-merged values like characteristics / tempoFeel /
-    // flowPattern that were populated on job create.
-    if (inputs !== undefined) {
+    const nextGenreId = genreId ?? job.genreId;
+    const nextPresetId = presetId ?? job.presetId;
+    const soundChanged =
+      nextGenreId !== job.genreId || nextPresetId !== job.presetId;
+    if (soundChanged) {
+      try {
+        getModuleOrThrow(nextGenreId);
+      } catch {
+        return reply.code(404).send({ error: `Unknown genre: ${nextGenreId}` });
+      }
+      update.genreId = nextGenreId;
+      update.presetId = nextPresetId;
+    }
+
+    if (inputs !== undefined || soundChanged) {
       let existing: Record<string, unknown> = {};
       try {
         existing = JSON.parse(job.inputs ?? "{}") as Record<string, unknown>;
       } catch {
         existing = {};
       }
-      update.inputs = JSON.stringify({ ...existing, ...inputs });
+      if (soundChanged) {
+        // The stored inputs carry the old preset's merged values (mood,
+        // characteristics, tempo feel…). Rebuild on the new preset, the
+        // same way job creation does, so none of the old sound leaks in.
+        const presetValues =
+          getPresets(nextGenreId).find((p) => p.id === nextPresetId)?.values ??
+          {};
+        update.inputs = JSON.stringify({ ...presetValues, ...(inputs ?? {}) });
+      } else {
+        // Merge with existing inputs so client autosave (common fields
+        // only) does not wipe preset-merged values like characteristics /
+        // tempoFeel / flowPattern that were populated on job create.
+        update.inputs = JSON.stringify({ ...existing, ...inputs });
+      }
     }
     if (name !== undefined) update.name = name;
 
@@ -361,29 +386,34 @@ export function registerJobRoutes(
       eq(schema.jobs.id, id),
       "Job",
     );
-    if (job.status !== "pending" && job.status !== "failed") {
-      return reply
-        .code(400)
-        .send({ error: "Job not in pending or failed status" });
-    }
+    // Where this job's event log stands before the run. The client passes
+    // it back when subscribing so it only sees this run's events — never a
+    // replay of an earlier run's "versioning completed".
+    const eventCursor = getLastEventSequence(db, id);
 
-    // A failed job (e.g. retries exhausted after a transient LLM/DB error)
-    // is retried as a full fresh run — compilation is cheap and inputs may
-    // have changed since the failure, so there's no reason to resume
-    // mid-pipeline.
-    if (job.status === "failed") {
-      await resetJobStage(db, id as JobId, "compilation");
+    // Any job that is not mid-run can be (re)started, and always as a full
+    // fresh run from compilation: a completed job is re-forged with whatever
+    // its inputs are now, a failed or cancelled one is retried. Compilation
+    // is cheap and every run freezes a new intent revision and writes a new
+    // version, so nothing from the earlier run is overwritten.
+    //
+    // Claimed in a single UPDATE so two near-simultaneous starts cannot both
+    // dispatch a pipeline.
+    const claimed = getSqlite(db)
+      .prepare(
+        `UPDATE jobs
+            SET status = 'in_progress', current_stage = 'compilation',
+                stage_attempt = 0, error = NULL, updated_at = ?
+          WHERE id = ? AND status != 'in_progress'`,
+      )
+      .run(new Date().toISOString(), id);
+    if (claimed.changes === 0) {
+      return reply.code(409).send({ error: "Job is already running" });
     }
-
-    const now = new Date().toISOString();
-    await db
-      .update(schema.jobs)
-      .set({ status: "in_progress", updatedAt: now })
-      .where(eq(schema.jobs.id, id));
 
     dispatchPipeline(id, job.genreId, req.log, "start");
 
-    return reply.code(202).send({ status: "started", jobId: id });
+    return reply.code(202).send({ status: "started", jobId: id, eventCursor });
   });
 
   // ── List genres ──────────────────────────────────────────────────────

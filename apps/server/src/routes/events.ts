@@ -27,9 +27,20 @@ export function registerEventRoutes(
   server.get("/api/jobs/:id/events", async (req, reply) => {
     const { id } = validateParams(IdParams, req);
     const headers = req.headers;
-    const lastEventId = headers["last-event-id"]
-      ? parseInt(headers["last-event-id"] as string, 10)
-      : 0;
+    // Replay starts after the later of two cursors: `Last-Event-ID`, which
+    // the browser sends when it reconnects, and `?after=`, which the client
+    // sets to the cursor returned by POST /start so a fresh subscription
+    // sees only that run's events (EventSource cannot set headers itself).
+    const headerCursor = parseInt(String(headers["last-event-id"] ?? ""), 10);
+    const queryCursor = parseInt(
+      String((req.query as { after?: string }).after ?? ""),
+      10,
+    );
+    const lastEventId = Math.max(
+      Number.isFinite(headerCursor) ? headerCursor : 0,
+      Number.isFinite(queryCursor) ? queryCursor : 0,
+      0,
+    );
 
     // SSE headers
     reply.raw.writeHead(200, {

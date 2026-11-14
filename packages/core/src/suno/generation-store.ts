@@ -18,6 +18,8 @@ export interface GenerationRecord {
   error?: string;
   /** JSON-encoded PayloadWarning[] from payload construction. */
   payloadWarnings?: string;
+  /** JSON: the model + per-take settings this take was rendered with. */
+  renderSettings?: string;
 }
 
 /**
@@ -42,6 +44,7 @@ export async function storeGeneration(
     lyrics: gen.lyrics ?? null,
     error: gen.error ?? null,
     payloadWarnings: gen.payloadWarnings ?? null,
+    renderSettings: gen.renderSettings ?? null,
     createdAt: now,
     updatedAt: now,
   });
@@ -124,6 +127,7 @@ function mapGenerationRow(row: Record<string, unknown>): GenerationRecord {
     lyrics: (row.lyrics as string) ?? undefined,
     error: (row.error as string) ?? undefined,
     payloadWarnings: (row.payloadWarnings as string) ?? undefined,
+    renderSettings: (row.renderSettings as string) ?? undefined,
   };
 }
 

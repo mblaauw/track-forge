@@ -11,8 +11,14 @@ export function ContextBar({
 }) {
   const s = useSession();
   const forging = s.status === "in_progress" || s.forgeRunning;
-  const statusDot = forging ? "#E0A63E" : "#3DDC84";
-  const statusText = forging ? "FORGING" : "READY";
+  const failed = !forging && s.status === "failed";
+  const statusDot = forging
+    ? "#E0A63E"
+    : failed
+      ? "var(--danger-text)"
+      : "#3DDC84";
+  const statusText = forging ? "FORGING" : failed ? "FAILED" : "READY";
+  const failReason = s.forgeError || "The forge failed";
 
   const presetLabel = s.presetLabels.length
     ? s.presetLabels.join(", ")
@@ -57,7 +63,17 @@ export function ContextBar({
       </div>
 
       <div class="ctx-right">
-        <div class="ctx-status">
+        {failed && (
+          <span
+            class="ctx-status-error"
+            role="alert"
+            title={failReason}
+            data-testid="forge-error"
+          >
+            {failReason}
+          </span>
+        )}
+        <div class={`ctx-status${failed ? " failed" : ""}`}>
           <span class="ctx-status-dot" style={{ background: statusDot }} />
           <span class="ctx-status-text">{statusText}</span>
         </div>

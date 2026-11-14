@@ -311,6 +311,19 @@ ol {
   font-weight: 600;
 }
 
+.ctx-status.failed {
+  color: var(--danger-text);
+}
+
+.ctx-status-error {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--danger-text);
+}
+
 .ctx-forge-btn {
   display: flex;
   align-items: center;
@@ -1078,6 +1091,75 @@ ol {
   font-size: 10px;
   color: var(--faint);
   margin-left: 4px;
+  white-space: nowrap;
+}
+
+.bundle-block-meta.over {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+.limit-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--danger-border);
+  border-radius: 6px;
+  background: var(--danger-fill);
+  color: var(--danger-text);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ── Render card (per-take Suno settings) ── */
+
+.render-slider-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.render-slider-value {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.render-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.render-slider {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+/* Untouched slider: Suno picks the value, so the thumb reads as inactive. */
+.render-slider.unset::-webkit-slider-thumb {
+  background: var(--border-chip-off, #c9bfae);
+}
+
+.render-slider.unset::-moz-range-thumb {
+  background: var(--border-chip-off, #c9bfae);
+}
+
+.rende-card-note {
+  margin-top: 6px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--faint);
+}
+
+.rende-card-note.error {
+  color: var(--danger-text);
 }
 
 .bundle-copy-btn {
@@ -1145,6 +1227,7 @@ ol {
   letter-spacing: 0.14em;
   color: var(--label);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .bundle-block-placeholder {

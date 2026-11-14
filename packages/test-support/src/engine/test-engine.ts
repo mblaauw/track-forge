@@ -30,6 +30,7 @@ export function createTestConfig(overrides?: Partial<Config>): Config {
   return {
     sunoBaseUrl: "https://api.sunomusic.com/v1",
     sunoAuthToken: undefined,
+    sunoModel: "V6",
     publicBaseUrl: undefined,
     dbPath: ":memory:",
     logLevel: "fatal",

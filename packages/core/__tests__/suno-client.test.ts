@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SunoClient, createSunoClientConfig } from "../src/suno/index.js";
+import {
+  SunoClient,
+  SunoApiError,
+  createSunoClientConfig,
+} from "../src/suno/index.js";
 import { normalizeTaskResponse } from "../src/suno/client.js";
 import type { SunoClientConfig } from "../src/suno/index.js";
 import type { Config } from "@track-forge/contracts";
@@ -7,7 +11,7 @@ import type { Config } from "@track-forge/contracts";
 const MIN_CONFIG: SunoClientConfig = {
   baseUrl: "https://api.sunomusic.com/v1",
   authToken: "test-token-123",
-  defaultModelVersion: "V4_5ALL",
+  defaultModelVersion: "V6",
   pollIntervalMs: 5000,
   pollTimeoutMs: 300000,
 };
@@ -42,10 +46,12 @@ describe("SunoClient.submit", () => {
     const result = await client.submit({
       customMode: true,
       instrumental: false,
-      model: "V4_5ALL",
+      model: "V6",
       title: "Test Track",
       style: "Deep house, warm pads",
-      prompt: "[Verse]\nHello world",
+      lyrics: "[Verse]\nHello world",
+      duration: 184,
+      variety: 0,
     });
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -78,10 +84,10 @@ describe("SunoClient.submit", () => {
     await client.submit({
       customMode: true,
       instrumental: false,
-      model: "V4_5ALL",
+      model: "V6",
       title: "Track",
       style: "Style",
-      prompt: "Lyrics",
+      lyrics: "Lyrics",
       negativeTags: "slow, ballad",
       callBackUrl: "https://hook.example.com/callback",
       vocalGender: "f",
@@ -109,10 +115,10 @@ describe("SunoClient.submit", () => {
     await client.submit({
       customMode: true,
       instrumental: false,
-      model: "V4_5ALL",
+      model: "V6",
       title: "Persona Track",
       style: "Style",
-      prompt: "Lyrics",
+      lyrics: "Lyrics",
       personaId: "pers-001",
     });
 
@@ -139,10 +145,10 @@ describe("SunoClient.submit", () => {
     await client.submit({
       customMode: true,
       instrumental: false,
-      model: "V4_5ALL",
+      model: "V6",
       title: "Callback Track",
       style: "Style",
-      prompt: "Lyrics",
+      lyrics: "Lyrics",
     });
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -164,11 +170,100 @@ describe("SunoClient.submit", () => {
       client.submit({
         customMode: true,
         instrumental: false,
-        model: "V4_5ALL",
+        model: "V6",
         title: "Fail",
         style: "Style",
       }),
-    ).rejects.toThrow("Suno API error");
+    ).rejects.toThrow("Suno rejected the request parameters");
+  });
+
+  it("never sends the legacy prompt field", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ code: 200, msg: "ok", data: { taskId: "t" } }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await makeClient().submit({
+      customMode: true,
+      instrumental: false,
+      model: "V6",
+      title: "Track",
+      style: "Style",
+      lyrics: "[Verse]\nLine",
+    });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.lyrics).toBe("[Verse]\nLine");
+    expect(body).not.toHaveProperty("prompt");
+  });
+
+  it("drops vocal-only fields on instrumental takes", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ code: 200, msg: "ok", data: { taskId: "t" } }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await makeClient().submit({
+      customMode: true,
+      instrumental: true,
+      model: "V6",
+      title: "Track",
+      style: "Style",
+      lyrics: "should not be sent",
+      vocalGender: "f",
+      audioWeight: 0.5,
+      duration: 240,
+    });
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.instrumental).toBe(true);
+    expect(body.duration).toBe(240);
+    expect(body).not.toHaveProperty("lyrics");
+    expect(body).not.toHaveProperty("vocalGender");
+    expect(body).not.toHaveProperty("audioWeight");
+  });
+
+  it.each([
+    [429, "out of credits"],
+    [430, "Too many Suno requests"],
+    [455, "maintenance"],
+    [413, "too long"],
+    [401, "API key"],
+  ])("explains provider code %i in plain words", async (code, phrase) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ code, msg: "provider detail" }),
+      }),
+    );
+
+    const err = await makeClient()
+      .submit({
+        customMode: true,
+        instrumental: true,
+        model: "V6",
+        title: "Fail",
+        style: "Style",
+      })
+      .catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(SunoApiError);
+    expect((err as SunoApiError).code).toBe(code);
+    expect((err as SunoApiError).reason).toContain(phrase);
+  });
+});
+
+describe("createSunoClientConfig", () => {
+  it("takes the default model from config", () => {
+    const cfg = createSunoClientConfig({
+      sunoBaseUrl: "https://api.example.com/",
+      sunoModel: "V6_MINI",
+    } as Config);
+    expect(cfg.defaultModelVersion).toBe("V6_MINI");
+    expect(cfg.baseUrl).toBe("https://api.example.com");
   });
 });
 
@@ -188,13 +283,64 @@ describe("normalizeTaskResponse", () => {
             duration: 180,
             tags: "deep house, warm",
             prompt: "[Verse]\nHello",
-            modelName: "V4_5",
-            createTime: "2025-01-01T00:00:00Z",
+            modelName: "chirp-v6",
+            createTime: "2026-10-01T00:00:00Z",
           },
         ],
       },
     });
     expect(result).toMatchSnapshot();
+  });
+
+  // record-info is documented in snake_case; the same fields must land
+  // in the same places as the camelCase spelling above.
+  it("reads snake_case track fields", () => {
+    const result = normalizeTaskResponse("task-006", {
+      taskId: "task-006",
+      status: "SUCCESS",
+      response: {
+        sunoData: [
+          {
+            id: "song-a",
+            title: "Snake A",
+            audio_url: "https://cdn.example.com/a.mp3",
+            image_url: "https://cdn.example.com/a.jpeg",
+            duration: 198.44,
+            tags: "electrifying, rock",
+            prompt: "[Verse] Night city lights",
+            model_name: "chirp-v6",
+            createTime: "2026-10-01 00:00:00",
+          },
+          {
+            id: "song-b",
+            title: "Snake B",
+            stream_audio_url: "https://cdn.example.com/b-stream",
+            image_url: "https://cdn.example.com/b.jpeg",
+            duration: 228.28,
+          },
+        ],
+      },
+    });
+    expect(result.audioUrl).toBe("https://cdn.example.com/a.mp3");
+    expect(result.imageUrl).toBe("https://cdn.example.com/a.jpeg");
+    expect(result.modelVersion).toBe("chirp-v6");
+    expect(result.lyrics).toBe("[Verse] Night city lights");
+    expect(result.tracks).toHaveLength(2);
+    // Falls back to the stream URL while the final file is not ready.
+    expect(result.tracks![1]!.audioUrl).toBe(
+      "https://cdn.example.com/b-stream",
+    );
+  });
+
+  it("explains a failed task that carries no message", () => {
+    const result = normalizeTaskResponse("task-007", {
+      taskId: "task-007",
+      status: "SENSITIVE_WORD_ERROR",
+      errorCode: null,
+      errorMessage: null,
+    });
+    expect(result.status).toBe("error");
+    expect(result.error).toContain("prohibited words");
   });
 
   it("PENDING status", () => {

@@ -11,6 +11,7 @@
  */
 
 import type { ResolvedSongIntent } from "@track-forge/song-intent";
+import { summarizeVocals } from "../suno/render-hints.js";
 
 export interface CompileStyleInput {
   genreName: string;
@@ -153,15 +154,21 @@ function compileSound(active: { label: string; cat: string }[]): string | null {
   return `built around ${sound.join(", ")}`;
 }
 
+/**
+ * Names the voice in the style prompt. v6 follows a vocal described here
+ * more reliably than one named only in a lyrics section tag.
+ */
 function compileIdentity(
   lyricsMode: string,
   vocalType?: string,
+  delivery?: string,
 ): string | null {
   if (lyricsMode === "strict_instrumental") {
     return "instrumental";
   }
   if (vocalType) {
-    return `${vocalType} vocals`;
+    const voice = `${vocalType.replace(/[·_]+/g, " ").toLowerCase()} vocals`;
+    return delivery ? `${voice} with a ${delivery} delivery` : voice;
   }
   return null;
 }
@@ -218,7 +225,16 @@ function macroArc(sections: { name: string; fn: string }[]): string | null {
   );
 
   if (peaks.length >= 2) {
-    const label = /drop/i.test(peaks[0]!.name) ? "drops" : "choruses";
+    // Name the peaks after what they are — "choruses" is wrong for an
+    // instrumental whose peaks are grooves or drops.
+    const first = peaks[0]!.name;
+    const label = /drop/i.test(first)
+      ? "drops"
+      : /chorus/i.test(first)
+        ? "choruses"
+        : /hook/i.test(first)
+          ? "hooks"
+          : "peaks";
     return `gradually builds toward ${peaks.length} increasingly intense ${label}`;
   }
   if (peaks.length === 1) {
@@ -242,7 +258,7 @@ function compileStructureNote(
   if (lyricsMode !== "strict_instrumental") return null;
   const names = sections.map((s) => s.name).filter(Boolean);
   if (names.length === 0) return null;
-  const note = `structure: ${names.join(" → ")}`;
+  const note = `structure: ${names.join(" → ").toLowerCase()}`;
   return note.length > 220 ? null : note;
 }
 
@@ -341,9 +357,11 @@ export function renderSunoStyle(
     resolved.mood,
   );
   const soundPart = compileSound(active);
+  const voice = summarizeVocals(resolved);
   const identityPart = compileIdentity(
     resolved.vocals.mode,
-    resolved.vocals.type,
+    voice.label ?? resolved.vocals.type,
+    voice.delivery,
   );
   const moodArc = compileMoodArc(
     active,
@@ -359,12 +377,23 @@ export function renderSunoStyle(
     narrativeArc: resolved.lyrics.narrativeArc,
     vocalStyle: resolved.lyrics.vocalStyle,
   });
-  const structureNote = resolved.arrangement.typicalSongStructure
-    ? compileTypedStructure(resolved.arrangement.typicalSongStructure)
-    : compileStructureNote(
-        resolved.arrangement.sections.map((s) => ({ name: s.name, fn: s.fn })),
-        resolved.vocals.mode,
-      );
+  // The style string carries the structure for instrumental takes only —
+  // vocal takes hand Suno the arrangement as section tags in the lyrics
+  // field, and repeating a second (possibly different) outline here would
+  // contradict it. The user's actual arrangement always wins; a preset's
+  // generic `typicalSongStructure` is used only when no sections exist.
+  const sectionNames = resolved.arrangement.sections.map((s) => ({
+    name: s.name,
+    fn: s.fn,
+  }));
+  const structureNote =
+    resolved.vocals.mode !== "strict_instrumental"
+      ? null
+      : sectionNames.length > 0
+        ? compileStructureNote(sectionNames, resolved.vocals.mode)
+        : compileTypedStructure(
+            resolved.arrangement.typicalSongStructure ?? [],
+          );
 
   const parts = [core, rhythmPart];
   if (soundPart) parts.push(soundPart);

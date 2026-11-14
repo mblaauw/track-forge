@@ -19,6 +19,13 @@ export function BundleCanvas() {
     weight: t.weight,
   }));
 
+  const sectionsKey = s.sections
+    .map(
+      (sec) =>
+        `${sec.name}:${sec.fn}:${sec.bars}:${sec.deltas.join("+")}:${sec.vocal?.type ?? ""}:${sec.vocal?.delivery ?? ""}`,
+    )
+    .join("|");
+
   // Debounced preview call on any relevant change
   useEffect(() => {
     if (descriptorsPayload.length === 0) {
@@ -39,6 +46,9 @@ export function BundleCanvas() {
         sections: s.sections.map((sec) => ({
           name: sec.name,
           fn: sec.fn,
+          bars: sec.bars,
+          deltas: sec.deltas,
+          vocal: sec.vocal,
         })),
         lyricsMode: s.lyricsMode,
         vocalType: null,
@@ -62,6 +72,9 @@ export function BundleCanvas() {
     descriptorsPayload.map((d) => `${d.label}:${d.weight}`).join(","),
     s.bpm,
     s.lyricsMode,
+    // The compiled style names the arrangement (instrumental) and the
+    // dominant voice (vocal), so it must recompile when sections change.
+    sectionsKey,
   ]);
 
   return (

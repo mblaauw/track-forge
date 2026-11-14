@@ -58,6 +58,7 @@ export type {
 // Suno integration
 export {
   SunoClient,
+  SunoApiError,
   createSunoClientConfig,
   resolveCallbackUrl,
   getCapabilities,
@@ -68,6 +69,8 @@ export {
   getGeneration,
   listGenerations,
   storeTracks,
+  deriveRenderHints,
+  summarizeVocals,
 } from "./suno/index.js";
 export type {
   SunoCapabilities,
@@ -79,6 +82,8 @@ export type {
   SunoGenerationStatus,
   SunoModelVersion,
   SunoPayloadInput,
+  RenderHints,
+  VocalSummary,
   PayloadWarning,
   GenerationRecord,
 } from "./suno/index.js";
@@ -100,6 +105,7 @@ export {
   publish,
   unsubscribeAll,
   getJobEvents,
+  getLastEventSequence,
   formatSseEvent,
 } from "./pipeline/index.js";
 export type {

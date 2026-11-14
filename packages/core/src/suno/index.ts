@@ -1,4 +1,4 @@
-export { SunoClient, createSunoClientConfig } from "./client.js";
+export { SunoClient, SunoApiError, createSunoClientConfig } from "./client.js";
 export { sunoAdapter } from "./adapter.js";
 export type { SunoAdapter } from "./adapter.js";
 export { resolveCallbackUrl } from "./callbacks.js";
@@ -23,3 +23,5 @@ export type {
   SunoGenerationStatus,
   SunoModelVersion,
 } from "./types.js";
+export { deriveRenderHints, summarizeVocals } from "./render-hints.js";
+export type { RenderHints, VocalSummary } from "./render-hints.js";

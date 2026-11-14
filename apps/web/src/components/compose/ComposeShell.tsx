@@ -9,6 +9,7 @@ import {
   fetchVersions,
   fetchTakes,
   createTake,
+  errorMessage,
   type ProgressEvent,
 } from "../../api";
 import { ContextBar } from "./ContextBar";
@@ -67,6 +68,17 @@ function buildInputPack(
   };
 }
 
+/** Genre + primary preset — sent with the inputs so the job follows a switch. */
+function jobSound(s: ReturnType<typeof useSession>): {
+  genreId?: string;
+  presetId?: string;
+} {
+  return {
+    genreId: s.genreId || undefined,
+    presetId: s.presetId || s.presetIds[0] || undefined,
+  };
+}
+
 export function ComposeShell() {
   const s = useSession();
   const player = usePlayer();
@@ -76,142 +88,189 @@ export function ComposeShell() {
   // forge starts so the pipeline never reads stale inputs from a debounce
   // window that hasn't fired yet.
   const persistRef = useRef<ReturnType<typeof setTimeout>>();
+  // The take is triggered from an SSE handler created when the forge
+  // started; a ref keeps it on the render settings as they are now.
+  const renderRef = useRef(s.render);
+  renderRef.current = s.render;
+  // Latest session, for callbacks that outlive the render they were made in.
+  const sessionRef = useRef(s);
+  sessionRef.current = s;
 
   const handleForge = useCallback(async () => {
     if (s.forgeRunning || !s.genreId) return;
 
-    // Flush any pending debounced autosave write immediately — otherwise a
-    // change made in the last 800ms could start the pipeline on stale inputs.
+    // Drop any pending debounced autosave — the forge sends the inputs
+    // itself, below, so the pipeline always compiles what is on screen.
     if (persistRef.current) {
       clearTimeout(persistRef.current);
       persistRef.current = undefined;
-      if (s.jobId) {
-        await updateJobInputs(s.jobId, {
-          inputs: buildInputPack(s),
-          name: s.name || undefined,
-        }).catch(() => {});
-      }
     }
+    // Read the session through a ref: this callback's dependency list does
+    // not cover every field of the input pack.
+    const now = sessionRef.current;
 
     s.setSession({
       forgeRunning: true,
       forgeStageIdx: 0,
       forgeStageLabel: STAGE_LABELS[0]!,
       status: "in_progress",
+      forgeError: "",
     });
 
     try {
-      let jobId = s.jobId;
+      let jobId = now.jobId;
 
-      // Create job if not yet saved
       if (!jobId) {
+        // First forge of this session — create the job.
         const job = await createJob({
-          genreId: s.genreId,
-          presetId: s.presetId || s.presetIds[0] || "",
-          inputs: buildInputPack(s),
-          reference: s.reference || undefined,
-          name: s.name || undefined,
+          genreId: now.genreId,
+          presetId: now.presetId || now.presetIds[0] || "",
+          inputs: buildInputPack(now),
+          reference: now.reference || undefined,
+          name: now.name || undefined,
         });
         jobId = job.id;
         s.setSession({ jobId: job.id });
+      } else {
+        // Re-forge — save the current inputs first. If this fails the run
+        // would compile stale inputs, so it is an error, not a best effort.
+        await updateJobInputs(jobId, {
+          inputs: buildInputPack(now),
+          name: now.name || undefined,
+          ...jobSound(now),
+        });
       }
 
-      // Subscribe to SSE
+      // Stop listening to any earlier run before starting this one.
       if (cleanupRef.current) cleanupRef.current();
+      cleanupRef.current = null;
+
+      // Start first, subscribe second: the cursor returned by the start call
+      // scopes the event stream to this run. Subscribing before a start that
+      // then fails used to replay the previous run's events and render a
+      // take of the old version.
+      const { eventCursor } = await startJob(jobId!);
 
       const completedStages = new Set<string>();
 
-      cleanupRef.current = connectJobEvents(jobId!, {
-        onProgress: (event: ProgressEvent) => {
-          if (event.stage === "suno_render" && event.status === "started") {
-            s.setSession({
-              forgeStageIdx: 3,
-              forgeStageLabel: "Forging audio with Suno",
-            });
-          } else if (
-            event.stage === "suno_render_complete" ||
-            (event.stage === "suno_render" && event.status === "completed")
-          ) {
-            s.setSession({
-              forgeRunning: false,
-              forgeStageIdx: 4,
-              status: "completed",
-              lastForgeTimestamp: Date.now(),
-            });
-            // Refresh takes
-            fetchVersions(jobId!)
-              .then((versions) => {
-                if (versions.length > 0) {
-                  // fetchVersions returns newest-first (server orders by
-                  // number DESC) — index 0 is the latest version, not the
-                  // last element.
-                  const latest = versions[0]!;
-                  fetchTakes(latest.id)
-                    .then((takes) => {
-                      s.setSession({ takes: takes as any[] });
-                      s.expandPanel("right");
-                      // takes are newest-first — load the take that just
-                      // finished, paused (never autoplay).
-                      const newest = takes[0];
-                      const playable = newest
-                        ? flattenTakes([newest as any])[0]
-                        : undefined;
-                      if (playable) player.loadPaused(playable);
-                    })
-                    .catch(() => {});
-                }
-              })
-              .catch(() => {});
-          } else if (event.stage === "suno_render_error") {
-            s.setSession({
-              forgeRunning: false,
-              status: "failed",
-            });
-          } else if (
-            event.stage === "versioning" &&
-            event.status === "completed"
-          ) {
-            // Auto-trigger Suno render via POST /takes
-            completedStages.add(event.stage);
-            s.setSession({ forgeStageIdx: Math.min(3, 3) });
-            fetchVersions(jobId!)
-              .then((versions) => {
-                if (versions.length > 0) {
-                  // fetchVersions returns newest-first (server orders by
-                  // number DESC) — index 0 is the latest version, not the
-                  // last element.
-                  const latest = versions[0]!;
-                  createTake(latest.id).catch((err) => {
-                    console.error("Failed to auto-trigger take:", err);
-                    s.setSession({ forgeRunning: false, status: "failed" });
-                  });
-                }
-              })
-              .catch(() => {});
-          } else if (event.status === "error") {
-            // Stage failure — stop forge, don't hang forever
-            s.setSession({ forgeRunning: false, status: "failed" });
-          } else {
-            // Normal stage progress (started / completed)
-            const { label, index } = stageToDisplay(event.stage);
-            if (event.status === "started") {
-              s.setSession({ forgeStageIdx: index, forgeStageLabel: label });
-            } else if (event.status === "completed") {
-              completedStages.add(event.stage);
-              s.setSession({ forgeStageIdx: Math.min(index + 1, 3) });
-            }
-          }
-        },
-        onError: () => {
-          s.setSession({ forgeRunning: false, status: "failed" });
-        },
-      });
+      // Once the run has reached an end state the stream is closed, so a
+      // dropped connection later on is not mistaken for a failed forge.
+      let settled = false;
+      const settle = () => {
+        settled = true;
+        if (cleanupRef.current) cleanupRef.current();
+        cleanupRef.current = null;
+      };
+      const fail = (reason: string) => {
+        settle();
+        s.setSession({
+          forgeRunning: false,
+          status: "failed",
+          forgeError: reason,
+        });
+      };
 
-      // Start the pipeline
-      await startJob(jobId!);
+      cleanupRef.current = connectJobEvents(
+        jobId!,
+        {
+          onProgress: (event: ProgressEvent) => {
+            if (event.stage === "suno_render" && event.status === "started") {
+              s.setSession({
+                forgeStageIdx: 3,
+                forgeStageLabel: "Forging audio with Suno",
+              });
+            } else if (
+              event.stage === "suno_render_complete" ||
+              (event.stage === "suno_render" && event.status === "completed")
+            ) {
+              settle();
+              s.setSession({
+                forgeRunning: false,
+                forgeStageIdx: 4,
+                status: "completed",
+                lastForgeTimestamp: Date.now(),
+              });
+              // Refresh takes
+              fetchVersions(jobId!)
+                .then((versions) => {
+                  if (versions.length > 0) {
+                    // fetchVersions returns newest-first (server orders by
+                    // number DESC) — index 0 is the latest version, not the
+                    // last element.
+                    const latest = versions[0]!;
+                    fetchTakes(latest.id)
+                      .then((takes) => {
+                        s.setSession({ takes: takes as any[] });
+                        s.expandPanel("right");
+                        // takes are newest-first — load the take that just
+                        // finished, paused (never autoplay).
+                        const newest = takes[0];
+                        const playable = newest
+                          ? flattenTakes([newest as any])[0]
+                          : undefined;
+                        if (playable) player.loadPaused(playable);
+                      })
+                      .catch(() => {});
+                  }
+                })
+                .catch(() => {});
+            } else if (event.stage === "suno_render_error") {
+              fail(event.error ?? "Suno could not render this take");
+            } else if (
+              event.stage === "versioning" &&
+              event.status === "completed"
+            ) {
+              // Auto-trigger Suno render via POST /takes
+              completedStages.add(event.stage);
+              s.setSession({ forgeStageIdx: Math.min(3, 3) });
+              fetchVersions(jobId!)
+                .then((versions) => {
+                  if (versions.length > 0) {
+                    // fetchVersions returns newest-first (server orders by
+                    // number DESC) — index 0 is the latest version, not the
+                    // last element.
+                    const latest = versions[0]!;
+                    createTake(latest.id, renderRef.current).catch((err) => {
+                      console.error("Failed to auto-trigger take:", err);
+                      fail(
+                        errorMessage(err, "Could not send the take to Suno"),
+                      );
+                    });
+                  }
+                })
+                .catch(() => {});
+            } else if (event.status === "error") {
+              // Stage failure — stop forge, don't hang forever. The stream
+              // stays open: the pipeline retries a stage before giving up.
+              s.setSession({
+                forgeRunning: false,
+                status: "failed",
+                forgeError: event.error ?? "The forge failed",
+              });
+            } else {
+              // Normal stage progress (started / completed)
+              const { label, index } = stageToDisplay(event.stage);
+              if (event.status === "started") {
+                s.setSession({ forgeStageIdx: index, forgeStageLabel: label });
+              } else if (event.status === "completed") {
+                completedStages.add(event.stage);
+                s.setSession({ forgeStageIdx: Math.min(index + 1, 3) });
+              }
+            }
+          },
+          onError: () => {
+            if (!settled) fail("Lost the connection to the server");
+          },
+        },
+        eventCursor ?? 0,
+      );
     } catch (err) {
       console.error("Forge failed:", err);
-      s.setSession({ forgeRunning: false, status: "failed" });
+      s.setSession({
+        forgeRunning: false,
+        status: "failed",
+        forgeError: errorMessage(err, "Could not start the forge"),
+      });
     }
   }, [
     s.jobId,
@@ -246,6 +305,7 @@ export function ComposeShell() {
       updateJobInputs(s.jobId!, {
         inputs: buildInputPack(s),
         name: s.name || undefined,
+        ...jobSound(s),
       }).catch(() => {});
     }, 800);
     return () => {

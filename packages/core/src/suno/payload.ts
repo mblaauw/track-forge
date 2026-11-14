@@ -2,8 +2,13 @@ import type {
   SunoGenerateRequest,
   SunoModelVersion,
   PromptFragment,
-  CompiledArtifacts,
 } from "./types.js";
+import {
+  DEFAULT_SUNO_MODEL,
+  DEFAULT_SUNO_VARIETY,
+  SUNO_VARIETY_LEVELS,
+  type SunoRenderSettings,
+} from "@track-forge/contracts";
 import { getCapabilities } from "./capabilities.js";
 import type { SunoCapabilities } from "./capabilities.js";
 
@@ -25,6 +30,16 @@ export interface SunoPayloadInput {
   /** Dominant vocal gender across the arrangement's vocal sections, if any. */
   vocalGender?: "m" | "f";
   /**
+   * Arrangement length in seconds. v6 renders 20 seconds when no duration
+   * is sent, so callers should always supply this.
+   */
+  durationSec?: number;
+  /** Per-take settings (variety, weirdness, style influence). */
+  settings?: Pick<
+    SunoRenderSettings,
+    "variety" | "weirdness" | "styleInfluence"
+  >;
+  /**
    * Optional fragments for fragment-aware truncation.
    * When provided, truncation drops complete low-priority fragments
    * instead of character-slicing through meaningful content.
@@ -37,7 +52,7 @@ export interface SunoPayloadInput {
 }
 
 export interface PayloadWarning {
-  field: "style" | "negativeTags" | "lyrics" | "title";
+  field: "style" | "negativeTags" | "lyrics" | "title" | "duration";
   message: string;
   currentLength: number;
   maxLength: number;
@@ -47,26 +62,26 @@ export interface PayloadWarning {
 
 // ── Payload generation ───────────────────────────────────────────────
 
-/**
- * Transform compiled artifacts into a SunoGenerateRequest (v1 API).
- *
- * Steps:
- *  1. Apply genre-specific transformations to style string.
- *  2. Determine `instrumental` from lyrics content.
- *  3. Map excludedStyles to negativeTags.
- *  4. Validate against model capabilities (truncate with warning).
- *  5. Return request + warnings.
- *
- * Truncation is fragment-aware when `input.fragments` is provided:
- * low-priority fragments are dropped whole rather than character-slicing.
- */
 const PRIORITY: Record<PayloadWarning["field"], number> = {
   title: 0,
   negativeTags: 1,
   lyrics: 2,
   style: 3,
+  duration: 4,
 };
 
+/**
+ * Transform compiled artifacts into a v6 custom-mode SunoGenerateRequest.
+ *
+ * Steps:
+ *  1. Truncate style / negative tags / lyrics / title to the v6 limits
+ *     (fragment-aware when `input.fragments` is provided).
+ *  2. Determine `instrumental` from lyrics content.
+ *  3. Clamp the requested duration into the provider's 10–360 s window.
+ *  4. Attach per-take settings — variety defaults to 0 so Suno leaves the
+ *     compiled style prompt untouched.
+ *  5. Return request + warnings.
+ */
 export function generateSunoPayload(
   input: SunoPayloadInput,
   capabilities?: SunoCapabilities,
@@ -74,10 +89,10 @@ export function generateSunoPayload(
   const caps = capabilities ?? getCapabilities(input.modelVersion);
   const warnings: PayloadWarning[] = [];
 
-  const model: SunoModelVersion = input.modelVersion ?? "V4_5ALL";
+  const model: SunoModelVersion = input.modelVersion ?? DEFAULT_SUNO_MODEL;
 
   // ── Style (fragment-aware truncation) ────────────────────────────
-  let { text: style, fragments: styleFrags } = fragmentTruncate(
+  const { text: style } = fragmentTruncate(
     input.style,
     input.fragments?.style,
     caps.maxStyleLength,
@@ -86,16 +101,16 @@ export function generateSunoPayload(
   );
 
   // ── Negative tags (excluded styles) ──────────────────────────────
-  let { text: negativeTags } = fragmentTruncate(
+  const { text: negativeTags } = fragmentTruncate(
     input.excludedStyles,
     input.fragments?.exclusions,
-    caps.maxTagsLength,
+    caps.maxNegativeTagsLength,
     "negativeTags",
     warnings,
   );
 
   // ── Lyrics (fragment-aware) ──────────────────────────────────────
-  let { text: prompt } = fragmentTruncate(
+  const { text: lyrics } = fragmentTruncate(
     input.lyrics,
     input.fragments?.lyrics,
     caps.maxLyricsLength,
@@ -104,7 +119,14 @@ export function generateSunoPayload(
   );
 
   // ── Instrumental flag ────────────────────────────────────────────
-  const instrumental = prompt.trim().length === 0;
+  const instrumental = lyrics.trim().length === 0;
+
+  // The provider rejects a custom-mode request with nothing to go on.
+  if (style.trim().length === 0 && instrumental && negativeTags.length === 0) {
+    throw new Error(
+      "Nothing to send to Suno: style, lyrics and excluded styles are all empty",
+    );
+  }
 
   // ── Title ────────────────────────────────────────────────────────
   const title = applySimpleTruncation(
@@ -120,16 +142,80 @@ export function generateSunoPayload(
     model,
     title,
     style,
+    variety: clampInt(
+      input.settings?.variety ?? DEFAULT_SUNO_VARIETY,
+      0,
+      SUNO_VARIETY_LEVELS.length - 1,
+    ),
     callBackUrl: caps.supportsCallbacks ? input.callbackUrl : undefined,
   };
 
-  if (!instrumental && prompt.length > 0) request.prompt = prompt;
+  if (!instrumental) request.lyrics = lyrics;
   if (!instrumental && input.vocalGender)
     request.vocalGender = input.vocalGender;
   if (caps.supportsNegativeTags && negativeTags.length > 0)
     request.negativeTags = negativeTags;
 
+  // ── Duration ─────────────────────────────────────────────────────
+  const duration = resolveDuration(input.durationSec, caps, warnings);
+  if (duration !== undefined) request.duration = duration;
+
+  // ── Sliders (omitted → Suno's own defaults) ──────────────────────
+  if (input.settings?.styleInfluence !== undefined)
+    request.styleWeight = unit(input.settings.styleInfluence);
+  if (input.settings?.weirdness !== undefined)
+    request.weirdnessConstraint = unit(input.settings.weirdness);
+
   return { request, warnings };
+}
+
+function resolveDuration(
+  requested: number | undefined,
+  caps: SunoCapabilities,
+  warnings: PayloadWarning[],
+): number | undefined {
+  if (
+    requested === undefined ||
+    !Number.isFinite(requested) ||
+    requested <= 0
+  ) {
+    warnings.push({
+      field: "duration",
+      message:
+        "No duration known for this version; Suno will render 20 seconds",
+      currentLength: 0,
+      maxLength: caps.maxDurationSec,
+      priority: PRIORITY.duration,
+    });
+    return undefined;
+  }
+  const rounded = Math.round(requested);
+  const clamped = Math.min(
+    caps.maxDurationSec,
+    Math.max(caps.minDurationSec, rounded),
+  );
+  if (clamped !== rounded) {
+    warnings.push({
+      field: "duration",
+      message:
+        rounded > clamped
+          ? `Arrangement runs ${rounded}s; Suno v6 renders at most ${clamped}s, so the take will be shorter`
+          : `Arrangement runs ${rounded}s; Suno v6 renders at least ${clamped}s`,
+      currentLength: clamped,
+      maxLength: caps.maxDurationSec,
+      priority: PRIORITY.duration,
+    });
+  }
+  return clamped;
+}
+
+/** Clamp to 0–1 and round to the two decimals the provider accepts. */
+function unit(value: number): number {
+  return Math.round(Math.min(1, Math.max(0, value)) * 100) / 100;
+}
+
+function clampInt(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)));
 }
 
 // ── Fragment-aware truncation ────────────────────────────────────────
@@ -235,9 +321,14 @@ export function payloadToLog(
   return {
     title: request.title,
     style: request.style.slice(0, 200),
-    prompt: request.prompt?.slice(0, 200),
+    lyrics: request.lyrics?.slice(0, 200),
     instrumental: request.instrumental,
     model: request.model,
+    duration: request.duration,
+    variety: request.variety,
+    styleWeight: request.styleWeight,
+    weirdnessConstraint: request.weirdnessConstraint,
+    vocalGender: request.vocalGender,
     negativeTags: request.negativeTags?.slice(0, 200),
     callbackUrl: request.callBackUrl,
   };

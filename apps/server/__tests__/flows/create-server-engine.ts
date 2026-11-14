@@ -27,13 +27,15 @@ import { registerLyricsRoutes } from "../../src/routes/lyrics.js";
 export async function createServerEngine(
   name: string,
   configOverrides?: Partial<Config>,
+  /** Replace the default Suno mock, e.g. to capture the submitted request. */
+  sunoOverride?: unknown,
 ): Promise<TestEngineInstance> {
   // Route handlers check SUNO_DRY_RUN at request time to skip real Suno calls
   process.env.SUNO_DRY_RUN = "true";
   const engine = TestEngine.create({ name, configOverrides });
 
   const llm = createMockLlm();
-  const suno = createMockSuno() as any;
+  const suno = (sunoOverride ?? createMockSuno()) as any;
 
   registerHealthRoutes(engine.server);
   registerJobRoutes(engine.server, {

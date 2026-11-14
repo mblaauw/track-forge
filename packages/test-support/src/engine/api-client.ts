@@ -312,8 +312,10 @@ export class ApiClient {
 
   async createTake(
     versionId: string,
+    /** Per-take Suno settings: model, variety, weirdness, styleInfluence. */
+    settings?: Record<string, unknown>,
   ): Promise<{ status: number; body: CreateTakeResponse }> {
-    return this.post(`/api/versions/${versionId}/takes`);
+    return this.post(`/api/versions/${versionId}/takes`, settings);
   }
 
   async toggleTakeFavorite(

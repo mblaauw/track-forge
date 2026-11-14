@@ -27,7 +27,13 @@ interface StyleCompileFields {
   presetIds?: string[];
   descriptors?: { label: string; cat: string; weight: number }[];
   bpm: number;
-  sections?: { name: string; fn?: string }[];
+  sections?: {
+    name: string;
+    fn?: string;
+    bars?: number;
+    deltas?: string[];
+    vocal?: Record<string, unknown>;
+  }[];
   lyricsMode?: string;
   vocalType?: string | null;
   characteristics?: string[];
@@ -83,14 +89,18 @@ function compilePreview(
     sections: body.sections?.map((s, i) => ({
       id: `preview-${i}`,
       name: s.name,
-      bars: 0,
+      bars: s.bars ?? 0,
       fn: s.fn ?? "establish",
-      deltas: [],
+      deltas: s.deltas ?? [],
       tags: [],
+      vocal: s.vocal,
     })) as unknown[] | undefined,
   };
   const materialized = materializeIntent(
-    { selectedStyles, userValues: userValues as any },
+    // These are flat job-input fields, so they go in as `userFlat` — the
+    // same path the create-job route uses. Passed as typed `userValues`
+    // they are silently ignored and the preview shows the bare preset.
+    { selectedStyles, userValues: {}, userFlat: userValues },
     catalog,
   );
   const resolved = resolveSongIntent(materialized);
