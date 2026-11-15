@@ -1,65 +1,67 @@
 import { type Locator, type Page } from "@playwright/test";
 
 /**
- * Page object for the SetupColumn (left sidebar with genre/preset/descriptors).
+ * The Sound zone (genre, preset, character) and the lyric brief that sits
+ * with the Lyrics panel in the Song zone.
  */
 export class SetupColumn {
   readonly panel: Locator;
-  readonly soundCard: Locator;
-  readonly descriptorsCard: Locator;
-  readonly referenceCard: Locator;
-  readonly lyricsSection: Locator;
-  readonly lyricsToggle: Locator;
+  readonly presetPicker: Locator;
+  readonly presetList: Locator;
+  readonly vocalsSwitch: Locator;
+  readonly lyricTopic: Locator;
 
   constructor(readonly page: Page) {
-    this.panel = page.locator(".setup-col, .col-rail");
-    this.soundCard = page.getByRole("button", { name: /^SOUND/ });
-    this.descriptorsCard = page.getByRole("button", { name: /^DESCRIPTORS/ });
-    this.referenceCard = page.getByRole("button", { name: /^REFERENCE/ });
-    this.lyricsSection = page.getByText("LYRICS", { exact: true });
-    this.lyricsToggle = page.locator(".setup-toggle");
+    this.panel = page.locator(".zone-sound");
+    this.presetPicker = page.getByTestId("preset-picker");
+    this.presetList = page.getByTestId("preset-list");
+    this.vocalsSwitch = page.getByTestId("vocals-switch");
+    this.lyricTopic = page.getByTestId("lyric-topic-input");
   }
 
-  /** Click a genre chip by its genre id. */
+  genreChip(genreId: string): Locator {
+    return this.page.getByTestId(`genre-chip-${genreId}`);
+  }
+
+  /** Choose a genre and wait for its first preset to be applied. */
   async selectGenre(genreId: string): Promise<void> {
-    await this.page.getByTestId(`genre-chip-${genreId}`).click();
+    const chip = this.genreChip(genreId);
+    if ((await chip.getAttribute("aria-checked")) === "true") return;
+    await chip.click();
+    await this.page.getByTestId("region-0").waitFor();
   }
 
-  /** Returns true if the genre chip has the "active" class. */
   async isGenreActive(genreId: string): Promise<boolean> {
-    const chip = this.page.getByTestId(`genre-chip-${genreId}`);
-    const cls = await chip.getAttribute("class");
-    return cls?.includes("active") ?? false;
+    return (
+      (await this.genreChip(genreId).getAttribute("aria-checked")) === "true"
+    );
   }
 
-  /** Click a preset from the preset list by name. */
+  /** Open the preset picker and choose a preset by its visible name. */
   async selectPreset(presetName: string): Promise<void> {
-    await this.page
-      .locator(".setup-select-list")
-      .getByRole("button", { name: presetName })
-      .click();
+    await this.presetPicker.click();
+    await this.presetList.getByRole("button", { name: presetName }).click();
   }
 
-  /** Click a preset by its data-testid. */
   async selectPresetById(presetId: string): Promise<void> {
+    await this.presetPicker.click();
     await this.page.getByTestId(`preset-${presetId}`).click();
   }
 
-  /** Set the lyric topic text. */
-  async setLyricTopic(topic: string): Promise<void> {
-    await this.page.getByTestId("lyric-topic-input").fill(topic);
-  }
-
-  /** Toggle the lyrics mode (instrumental/vocal). */
-  async toggleLyrics(): Promise<void> {
-    await this.lyricsToggle.click();
-  }
-
-  /** Expand the left panel if collapsed. */
-  async expandIfCollapsed(): Promise<void> {
-    const rail = this.page.locator(".col-rail.collapsed");
-    if (await rail.isVisible().catch(() => false)) {
-      await rail.click();
+  /** Turn vocals on if they are off. */
+  async enableVocals(): Promise<void> {
+    if ((await this.vocalsSwitch.getAttribute("aria-checked")) !== "true") {
+      await this.vocalsSwitch.click();
     }
+  }
+
+  /** Fill the lyric brief; turns vocals on first if needed. */
+  async setLyricTopic(topic: string): Promise<void> {
+    await this.enableVocals();
+    await this.lyricTopic.fill(topic);
+  }
+
+  async toggleLyrics(): Promise<void> {
+    await this.vocalsSwitch.click();
   }
 }

@@ -127,6 +127,27 @@ export function estimateDurationSec(
   return Math.round((bars * 4 * 60) / bpm);
 }
 
+/**
+ * The lyrics text exactly as Suno receives it: every arrangement section
+ * becomes a bracket tag (`[Name: change, change]`), sung sections carry
+ * their lines underneath, instrumental ones stand alone so the structure
+ * still reaches Suno. Shared by the pipeline (which writes the artifact)
+ * and the web client (which previews it), so the two cannot drift.
+ */
+export function formatSunoLyrics(
+  sections: readonly { id: string; name: string; deltas: readonly string[] }[],
+  linesById: Readonly<Record<string, readonly string[]>>,
+): string {
+  return sections
+    .map((s) => {
+      const tagStr = s.deltas.length > 0 ? `: ${s.deltas.join(", ")}` : "";
+      const header = `[${s.name}${tagStr}]`;
+      const lines = linesById[s.id] ?? [];
+      return lines.length > 0 ? `${header}\n${lines.join("\n")}` : header;
+    })
+    .join("\n\n");
+}
+
 // ── Lyrics & Structure Document Model ─────────────────────────────────
 
 export const SectionType = {

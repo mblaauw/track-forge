@@ -10,8 +10,10 @@ test.describe("Full forge flow", () => {
 
     // ── Setup phase ────────────────────────────────────────────────────
     // Default state: EDM genre, instrumental mode
-    await expect(forge.setupColumn.soundCard).toBeVisible();
-    await expect(forge.setupColumn.soundCard).toContainText("EDM");
+    await expect(forge.setupColumn.genreChip("edm")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
 
     // Forge button should be ready
     await expect(forge.contextBar.forgeBtn).toBeVisible();
@@ -29,7 +31,7 @@ test.describe("Full forge flow", () => {
     await expect(forge.contextBar.forgeBtn).toContainText(/Forging/);
 
     // Status should indicate FORGING
-    await expect(forge.contextBar.statusText).toHaveText("FORGING");
+    await expect(forge.contextBar.statusText).toHaveText("Forging");
 
     // ── Completion phase ────────────────────────────────────────────────
     // Wait for forge strip to disappear (pipeline completed)
@@ -38,11 +40,7 @@ test.describe("Full forge flow", () => {
     // Forge button should be re-enabled
     await expect(forge.contextBar.forgeBtn).not.toBeDisabled();
     await expect(forge.contextBar.forgeBtn).not.toContainText(/Forging/);
-    await expect(forge.contextBar.statusText).toHaveText("READY");
-
-    // Transport bar with play controls should be visible (takes present)
-    const transportBar = page.locator(".transport-bar");
-    await expect(transportBar).toBeVisible({ timeout: 5000 });
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
 
     // ── Takes verification ──────────────────────────────────────────────
     // RendersPanel should show at least 1 take
@@ -54,9 +52,10 @@ test.describe("Full forge flow", () => {
     const cards = forge.rendersPanel.takeCards();
     const firstCard = cards.first();
     await expect(firstCard).toBeVisible();
-    // Play button inside the card should be visible
+    // A dry run renders no audio, so the play control is present but off.
     const playBtn = firstCard.locator('[data-testid^="play-btn-"]');
     await expect(playBtn).toBeVisible();
+    await expect(firstCard).toContainText("Dry run, no audio");
   });
 
   test("status indicators update correctly through forge lifecycle", async ({
@@ -66,18 +65,18 @@ test.describe("Full forge flow", () => {
     await forge.goto();
 
     // Initial: READY
-    await expect(forge.contextBar.statusText).toHaveText("READY");
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
 
     // Click forge
     await forge.contextBar.clickForge();
 
     // During: FORGING
-    await expect(forge.contextBar.statusText).toHaveText("FORGING");
+    await expect(forge.contextBar.statusText).toHaveText("Forging");
 
     // Wait for completion
     await forge.contextBar.waitForForgeComplete(20000);
 
     // After: READY again
-    await expect(forge.contextBar.statusText).toHaveText("READY");
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
   });
 });

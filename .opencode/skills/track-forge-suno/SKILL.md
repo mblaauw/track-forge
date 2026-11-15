@@ -72,4 +72,4 @@ When `POST /api/versions/:id/takes` is called, the server emits synthetic SSE ev
 - `progress { stage: "suno_render_complete", status: "completed" }` — on success
 - `progress { stage: "suno_render_error", status: "error" }` — on failure
 
-These live in a display-only label map (`STAGE_LABELS` in `arrangement.ts`), NOT in `STAGE_ORDER`/`GenerationStage`.
+These map onto the display-only `FORGE_STEPS` list in `apps/web/src/lib/forge.ts`, NOT `STAGE_ORDER`/`GenerationStage`.

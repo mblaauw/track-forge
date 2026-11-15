@@ -28,7 +28,7 @@ test.describe("Lyrics generation flow", () => {
     await forgeStrip.waitFor({ state: "detached", timeout: 90_000 });
 
     // Status should reflect completion
-    await expect(forge.contextBar.statusText).toHaveText("READY");
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
 
     // ── Extract job ID from session storage ─────────────────────────
     const jobId = await page.evaluate(() => {
@@ -90,7 +90,7 @@ test.describe("Lyrics generation flow", () => {
     await expect(forgeStrip).toBeVisible({ timeout: 5000 });
     await forgeStrip.waitFor({ state: "detached", timeout: 90_000 });
 
-    await expect(forge.contextBar.statusText).toHaveText("READY");
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
 
     // ── Extract job ID from session storage ─────────────────────────
     const jobId = await page.evaluate(() => {

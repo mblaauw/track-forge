@@ -1,43 +1,54 @@
 import { test, expect } from "@playwright/test";
+import { ForgePage } from "./pages/ForgePage";
 
 test.describe("session recovery", () => {
-  test("page loads with default session state", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+  test("a fresh session starts on EDM with an arrangement", async ({
+    page,
+  }) => {
+    const forge = new ForgePage(page);
+    await forge.goto();
 
-    // Sound card should show EDM as default
-    const soundCard = page.getByRole("button", { name: /^SOUND/ });
-    await expect(soundCard).toBeVisible();
-    await expect(soundCard).toContainText("EDM");
-  });
-
-  test("sound card can be collapsed and expanded", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-
-    const soundCard = page.getByRole("button", { name: /^SOUND/ });
-    const presetLabel = page.getByText("PRESET", { exact: true });
-    await expect(presetLabel).toBeVisible();
-
-    await soundCard.click();
-    await expect(presetLabel).not.toBeVisible();
-
-    await soundCard.click();
-    await expect(presetLabel).toBeVisible();
-  });
-
-  test("library panel can be toggled", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-
-    // Library panel trigger should be present (handle icon or library icon)
-    const libBtn = page.locator(
-      '[class*="library"] button, button[class*="library"]',
+    await expect(forge.setupColumn.genreChip("edm")).toHaveAttribute(
+      "aria-checked",
+      "true",
     );
-    const count = await libBtn.count();
-    if (count > 0) {
-      await libBtn.first().click();
-    }
-    // No crash is the main assertion
+    await expect(page.getByTestId("region-0")).toBeVisible();
+    await expect(forge.contextBar.titleInput).not.toHaveValue("");
+  });
+
+  test("edits survive a reload", async ({ page }) => {
+    const forge = new ForgePage(page);
+    await forge.goto();
+
+    await forge.contextBar.setTitle("Reload Survivor");
+    await page.getByTestId("bpm-input").fill("111");
+    // The session is written to storage on a short debounce.
+    await page.waitForFunction(
+      () => JSON.parse(localStorage.getItem("tf-session") ?? "{}").bpm === 111,
+    );
+
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(forge.contextBar.titleInput).toHaveValue("Reload Survivor");
+    await expect(page.getByTestId("bpm-input")).toHaveValue("111");
+  });
+
+  test("the sessions menu opens, starts a new session, and closes", async ({
+    page,
+  }) => {
+    const forge = new ForgePage(page);
+    await forge.goto();
+    await forge.contextBar.setTitle("About To Be Replaced");
+
+    await forge.libraryPanel.open();
+    await expect(forge.libraryPanel.searchInput).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(forge.libraryPanel.panel).toBeHidden();
+
+    await forge.libraryPanel.clickNew();
+    await expect(forge.libraryPanel.panel).toBeHidden();
+    await expect(forge.contextBar.titleInput).not.toHaveValue(
+      "About To Be Replaced",
+    );
   });
 });

@@ -74,39 +74,45 @@ export function randomTitle(): string {
   return `${a} ${b}`;
 }
 
-export const SEC_COLORS: Record<string, string> = {
-  intro: "var(--hue-slate)",
-  outro: "var(--hue-slate)",
-  emerge: "var(--hue-slate)",
-  fade: "var(--hue-slate)",
-  "spoken word": "var(--hue-slate)",
-  build: "var(--hue-amber)",
-  swell: "var(--hue-amber)",
-  "pre-chorus": "var(--hue-amber)",
-  "post-chorus": "var(--hue-amber)",
-  crescendo: "var(--hue-amber)",
-  drop: "var(--hue-green)",
-  hook: "var(--hue-green)",
-  chorus: "var(--hue-green)",
-  drift: "var(--hue-green)",
-  "final chorus": "var(--hue-green)",
-  "final hook": "var(--hue-green)",
-  breakdown: "var(--hue-violet)",
-  bridge: "var(--hue-violet)",
-  interlude: "var(--hue-violet)",
-  transition: "var(--hue-violet)",
-  verse: "var(--hue-cyan)",
-  groove: "var(--hue-cyan)",
-  movement: "var(--hue-cyan)",
-  solo: "var(--hue-cyan)",
+/**
+ * Sections are coloured by family, on a cold-to-hot scale: the edges of a
+ * song are cool, its peaks are the hottest thing on the timeline.
+ */
+export type SectionFamily = "edge" | "body" | "turn" | "lift" | "peak";
+
+const FAMILY_BY_NAME: Record<string, SectionFamily> = {
+  intro: "edge",
+  outro: "edge",
+  emerge: "edge",
+  fade: "edge",
+  "spoken word": "edge",
+  verse: "body",
+  groove: "body",
+  movement: "body",
+  solo: "body",
+  breakdown: "turn",
+  bridge: "turn",
+  interlude: "turn",
+  transition: "turn",
+  build: "lift",
+  swell: "lift",
+  "pre-chorus": "lift",
+  "post-chorus": "lift",
+  crescendo: "lift",
+  drop: "peak",
+  hook: "peak",
+  chorus: "peak",
+  drift: "peak",
+  "final chorus": "peak",
+  "final hook": "peak",
 };
 
-export function sectionColor(name: string): string {
+export function sectionFamily(name: string): SectionFamily {
   const key = name
     .toLowerCase()
-    .replace(/[0-9]$/, "")
+    .replace(/\s*\d+$/, "")
     .trim();
-  return SEC_COLORS[key] ?? "var(--hue-slate)";
+  return FAMILY_BY_NAME[key] ?? "edge";
 }
 
 export function sectionIsVocal(sec: Section): boolean {
@@ -145,15 +151,62 @@ export function vocalMeta(vocal?: {
   return parts.filter(Boolean).join(", ");
 }
 
-export const SECTION_FUNCTIONS: { id: SectionFunction; label: string }[] = [
-  { id: "establish", label: "Establish" },
-  { id: "introduce", label: "Introduce" },
-  { id: "escalate", label: "Escalate" },
-  { id: "contrast", label: "Contrast" },
-  { id: "remove", label: "Strip back" },
-  { id: "peak", label: "Peak" },
-  { id: "resolve", label: "Resolve" },
+/**
+ * A section's role in the song's arc. `energy` (0–1) sets how tall the
+ * section stands on the timeline, so the arc can be read at a glance.
+ */
+export const SECTION_FUNCTIONS: {
+  id: SectionFunction;
+  label: string;
+  hint: string;
+  energy: number;
+}[] = [
+  { id: "establish", label: "Establish", hint: "Sets the scene", energy: 0.36 },
+  {
+    id: "introduce",
+    label: "Introduce",
+    hint: "Brings in a new idea",
+    energy: 0.52,
+  },
+  { id: "escalate", label: "Escalate", hint: "Builds tension", energy: 0.76 },
+  {
+    id: "contrast",
+    label: "Contrast",
+    hint: "Changes direction",
+    energy: 0.5,
+  },
+  {
+    id: "remove",
+    label: "Strip back",
+    hint: "Pulls elements out",
+    energy: 0.22,
+  },
+  { id: "peak", label: "Peak", hint: "The biggest moment", energy: 1 },
+  {
+    id: "resolve",
+    label: "Resolve",
+    hint: "Winds the song down",
+    energy: 0.3,
+  },
 ];
+
+export function roleOf(fn: SectionFunction) {
+  return SECTION_FUNCTIONS.find((f) => f.id === fn) ?? SECTION_FUNCTIONS[0]!;
+}
+
+/**
+ * Name for a new section of the given type: the bare type if it is the
+ * first of its kind, otherwise numbered ("Verse 2", "Verse 3"…).
+ */
+export function nextSectionName(type: string, existing: Section[]): string {
+  const taken = new Set(existing.map((sec) => sec.name.toLowerCase()));
+  if (!taken.has(type.toLowerCase())) return type;
+  for (let n = 2; n < 100; n++) {
+    const candidate = `${type} ${n}`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+  return type;
+}
 
 export const DELTA_PALETTE = [
   "sparse texture",
@@ -196,13 +249,6 @@ export const SECTION_PALETTE = [
   "Transition",
   "Spoken Word",
   "Outro",
-];
-
-export const STAGE_LABELS = [
-  "Composing arrangement",
-  "Writing lyrics",
-  "Finalizing bundle",
-  "Forging audio with Suno",
 ];
 
 const VALID_FNS = new Set(SECTION_FUNCTIONS.map((f) => f.id));

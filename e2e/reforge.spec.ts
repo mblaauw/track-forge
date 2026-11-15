@@ -61,18 +61,18 @@ test.describe("re-forging a session", () => {
 
     // ── First forge ─────────────────────────────────────────────────
     await forge.forgeInstrumental();
-    await expect(forge.contextBar.statusText).toHaveText("READY");
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
     const jobId = await sessionJobId(page);
     expect(takeRequests).toHaveLength(1);
 
     // ── Edit, then forge again ──────────────────────────────────────
-    const bpm = page.locator(".arr-bpm-input");
+    const bpm = page.getByTestId("bpm-input");
     await bpm.fill("101");
     await bpm.blur();
 
     await forge.contextBar.clickForge();
     await forge.contextBar.waitForForgeComplete(20_000);
-    await expect(forge.contextBar.statusText).toHaveText("READY");
+    await expect(forge.contextBar.statusText).toHaveText("Ready");
 
     // ── The server has two versions; the new one carries the edit ────
     const versions = await (
@@ -117,7 +117,7 @@ test.describe("re-forging a session", () => {
 
     await forge.contextBar.clickForge();
 
-    await expect(forge.contextBar.statusText).toHaveText("FAILED");
+    await expect(forge.contextBar.statusText).toHaveText("Failed");
     await expect(page.getByTestId("forge-error")).toHaveText(
       "Job is already running",
     );

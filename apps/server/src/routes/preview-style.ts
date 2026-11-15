@@ -43,6 +43,7 @@ interface StyleCompileFields {
   narrativeArc?: string;
   vocalStyle?: string;
   typicalSongStructure?: string[];
+  excludedStyles?: string;
   mood?: string;
   energy?: number;
 }
@@ -63,7 +64,7 @@ function buildCatalog(genreId: string): PresetCatalog {
 function compilePreview(
   genreId: string,
   body: StyleCompileFields,
-): ReturnType<typeof renderSunoStyle> {
+): ReturnType<typeof renderSunoStyle> & { exclusions: string[] } {
   const presetIds = body.presetIds ?? [];
   const catalog = buildCatalog(genreId);
   const selectedStyles: StyleInfluence[] = presetIds.map((pid, i) => ({
@@ -85,6 +86,7 @@ function compilePreview(
     narrativeArc: body.narrativeArc,
     vocalStyle: body.vocalStyle,
     typicalSongStructure: body.typicalSongStructure,
+    excludedStyles: body.excludedStyles,
     descriptors: body.descriptors as unknown[] | undefined,
     sections: body.sections?.map((s, i) => ({
       id: `preview-${i}`,
@@ -109,7 +111,10 @@ function compilePreview(
   resolved.presetLabels = presetIds
     .map((pid) => mod.presets?.find((p) => p.id === pid)?.name ?? "")
     .filter(Boolean);
-  return renderSunoStyle(resolved);
+  // The exclusions are part of what reaches Suno (as negative tags) and
+  // the resolver adds to them — e.g. vocals for an instrumental — so the
+  // preview reports the resolved list rather than echoing the input.
+  return { ...renderSunoStyle(resolved), exclusions: resolved.exclusions };
 }
 
 export function registerPreviewStyleRoutes(

@@ -1,52 +1,45 @@
 import { type Locator, type Page } from "@playwright/test";
 
 /**
- * Page object for the ContextBar (top header with forge button, title, status).
+ * The session title in the top bar, and the forge control at the top of
+ * the Output deck (status, Forge button, progress).
  */
 export class ContextBar {
   readonly forgeBtn: Locator;
   readonly titleInput: Locator;
-  readonly statusDot: Locator;
   readonly statusText: Locator;
-  readonly genreLabel: Locator;
   readonly titleGenBtn: Locator;
+  readonly forgeError: Locator;
 
   constructor(readonly page: Page) {
     this.forgeBtn = page.getByTestId("forge-btn");
     this.titleInput = page.getByRole("textbox", { name: "Track title" });
     this.titleGenBtn = page.getByRole("button", { name: "Generate title" });
-    // status dot and text are inside .ctx-status
-    this.statusDot = page.locator(".ctx-status-dot");
-    this.statusText = page.locator(".ctx-status-text");
-    this.genreLabel = page.locator(".ctx-meta-genre");
+    this.statusText = page.getByTestId("forge-status");
+    this.forgeError = page.getByTestId("forge-error");
   }
 
-  /** Click forge and wait for the forge strip to appear (pipeline started). */
   async clickForge(): Promise<void> {
     await this.forgeBtn.click();
   }
 
-  /** Set the track title. */
   async setTitle(title: string): Promise<void> {
     await this.titleInput.fill(title);
   }
 
-  /** Returns true when the forge button is disabled (forging or no genre). */
   async isForgeDisabled(): Promise<boolean> {
     return await this.forgeBtn.isDisabled();
   }
 
-  /** Wait until forge completes — forge strip disappears, transport bar appears. */
+  /** Wait until the forge finishes — the progress list appears, then goes. */
   async waitForForgeComplete(timeout = 15000): Promise<void> {
-    // Forge strip appears during pipeline, then disappears when done
-    const forgeStrip = this.page.getByTestId("forge-strip");
-    await forgeStrip.waitFor({ state: "attached", timeout });
-    // Wait for it to disappear (forge finished → transport bar shows)
-    await forgeStrip.waitFor({ state: "detached", timeout });
+    const progress = this.page.getByTestId("forge-strip");
+    await progress.waitFor({ state: "attached", timeout });
+    await progress.waitFor({ state: "detached", timeout });
   }
 
-  /** Returns the status text (READY / FORGING). */
+  /** "Ready", "Forging" or "Failed". */
   async statusTextValue(): Promise<string> {
-    return (await this.statusText.textContent()) ?? "";
+    return ((await this.statusText.textContent()) ?? "").trim();
   }
 }

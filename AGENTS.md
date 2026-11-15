@@ -46,6 +46,8 @@ If server/web/session code changed, also run `npx playwright test e2e/`.
 | Genre module types     | `packages/genre-core/src/index.ts` — `SectionFunction`, `Vocal`, `DescriptorCategory`               |
 | DB schema              | `packages/core/src/db/schema.ts`                                                                    |
 | Web session            | `apps/web/src/lib/session.tsx` — `SessionProvider` + `useSession()`                                 |
+| Web forge flow         | `apps/web/src/lib/forge.ts` — `useForge()` (save, start, SSE, take, autosave)                       |
+| Web UI + design system | `apps/web/src/components/studio/` (zones, `ui.tsx` primitives) and `apps/web/src/style.css` tokens  |
 | Suno provider contract | `packages/core/src/suno/client.ts` — `submit()`, `getGenerationStatus()`                            |
 | Suno adapter           | `packages/core/src/suno/adapter.ts` — `SunoAdapter` interface + default instance                    |
 | Suno v6 contract       | `packages/contracts/src/index.ts` — `SUNO_MODELS`, `SUNO_LIMITS`, `SunoRenderSettingsSchema`        |

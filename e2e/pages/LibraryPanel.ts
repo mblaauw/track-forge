@@ -1,54 +1,56 @@
 import { type Locator, type Page } from "@playwright/test";
 
-/**
- * Page object for the LibraryPanel (left-right panel showing saved jobs).
- */
+/** The sessions menu, opened from the top bar. */
 export class LibraryPanel {
+  readonly button: Locator;
   readonly panel: Locator;
   readonly newBtn: Locator;
   readonly searchInput: Locator;
 
   constructor(readonly page: Page) {
+    this.button = page.getByTestId("sessions-button");
     this.panel = page.getByTestId("library-panel");
-    this.newBtn = this.panel.getByRole("button", { name: "New" });
-    this.searchInput = this.panel.locator(".library-search");
+    this.newBtn = page.getByTestId("new-session");
+    this.searchInput = page.getByTestId("session-search");
   }
 
-  /** Returns all library row locators. */
+  async open(): Promise<void> {
+    if (!(await this.panel.isVisible().catch(() => false))) {
+      await this.button.click();
+      await this.panel.waitFor();
+    }
+  }
+
+  /** Kept for older specs: opening the menu is the equivalent. */
+  async expandIfCollapsed(): Promise<void> {
+    await this.open();
+  }
+
   rows(): Locator {
     return this.panel.locator('[data-testid^="library-row-"]');
   }
 
-  /** Get a specific library row by job id. */
   row(jobId: string): Locator {
     return this.panel.getByTestId(`library-row-${jobId}`);
   }
 
-  /** Row count. */
   async rowCount(): Promise<number> {
+    await this.open();
     return await this.rows().count();
   }
 
-  /** Click a library row to load that session. */
   async loadSession(jobId: string): Promise<void> {
+    await this.open();
     await this.row(jobId).click();
   }
 
-  /** Expand the library panel if collapsed. */
-  async expandIfCollapsed(): Promise<void> {
-    const rail = this.panel.locator(".col-rail.collapsed");
-    if (await rail.isVisible().catch(() => false)) {
-      await rail.click();
-    }
-  }
-
-  /** Click New button to reset session. */
   async clickNew(): Promise<void> {
+    await this.open();
     await this.newBtn.click();
   }
 
-  /** Search library by name. */
   async search(query: string): Promise<void> {
+    await this.open();
     await this.searchInput.fill(query);
   }
 }

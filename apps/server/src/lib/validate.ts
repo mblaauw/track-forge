@@ -100,6 +100,8 @@ const StyleCompileFields = z.object({
     .enum(["full_lyrics", "strict_instrumental"])
     .default("strict_instrumental"),
   vocalType: z.string().nullable().optional(),
+  /** Comma-separated styles to avoid, as typed in the session. */
+  excludedStyles: z.string().optional(),
 });
 
 /** Unsaved-session variant — genre isn't implied by an existing job row. */

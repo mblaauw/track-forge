@@ -20,7 +20,7 @@ User inputs → resolveSongIntent() (derivation rules, enrich)
   → compilation (deterministic, no LLM)
   → optional lyrics_writing (only LLM call, skipped if strict_instrumental)
   → versioning (persists artifacts, createCompilation() links to revision, completes job)
-  → ComposeShell triggers take (POST /api/versions/:id/takes)
+  → useForge() triggers take (POST /api/versions/:id/takes)
   → Suno submit
   → render events (SSE → Renders panel)
 ```
