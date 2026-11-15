@@ -144,12 +144,15 @@ export interface PreviewStyleBody {
   }[];
   lyricsMode: string;
   vocalType?: string | null;
+  excludedStyles?: string;
 }
 
 export interface PreviewStyleResult {
   style: string;
   charCount: number;
   activeCount: number;
+  /** Resolved negative tags, including ones the server adds itself. */
+  exclusions: string[];
 }
 
 export function previewStyle(

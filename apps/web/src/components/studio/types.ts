@@ -40,14 +40,7 @@ export type LyricAngle = "first_person" | "story" | "abstract" | "anthemic";
 
 export type ArrangeSource = "default" | "custom";
 
-export type SetupCardId = "sound" | "descriptors" | "reference" | "render";
-
-export interface SetupCardsOpen {
-  sound: boolean;
-  descriptors: boolean;
-  reference: boolean;
-  render: boolean;
-}
+export type Zone = "sound" | "song" | "output";
 
 export interface TakeTrack {
   id: string;

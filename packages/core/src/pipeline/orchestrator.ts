@@ -1,6 +1,7 @@
 import pino from "pino";
 import {
   DEFAULT_SUNO_MODEL,
+  formatSunoLyrics,
   GenerationStage,
   SectionType,
   SunoArtifactType,
@@ -318,26 +319,6 @@ async function handleLyricsWriting(
   };
 }
 
-/**
- * Shared formatter for the versioned lyrics artifact — every arrangement
- * section becomes a Suno bracket metatag (`[Name: delta1, delta2]`), with
- * lyric lines under vocal sections and a bare marker under instrumental
- * ones, so the full arrangement (not just the sung parts) reaches Suno.
- */
-function formatLyricsArtifact(
-  sections: { id: string; name: string; deltas: string[] }[],
-  linesById: Record<string, string[]>,
-): string {
-  return sections
-    .map((s) => {
-      const tagStr = s.deltas.length > 0 ? `: ${s.deltas.join(", ")}` : "";
-      const header = `[${s.name}${tagStr}]`;
-      const lines = linesById[s.id] ?? [];
-      return lines.length > 0 ? `${header}\n${lines.join("\n")}` : header;
-    })
-    .join("\n\n");
-}
-
 // ── Stage: Versioning ─────────────────────────────────────────────────
 
 async function handleVersioning(
@@ -370,7 +351,7 @@ async function handleVersioning(
     // Sections come from the resolved intent (frozen revision source), never
     // from the legacy rawSections bag — the orchestrator no longer reads that.
     const srcSections = resolved?.arrangement.sections ?? [];
-    lyricsText = formatLyricsArtifact(
+    lyricsText = formatSunoLyrics(
       srcSections.map((s) => ({
         id: String(s.id ?? ""),
         name: String(s.name ?? ""),

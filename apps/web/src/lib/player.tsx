@@ -6,7 +6,7 @@ import {
   useCallback,
   useEffect,
 } from "preact/hooks";
-import type { Take } from "../components/compose/types";
+import type { Take } from "../components/studio/types";
 
 export interface PlayerTrack {
   takeId: string;
